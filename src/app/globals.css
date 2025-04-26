@@ -7,22 +7,24 @@
 @tailwind utilities;
 
 :root {
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.147 0.004 49.25);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.25);
-  --primary: oklch(0.216 0.006 56.043);
-  --primary-foreground: oklch(0.985 0.001 106.423);
-  --secondary: oklch(0.97 0.001 106.424);
-  --secondary-foreground: oklch(0.216 0.006 56.043);
-  --muted: oklch(0.97 0.001 106.424);
-  --muted-foreground: oklch(0.553 0.013 58.071);
-  --accent: oklch(0.97 0.001 106.424);
-  --accent-foreground: oklch(0.216 0.006 56.043);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.923 0.003 48.717);
-  --input: oklch(0.923 0.003 48.717);
-  --ring: oklch(0.709 0.01 56.259);
+  --background: oklch(1 0 0); /* Blanc */
+  --foreground: oklch(0.147 0.004 49.25); /* Default dark grey */
+  --card: oklch(0.829 0.041 92.4); /* Pierre Calcaire */
+  --card-foreground: oklch(0.147 0.004 49.25); /* Default dark grey */
+  --popover: oklch(0.829 0.041 92.4); /* Pierre Calcaire */
+  --popover-foreground: oklch(0.147 0.004 49.25); /* Default dark grey */
+  --primary: oklch(0.714 0.108 298.82); /* Lavande */
+  --primary-foreground: oklch(0.985 0.001 106.423); /* Default near white */
+  --secondary: oklch(0.543 0.091 121.3); /* Olive */
+  --secondary-foreground: oklch(0.985 0.001 106.423); /* Default near white - Adjusted for Olive */
+  --muted: oklch(0.829 0.041 92.4); /* Pierre Calcaire */
+  --muted-foreground: oklch(0.553 0.013 58.071); /* Default medium grey */
+  --accent: oklch(0.831 0.146 91.16); /* Soleil */
+  --accent-foreground: oklch(0.216 0.006 56.043); /* Default dark grey */
+  --destructive: oklch(0.577 0.245 27.325); /* Default red */
+  --border: oklch(0.923 0.003 48.717); /* Default light grey */
+  --input: oklch(0.923 0.003 48.717); /* Default light grey */
+  --ring: oklch(0.709 0.01 56.259); /* Default grey */
   --sidebar: oklch(0.985 0.001 106.423);
   --sidebar-foreground: oklch(0.147 0.004 49.25);
   --sidebar-primary: oklch(0.216 0.006 56.043);
@@ -77,9 +79,7 @@
   --z-index-40: 40;
   --z-index-50: 50;
   --z-index-auto: auto;
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.25);
+  --radius: 0.5rem;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);

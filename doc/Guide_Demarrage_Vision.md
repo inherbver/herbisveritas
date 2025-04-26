@@ -449,7 +449,7 @@ _Légende :_
 ### 1.3. Mise en place du Design System
 
 - [x] Création des dossiers `src/components/ui`, `primitives`, `shared`, `layout`, `domain`.
-- [ ] Centralisation des tokens (couleurs, tailles, typographies) dans `tailwind.config.js`.
+- [x] Centralisation des tokens (couleurs, tailles, typographies) dans `tailwind.config.js` / `globals.css`. (Note: Thème principal via variables CSS dans `globals.css`, extensions spécifiques dans `tailwind.config.js`)
 - [ ] Développement des composants UI : **Prioriser l'utilisation des composants `shadcn/ui` existants**. Créer des composants personnalisés uniquement si nécessaire, en suivant les conventions Atomic Design et en s'inspirant de `shadcn/ui`.
   - ᾞ **Composants Clés :** `Button`, `Input`, `Card`, `Badge`, `Spinner`, `Dialog`, `Toast`, Composants `shadcn/ui` de base.
   - ⚠️ **Points d'Attention :**
