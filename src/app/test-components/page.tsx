@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 
 // Importez ici les composants que vous souhaitez tester
@@ -12,8 +14,61 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner"; // Importer toast depuis la bibliothèque sonner
+import { Separator } from "@/components/ui/separator";
+import { Terminal } from "lucide-react"; // For Alert example
 
 export default function TestComponentsPage() {
+  const handleToast = () => {
+    toast("Événement déclenché!", {
+      description: "Ceci est une notification toast.",
+      action: {
+        label: "Annuler",
+        onClick: () => {},
+      },
+    });
+  };
+
   return (
     <div className="container mx-auto space-y-8 p-8">
       <h1 className="mb-6 text-2xl font-bold">Page de Test des Composants</h1>
@@ -111,6 +166,188 @@ export default function TestComponentsPage() {
         </div>
         <div className="mt-4 rounded-md border p-4 font-mono">Texte Mono</div>
         <div className="mt-4 rounded-md border p-4 font-serif">Texte Serif</div>
+      </section>
+
+      <Separator />
+
+      {/* Section Select */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Menu Déroulant (Select)</h2>
+        <Select>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Thème" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="light">Clair</SelectItem>
+            <SelectItem value="dark">Sombre</SelectItem>
+            <SelectItem value="system">Système</SelectItem>
+          </SelectContent>
+        </Select>
+      </section>
+
+      {/* Section Textarea */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Zone de Texte (Textarea)</h2>
+        <div className="grid w-full gap-1.5">
+          <Label htmlFor="message">Votre message</Label>
+          <Textarea placeholder="Écrivez votre message ici." id="message" />
+        </div>
+      </section>
+
+      {/* Section Checkbox & Switch */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">
+          Cases à Cocher (Checkbox) & Interrupteurs (Switch)
+        </h2>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="terms" />
+            <Label htmlFor="terms">Accepter les termes</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch id="airplane-mode" />
+            <Label htmlFor="airplane-mode">Mode Avion</Label>
+          </div>
+        </div>
+      </section>
+
+      {/* Section Dropdown Menu */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Menu Contextuel (Dropdown Menu)</h2>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">Ouvrir Menu</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Profil</DropdownMenuItem>
+            <DropdownMenuItem>Facturation</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Déconnexion</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </section>
+
+      {/* Section Table */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Tableau (Table)</h2>
+        <Table>
+          <TableCaption>Liste des factures récentes.</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Facture</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Méthode</TableHead>
+              <TableHead className="text-right">Montant</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-medium">INV001</TableCell>
+              <TableCell>Payée</TableCell>
+              <TableCell>Carte de crédit</TableCell>
+              <TableCell className="text-right">€250.00</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-medium">INV002</TableCell>
+              <TableCell>En attente</TableCell>
+              <TableCell>Virement</TableCell>
+              <TableCell className="text-right">€150.00</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </section>
+
+      {/* Section Avatar */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Avatar</h2>
+        <Avatar>
+          <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+          <AvatarFallback>CN</AvatarFallback>
+        </Avatar>
+      </section>
+
+      {/* Section Badge */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Badges</h2>
+        <div className="flex gap-2">
+          <Badge>Défaut</Badge>
+          <Badge variant="secondary">Secondaire</Badge>
+          <Badge variant="destructive">Destructif</Badge>
+          <Badge variant="outline">Contour</Badge>
+        </div>
+      </section>
+
+      {/* Section Alert */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Alertes (Alert)</h2>
+        <div className="space-y-4">
+          <Alert>
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Information</AlertTitle>
+            <AlertDescription>Ceci est une alerte informative.</AlertDescription>
+          </Alert>
+          <Alert variant="destructive">
+            <Terminal className="h-4 w-4" /> {/* Utiliser une icone appropriée si disponible */}
+            <AlertTitle>Erreur</AlertTitle>
+            <AlertDescription>Ceci est une alerte d&apos;erreur.</AlertDescription>
+          </Alert>
+        </div>
+      </section>
+
+      {/* Section Dialog */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Boîte de Dialogue (Dialog)</h2>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">Ouvrir Dialogue</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Êtes-vous s&apos;ûr?</DialogTitle>
+              <DialogDescription>Cette action ne peut pas être annulée.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Fermer
+                </Button>
+              </DialogClose>
+              <Button type="button">Confirmer</Button> {/* Ajouter une action si nécessaire */}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </section>
+
+      {/* Section Tooltip */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Infobulle (Tooltip)</h2>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline">Survolez-moi</Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Ceci est une infobulle !</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </section>
+
+      {/* Section Sonner (Toast) */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Notifications (Sonner/Toast)</h2>
+        <Button onClick={handleToast}>Afficher Toast</Button>
+        {/* <Toaster />  Toaster moved to layout.tsx */}
+      </section>
+
+      {/* Separator Example */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold">Séparateur (Separator)</h2>
+        <div>
+          <p>Contenu au-dessus</p>
+          <Separator className="my-4" />
+          <p>Contenu en-dessous</p>
+        </div>
       </section>
     </div>
   );
