@@ -71,11 +71,11 @@ export default function TestComponentsPage() {
 
   return (
     <div className="container mx-auto space-y-8 p-8">
-      <h1 className="mb-6 text-2xl font-bold">Page de Test des Composants</h1>
+      <h1 className="mb-6 font-serif text-2xl font-bold">Page de Test des Composants</h1>
 
       {/* Section Boutons */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Boutons (Button)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Boutons (Button)</h2>
         <div className="flex flex-wrap items-center gap-4">
           <Button>Défaut</Button>
           <Button variant="secondary">Secondaire</Button>
@@ -89,7 +89,7 @@ export default function TestComponentsPage() {
 
       {/* Section Cartes */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Cartes (Card)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Cartes (Card)</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -117,7 +117,7 @@ export default function TestComponentsPage() {
 
       {/* Section Champs de Saisie et Labels */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">
+        <h2 className="mb-4 font-serif text-xl font-semibold">
           Champs de Saisie (Input) & Étiquettes (Label)
         </h2>
         <div className="grid w-full max-w-sm items-center gap-1.5">
@@ -136,7 +136,7 @@ export default function TestComponentsPage() {
 
       {/* Section Test des Tokens Directs */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Test des Tokens Directs</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Test des Tokens Directs</h2>
         <div className="flex flex-wrap gap-4">
           <div className="bg-primary text-primary-foreground rounded-md p-4">Primaire</div>
           <div className="bg-secondary text-secondary-foreground rounded-lg p-4">
@@ -172,7 +172,7 @@ export default function TestComponentsPage() {
 
       {/* Section Select */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Menu Déroulant (Select)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Menu Déroulant (Select)</h2>
         <Select>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Thème" />
@@ -187,7 +187,7 @@ export default function TestComponentsPage() {
 
       {/* Section Textarea */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Zone de Texte (Textarea)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Zone de Texte (Textarea)</h2>
         <div className="grid w-full gap-1.5">
           <Label htmlFor="message">Votre message</Label>
           <Textarea placeholder="Écrivez votre message ici." id="message" />
@@ -196,7 +196,7 @@ export default function TestComponentsPage() {
 
       {/* Section Checkbox & Switch */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">
+        <h2 className="mb-4 font-serif text-xl font-semibold">
           Cases à Cocher (Checkbox) & Interrupteurs (Switch)
         </h2>
         <div className="flex items-center space-x-4">
@@ -213,7 +213,7 @@ export default function TestComponentsPage() {
 
       {/* Section Dropdown Menu */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Menu Contextuel (Dropdown Menu)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Menu Contextuel (Dropdown Menu)</h2>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">Ouvrir Menu</Button>
@@ -229,7 +229,7 @@ export default function TestComponentsPage() {
 
       {/* Section Table */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Tableau (Table)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Tableau (Table)</h2>
         <Table>
           <TableCaption>Liste des factures récentes.</TableCaption>
           <TableHeader>
@@ -259,7 +259,7 @@ export default function TestComponentsPage() {
 
       {/* Section Avatar */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Avatar</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Avatar</h2>
         <Avatar>
           <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
           <AvatarFallback>CN</AvatarFallback>
@@ -268,7 +268,7 @@ export default function TestComponentsPage() {
 
       {/* Section Badge */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Badges</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Badges</h2>
         <div className="flex gap-2">
           <Badge>Défaut</Badge>
           <Badge variant="secondary">Secondaire</Badge>
@@ -279,7 +279,7 @@ export default function TestComponentsPage() {
 
       {/* Section Alert */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Alertes (Alert)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Alertes (Alert)</h2>
         <div className="space-y-4">
           <Alert>
             <Terminal className="h-4 w-4" />
@@ -296,7 +296,7 @@ export default function TestComponentsPage() {
 
       {/* Section Dialog */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Boîte de Dialogue (Dialog)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Boîte de Dialogue (Dialog)</h2>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">Ouvrir Dialogue</Button>
@@ -320,7 +320,7 @@ export default function TestComponentsPage() {
 
       {/* Section Tooltip */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Infobulle (Tooltip)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Infobulle (Tooltip)</h2>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -335,14 +335,14 @@ export default function TestComponentsPage() {
 
       {/* Section Sonner (Toast) */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Notifications (Sonner/Toast)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Notifications (Sonner/Toast)</h2>
         <Button onClick={handleToast}>Afficher Toast</Button>
         {/* <Toaster />  Toaster moved to layout.tsx */}
       </section>
 
       {/* Separator Example */}
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Séparateur (Separator)</h2>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Séparateur (Separator)</h2>
         <div>
           <p>Contenu au-dessus</p>
           <Separator className="my-4" />
