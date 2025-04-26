@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+import { zodResolver } from "@hookform/resolvers/zod"; // Import resolver
+import { useForm } from "react-hook-form"; // Import useForm
+import { z } from "zod"; // Import zod
 
 // Importez ici les composants que vous souhaitez tester
 import { Button } from "@/components/ui/button";
@@ -58,7 +61,48 @@ import { toast } from "sonner"; // Importer toast depuis la bibliothèque sonner
 import { Separator } from "@/components/ui/separator";
 import { Terminal } from "lucide-react"; // For Alert example
 
+// Nouveaux imports
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+// Définir un schéma simple pour le formulaire d'exemple
+const formSchema = z.object({
+  username: z.string().min(2, {
+    message: "Le nom d'utilisateur doit contenir au moins 2 caractères.",
+  }),
+});
+
 export default function TestComponentsPage() {
+  // Initialiser le formulaire
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+    },
+  });
+
+  // Fonction de soumission (exemple simple)
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values);
+    toast("Formulaire soumis!", {
+      description: `Nom d'utilisateur: ${values.username}`,
+    });
+  }
+
   const handleToast = () => {
     toast("Événement déclenché!", {
       description: "Ceci est une notification toast.",
@@ -348,6 +392,70 @@ export default function TestComponentsPage() {
           <Separator className="my-4" />
           <p>Contenu en-dessous</p>
         </div>
+      </section>
+
+      {/* Nouvelles sections pour Tabs, Accordion, Form */}
+
+      {/* Section Tabs */}
+      <section>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Onglets (Tabs)</h2>
+        <Tabs defaultValue="compte" className="w-[400px]">
+          <TabsList>
+            <TabsTrigger value="compte">Compte</TabsTrigger>
+            <TabsTrigger value="motdepasse">Mot de passe</TabsTrigger>
+            <TabsTrigger value="autre">Autre</TabsTrigger>
+          </TabsList>
+          <TabsContent value="compte">Contenu de l&apos;onglet Compte.</TabsContent>
+          <TabsContent value="motdepasse">Contenu de l&apos;onglet Mot de passe.</TabsContent>
+          <TabsContent value="autre">Contenu d&apos;un autre onglet.</TabsContent>
+        </Tabs>
+      </section>
+
+      {/* Section Accordion */}
+      <section>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Accordéon (Accordion)</h2>
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="item-1">
+            <AccordionTrigger>Est-ce accessible?</AccordionTrigger>
+            <AccordionContent>Oui. Adhère aux normes WAI-ARIA.</AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="item-2">
+            <AccordionTrigger>Est-ce stylisé?</AccordionTrigger>
+            <AccordionContent>
+              Oui. Livré avec des styles par défaut qui peuvent être étendus.
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="item-3">
+            <AccordionTrigger>Est-ce animé?</AccordionTrigger>
+            <AccordionContent>
+              Oui. C&apos;est animé par défaut, mais vous pouvez le désactiver.
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </section>
+
+      {/* Section Form */}
+      <section>
+        <h2 className="mb-4 font-serif text-xl font-semibold">Formulaire (Form)</h2>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nom d&apos;utilisateur</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Votre pseudo" {...field} />
+                  </FormControl>
+                  <FormDescription>C&apos;est votre nom d&apos;affichage public.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit">Soumettre</Button>
+          </form>
+        </Form>
       </section>
     </div>
   );
