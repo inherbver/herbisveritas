@@ -16,8 +16,6 @@
   "plugins": ["@typescript-eslint", "react", "react-hooks", "jsx-a11y", "import", "prettier"],
   "extends": [
     "eslint:recommended",
-    "airbnb",
-    "airbnb-typescript", // Utilise airbnb/base + règles react via airbnb-typescript
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
