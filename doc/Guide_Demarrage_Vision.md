@@ -60,7 +60,7 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 
 # Ὠ README – Vibe Coding & MVP Reference
 
-Bienvenue ! Ce README est ta boussole pour coder vite, bien, et sans friction vers le MVP. Il synthétise l’essentiel, te rappelle les pièges à éviter, t’inspire avec les meilleures pratiques, et t’offre des liens directs vers la doc détaillée pour chaque besoin.
+Bienvenue ! Ce README est ta boussole pour coder vite, bien, et sans friction vers le MVP. Il synthétise l’essentiel, te rappelle les pièges à éviter, t’inspire avec les meilleures pratiques, et t’offre des liens directs vers la doc détaillée pour chaque besoin.
 
 ---
 
@@ -125,7 +125,7 @@ pnpm dev
 - **Next.js App Router** : bien séparer Server/Client, ne pas transmettre de fonctions, toujours await params
 - **UI/UX** : props natives uniquement, pattern polymorphique via Radix UI/Slot
 
-- **Accessibilité** : balises sémantiques, ARIA, tests axe/lighthouse systématiques
+- **Accessibilité** : balises sémantiques, ARIA, tests axe/lighthouse systématiques
 - **Sécurité** : RLS Supabase, audit log, cookies httpOnly, pas de secrets exposés
 - **Tests & CI/CD** : lint, build, tests unitaires/E2E/accessibilité/SEO à chaque PR
 - **Onboarding** : script setup, doc synthétique, exemples concrets
@@ -191,7 +191,7 @@ Ces composants sont spécifiques à des fonctionnalités métier particulières 
 #### Événements
 
  
-- **EventList** - Liste des événements
+- **EventList** - Liste des événements
 - **EventDetails** - Détails d'un événement
 - **EventCalendar** - Calendrier des événements
 - **EventRegistration** - Formulaire d'inscription à un événement
@@ -255,7 +255,7 @@ Ces composants sont spécifiques à des fonctionnalités métier particulières 
 
 ## Ἲ Thème, couleurs et design system
 
-### Centralisation du design avec Tailwind CSS
+### Centralisation du design avec Tailwind CSS
 
 - **Définir toutes les couleurs dans `tailwind.config.js`** sous `theme.colors` (tu peux même importer un fichier JSON ou JS si besoin de plus de modularité).
 - **Créer des “presets” ou des “plugins” Tailwind** si tu veux partager des tokens/designs entre plusieurs projets.
@@ -278,7 +278,7 @@ Créer une boutique e-commerce et magazine **robuste, mobile-first, SEO friendly
 ## 2. Fonctionnalités MVP & Parcours Utilisateur
 
 ### 2.1 Fondations & Design System
-- Initialiser le repo avec Next.js 15 (App Router), TypeScript, Tailwind CSS, ShadCN UI.
+- Initialiser le repo avec Next.js 15 (App Router), TypeScript, Tailwind CSS, shadcn/ui.
 - Structurer les dossiers : `app/`, `src/components/` (primitives, shared, layout, domain), `src/lib/`, `src/hooks/`, `src/types/`, `e2e/`.
 - Mettre en place le design system (tokens centralisés dans `tailwind.config.js`, composants UI de base, accessibilité native).
 - Configurer Supabase (auth, DB, stockage, RLS), Zustand (état global), React Hook Form + Zod (formulaires).
@@ -319,7 +319,7 @@ Créer une boutique e-commerce et magazine **robuste, mobile-first, SEO friendly
 - Gestion articles/magazine (CRUD simple avec éditeur type Markdown/TipTap pour la V2).
 - Gestion pages statiques/Hero Section (pour flexibilité).
 
----
+---
 
 ## 3. Exigences Transverses (Qualité, Sécurité, Évolutivité)
 
@@ -381,7 +381,7 @@ Créer une boutique e-commerce et magazine **robuste, mobile-first, SEO friendly
 
 # ROADMAP.md
 
-Ce document détaille les étapes de développement du projet InHerbisVeritas.
+Ce document détaille les étapes de développement du projet InHerbisVeritas.
 
 *Légende :*
 *   `[ ]` : Tâche à faire
@@ -393,9 +393,9 @@ Créer une boutique e-commerce et magazine **robuste, mobile-first, SEO friendly
 ## 1. Initialisation & Fondations
 
 ### 1.1. Préparation du projet
-- [ ] Création du dépôt Git, configuration des branches principales
-- [ ] Mise en place du workflow Git (feature branches, PR, conventions de nommage)
-- [ ] Initialisation Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui
+- [x] Création du dépôt Git, configuration des branches principales
+- [x] Mise en place du workflow Git (feature branches, PR, conventions de nommage)
+- [x] Initialisation Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui
 - [ ] Ajout des outils de qualité : ESLint (AirBnB), Prettier, Husky (pré-commit), commitlint
     - ᾞ **Composants Clés :** N/A (Configuration)
     - ⚠️ **Points d'Attention :**
@@ -446,7 +446,7 @@ Créer une boutique e-commerce et magazine **robuste, mobile-first, SEO friendly
 - [ ] Mise en place de la gestion d'état (Zustand si besoin global, sinon `useState`/`useReducer`).
 - [ ] Stratégie de fetching de données (Server Components, Route Handlers, Client-side fetching).
 
-- [ ] Utilisation des Server Actions pour les mutations.
+- [ ] Utilisation des Server Actions pour les mutations.
     - ᾞ **Composants Clés :** Distinction entre Server/Client Components, potentiellement HOCs ou hooks utilitaires.
     - ⚠️ **Points d'Attention :**
         - Mauvaise utilisation des Server/Client Components entraînant des erreurs ou des performances dégradées.
@@ -511,7 +511,7 @@ Créer une boutique e-commerce et magazine **robuste, mobile-first, SEO friendly
     - ᾞ **Composants Clés :** `ProductCard`, `ProductFilters`.
     - ⚠️ **Points d'Attention :** **Spécifique (SUFFERS.md) :** Problèmes potentiels d'imports ou de typage lors de l'utilisation de `ProductCard` (vérifier export/import du type `Product`).
 
-- [ ] Récupération des données produits depuis Supabase.
+- [ ] Récupération des données produits depuis Supabase.
 
 ### 3.3. Panier d'Achat
 - [ ] Logique d'ajout/suppression/modification des articles (probablement avec Zustand).
@@ -576,7 +576,7 @@ Créer une boutique e-commerce et magazine **robuste, mobile-first, SEO friendly
 - [ ] Système de recherche.
 - [ ] Avis produits.
 
-- [ ] Blog/Magazine (`/magazine`).
+- [ ] Blog/Magazine (`/magazine`).
 - [ ] Liste de souhaits (Wishlist).
     - ᾞ **Composants Clés :** `SearchBar`, `ReviewForm`, `ReviewList`, `ArticleCard`, `ArticleDetail`, `WishlistButton`, `WishlistPage`.
     - ⚠️ **Points d'Attention :** Complexité variable selon la fonctionnalité (ex: recherche full-text, modération des avis, gestion état wishlist).
@@ -629,5 +629,3 @@ STRIPE_SECRET_KEY=...
 
 ## Tutoriel avancé (Placeholder)
 Un guide détaillé pour l’intégration Prisma/Supabase et guides avancés sera ajouté ici.
-
-

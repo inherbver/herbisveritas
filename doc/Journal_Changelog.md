@@ -1,7 +1,5 @@
 # SUFFERS.md
 
-# SUFFERS.md
-
 ## Blocages et points "tricky" rencontrés
 
 ### 1. Problème d'import avec les alias `@/`
