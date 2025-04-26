@@ -1,0 +1,71 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json",
+    "ecmaVersion": 2021,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "plugins": ["@typescript-eslint", "react", "react-hooks", "jsx-a11y", "import", "prettier"],
+  "extends": [
+    "eslint:recommended",
+    "airbnb",
+    "airbnb-typescript", // Utilise airbnb/base + règles react via airbnb-typescript
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:jsx-a11y/recommended",
+    "plugin:import/typescript",
+    "next/core-web-vitals", // Règles spécifiques à Next.js
+    "plugin:prettier/recommended" // Intègre Prettier et désactive les règles conflictuelles
+  ],
+  "settings": {
+    "react": {
+      "version": "detect" // Détecte automatiquement la version de React
+    },
+    "import/resolver": {
+      "typescript": {}
+    }
+  },
+  "rules": {
+    // Désactiver temporairement, car peut être strict avec Next.js 13+ App Router
+    "react/react-in-jsx-scope": "off",
+    // Permet les fonctions fléchées pour les composants fonctionnels
+    "react/function-component-definition": [
+      2,
+      {
+        "namedComponents": "arrow-function",
+        "unnamedComponents": "arrow-function"
+      }
+    ],
+    // Préférences personnelles (optionnel)
+    "react/prop-types": "off", // Pas nécessaire avec TypeScript
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "prettier/prettier": "warn", // Affiche les erreurs Prettier comme warnings
+    "import/prefer-default-export": "off", // Permet les exports nommés sans export par défaut
+    "react/jsx-props-no-spreading": "off", // Peut être utile pour les props de composants UI
+    "@typescript-eslint/no-unused-vars": "warn",
+    // Next.js specific (peut être ajusté)
+    "@next/next/no-html-link-for-pages": "off" // Utile si vous mixez pages/ et app/
+  },
+  "ignorePatterns": [
+    ".eslintrc.json",
+    "next.config.js",
+    "postcss.config.js",
+    "tailwind.config.js",
+    "node_modules/",
+    ".next/",
+    "out/",
+    "public/", // Ou spécifiquement public/build, public/static etc.
+    "*.config.js",
+    "*.config.mjs"
+    // Ajoutez d'autres fichiers/dossiers générés ou non pertinents
+  ]
+}
