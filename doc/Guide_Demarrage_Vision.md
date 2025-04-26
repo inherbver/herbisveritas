@@ -151,6 +151,11 @@ La structure des composants suit une approche Atomic Design adaptée :
 src/
 └── components/
     ├── ui/           # Composants shadcn/ui ajoutés via CLI
+    │                 #   (Actuels: Accordion, Alert, Avatar, Badge, Button, Card,
+    │                 #    Checkbox, Dialog, DropdownMenu, Form, Input, Label,
+    │                 #    Select, Separator, Switch, Table, Tabs, Textarea,
+    │                 #    Toast (sonner), Tooltip)
+    │                 #   (Prévus: -)
     ├── primitives/   # Atomes UI maison (si non couverts par shadcn/ui)
     ├── shared/       # Composants transverses réutilisables
     ├── layout/       # Structure globale et mise en page
