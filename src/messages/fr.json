@@ -1,0 +1,9 @@
+{
+  "HomePage": {
+    "title": "Bienvenue (FR)",
+    "description": "Ceci est la page d'accueil en français."
+  },
+  "NotFound": {
+    "title": "Page non trouvée"
+  }
+}

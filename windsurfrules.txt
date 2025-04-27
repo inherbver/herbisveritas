@@ -25,37 +25,38 @@
 # 5. Données & sécurité
 12. Supabase-js 2 : appels DB UNIQUEMENT dans Server Components/Route Handlers.  
 13. RLS obligatoire sur chaque table ; politiques distinctes `anon` / `authenticated`.  
-14. Interdiction d’exposer la clé `service_role`. Variables dans `.env.local`.
+14. Next.js 15 dynamic APIs : `params` et `searchParams` sont désormais asynchrones ; en Server Components, await avant déstructuration (ex : `const { locale } = await params;`), en Client Components, unwrap avec `React.use(params)`.
+15. Interdiction d’exposer la clé `service_role`. Variables dans `.env.local`.
 
 # 6. i18n & routes
-15. next-intl pour fr, en, de, es ; fichiers JSON dans /messages.  
-16. URLs publiques : /{locale}/… ; locale par défaut = fr.
+16. next-intl pour fr, en, de, es ; fichiers JSON dans /messages.  
+17. URLs publiques : /{locale}/… ; locale par défaut = fr.
 
 # 7. Performances
-17. Dev : `next dev --turbo` ; analyse bundle `next build --profile`.  
-18. `export const dynamic = "force-dynamic"` uniquement si nécessaire.  
-19. Favoriser Edge Runtime (revalidateTag) pour fonctions légères.
+18. Dev : `next dev --turbo` ; analyse bundle `next build --profile`.  
+19. `export const dynamic = "force-dynamic"` uniquement si nécessaire.  
+20. Favoriser Edge Runtime (revalidateTag) pour fonctions légères.
 
 # 8. Tests & CI
-20. Jest unitaires dans __tests__, Cypress e2e dans cypress/.  
-21. Workflow GitHub : `npm run lint && npm run test && npm run build`.
+21. Jest unitaires dans __tests__, Cypress e2e dans cypress/.  
+22. Workflow GitHub : `npm run lint && npm run test && npm run build`.
 
 # 9. MCP directives spécifiques
-22. Context7 : chaque prompt complexe doit inclure le tag `use context7` pour injecter docs live (Next 15, Supabase, shadcn/ui…).  
-23. Supabase MCP : activer l’action “rowLevelSecurityCheck” avant tout commit touchant `/supabase/`.  
-24. Dart MCP :  
+23. Context7 : chaque prompt complexe doit inclure le tag `use context7` pour injecter docs live (Next 15, Supabase, shadcn/ui…).  
+24. Supabase MCP : activer l’action “rowLevelSecurityCheck” avant tout commit touchant `/supabase/`.  
+25. Dart MCP :  
     • `createTask` quand un TODO > 30 mn est détecté dans le diff ;  
     • `updateTask` sur push si commit message contient `#task-<id>`.
 
 # 10. Répertoires protégés
-25. Ne JAMAIS éditer `/public`, `/supabase/migrations`, `/node_modules`.
+26. Ne JAMAIS éditer `/public`, `/supabase/migrations`, `/node_modules`.
 
 # 11. Commits & documentation
-26. Convention commit : `type(scope): description` (ex. feat(cart): optimistic update).  
-27. Commentaires « why » requis si > 20 lignes changées.
+27. Convention commit : `type(scope): description` (ex. feat(cart): optimistic update).  
+28. Commentaires « why » requis si > 20 lignes changées.
 
 # 12. AI guidelines
-28. Cascade doit proposer : snippet + explication + source Context7.  
-29. Si Cascade manque de contexte, déclencher automatiquement `use context7`.
+29. Cascade doit proposer : snippet + explication + source Context7.  
+30. Si Cascade manque de contexte, déclencher automatiquement `use context7`.
 
 # ------------- end .windsurfrules -------------

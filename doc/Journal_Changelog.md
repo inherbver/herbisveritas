@@ -13,12 +13,19 @@
 - Solution temporaire : mettre les tests de côté et prioriser l'avancement fonctionnel.
 
 ### 3. i18n (next-intl) et structure des pages
-- Migration de `/app/boutique/page.tsx` vers `/app/[locale]/boutique/page.tsx`.
-- Nécessite d'adapter tous les imports et la gestion des locales, et de bien comprendre la gestion du middleware.
+- Migration de `/app/boutique/page.tsx` vers `/app/[locale]/boutique/page.tsx` nécessaire.
+- Nécessite d'adapter tous les imports et la gestion des locales.
+- **Solution / Clarification Context7** :
+  - `RootLayout` doit récupérer la locale et envelopper les `children` avec `<NextIntlClientProvider>` pour fournir messages et locale aux Client Components.
+  - La navigation (liens `<Link>`, redirections `redirect`, hooks `useRouter`, `usePathname`) *doit* utiliser les versions localisées fournies par `next-intl/navigation` (souvent via un fichier `src/i18n/navigation.ts`).
+  - Un `middleware.ts` est indispensable pour détecter et gérer la locale de la requête.
 
-### 4. Header : hooks "client only" (usePathname, useLocale, useTranslations)
-- Erreur : "You're importing a component that needs `usePathname`. This React hook only works in a client component. To fix, mark the file (ou son parent) avec la directive `"use client"` en haut du fichier.
-- Solution : ajouter la directive `"use client"` en haut du fichier concerné (typiquement `src/components/Header.tsx`).
+### 4. Header / Composants clients : hooks "client only" (usePathname, useLocale, useTranslations)
+- Erreur : "You're importing a component that needs `usePathname`. This React hook only works in a client component..."
+- **Solution / Clarification Context7** :
+  - Confirme que tout composant utilisant des hooks interactifs (`useState`, `useEffect`), des API navigateur (`usePathname` même celui de `next-intl/navigation`), ou des événements **doit** être marqué avec la directive `"use client"`.
+  - Les hooks comme `useTranslations` peuvent être utilisés dans les Server Components *uniquement* s'il n'y a pas d'interactivité client requise.
+  - Le `Header`, le `Breadcrumb` et d'autres composants interactifs seront probablement des Client Components ou devront déléguer l'usage des hooks à des sous-composants clients.
 
 ### 5. Port 3000 déjà utilisé
 - Next.js démarre automatiquement sur un port libre (ex : 3002) si 3000 est occupé.
@@ -73,6 +80,31 @@
 
 Ce fichier retrace les principaux problèmes rencontrés et les solutions mises en place au cours du développement du projet.
 
+
+## 2025-04-26
+
+### ὁ Problèmes résolus
+
+#### Erreur ESLint `react/no-unescaped-entities` et `commitlint` bloquant le commit
+
+**Problème** :
+- Le hook pre-commit (Husky + lint-staged) échouait systématiquement lors de la tentative de commit des modifications de la page de test des composants (`src/app/test-components/page.tsx`).
+- La cause principale était l'erreur ESLint `react/no-unescaped-entities`, déclenchée par la présence d'apostrophes non échappées (`'`) dans le contenu JSX (ex: `<DialogTitle>Êtes-vous sûr?</DialogTitle>`, `<AlertDescription>Ceci est une alerte d'erreur.</AlertDescription>`).
+- Plusieurs tentatives d'échappement (avec `{''}` ou `{""}`) ont échoué car la règle exige l'utilisation d'entités HTML ou la désactivation de la règle.
+- En parallèle, un problème secondaire avec `commitlint` (`body-max-line-length`) est survenu, car certaines lignes de la description du message de commit dépassaient 100 caractères.
+
+**Solution** :
+- **Erreur ESLint** : Correction des apostrophes non échappées dans le fichier `src/app/test-components/page.tsx` en utilisant l'entité HTML `&apos;` pour les composants concernés (`DialogTitle`, `AlertDescription`).
+- **Erreur commitlint** : Réorganisation du message de commit pour que les lignes de la description respectent la limite de longueur de 100 caractères.
+- **Avertissement `.eslintignore`** : Noté mais ignoré pour l'instant (pas bloquant). Un fichier `.eslintignore` a été ajouté pour exclure le dossier `.next/`.
+- **Déplacement `Toaster`** : Le composant `Toaster` de Sonner a été déplacé de la page de test vers le layout racine (`src/app/layout.tsx`) conformément aux bonnes pratiques.
+- **Suppression `console.log`** : Retrait d'un `console.log` dans la page de test qui aurait pu potentiellement causer des erreurs de linting.
+
+**Fichiers modifiés** :
+- `src/app/test-components/page.tsx`
+- `src/app/layout.tsx`
+- `.eslintignore` (ajouté)
+
 ## 2025-04-06 / 2025-04-07
 
 ### ὁ Problèmes résolus
@@ -125,7 +157,7 @@ export async function generateMetadata({ params }: Props) {
 
 #### Transfert de fonctions entre Server et Client Components
 
-**Problème** :
+**Problème** :
 - Erreur 500 lors de l'accès à la page Shop
 - Causée par la transmission de fonctions de rappel (callbacks) du Server Component (page.tsx) vers des Client Components (ProductGrid, ProductFilters)
 - Next.js ne permet pas de sérialiser des fonctions entre Server et Client Components
@@ -188,7 +220,7 @@ export async function generateMetadata({ params }: Props) {
    - Centraliser les mocks de données dans un dossier dédié
    - Créer un service pattern pour simuler puis implémenter les appels API
 
-3. **Prochaines user stories à implémenter** :
+3. **Prochaines user stories à implémenter** :
    - Système de panier fonctionnel
    - Pages checkout et confirmation
    - Authentification utilisateur
@@ -198,4 +230,62 @@ export async function generateMetadata({ params }: Props) {
    - Implémentation du chargement progressif des images
    - Optimisation des métadonnées pour le SEO
 
-
+## 2025-04-27
+
+### ὁ Problèmes résolus
+
+#### Erreur d'hydratation React : `whitespace text nodes cannot be a child of <html>`
+
+**Problème** :
+- L'application échouait au chargement avec une erreur d'hydratation React côté client, même après avoir configuré correctement `next-intl` (middleware, i18n.ts, provider).
+- L'erreur indiquait la présence de nœuds texte (espaces blancs, retours à la ligne) comme enfant direct de la balise `<html>`, ce qui est invalide et casse l'hydratation.
+- La cause pouvait se situer soit dans le layout racine (`src/app/layout.tsx`), soit dans le layout spécifique à la locale (`src/app/[locale]/layout.tsx`), car les deux peuvent définir la balise `<html>`.
+
+**Solution** :
+- Après plusieurs tentatives, la solution finale a consisté à modifier le layout racine (`src/app/layout.tsx`) pour s'assurer que la balise `<body>` soit directement imbriquée dans `<html>` sans aucun espace blanc ou retour à la ligne intermédiaire dans le code JSX.
+- Le layout spécifique à la locale (`src/app/[locale]/layout.tsx`) a également été vérifié et corrigé pour éviter le même problème lors de la surcharge de la balise `<html>`.
+- Le code final dans `src/app/layout.tsx` est devenu : `<html lang="fr"><body>{children}</body></html>`.
+
+**Fichiers modifiés** :
+- `src/app/layout.tsx`
+- `src/app/[locale]/layout.tsx`
+
+#### Erreur 404 pour la locale `fr` manquante
+**Problème**:
+- Le middleware redirige vers `/fr` par défaut, mais le fichier `src/messages/fr.json` n'existait pas, provoquant un 404 et l'affichage de la page NotFound.
+**Solution**:
+- Création d'un fichier `src/messages/fr.json` basique avec les clés de traduction minimales.
+**Fichier ajouté**:
+- `src/messages/fr.json`
+
+#### Avertissement `params.locale` asynchrone (Next.js 15)
+**Problème**:
+- Accès direct à `params.locale` dans les Server Components causait un warning `sync-dynamic-apis`.
+**Solution**:
+- Retrait de la prop `params` dans la page (`page.tsx`) et adaptation du layout asynchrone pour utiliser `const { locale } = await params;`.
+**Fichiers modifiés**:
+- `src/app/[locale]/layout.tsx`
+- `src/app/[locale]/page.tsx`
+
+#### Erreur 404 sur `/fr/test-components`
+**Problème**:
+- Le dossier `test-components` était situé hors du segment `[locale]`, donc inaccessible sous `/fr/test-components`.
+**Solution**:
+- Déplacement du dossier dans `src/app/[locale]/test-components`.
+**Fichier déplacé**:
+- `src/app/[locale]/test-components/page.tsx`
+
+#### Styles globaux non appliqués
+**Problème**:
+- Les styles Tailwind et `globals.css` n'étaient pas importés dans le layout racine, entraînant la perte de styles sur les pages localisées.
+**Solution**:
+- Ajout de `import './globals.css';` dans `src/app/layout.tsx`.
+**Fichier modifié**:
+- `src/app/layout.tsx`
+
+## Problèmes potentiels à surveiller (depuis inherbis/SUFFERS.md)
+
+ 
+- Cache IDE ou Next.js pouvant afficher de fausses erreurs après modification des fichiers.
+- Duplication de code entre pages (préférer la redirection ou la factorisation de composants).
+- Vérifier l'unicité des définitions utilitaires dans tous les fichiers (éviter les redéfinitions locales).

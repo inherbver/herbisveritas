@@ -1,0 +1,13 @@
+{
+  "LocaleSwitcher": {
+    "switchLocale": "Switch to {locale, select, fr {French} en {English} other {Unknown}}"
+  },
+  "HomePage": {
+    "title": "Welcome to Inherbis",
+    "description": "Your source for quality products."
+  },
+  "Error": {
+    "title": "Error",
+    "description": "Something went wrong."
+  }
+}
