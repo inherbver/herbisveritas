@@ -13,14 +13,14 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   try {
     return {
       locale: locale as string, // Assurer le type string
-      messages: (await import(`./messages/${locale}.json`)).default // Changed path to ./messages/
+      messages: (await import(`../messages/${locale}.json`)).default // Corrected path to ../messages/
     };
   } catch (error) {
     console.error(`Error loading messages for locale ${locale}:`, error);
     try {
       return {
         locale: defaultLocale, // Retourner la locale par défaut
-        messages: (await import(`./messages/${defaultLocale}.json`)).default, // Changed path to ./messages/
+        messages: (await import(`../messages/${defaultLocale}.json`)).default, // Corrected path to ../messages/
       };
     } catch (defaultError) {
       console.error(`Error loading default messages (${defaultLocale}):`, defaultError);

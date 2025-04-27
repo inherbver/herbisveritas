@@ -283,9 +283,25 @@ export async function generateMetadata({ params }: Props) {
 **Fichier modifié**:
 - `src/app/layout.tsx`
 
-## Problèmes potentiels à surveiller (depuis inherbis/SUFFERS.md)
+## 2025-04-27
+### ὁ Problèmes résolus
 
- 
-- Cache IDE ou Next.js pouvant afficher de fausses erreurs après modification des fichiers.
-- Duplication de code entre pages (préférer la redirection ou la factorisation de composants).
-- Vérifier l'unicité des définitions utilitaires dans tous les fichiers (éviter les redéfinitions locales).
+#### Erreur d'hydratation "whitespace text node" dans `<html>`
+**Problème**:
+- Persistance d'une erreur d'hydratation React (`Text nodes cannot appear as a child of <html>`) même après avoir centralisé la structure `<html>`/`<body>` dans `app/layout.tsx`.
+- La cause était un espace, un retour à la ligne ou un commentaire JSX entre la balise fermante `>` de `<html>` et la balise ouvrante `<` de `<body>`.
+**Solution**:
+- Modification de `src/app/layout.tsx` pour s'assurer qu'il n'y a absolument aucun caractère (espace, retour ligne, commentaire) entre `<html>` et `<body>`, en les plaçant sur la même ligne dans le `return`.
+**Fichiers modifiés**:
+- `src/app/layout.tsx`
+
+## 2025-04-27
+
+### ὁ Problèmes résolus
+
+#### Résolution du problème d'application des styles de texte
+
+- **Problème** : Les styles de texte (polices `font-sans`, tailles `text-lg`, graisse `font-medium`, etc.) ne s'appliquaient pas sur les pages de test des composants dans Next.js 15 avec Tailwind CSS, malgré des styles de couleur fonctionnant correctement.
+- **Cause racine** : Erreurs de build causées par des directives `@apply` dans `globals.css` utilisant des classes inexistantes (`outline-ring/50`), interrompant la génération des utilitaires Tailwind.
+- **Solution** : Remplacement de `@apply outline-ring/50` par du CSS pur (`outline-color: color-mix(in oklab, var(--ring) 50%, transparent)`) et correction des commentaires `//` en `/* */` pour compatibilité avec Turbopack/PostCSS.
+- **Résultat** : Build réussi, styles de texte appliqués correctement sur les pages de test.

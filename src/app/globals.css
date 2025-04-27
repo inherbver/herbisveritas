@@ -1,8 +1,26 @@
-@import "tw-animate-css";
+/* Temporarily commented to test if it interferes with Tailwind core plugins */
+/* @import "tw-animate-css"; */
 
 @custom-variant dark (&:is(.dark *));
 
 @tailwind base;
+@layer base {
+  *,
+  ::before,
+  ::after {
+    /* Override default outline potentially causing issues */
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent); /* Use the ring variable directly */
+    border-color: var(--border); /* Keep existing border color */
+  }
+
+  /* Ensure focus styles remain accessible */
+  *:focus-visible {
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 2px;
+  }
+}
 @tailwind components;
 @tailwind utilities;
 
@@ -189,9 +207,6 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family-sans);
@@ -272,7 +287,8 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    border-color: var(--border);
   }
   body {
     @apply bg-background text-foreground;
