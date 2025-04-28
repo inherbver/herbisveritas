@@ -5,5 +5,16 @@
   },
   "NotFound": {
     "title": "Page non trouvée"
+  },
+  "TestPage": {
+    "title": "Page de Test des Composants Métier",
+    "categoryFilterTitle": "Test du Filtre par Catégories",
+    "selectedCategoriesLabel": "Catégories sélectionnées",
+    "noneSelected": "Aucune"
+  },
+  "Filters": {
+    "filterByCategory": "Filtrer par catégorie",
+    "close": "Fermer",
+    "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
   }
 }

@@ -11,5 +11,24 @@
     "title": "Bienvenue sur InHerbisVeritas",
     "welcome": "Le savoir des plantes à portée de main.",
     "description": "Explorez notre base de données de plantes."
+  },
+  "TestPage": {
+    "title": "Page de Test des Composants Métier",
+    "categoryFilterTitle": "Test du Filtre par Catégories",
+    "selectedCategoriesLabel": "Catégories sélectionnées",
+    "noneSelected": "Aucune",
+    "productCardTitle": "Test de la Fiche Produit"
+  },
+  "Filters": {
+    "filterByCategory": "Filtrer par catégorie",
+    "close": "Fermer",
+    "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
+  },
+  "ProductCard": {
+    "addToCart": "Acheter",
+    "outOfStock": "Rupture"
+  },
+  "ProductGrid": {
+    "noProductsFound": "Aucun produit ne correspond à vos critères."
   }
 }
