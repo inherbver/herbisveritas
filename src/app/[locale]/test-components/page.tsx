@@ -182,21 +182,21 @@ export default function TestComponentsPage() {
       <section>
         <h2 className="mb-4 font-serif text-xl font-semibold">Test des Tokens Directs</h2>
         <div className="flex flex-wrap gap-4">
-          <div className="bg-primary text-primary-foreground rounded-md p-4">Primaire</div>
-          <div className="bg-secondary text-secondary-foreground rounded-lg p-4">
+          <div className="rounded-md bg-primary p-4 text-primary-foreground">Primaire</div>
+          <div className="rounded-lg bg-secondary p-4 text-secondary-foreground">
             Secondaire (lg)
           </div>
-          <div className="bg-accent text-accent-foreground rounded-xl p-4">Accent (xl)</div>
-          <div className="bg-destructive text-primary-foreground rounded-sm p-4">
+          <div className="rounded-xl bg-accent p-4 text-accent-foreground">Accent (xl)</div>
+          <div className="rounded-sm bg-destructive p-4 text-primary-foreground">
             Destructif (sm)
           </div>
-          <div className="bg-muted text-muted-foreground border-border rounded-md border p-4">
+          <div className="rounded-md border border-border bg-muted p-4 text-muted-foreground">
             Muted + Bordure
           </div>
-          <div className="bg-card text-card-foreground rounded-md border p-4 shadow-md">
+          <div className="rounded-md border bg-card p-4 text-card-foreground shadow-md">
             Carte + Ombre md
           </div>
-          <div className="bg-popover text-popover-foreground rounded-md border p-4 shadow-lg">
+          <div className="rounded-md border bg-popover p-4 text-popover-foreground shadow-lg">
             Popover + Ombre lg
           </div>
         </div>

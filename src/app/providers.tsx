@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { NextIntlClientProvider } from 'next-intl';
-import { ReactNode } from 'react';
+import { NextIntlClientProvider, AbstractIntlMessages } from "next-intl";
+import { ReactNode } from "react";
 // Importez ThemeProvider si vous l'utilisez
 // import { ThemeProvider } from 'next-themes';
 
 type Props = {
   children: ReactNode;
   locale: string;
-  messages: any; // Ou un type plus précis si vous avez généré les types de messages
+  messages: AbstractIntlMessages; // Utiliser le type fourni par next-intl
   // themeProps?: React.ComponentProps<typeof ThemeProvider>; // Si ThemeProvider est utilisé
 };
 
@@ -17,7 +17,7 @@ export function Providers({ children, locale, messages /*, themeProps */ }: Prop
     <NextIntlClientProvider locale={locale} messages={messages}>
       {/* Décommentez ThemeProvider si nécessaire */}
       {/* <ThemeProvider {...themeProps}> */}
-        {children}
+      {children}
       {/* </ThemeProvider> */}
     </NextIntlClientProvider>
   );

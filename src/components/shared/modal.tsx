@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose, // Pour fermer depuis l'intérieur
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface ModalProps {
   trigger?: React.ReactNode; // Élément qui déclenche l'ouverture
@@ -22,7 +22,7 @@ interface ModalProps {
   children: React.ReactNode; // Contenu principal de la modale
   footer?: React.ReactNode; // Contenu du pied de page (boutons d'action)
   contentClassName?: string; // Classe pour personnaliser DialogContent
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'; // Tailles prédéfinies
+  size?: "sm" | "md" | "lg" | "xl" | "full"; // Tailles prédéfinies
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -34,33 +34,27 @@ const Modal: React.FC<ModalProps> = ({
   children,
   footer,
   contentClassName,
-  size = 'md', // Taille par défaut
+  size = "md", // Taille par défaut
 }) => {
   const sizeClasses = {
-    sm: 'sm:max-w-sm',
-    md: 'sm:max-w-md',
-    lg: 'sm:max-w-lg',
-    xl: 'sm:max-w-xl',
-    full: 'sm:max-w-full h-full sm:h-auto',
+    sm: "sm:max-w-sm",
+    md: "sm:max-w-md",
+    lg: "sm:max-w-lg",
+    xl: "sm:max-w-xl",
+    full: "sm:max-w-full h-full sm:h-auto",
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
-        className={cn(
-          'max-h-[90vh] overflow-y-auto',
-          sizeClasses[size],
-          contentClassName
-        )}
+        className={cn("max-h-[90vh] overflow-y-auto", sizeClasses[size], contentClassName)}
         onOpenAutoFocus={(e) => e.preventDefault()} // Empêche le focus auto sur le premier élément
       >
         {(title || description) && (
           <DialogHeader>
             {title && <DialogTitle>{title}</DialogTitle>}
-            {description && (
-              <DialogDescription>{description}</DialogDescription>
-            )}
+            {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
         )}
         <div className="py-4">{children}</div>
@@ -70,7 +64,7 @@ const Modal: React.FC<ModalProps> = ({
   );
 };
 
-Modal.displayName = 'Modal';
+Modal.displayName = "Modal";
 
 // Exporte aussi DialogClose pour pouvoir l'utiliser facilement dans le footer
 export { Modal, DialogClose };

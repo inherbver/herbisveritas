@@ -1,36 +1,22 @@
-import React from 'react';
-import { Link as LocalizedLink } from '@/i18n/navigation';
-import { cn } from '@/lib/utils';
-import { Slot } from '@radix-ui/react-slot';
+import React from "react";
+import { Link as NavigationLink } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 
-// Combine LocalizedLink props with standard anchor props, explicitly including className and children
-// Utilise les props de LocalizedLink et ajoute les attributs standards d'une ancre HTML,
-// en omettant 'href' des attributs HTML pour prioriser celui de LocalizedLink si conflit.
-interface LinkProps extends React.ComponentProps<typeof LocalizedLink>, Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
-  asChild?: boolean;
-  // Assure que className et children sont explicitement présents si l'inférence échoue
+interface LinkProps extends React.ComponentProps<typeof NavigationLink> {
   className?: string;
   children?: React.ReactNode;
 }
 
 const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
-  ({ className, children, asChild, ...props }, ref) => {
+  ({ className, children, ...props }, ref) => {
     return (
-      <LocalizedLink
-        ref={ref}
-        className={cn(
-          'font-medium text-primary underline underline-offset-4 hover:text-primary/90',
-          // Ajoutez ici des classes de variantes conditionnelles
-          className
-        )}
-        {...props}
-      >
+      <NavigationLink ref={ref} className={cn("hover:underline", className)} {...props}>
         {children}
-      </LocalizedLink>
+      </NavigationLink>
     );
   }
 );
 
-Link.displayName = 'Link';
+Link.displayName = "Link";
 
 export { Link };

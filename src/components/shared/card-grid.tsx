@@ -1,19 +1,13 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { cn } from "@/lib/utils";
 
-interface CardGridProps extends React.HTMLAttributes<HTMLDivElement> {
-  // Option pour ajuster le nombre de colonnes par breakpoint
-  // Ex: cols={{ sm: 2, md: 3, lg: 4 }}
-  // Pour l'instant, utilisons des classes Tailwind responsives fixes
-}
-
-const CardGrid = React.forwardRef<HTMLDivElement, CardGridProps>(
+const CardGrid = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          'grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4',
+          "grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4",
           // Ajustez le nombre de colonnes et les gaps selon votre design
           className
         )}
@@ -25,6 +19,6 @@ const CardGrid = React.forwardRef<HTMLDivElement, CardGridProps>(
   }
 );
 
-CardGrid.displayName = 'CardGrid';
+CardGrid.displayName = "CardGrid";
 
 export { CardGrid };

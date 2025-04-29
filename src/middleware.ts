@@ -1,11 +1,10 @@
-import createMiddleware from 'next-intl/middleware';
-import type { NextRequest } from 'next/server';
-import { locales, defaultLocale, localePrefix, pathnames, localeDetection } from './i18n-config'; // Import centralisé
+import createMiddleware from "next-intl/middleware";
+import { locales, defaultLocale, localePrefix, pathnames, localeDetection } from "./i18n-config"; // Import centralisé
 
 // Utilisation directe de createMiddleware avec la configuration importée
 export default createMiddleware({
   // A list of all locales that are supported
-  locales,
+  locales: locales,
 
   // Used when no locale matches
   defaultLocale,
@@ -17,7 +16,7 @@ export default createMiddleware({
   pathnames,
 
   // Activer ou désactiver la détection de locale automatique
-  localeDetection
+  localeDetection,
 });
 
 export const config = {
@@ -25,6 +24,6 @@ export const config = {
     // Match all pathnames except for
     // - … if they start with `/api`, `/_next` or `/_vercel`
     // - … the ones containing a dot (e.g. `favicon.ico`)
-    '/((?!api|_next|_vercel|.*\\.).*)',
+    "/((?!api|_next|_vercel|.*\\.).*)",
   ],
 };

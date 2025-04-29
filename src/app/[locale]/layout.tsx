@@ -1,35 +1,35 @@
-import type { Metadata } from 'next';
-import { getMessages } from 'next-intl/server';
-import { NextIntlClientProvider } from 'next-intl';
-import { ReactNode } from 'react';
-import { Toaster } from "@/components/ui/sonner";
+import { ReactNode } from "react";
+import { notFound } from "next/navigation";
+import { locales, Locale } from "@/i18n-config";
+import ClientLayout from "@/components/layout/client-layout";
 
 interface Props {
   children: ReactNode;
-  params: { locale: string }; // The type definition remains the same
+  params: { locale: string };
 }
 
-export default async function LocaleLayout(props: Props) {
-  // Providing all messages to the client
-  // Optional: Validate that the incoming `locale` parameter is valid
+async function getMessages(locale: string) {
+  try {
+    return (await import(`../../messages/${locale}.json`)).default;
+  } catch (error) {
+    console.error(`Failed to load messages for locale ${locale}:`, error);
+    notFound();
+  }
+}
 
-  // Await the params object *before* accessing its properties
-  const { locale } = await Promise.resolve(props.params); // Use await on props.params
+export default async function LocaleLayout({ children, params: { locale } }: Props) {
+  if (!locales.includes(locale as Locale)) {
+    console.warn(
+      `Invalid locale "${locale}" requested, falling back to default or triggering notFound.`
+    );
+    notFound();
+  }
 
-  const messages = await getMessages();
+  const messages = await getMessages(locale);
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      {/* ThemeProvider can be potentially re-added here later */}
-      {/* <ThemeProvider
-             attribute="class"
-             defaultTheme="system"
-             enableSystem
-             disableTransitionOnChange
-          > */}
-             {props.children}
-             <Toaster />
-          {/* </ThemeProvider> */}
-    </NextIntlClientProvider>
+    <ClientLayout locale={locale} messages={messages}>
+      {children}
+    </ClientLayout>
   );
 }

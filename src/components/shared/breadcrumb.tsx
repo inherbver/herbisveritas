@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Link } from '@/components/primitives';
-import { ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { Link } from "@/components/primitives";
+import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 // Pourrait utiliser usePathname pour générer les items dynamiquement
 // import { usePathname } from '@/i18n/navigation';
 // import { useTranslations } from 'next-intl';
@@ -19,10 +19,7 @@ interface BreadcrumbProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
-  (
-    { className, items, separator = <ChevronRight className="h-4 w-4" />, ...props },
-    ref
-  ) => {
+  ({ className, items, separator = <ChevronRight className="h-4 w-4" />, ...props }, ref) => {
     // const t = useTranslations('Breadcrumb'); // Pour traduire ex: 'Home'
 
     if (!items || items.length === 0) {
@@ -33,7 +30,7 @@ const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
       <nav
         aria-label="Fil d'Ariane"
         ref={ref}
-        className={cn('text-sm text-muted-foreground', className)}
+        className={cn("text-sm text-muted-foreground", className)}
         {...props}
       >
         <ol className="flex flex-wrap items-center gap-1.5 break-words sm:gap-2.5">
@@ -51,10 +48,10 @@ const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
                   // Les éléments non actifs (sauf le dernier) sont des liens
                   // Le dernier élément est juste du texte (ou un lien non cliquable)
                   className={cn(
-                    'transition-colors hover:text-foreground',
-                    isLast && 'font-medium text-foreground pointer-events-none'
+                    "transition-colors hover:text-foreground",
+                    isLast && "pointer-events-none font-medium text-foreground"
                   )}
-                  aria-current={isLast ? 'page' : undefined}
+                  aria-current={isLast ? "page" : undefined}
                 >
                   {item.label}
                 </Link>
@@ -67,6 +64,6 @@ const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
   }
 );
 
-Breadcrumb.displayName = 'Breadcrumb';
+Breadcrumb.displayName = "Breadcrumb";
 
 export { Breadcrumb };

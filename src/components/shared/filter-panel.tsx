@@ -1,18 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
+import React, { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
+} from "@/components/ui/accordion";
 
 // Types pour les données de filtres (Exemples)
 export interface FilterOption {
@@ -56,30 +55,31 @@ const FilterPanel = React.forwardRef<HTMLDivElement, FilterPanelProps>(
     },
     ref
   ) => {
-    const t = useTranslations('Filters');
+    const t = useTranslations("Filters");
 
     // Gérer l'état local temporaire pour le slider avant de "valider"
     const [localPrice, setLocalPrice] = useState<PriceRange>(
       currentFilters.price ?? availablePriceRange
     );
 
-    // Mettre à jour le prix local si le prix externe change
+    // Mettre à jour le prix local si le prix externe changes
     useEffect(() => {
       setLocalPrice(currentFilters.price ?? availablePriceRange);
     }, [currentFilters.price, availablePriceRange]);
 
     const handleCategoryChange = (checked: boolean | string, categoryValue: string) => {
       const currentCategories = currentFilters.categories || [];
-      let newCategories:
-        | string[]
-        | undefined;
+      let newCategories: string[] | undefined;
       if (checked) {
         newCategories = [...currentCategories, categoryValue];
       } else {
         newCategories = currentCategories.filter((c) => c !== categoryValue);
       }
       // Si la liste est vide, on met undefined pour simplifier les requêtes futures
-      onFilterChange({ ...currentFilters, categories: newCategories.length > 0 ? newCategories : undefined });
+      onFilterChange({
+        ...currentFilters,
+        categories: newCategories.length > 0 ? newCategories : undefined,
+      });
     };
 
     const handlePriceChange = (value: number[]) => {
@@ -93,13 +93,15 @@ const FilterPanel = React.forwardRef<HTMLDivElement, FilterPanelProps>(
     };
 
     return (
-      <div ref={ref} className={cn('space-y-6', className)} {...props}>
-        <Accordion type="multiple" defaultValue={['categories', 'price']}> {/* Sections ouvertes par défaut */} 
-          {/* Section Catégories */} 
+      <div ref={ref} className={cn("space-y-6", className)} {...props}>
+        <Accordion type="multiple" defaultValue={["categories", "price"]}>
+          {" "}
+          {/* Sections ouvertes par défaut */}
+          {/* Section Catégories */}
           {availableCategories.length > 0 && (
             <AccordionItem value="categories">
               <AccordionTrigger className="text-base font-medium">
-                {t('categoriesTitle', { defaultValue: 'Catégories' })}
+                {t("categoriesTitle", { defaultValue: "Catégories" })}
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-3">
@@ -127,11 +129,10 @@ const FilterPanel = React.forwardRef<HTMLDivElement, FilterPanelProps>(
               </AccordionContent>
             </AccordionItem>
           )}
-
-          {/* Section Prix */} 
+          {/* Section Prix */}
           <AccordionItem value="price">
             <AccordionTrigger className="text-base font-medium">
-              {t('priceTitle', { defaultValue: 'Prix' })}
+              {t("priceTitle", { defaultValue: "Prix" })}
             </AccordionTrigger>
             <AccordionContent className="px-1 pt-2">
               <Slider
@@ -150,18 +151,16 @@ const FilterPanel = React.forwardRef<HTMLDivElement, FilterPanelProps>(
               </div>
             </AccordionContent>
           </AccordionItem>
-
-          {/* Ajoutez d'autres sections de filtres ici (Marques, Tailles, etc.) */} 
-
+          {/* Ajoutez d'autres sections de filtres ici (Marques, Tailles, etc.) */}
         </Accordion>
 
-        {/* Optionnel: Bouton pour réinitialiser les filtres */} 
+        {/* Optionnel: Bouton pour réinitialiser les filtres */}
         {/* <Button variant="outline" size="sm" onClick={() => onFilterChange({})}>Réinitialiser</Button> */}
       </div>
     );
   }
 );
 
-FilterPanel.displayName = 'FilterPanel';
+FilterPanel.displayName = "FilterPanel";
 
 export { FilterPanel };
