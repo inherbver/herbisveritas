@@ -48,5 +48,9 @@
     "quantity": "Quantity",
     "decreaseQuantity": "Decrease quantity",
     "increaseQuantity": "Increase quantity"
+  },
+  "ProductDetail": {
+    "categoryLabel": "Category",
+    "outOfStockLabel": "Product currently unavailable"
   }
 }

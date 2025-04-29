@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { locales, Locale } from "@/i18n-config";
 import ClientLayout from "@/components/layout/client-layout";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTimeZone } from "next-intl/server";
 
 interface Props {
   children: ReactNode;
@@ -32,9 +32,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   setRequestLocale(locale);
 
   const messages = await getMessages(locale);
+  const timeZone = await getTimeZone({ locale });
 
   return (
-    <ClientLayout locale={locale} messages={messages}>
+    <ClientLayout locale={locale} messages={messages} timeZone={timeZone}>
       {children}
     </ClientLayout>
   );

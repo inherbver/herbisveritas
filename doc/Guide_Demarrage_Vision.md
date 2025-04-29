@@ -9,15 +9,17 @@ La structure des composants suit une approche Atomic Design adaptée :
 
 La structure des composants suit une approche Atomic Design adaptée, visant à la fois la réutilisabilité et la clarté métier :
 
-````
+```
+
 src/
 └── components/
-    ├── ui/           # Composants shadcn/ui installés via CLI
-    ├── primitives/   # Petits atomes UI maison
-    ├── shared/       # Blocs réutilisables multi-pages
-    ├── layout/       # Gabarits de page et structures
-    └── domain/       # Composants métier spécifiques (Shop, Cart, etc.)
-````
+├── ui/ # Composants shadcn/ui installés via CLI
+├── primitives/ # Petits atomes UI maison
+├── shared/ # Blocs réutilisables multi-pages
+├── layout/ # Gabarits de page et structures
+└── domain/ # Composants métier spécifiques (Shop, Cart, etc.)
+
+```
 **✅ Détail par dossier et Plan de Développement**
 
 #### 1. `src/components/ui/`
@@ -154,14 +156,18 @@ Ces composants sont spécifiques à des fonctionnalités métier particulières 
 - [x] Création du dépôt Git, configuration des branches principales
 - [x] Mise en place du workflow Git (feature branches, PR, conventions de nommage)
 - [x] Initialisation Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui
+- [x] Configuration initiale de l'internationalisation (i18n) avec `next-intl` (middleware, `i18n.ts`, fichiers de messages, configuration de la navigation)
+- [x] Mise en place de la structure de base pour les routes localisées (ex: `/app/[locale]/...`)
+- [x] Création et configuration d'une route dynamique localisée (ex: `/app/[locale]/product/[slug]/page.tsx`)
 - [x] Ajout des outils de qualité : ESLint (AirBnB), Prettier, Husky (pré-commit), commitlint
   - ᾞ **Composants Clés :** N/A (Configuration)
   - ⚠️ **Points d'Attention :**
     - Conflits de configuration entre outils (ESLint, Prettier, TSConfig).
     - Configuration correcte de `shadcn/ui` (chemins, `tailwind.config.js`, `globals.css`).
+    - **Configuration `next-intl`**: Précision requise pour le middleware, `i18n.ts`, la structure des fichiers de messages, et la configuration des `pathnames` dans `navigation.ts` pour inclure les routes statiques et dynamiques.
+    - **TypeScript & `next-intl`**: Potentiels problèmes de typage lors de l'utilisation de liens `next-intl/navigation` (`Link`), surtout avec des routes dynamiques. Peut nécessiter des types personnalisés ou des assertions de type (`as`).
+    - **Async/Await avec `params`**: Dans Next.js 15+, nécessité d'utiliser `await params` avant d'accéder aux propriétés (`params.locale`, `params.slug`) dans les Server Components.
     - **Spécifique (SUFFERS.md) :** Problèmes potentiels avec les alias d'import `@/` si `tsconfig.json` et `next.config.js` ne sont pas correctement configurés.
-    - Compatibilité des versions des dépendances.
-    - **Spécifique (SUFFERS.md) :** Attention aux problèmes de cache IDE/Next.js pouvant masquer/afficher des erreurs temporairement après modifications.
 
 ### 1.2. Configuration des environnements
 
@@ -320,7 +326,7 @@ Ces composants sont spécifiques à des fonctionnalités métier particulières 
 
 - [ ] `/profil` (ProfileForm, UserInfoDisplay)
 - [ ] `/profil/commandes` (OrderHistoryTable)
-- [ ] `/profil/adresses` (AddressList, AddressCard, AddressForm)  
+- [ ] `/profil/adresses` (AddressList, AddressCard, AddressForm)
   ⚠️ **Points d'Attention :** RLS, chargement, sécurisation
 
 ---
@@ -329,7 +335,7 @@ Ces composants sont spécifiques à des fonctionnalités métier particulières 
 
 ### 4.1. Pages Statiques
 
-- [ ] `/a-propos`, `/contact`, CGV/CGU, Mentions légales  
+- [ ] `/a-propos`, `/contact`, CGV/CGU, Mentions légales
   ᾞ **Composants Clés :** StaticPageLayout, ContactForm
 
 ### 4.2. Fonctionnalités Additionnelles (Post-MVP)
@@ -340,15 +346,16 @@ Ces composants sont spécifiques à des fonctionnalités métier particulières 
 
 - [ ] Perf (images, splitting)
 - [ ] Lazy Loading images
-- [ ] Tests unitaires (Jest/RTL), E2E (Playwright/Cypress)  
+- [ ] Tests unitaires (Jest/RTL), E2E (Playwright/Cypress)
   ⚠️ **Points d'Attention :** ESM/CJS, fixtures, stabilité
 
 ### 4.4. Déploiement
 
-- [ ] CI/CD (GitHub Actions -> Vercel), monitoring, rollback  
-  ᾞ **Composants Clés :** `.github/workflows`, config Vercel  
+- [ ] CI/CD (GitHub Actions -> Vercel), monitoring, rollback
+  ᾞ **Composants Clés :** `.github/workflows`, config Vercel
   ⚠️ **Points d'Attention :** Env prod/preview, tests builds
 
 ---
 
 ## Ἲ Thème, couleurs et design system
+```

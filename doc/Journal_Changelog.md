@@ -90,6 +90,39 @@
 
 Ce fichier retrace les principaux problèmes rencontrés et les solutions mises en place au cours du développement du projet.
 
+## 2025-04-29
+
+### ὁ Problèmes résolus
+
+#### Corrections Configuration & Routage `next-intl`
+
+- **Problème 1**: Warning `ENVIRONMENT_FALLBACK: There is no timeZone configured` dans la console serveur.
+  - **Cause**: Absence de configuration `timeZone` globale dans `next-intl`.
+  - **Solution**: Ajout de `timeZone: "Europe/Paris"` dans le retour de `getRequestConfig` dans `src/i18n.ts`.
+- **Problème 2**: Erreur 404 lors de l'accès à `/fr/produit/[slug]`.
+  - **Cause**: Incohérence entre le chemin français défini dans `src/i18n/navigation.ts` (`/produit/[slug]`) et la structure de dossier réelle (`/product/[slug]`).
+  - **Solution**: Modification de `src/i18n/navigation.ts` pour utiliser `/product/[slug]` également pour le français.
+- **Problème 3**: Erreurs serveur `params should be awaited` dans les composants serveur dynamiques (layout, page produit).
+  - **Cause**: Accès direct aux propriétés de `params` (ex: `params.locale`) sans `await` préalable dans Next.js 15.
+  - **Solution**: Ajout de `await params` avant la déstructuration dans `src/app/[locale]/layout.tsx` et `src/app/[locale]/product/[slug]/page.tsx`.
+- **Problème 4**: Erreur TypeScript sur la prop `href` dans `ProductGrid` / `test-components-3` (`@ts-ignore` nécessaire).
+  - **Cause**: Le chemin dynamique `/product/[slug]` n'était pas défini comme une clé valide dans l'objet `pathnames` de `src/i18n/navigation.ts`, rendant le type `AppPathname` incomplet.
+  - **Solution**: Ajout de l'entrée `"/product/[slug]": { en: "/product/[slug]", fr: "/product/[slug]" }` dans `pathnames`, suppression du `@ts-ignore`.
+- **Problème 5**: Erreurs ESLint lors du commit (`no-unused-vars` pour `Route`, type mismatch pour `href` dans `ProductCard`).
+  - **Cause**: Import `Route` inutilisé et légère incompatibilité de type entre `ProductCardProps['href']` et l'attente de `next-intl/navigation Link`.
+  - **Solution**: Suppression de l'import `Route` et ajout d'une assertion de type (`as`) pour `href` lors du passage à `NextLink` dans `ProductCard`.
+
+**Fichiers modifiés**:
+
+- `src/i18n.ts`
+- `src/i18n/navigation.ts`
+- `src/app/[locale]/layout.tsx`
+- `src/app/[locale]/product/[slug]/page.tsx` (créé)
+- `src/app/[locale]/test-components-3/page.tsx`
+- [src/components/domain/shop/product-card.tsx](cci:7://file:///c:/Users/util37.montpellier/Desktop/herbisveritas/src/components/domain/shop/product-card.tsx:0:0-0:0)
+
+## 2025-04-28
+
 ## 2025-04-26
 
 ### ὁ Problèmes résolus
@@ -328,7 +361,7 @@ export async function generateMetadata({ params }: Props) {
 
 #### Erreur d'hydratation "whitespace text node" dans `<html>`
 
-**Problème**:
+**Problème** :
 
 - Persistance d'une erreur d'hydratation React (`Text nodes cannot appear as a child of <html>`) même après avoir centralisé la structure `<html>`/`<body>` dans `app/layout.tsx`.
 - La cause était un espace, un retour à la ligne ou un commentaire JSX entre la balise fermante `>` de `<html>` et la balise ouvrante `<` de `<body>`.

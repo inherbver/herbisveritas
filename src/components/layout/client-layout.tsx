@@ -8,11 +8,13 @@ interface ClientLayoutProps {
   children: ReactNode;
   locale: string;
   messages: AbstractIntlMessages;
+  timeZone?: string; // Added timeZone prop
 }
 
-export default function ClientLayout({ children, locale, messages }: ClientLayoutProps) {
+export default function ClientLayout({ children, locale, messages, timeZone }: ClientLayoutProps) {
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    // Pass timeZone to the provider
+    <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
       {children}
       <Toaster />
     </NextIntlClientProvider>

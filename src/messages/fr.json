@@ -43,5 +43,9 @@
     "addToCart": "Ajouter au panier",
     "viewDetails": "Voir les détails",
     "outOfStock": "Épuisé"
+  },
+  "ProductDetail": {
+    "categoryLabel": "Catégorie",
+    "outOfStockLabel": "Produit actuellement indisponible"
   }
 }
