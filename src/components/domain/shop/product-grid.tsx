@@ -51,7 +51,7 @@ export function ProductGrid({
       <div className={gridClasses}>
         {Array.from({ length: loadingSkeletons }).map((_, index) => (
           // Render the ProductCard in its loading state
-          <ProductCard
+          (<ProductCard
             key={`skeleton-${index}`}
             isLoading={true}
             id={`skeleton-${index}`}
@@ -60,7 +60,7 @@ export function ProductGrid({
             imageAlt=""
             price=""
             onAddToCart={() => {}}
-          />
+          />)
         ))}
       </div>
     );

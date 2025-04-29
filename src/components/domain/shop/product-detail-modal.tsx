@@ -68,13 +68,13 @@ export function ProductDetailModal({
           <div className="bg-muted/30 flex min-h-[300px] items-center justify-center p-6 md:min-h-[450px]">
             {product.images && product.images.length > 0 ? (
               // Basic image display for now - Replace with Carousel later
-              <Image
+              (<Image
                 src={product.images[0].src}
                 alt={product.images[0].alt}
                 width={400}
                 height={400}
                 className="max-h-[400px] w-auto object-contain"
-              />
+              />)
             ) : (
               <div className="text-muted-foreground">{t("noImage")}</div>
             )}
