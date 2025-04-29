@@ -34,6 +34,8 @@ export interface ProductCardProps {
   isOutOfStock?: boolean;
   /** Callback for adding the product to cart */
   onAddToCart: (productId: string | number) => void;
+  /** Callback for viewing product details */
+  onViewDetails?: (productId: string | number) => void;
   /** Optional custom class name */
   className?: string;
 }
@@ -51,6 +53,7 @@ export function ProductCard({
   isLoading = false,
   isOutOfStock = false,
   onAddToCart,
+  onViewDetails,
   className,
 }: ProductCardProps) {
   const t = useTranslations("ProductCard");
@@ -77,9 +80,26 @@ export function ProductCard({
     );
   }
 
+  const handleAddToCartClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (!isOutOfStock) onAddToCart(id);
+  };
+
+  const handleCardClick = () => {
+    if (onViewDetails && !isOutOfStock) {
+      onViewDetails(id);
+    }
+  };
+
   const cardContent = (
     <>
-      <div className="relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90">
+      <div
+        className={cn(
+          "relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90",
+          "cursor-pointer"
+        )}
+        onClick={handleCardClick}
+      >
         <Image
           src={imageSrc}
           alt={imageAlt}
@@ -109,7 +129,7 @@ export function ProductCard({
       </div>
 
       {/* Content Area - V2: Standard padding, flex-grow, WHITE BACKGROUND */}
-      <div className="flex flex-grow flex-col bg-background p-4">
+      <div className="flex flex-grow flex-col bg-background p-4" onClick={handleCardClick}>
         <h2
           id={`product-title-${id}`}
           className="mb-1 line-clamp-2 text-lg font-semibold leading-tight"
@@ -140,13 +160,7 @@ export function ProductCard({
             size="sm"
             variant={isOutOfStock ? "outline" : "default"}
             disabled={isOutOfStock}
-            onClick={(e) => {
-              if (href && !isOutOfStock) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-              if (!isOutOfStock) onAddToCart(id);
-            }}
+            onClick={handleAddToCartClick}
             aria-describedby={isOutOfStock ? undefined : `product-title-${id}`}
             aria-label={
               isOutOfStock ? `${title} - ${t("outOfStock")}` : `${t("addToCart")} ${title}`
@@ -182,6 +196,11 @@ export function ProductCard({
       </a>
     </NextLink>
   ) : (
-    <div className={cn(commonCardClasses, isOutOfStock ? "opacity-80" : "")}>{cardContent}</div>
+    <div
+      className={cn(commonCardClasses, isOutOfStock ? "opacity-80" : "")}
+      onClick={handleCardClick}
+    >
+      {cardContent}
+    </div>
   );
 }

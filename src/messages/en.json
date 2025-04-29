@@ -24,9 +24,29 @@
   },
   "ProductCard": {
     "addToCart": "Add to cart",
-    "outOfStock": "Out of stock"
+    "outOfStock": "Out of stock",
+    "discountBadge": "-{discountPercent}%",
+    "priceAccessibilityLabel": "Price: {price}"
   },
   "ProductGrid": {
     "noProductsFound": "No products found matching your criteria."
+  },
+  "ProductDetailModal": {
+    "noImage": "Image not available",
+    "quantity": "Quantity",
+    "addToCart": "Add to cart",
+    "propertiesTab": "Properties",
+    "compositionTab": "Composition",
+    "usageTab": "Usage tips",
+    "inciList": "INCI List",
+    "noProperties": "Product properties not available.",
+    "noInci": "INCI list not available.",
+    "noUsage": "Usage instructions not available.",
+    "close": "Close"
+  },
+  "QuantityInput": {
+    "quantity": "Quantity",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity"
   }
 }

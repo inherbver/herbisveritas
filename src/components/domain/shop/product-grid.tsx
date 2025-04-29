@@ -6,7 +6,10 @@ import { ProductCard, ProductCardProps } from "./product-card";
 import { cn } from "@/lib/utils";
 
 // Define a type for the product data, excluding functions and generated IDs
-export type ProductData = Omit<ProductCardProps, "onAddToCart" | "className" | "isLoading"> & {
+export type ProductData = Omit<
+  ProductCardProps,
+  "onAddToCart" | "className" | "isLoading" | "onViewDetails"
+> & {
   id: string | number; // Ensure id is part of the data type expected
 };
 
@@ -19,8 +22,12 @@ export interface ProductGridProps {
   loadingSkeletons?: number;
   /** Callback function when a product's add to cart button is clicked */
   onAddToCart: (productId: string | number) => void; // Expects the ID
+  /** Callback function when a product's view details button is clicked */
+  onViewDetails?: (productId: string | number) => void; // Add handler for viewing details
   /** Optional CSS classes for the grid container */
   className?: string;
+  /** Optional message when products array is empty */
+  noProductsMessage?: string;
 }
 
 export function ProductGrid({
@@ -28,7 +35,9 @@ export function ProductGrid({
   isLoading = false,
   loadingSkeletons = 8, // Default skeletons adjusted for 4 cols
   onAddToCart,
+  onViewDetails, // Destructure the new prop
   className,
+  noProductsMessage,
 }: ProductGridProps) {
   const t = useTranslations("ProductGrid");
 
@@ -60,7 +69,7 @@ export function ProductGrid({
   if (!products || products.length === 0) {
     return (
       <div className="py-10 text-center text-gray-500 dark:text-gray-400">
-        <p>{t("noProductsFound")}</p>
+        <p>{noProductsMessage || t("noProductsFound")}</p>
       </div>
     );
   }
@@ -72,6 +81,7 @@ export function ProductGrid({
           key={product.id}
           {...product} // Spread the product data (which includes id)
           onAddToCart={onAddToCart} // Pass the handler function directly
+          onViewDetails={onViewDetails} // Pass the view details handler
           // Removed incorrect 'titleId' and 'index' props
         />
       ))}
