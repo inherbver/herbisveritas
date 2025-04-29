@@ -2,7 +2,8 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import NextLink from "next/link";
+import { Link as NextLink } from "@/i18n/navigation";
+import type { AppPathname } from "@/i18n/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +27,10 @@ export interface ProductCardProps {
   price: string;
   /** Optional discount percentage */
   discountPercent?: number;
-  /** Optional href for the product link */
-  href?: string;
+  /** Optional href for the product link. Can be a string or an object for dynamic routes. */
+  href?: AppPathname | { pathname: AppPathname; params?: Record<string, string | number> };
+  /** Optional slug for dynamic routes, used if href is an object */
+  slug?: string;
   /** Whether the product is loading */
   isLoading?: boolean;
   /** Whether the product is out of stock */
@@ -190,10 +193,10 @@ export function ProductCard({
   const isLinkable = href && !isOutOfStock;
 
   return isLinkable ? (
-    <NextLink href={href} passHref legacyBehavior>
-      <a className={commonCardClasses} aria-labelledby={`product-title-${id}`}>
+    <NextLink href={href as React.ComponentProps<typeof NextLink>["href"]} passHref={false}>
+      <div className={commonCardClasses} aria-labelledby={`product-title-${id}`}>
         {cardContent}
-      </a>
+      </div>
     </NextLink>
   ) : (
     <div

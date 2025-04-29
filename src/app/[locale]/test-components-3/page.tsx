@@ -39,7 +39,7 @@ const mockProducts: (ProductData & Partial<ProductDetailData>)[] = [
     imageAlt: "Baume Apaisant à la Lavande",
     meta: "50 ml",
     price: "25,00 €",
-    href: "/product/baume-lavande",
+    slug: "baume-lavande",
     // Modal specific data
     properties:
       "Ce baume riche et nourrissant apaise instantanément les peaux sèches et irritées grâce aux propriétés calmantes de la lavande vraie. Idéal après une exposition au soleil ou pour un moment de détente.",
@@ -55,7 +55,7 @@ const mockProducts: (ProductData & Partial<ProductDetailData>)[] = [
     meta: "10 ml",
     price: "12,50 €",
     discountPercent: 10,
-    href: "/product/huile-tea-tree",
+    slug: "huile-tea-tree",
     // Modal specific data
     properties:
       "Reconnue pour ses puissantes propriétés purifiantes et assainissantes, l'huile essentielle de Tea Tree est un indispensable pour les petits bobos cutanés et pour assainir l'air.",
@@ -71,11 +71,11 @@ const mockProducts: (ProductData & Partial<ProductDetailData>)[] = [
     meta: "Boîte de 20 bâtons",
     price: "8,00 €",
     isOutOfStock: true,
-    href: "/product/encens-sauge",
+    slug: "encens-sauge",
     // Modal specific data
     properties:
-      "Utilisée traditionnellement pour purifier les lieux et les esprits, la sauge blanche dégage une fumée aromatique intense qui favorise la clarté et le bien-être.",
-    inci: "Salvia Apiana (White Sage) Leaves.",
+      "Utilisée traditionnellement pour purifier les lieux et les esprits, la sauge blanche aide à éliminer les énergies négatives et à favoriser la clarté mentale.",
+    inci: "Salvia Apiana (White Sage) Leaves",
     usageInstructions:
       "Allumer l'extrémité du bâton d'encens, laisser brûler quelques secondes puis souffler la flamme. Laisser la fumée se diffuser dans la pièce. Utiliser un support résistant à la chaleur. Ventiler après usage.",
   },
@@ -86,11 +86,11 @@ const mockProducts: (ProductData & Partial<ProductDetailData>)[] = [
     imageSrc: "/assets/images/pdct_4.webp", // Use another image
     imageAlt: "Savon Doux au Calendula",
     meta: "100 g",
-    price: "7,50 €",
-    href: "/product/savon-calendula",
+    price: "9,90 €",
+    slug: "savon-calendula",
     // Modal specific data
     properties:
-      "Fabriqué par saponification à froid, ce savon surgras enrichi en macérât de Calendula nettoie la peau en douceur tout en préservant son hydratation naturelle. Parfum délicat et mousse onctueuse.",
+      "Enrichi en macérat huileux de calendula bio, ce savon surgras nettoie la peau tout en douceur, préservant son hydratation naturelle. Convient aux peaux les plus délicates.",
     inci: "Sodium Olivate*, Sodium Cocoate*, Aqua (Water), Glycerin*, Calendula Officinalis Flower Extract*, Olea Europaea (Olive) Fruit Oil*, Cocos Nucifera (Coconut) Oil*. *Ingrédients issus de l'agriculture biologique.",
     usageInstructions:
       "Faire mousser sur peau humide puis rincer abondamment. Peut être utilisé pour le corps et le visage. Éviter le contact avec les yeux.",
@@ -169,7 +169,14 @@ export default function TestComponentsPage3() {
       <section>
         <h2 className="mb-6 text-2xl font-semibold">{t("productCardTitle")}</h2>
         <ProductGrid
-          products={mockProducts} // Pass the mock data with IDs
+          products={mockProducts.map((product) => ({
+            ...product,
+            href: {
+              pathname: "/product/[slug]", // Correct canonical path pattern with placeholder
+              params: { slug: product.slug ?? "" }, // Actual slug parameter
+            },
+            // Provide the callback handlers expected by ProductCard
+          }))}
           isLoading={isLoadingProducts} // Pass the loading state
           onAddToCart={handleAddToCart} // Pass the handler
           onViewDetails={handleViewDetails} // Pass the new view details handler
@@ -186,21 +193,3 @@ export default function TestComponentsPage3() {
     </Container>
   );
 }
-
-// N'oubliez pas d'ajouter les traductions correspondantes dans vos fichiers JSON (ex: messages/en.json, messages/fr.json)
-/* Exemple pour messages/fr.json:
-{
-  "TestPage": {
-    "title": "Page de Test des Composants Métier",
-    "categoryFilterTitle": "Test du Filtre par Catégories",
-    "selectedCategoriesLabel": "Catégories sélectionnées",
-    "noneSelected": "Aucune",
-    "productCardTitle": "Test de la Carte de Produit"
-  },
-  "Filters": {
-     "filterByCategory": "Filtrer par catégorie",
-     "close": "Fermer",
-     "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
-  }
-}
-*/

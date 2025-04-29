@@ -14,6 +14,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     return {
       locale: locale,
       messages: (await import(`../messages/${locale}.json`)).default,
+      timeZone: "Europe/Paris",
     };
   } catch (error) {
     console.error(`Error loading messages for locale ${locale}:`, error);
@@ -21,6 +22,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
       return {
         locale: defaultLocale,
         messages: (await import(`../messages/${defaultLocale}.json`)).default,
+        timeZone: "Europe/Paris",
       };
     } catch (defaultError) {
       console.error(`Error loading default messages (${defaultLocale}):`, defaultError);

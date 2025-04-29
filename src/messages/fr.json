@@ -10,7 +10,8 @@
     "title": "Page de Test des Composants Métier",
     "categoryFilterTitle": "Test du Filtre par Catégories",
     "selectedCategoriesLabel": "Catégories sélectionnées",
-    "noneSelected": "Aucune"
+    "noneSelected": "Aucune",
+    "productCardTitle": "Grille de Produits (Test)"
   },
   "Filters": {
     "filterByCategory": "Filtrer par catégorie",
@@ -34,5 +35,13 @@
     "quantity": "Quantité",
     "decreaseQuantity": "Diminuer la quantité",
     "increaseQuantity": "Augmenter la quantité"
+  },
+  "ProductGrid": {
+    "noProductsFound": "Aucun produit trouvé."
+  },
+  "ProductCard": {
+    "addToCart": "Ajouter au panier",
+    "viewDetails": "Voir les détails",
+    "outOfStock": "Épuisé"
   }
 }

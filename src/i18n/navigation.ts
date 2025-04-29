@@ -33,8 +33,16 @@ export const pathnames = {
     en: "/shop",
     fr: "/boutique",
   },
+  // Dynamic product route
+  "/product/[slug]": {
+    en: "/product/[slug]",
+    fr: "/product/[slug]", // Using 'product' for French locale to match folder structure
+  },
   // Ajoutez d'autres chemins ici...
 } as const;
+
+// Type for canonical pathnames based on the keys of the pathnames object
+export type AppPathname = keyof typeof pathnames;
 
 export const { Link, redirect, usePathname, useRouter, getPathname } = createNavigation({
   locales,
