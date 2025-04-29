@@ -16,5 +16,23 @@
     "filterByCategory": "Filtrer par catégorie",
     "close": "Fermer",
     "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
+  },
+  "ProductDetailModal": {
+    "noImage": "Image non disponible",
+    "quantity": "Quantité",
+    "addToCart": "Ajouter au panier",
+    "propertiesTab": "Propriétés",
+    "compositionTab": "Composition",
+    "usageTab": "Conseils d'utilisation",
+    "inciList": "Liste INCI",
+    "noProperties": "Propriétés du produit non disponibles.",
+    "noInci": "Liste INCI non disponible.",
+    "noUsage": "Conseils d'utilisation non disponibles.",
+    "close": "Fermer"
+  },
+  "QuantityInput": {
+    "quantity": "Quantité",
+    "decreaseQuantity": "Diminuer la quantité",
+    "increaseQuantity": "Augmenter la quantité"
   }
 }
