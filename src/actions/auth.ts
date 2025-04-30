@@ -128,3 +128,12 @@ export async function signUpAction(
   // Cas par défaut ou si quelque chose d'inattendu se produit
   return { error: "Une erreur inattendue est survenue lors de l'inscription." };
 }
+
+// --- Logout Action ---
+export async function logoutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  // Redirect to homepage after logout
+  // Note: We use the Link component's type knowledge implicitly here
+  redirect("/");
+}

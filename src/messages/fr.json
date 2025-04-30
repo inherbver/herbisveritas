@@ -48,6 +48,14 @@
     "categoryLabel": "Catégorie",
     "outOfStockLabel": "Produit actuellement indisponible"
   },
+  "Header": {
+    "home": "Accueil",
+    "products": "Produits",
+    "about": "À Propos",
+    "logoAriaLabel": "Retour à l'accueil",
+    "cartAriaLabel": "Panier d'achats",
+    "mobileMenuAriaLabel": "Ouvrir le menu mobile"
+  },
   "Auth": {
     "LoginForm": {
       "title": "Connexion",
@@ -69,6 +77,10 @@
       "loading": "Inscription en cours...",
       "loginPrompt": "Déjà un compte ?",
       "loginLink": "Connectez-vous"
-    }
+    },
+    "logout": "Déconnexion"
+  },
+  "ShopPage": {
+    "title": "Boutique"
   }
 }

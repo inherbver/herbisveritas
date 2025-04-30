@@ -38,6 +38,15 @@ export const pathnames = {
     en: "/product/[slug]",
     fr: "/product/[slug]", // Using 'product' for French locale to match folder structure
   },
+  // Add authentication paths
+  "/login": {
+    en: "/login",
+    fr: "/login", // Ou /connexion
+  },
+  "/register": {
+    en: "/register",
+    fr: "/register", // Ou /inscription
+  },
   // Ajoutez d'autres chemins ici...
 } as const;
 

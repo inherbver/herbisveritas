@@ -44,6 +44,14 @@
     "noUsage": "Usage instructions not available.",
     "close": "Close"
   },
+  "Header": {
+    "home": "Home",
+    "products": "Products",
+    "about": "About",
+    "logoAriaLabel": "Back to homepage",
+    "cartAriaLabel": "Shopping Cart",
+    "mobileMenuAriaLabel": "Open mobile menu"
+  },
   "QuantityInput": {
     "quantity": "Quantity",
     "decreaseQuantity": "Decrease quantity",
@@ -74,6 +82,10 @@
       "loading": "Signing up...",
       "loginPrompt": "Already have an account?",
       "loginLink": "Log in"
-    }
+    },
+    "logout": "Logout"
+  },
+  "ShopPage": {
+    "title": "Shop"
   }
 }
