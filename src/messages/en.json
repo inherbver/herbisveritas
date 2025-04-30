@@ -1,0 +1,79 @@
+{
+  "LocaleSwitcher": {
+    "switchLocale": "Switch to {locale, select, fr {French} en {English} other {Unknown}}"
+  },
+  "HomePage": {
+    "title": "Welcome to Inherbis",
+    "description": "Your source for quality products."
+  },
+  "Error": {
+    "title": "Error",
+    "description": "Something went wrong."
+  },
+  "TestPage": {
+    "title": "Domain Components Test Page",
+    "categoryFilterTitle": "Category Filter Test",
+    "selectedCategoriesLabel": "Selected categories",
+    "noneSelected": "None",
+    "productCardTitle": "Product Card Test"
+  },
+  "Filters": {
+    "filterByCategory": "Filter by category",
+    "close": "Close",
+    "noCategoriesAvailable": "No categories available at the moment."
+  },
+  "ProductCard": {
+    "addToCart": "Add to cart",
+    "outOfStock": "Out of stock",
+    "discountBadge": "-{discountPercent}%",
+    "priceAccessibilityLabel": "Price: {price}"
+  },
+  "ProductGrid": {
+    "noProductsFound": "No products found matching your criteria."
+  },
+  "ProductDetailModal": {
+    "noImage": "Image not available",
+    "quantity": "Quantity",
+    "addToCart": "Add to cart",
+    "propertiesTab": "Properties",
+    "compositionTab": "Composition",
+    "usageTab": "Usage tips",
+    "inciList": "INCI List",
+    "noProperties": "Product properties not available.",
+    "noInci": "INCI list not available.",
+    "noUsage": "Usage instructions not available.",
+    "close": "Close"
+  },
+  "QuantityInput": {
+    "quantity": "Quantity",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity"
+  },
+  "ProductDetail": {
+    "categoryLabel": "Category",
+    "outOfStockLabel": "Product currently unavailable"
+  },
+  "Auth": {
+    "LoginForm": {
+      "title": "Login",
+      "description": "Enter your email below to login to your account",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "submitButton": "Login",
+      "loading": "Logging in...",
+      "registerPrompt": "Don't have an account?",
+      "registerLink": "Sign up"
+    },
+    "RegisterForm": {
+      "title": "Create an account",
+      "description": "Enter your details below to create your account",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm Password",
+      "submitButton": "Sign Up",
+      "loading": "Signing up...",
+      "loginPrompt": "Already have an account?",
+      "loginLink": "Log in"
+    }
+  }
+}

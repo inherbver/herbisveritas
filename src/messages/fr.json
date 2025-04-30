@@ -1,0 +1,74 @@
+{
+  "HomePage": {
+    "title": "Bienvenue (FR)",
+    "description": "Ceci est la page d'accueil en français."
+  },
+  "NotFound": {
+    "title": "Page non trouvée"
+  },
+  "TestPage": {
+    "title": "Page de Test des Composants Métier",
+    "categoryFilterTitle": "Test du Filtre par Catégories",
+    "selectedCategoriesLabel": "Catégories sélectionnées",
+    "noneSelected": "Aucune",
+    "productCardTitle": "Grille de Produits (Test)"
+  },
+  "Filters": {
+    "filterByCategory": "Filtrer par catégorie",
+    "close": "Fermer",
+    "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
+  },
+  "ProductDetailModal": {
+    "noImage": "Image non disponible",
+    "quantity": "Quantité",
+    "addToCart": "Ajouter au panier",
+    "propertiesTab": "Propriétés",
+    "compositionTab": "Composition",
+    "usageTab": "Conseils d'utilisation",
+    "inciList": "Liste INCI",
+    "noProperties": "Propriétés du produit non disponibles.",
+    "noInci": "Liste INCI non disponible.",
+    "noUsage": "Conseils d'utilisation non disponibles.",
+    "close": "Fermer"
+  },
+  "QuantityInput": {
+    "quantity": "Quantité",
+    "decreaseQuantity": "Diminuer la quantité",
+    "increaseQuantity": "Augmenter la quantité"
+  },
+  "ProductGrid": {
+    "noProductsFound": "Aucun produit trouvé."
+  },
+  "ProductCard": {
+    "addToCart": "Ajouter au panier",
+    "viewDetails": "Voir les détails",
+    "outOfStock": "Épuisé"
+  },
+  "ProductDetail": {
+    "categoryLabel": "Catégorie",
+    "outOfStockLabel": "Produit actuellement indisponible"
+  },
+  "Auth": {
+    "LoginForm": {
+      "title": "Connexion",
+      "description": "Entrez votre email pour vous connecter à votre compte",
+      "emailLabel": "Email",
+      "passwordLabel": "Mot de passe",
+      "submitButton": "Se connecter",
+      "loading": "Connexion en cours...",
+      "registerPrompt": "Pas encore de compte ?",
+      "registerLink": "Inscrivez-vous"
+    },
+    "RegisterForm": {
+      "title": "Créer un compte",
+      "description": "Entrez vos informations pour créer un nouveau compte",
+      "emailLabel": "Email",
+      "passwordLabel": "Mot de passe",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "submitButton": "S'inscrire",
+      "loading": "Inscription en cours...",
+      "loginPrompt": "Déjà un compte ?",
+      "loginLink": "Connectez-vous"
+    }
+  }
+}
