@@ -24,6 +24,20 @@ export default tseslint.config(
     },
   },
 
+  // Configuration explicite pour no-unused-vars
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error", // Garder le niveau d'erreur
+        {
+          argsIgnorePattern: "^_", // Ignore les arguments commençant par _
+          varsIgnorePattern: "^_", // Ignore aussi les variables locales commençant par _
+          caughtErrorsIgnorePattern: "^_", // Ignore spécifiquement les erreurs catch commençant par _
+        },
+      ],
+    },
+  },
+
   // Configuration pour ignorer des fichiers/dossiers
   {
     ignores: [

@@ -172,8 +172,11 @@ Ces composants sont spécifiques à des fonctionnalités métier particulières 
 ### 1.2. Configuration des environnements
 
 - [x] Création des fichiers `.env.local`, `.env.test`, `.env.production`
-- [ ] Configuration des accès Supabase (auth, DB, storage) et, si besoin, Stripe
+- [x] Configuration des accès Supabase (auth) _(DB et Storage à configurer si besoin ultérieurement)_
 - [x] Documentation des variables d’environnement requises
+  *   Variables Supabase Auth requises dans `.env.local`:
+      *   `NEXT_PUBLIC_SUPABASE_URL`: URL de votre projet Supabase.
+      *   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Clé anonyme (publique) de votre projet Supabase.
   - ᾞ **Composants Clés :** N/A (Configuration)
   - ⚠️ **Points d'Attention :**
     - Sécurisation des clés API (ne pas commiter `.env.local`, utiliser les variables d'env Vercel/Supabase en prod).
@@ -253,17 +256,17 @@ Ces composants sont spécifiques à des fonctionnalités métier particulières 
 
 ### 3.1. Authentification Utilisateur
 
-- [ ] Page de connexion (`/login`)
-- [ ] Page d'inscription (`/register`)
-  - ᾞ **Composants Clés :** `LoginForm`, `RegisterForm` (utilisant `Input`, `Button`, `Label` de `shadcn/ui`), `AuthLayout`.
+- [x] Page de connexion (`/login`)
+- [x] Page d'inscription (`/register`)
+  - ᾞ **Composants Clés :** `LoginForm`, `RegisterForm` (utilisant `Input`, `Button`, `Label`, `Card` de `shadcn/ui`), `AuthLayout`.
   - ⚠️ **Points d'Attention :**
-    - Gestion des erreurs de formulaire (validation Zod, feedback utilisateur).
-    - Interaction avec Supabase Auth (gestion des sessions, erreurs Supabase).
-    - Redirections après connexion/inscription.
-- [ ] Logique de gestion de session (Supabase Auth)
-- [ ] Protection des routes nécessitant une authentification.
-  - ᾞ **Composants Clés :** Middleware, hooks (`useAuth`) ou contexte pour vérifier l'état d'authentification.
-  - ⚠️ **Points d'Attention :** Gestion cohérente de l'état d'authentification entre Server et Client Components, gestion du rafraîchissement des tokens.
+    *   Implémentation avec Supabase Auth (`signInWithPassword`, `signUp`).
+    *   Utilisation de Server Actions (`loginAction`, `signUpAction` dans `@/actions/auth.ts`) pour la logique serveur.
+    *   Validation des formulaires côté serveur avec Zod.
+    *   Gestion de l'état du formulaire et des erreurs via le hook `useActionState`.
+    *   Sécurité : Validation systématique côté serveur, gestion sécurisée des erreurs (pas de détails superflus), protection contre les attaques courantes (CSRF implicitement géré par Server Actions).
+    *   Redirection après succès : `/` après inscription (à vérifier/configurer pour la connexion).
+    *   Nécessite la configuration des variables d'environnement Supabase (`.env.local`).
 
 ### 3.2. Catalogue Produits
 

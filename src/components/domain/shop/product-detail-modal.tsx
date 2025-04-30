@@ -9,29 +9,27 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import Image from "next/image"; // Assuming Next.js Image component for product images
+import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { QuantityInput } from "./quantity-input"; // Import the new component
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
+import { QuantityInput } from "./quantity-input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Placeholder for detailed product data - Will need refinement
 export interface ProductDetailData {
   id: string | number;
   name: string;
   shortDescription?: string;
   price: string;
-  images: { src: string; alt: string }[]; // Assuming multiple images
-  // Add other fields later: fullDescription, inci, usage, etc.
+  images: { src: string; alt: string }[];
   properties?: string;
   inci?: string;
   usageInstructions?: string;
 }
 
 interface ProductDetailModalProps {
-  product: ProductDetailData | null; // Product data or null if none selected
+  product: ProductDetailData | null;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onAddToCart: (productId: string | number, quantity: number) => void; // Add quantity
+  onAddToCart: (productId: string | number, quantity: number) => void;
 }
 
 export function ProductDetailModal({
@@ -40,10 +38,9 @@ export function ProductDetailModal({
   onOpenChange,
   onAddToCart,
 }: ProductDetailModalProps) {
-  const t = useTranslations("ProductDetailModal"); // Assuming translations needed
+  const t = useTranslations("ProductDetailModal");
   const [quantity, setQuantity] = React.useState(1);
 
-  // Reset quantity when modal opens or product changes
   React.useEffect(() => {
     if (isOpen) {
       setQuantity(1);
@@ -51,70 +48,70 @@ export function ProductDetailModal({
   }, [isOpen, product]);
 
   if (!product) {
-    return null; // Don't render anything if no product data
+    return null;
   }
 
   const handleAddToCart = () => {
     onAddToCart(product.id, quantity);
-    onOpenChange(false); // Close modal after adding to cart (optional)
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-[80%] lg:max-w-[60%] xl:max-w-[50%]">
-        {/* Using Grid for two main columns */}
+        {/* Utiliser DialogHeader avec sr-only */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{product.name}</DialogTitle>
+          <DialogDescription>
+            {product.shortDescription || `Détails pour ${product.name}`}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Le reste du layout reste visuellement le même */}
         <div className="grid grid-cols-1 gap-0 md:grid-cols-2">
-          {/* Left Column: Image Carousel Placeholder */}
+          {/* Left Column: Image */}
           <div className="bg-muted/30 flex min-h-[300px] items-center justify-center p-6 md:min-h-[450px]">
             {product.images && product.images.length > 0 ? (
-              // Basic image display for now - Replace with Carousel later
-              (<Image
+              <Image
                 src={product.images[0].src}
                 alt={product.images[0].alt}
                 width={400}
                 height={400}
                 className="max-h-[400px] w-auto object-contain"
-              />)
+              />
             ) : (
               <div className="text-muted-foreground">{t("noImage")}</div>
             )}
           </div>
 
-          {/* Right Column: Details, Actions, Tabs Placeholder */}
+          {/* Right Column: Details, Actions, Tabs */}
           <div className="flex flex-col p-6">
-            <DialogHeader className="mb-4">
-              <DialogTitle className="mb-1 font-serif text-2xl">{product.name}</DialogTitle>
-              {product.shortDescription && (
-                <DialogDescription className="text-base text-muted-foreground">
-                  {product.shortDescription}
-                </DialogDescription>
-              )}
-            </DialogHeader>
+            {/* Display Title Visually */}
+            <h2 className="mb-1 font-serif text-2xl">{product.name}</h2>
+            {/* Display Description Visually */}
+            {product.shortDescription && (
+              <p className="mb-4 text-base text-muted-foreground">{product.shortDescription}</p>
+            )}
 
             <div className="mb-6 text-3xl font-bold text-green-700 dark:text-green-500">
-              {product.price} {/* Assuming price is pre-formatted */}
+              {product.price}
             </div>
 
-            {/* Quantity Selector - Using the new component */}
             <div className="mb-6 flex items-center space-x-3">
               <label htmlFor={`quantity-${product.id}`} className="sr-only text-sm font-medium">
-                {/* Screen reader only label, visible label handled by QuantityInput's aria-labels */}
                 {t("quantity")}
               </label>
               <QuantityInput
                 id={`quantity-${product.id}`}
                 value={quantity}
-                onChange={setQuantity} // Pass the state setter directly
-                // min={1} max={99} // Defaults are likely fine, but can override
+                onChange={setQuantity}
               />
             </div>
 
-            {/* Add to Cart Button */}
             <Button size="lg" className="mb-8 w-full" onClick={handleAddToCart}>
               {t("addToCart")}
             </Button>
 
-            {/* Tabs Section Implementation */}
             <Tabs defaultValue="properties" className="mt-auto w-full">
               <TabsList className="mb-4 grid w-full grid-cols-3">
                 <TabsTrigger value="properties">{t("propertiesTab")}</TabsTrigger>
@@ -125,18 +122,12 @@ export function ProductDetailModal({
                 value="properties"
                 className="max-h-40 overflow-y-auto pr-2 text-sm text-muted-foreground"
               >
-                {" "}
-                {/* Added scroll */}
-                {/* Content for Properties Tab */}
                 <p>{product.properties || t("noProperties")}</p>
               </TabsContent>
               <TabsContent
                 value="composition"
                 className="max-h-40 overflow-y-auto pr-2 text-sm text-muted-foreground"
               >
-                {" "}
-                {/* Added scroll */}
-                {/* Content for Composition Tab */}
                 <h4 className="mb-2 font-semibold">{t("inciList")}</h4>
                 <p className="break-words text-xs">{product.inci || t("noInci")}</p>
               </TabsContent>
@@ -144,21 +135,9 @@ export function ProductDetailModal({
                 value="usage"
                 className="max-h-40 overflow-y-auto pr-2 text-sm text-muted-foreground"
               >
-                {" "}
-                {/* Added scroll */}
-                {/* Content for Usage Tab */}
                 <p>{product.usageInstructions || t("noUsage")}</p>
               </TabsContent>
             </Tabs>
-
-            {/* Optional Footer for close button if needed, but usually handled by Dialog overlay/X */}
-            {/* <DialogFooter className="sm:justify-start">
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
-                  {t('close')}
-                </Button>
-              </DialogClose>
-            </DialogFooter> */}
           </div>
         </div>
       </DialogContent>

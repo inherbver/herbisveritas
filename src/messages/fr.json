@@ -47,5 +47,28 @@
   "ProductDetail": {
     "categoryLabel": "Catégorie",
     "outOfStockLabel": "Produit actuellement indisponible"
+  },
+  "Auth": {
+    "LoginForm": {
+      "title": "Connexion",
+      "description": "Entrez votre email pour vous connecter à votre compte",
+      "emailLabel": "Email",
+      "passwordLabel": "Mot de passe",
+      "submitButton": "Se connecter",
+      "loading": "Connexion en cours...",
+      "registerPrompt": "Pas encore de compte ?",
+      "registerLink": "Inscrivez-vous"
+    },
+    "RegisterForm": {
+      "title": "Créer un compte",
+      "description": "Entrez vos informations pour créer un nouveau compte",
+      "emailLabel": "Email",
+      "passwordLabel": "Mot de passe",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "submitButton": "S'inscrire",
+      "loading": "Inscription en cours...",
+      "loginPrompt": "Déjà un compte ?",
+      "loginLink": "Connectez-vous"
+    }
   }
 }
