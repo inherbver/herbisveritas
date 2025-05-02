@@ -27,29 +27,29 @@ export interface Product {
   labels?: string[] | null;
 }
 
-export async function generateMetadata(props: Props): Promise<Metadata> {
-  const locale = props.params.locale;
-  const t = await getTranslations({ locale, namespace: 'ShopPage' });
+export async function generateMetadata(_props: Props): Promise<Metadata> {
+  const locale = _props.params.locale;
+  const t = await getTranslations({ locale, namespace: "ShopPage" });
   return {
-    title: t('title'),
+    title: t("title"),
   };
 }
 
-export default async function ShopPage(props: Props) {
+export default async function ShopPage(_props: Props) {
   // Fetch translations for the server component (title, errors)
   const t = await getTranslations("ShopPage");
 
   // Fetch raw products from Supabase
   const supabase = await createClient();
-  const { data: products, error } = await supabase.from('products').select('*');
+  const { data: products, error } = await supabase.from("products").select("*");
 
   if (error) {
-    console.error('Error fetching products:', error);
+    console.error("Error fetching products:", error);
     return (
       <MainLayout>
         <div className="container py-8">
-          <h1 className="text-3xl font-bold mb-6">{t('title')}</h1>
-          <p className="text-red-500 text-center mt-10">{t('errorFetchingData')}</p>
+          <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
+          <p className="mt-10 text-center text-red-500">{t("errorFetchingData")}</p>
         </div>
       </MainLayout>
     );
@@ -59,8 +59,8 @@ export default async function ShopPage(props: Props) {
     return (
       <MainLayout>
         <div className="container py-8">
-          <h1 className="text-3xl font-bold mb-6">{t('title')}</h1>
-          <p className="text-center mt-10">{t('noProductsFound')}</p>
+          <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
+          <p className="mt-10 text-center">{t("noProductsFound")}</p>
         </div>
       </MainLayout>
     );
@@ -69,7 +69,7 @@ export default async function ShopPage(props: Props) {
   return (
     <MainLayout>
       <div className="container py-8">
-        <h1 className="text-3xl font-bold mb-6">{t('title')}</h1>
+        <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
         <ShopClientContent initialProducts={products as Product[]} />
       </div>
     </MainLayout>
