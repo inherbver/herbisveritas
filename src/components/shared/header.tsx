@@ -41,7 +41,8 @@ async function Header({ className, ...props }: React.HTMLAttributes<HTMLElement>
         </nav>
 
         {/* Actions Utilisateur & Menu Mobile */}
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        {/* Removed flex-1 to allow proper spacing with justify-between */}
+        <div className="flex items-center justify-end space-x-4">
           {/* Actions Desktop (Panier, Compte / Auth) */}
           <div className="hidden items-center space-x-2 md:flex">
             <Button variant="ghost" size="icon" aria-label={t("cartAriaLabel")}>

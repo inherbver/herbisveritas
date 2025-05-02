@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { locales, Locale } from "@/i18n-config";
 import ClientLayout from "@/components/layout/client-layout";
 import { setRequestLocale, getTimeZone } from "next-intl/server";
+import { Header } from "@/components/shared/header";
 
 interface Props {
   children: ReactNode;
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 }
 
-async function getMessages(locale: string) {
+async function loadMessages(locale: string) {
   try {
     const messages = (await import(`../../messages/${locale}.json`)).default;
     return messages;
@@ -20,7 +21,7 @@ async function getMessages(locale: string) {
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
-  const { locale } = await params;
+  const { locale } = params;
 
   if (!locales.includes(locale as Locale)) {
     console.warn(
@@ -31,12 +32,17 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   setRequestLocale(locale);
 
-  const messages = await getMessages(locale);
+  const messages = await loadMessages(locale);
   const timeZone = await getTimeZone({ locale });
 
   return (
+    // NE PAS inclure <html> ou <body> ici.
+    // ClientLayout enveloppe la structure interne.
     <ClientLayout locale={locale} messages={messages} timeZone={timeZone}>
-      {children}
+      <Header />
+      {children} {/* Main tag removed, handled by page-specific layouts like MainLayout */}
+      {/* <Footer /> */}
     </ClientLayout>
+    // NE PAS inclure <html> ou <body> ici.
   );
 }

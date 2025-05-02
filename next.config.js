@@ -1,5 +1,7 @@
-// Utilisation de CommonJS comme recommandé pour le plugin
-const withNextIntl = require("next-intl/plugin")(
+// Utilisation de ES Module comme recommandé pour le plugin
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin(
   // Chemin vers votre fichier de configuration i18n (depuis la racine)
   "./src/i18n.ts" // Corrigé pour pointer vers src/i18n.ts
 );
@@ -19,4 +21,4 @@ const nextConfig = {
 };
 
 // Exporte la configuration enveloppée par le plugin
-module.exports = withNextIntl(nextConfig);
+export default withNextIntl(nextConfig);
