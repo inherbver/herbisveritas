@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 // Define a type for the product data, excluding functions and generated IDs
 export type ProductData = Omit<
   ProductCardProps,
-  "onAddToCart" | "className" | "isLoading" | "onViewDetails"
+  "onAddToCart" | "className" | "isLoading"
 > & {
   id: string | number; // Ensure id is part of the data type expected
+  slug: string; // Add slug, anticipating it will be in ProductCardProps
 };
 
 export interface ProductGridProps {
@@ -22,12 +23,12 @@ export interface ProductGridProps {
   loadingSkeletons?: number;
   /** Callback function when a product's add to cart button is clicked */
   onAddToCart: (productId: string | number) => void; // Expects the ID
-  /** Callback function when a product's view details button is clicked */
-  onViewDetails?: (productId: string | number) => void; // Add handler for viewing details
   /** Optional CSS classes for the grid container */
   className?: string;
   /** Optional message when products array is empty */
   noProductsMessage?: string;
+  /** Current locale, needed for Link construction */
+  locale: string;
 }
 
 export function ProductGrid({
@@ -35,9 +36,9 @@ export function ProductGrid({
   isLoading = false,
   loadingSkeletons = 8, // Default skeletons adjusted for 4 cols
   onAddToCart,
-  onViewDetails, // Destructure the new prop
   className,
   noProductsMessage,
+  locale, // Destructure locale
 }: ProductGridProps) {
   const t = useTranslations("ProductGrid");
 
@@ -59,6 +60,8 @@ export function ProductGrid({
             imageSrc=""
             imageAlt=""
             price=""
+            slug="" // Add dummy slug for skeleton
+            locale="" // Add dummy locale for skeleton
             onAddToCart={() => {}}
           />)
         ))}
@@ -79,9 +82,9 @@ export function ProductGrid({
       {products.map((product) => (
         <ProductCard
           key={product.id}
-          {...product} // Spread the product data (which includes id)
+          {...product} // Spread the product data (now includes id and slug)
           onAddToCart={onAddToCart} // Pass the handler function directly
-          onViewDetails={onViewDetails} // Pass the view details handler
+          locale={locale} // Pass locale down to ProductCard for Link
           // Removed incorrect 'titleId' and 'index' props
         />
       ))}

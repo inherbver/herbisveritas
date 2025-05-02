@@ -59,7 +59,9 @@
   },
   "ProductDetail": {
     "categoryLabel": "Category",
-    "outOfStockLabel": "Product currently unavailable"
+    "outOfStockLabel": "Currently unavailable",
+    "productNotFound": "Product not found",
+    "defaultDescription": "Find out more details about this product."
   },
   "Auth": {
     "LoginForm": {

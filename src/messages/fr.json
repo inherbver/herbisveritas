@@ -46,7 +46,9 @@
   },
   "ProductDetail": {
     "categoryLabel": "Catégorie",
-    "outOfStockLabel": "Produit actuellement indisponible"
+    "outOfStockLabel": "Produit actuellement indisponible",
+    "productNotFound": "Produit non trouvé",
+    "defaultDescription": "Découvrez plus de détails sur ce produit."
   },
   "Header": {
     "home": "Accueil",

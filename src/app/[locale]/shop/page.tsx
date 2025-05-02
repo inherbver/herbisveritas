@@ -8,6 +8,22 @@ type Props = {
   params: { locale: string };
 };
 
+// Define the expected shape of the data for product cards on the shop page
+export interface ProductListItem {
+  id: string;
+  slug: string; // Needed for the link
+  price: number;
+  image_url?: string | null;
+  stock: number; // May be needed for 'out of stock' badges etc.
+  is_new?: boolean | null;
+  is_on_promotion?: boolean | null;
+  labels?: string[] | null;
+  // Translated fields from the join
+  name: string;
+  short_description?: string | null;
+}
+
+/*
 export interface Product {
   id: string;
   name: string;
@@ -26,6 +42,7 @@ export interface Product {
   is_on_promotion?: boolean | null;
   labels?: string[] | null;
 }
+*/
 
 export async function generateMetadata(_props: Props): Promise<Metadata> {
   const locale = _props.params.locale;
@@ -36,12 +53,33 @@ export async function generateMetadata(_props: Props): Promise<Metadata> {
 }
 
 export default async function ShopPage(_props: Props) {
+  const locale = _props.params.locale; // Get locale from params
   // Fetch translations for the server component (title, errors)
   const t = await getTranslations("ShopPage");
 
-  // Fetch raw products from Supabase
+  // Fetch products with join on translations
   const supabase = await createClient();
-  const { data: products, error } = await supabase.from("products").select("*");
+  // Updated query to fetch slug and join with translations
+  const { data: productsData, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id,
+      slug, 
+      price,
+      image_url,
+      stock,
+      is_new,
+      is_on_promotion,
+      labels,
+      product_translations!inner (
+        name,
+        short_description
+      )
+    `
+    )
+    .eq("is_active", true) // Only fetch active products
+    .eq("product_translations.locale", locale); // Filter translations by locale
 
   if (error) {
     console.error("Error fetching products:", error);
@@ -55,7 +93,7 @@ export default async function ShopPage(_props: Props) {
     );
   }
 
-  if (!products || products.length === 0) {
+  if (!productsData || productsData.length === 0) {
     return (
       <MainLayout>
         <div className="container py-8">
@@ -66,11 +104,26 @@ export default async function ShopPage(_props: Props) {
     );
   }
 
+  // Map the raw Supabase data to our ProductListItem structure
+  // We use 'any' temporarily for the input type, Supabase might provide better types
+  const productListItems: ProductListItem[] = productsData.map((p: any) => ({
+    id: p.id,
+    slug: p.slug,
+    price: p.price,
+    image_url: p.image_url,
+    stock: p.stock,
+    is_new: p.is_new,
+    is_on_promotion: p.is_on_promotion,
+    labels: p.labels,
+    name: p.product_translations.name, // Access joined data
+    short_description: p.product_translations.short_description, // Access joined data
+  }));
+
   return (
     <MainLayout>
       <div className="container py-8">
         <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
-        <ShopClientContent initialProducts={products as Product[]} />
+        <ShopClientContent initialProducts={productListItems} />
       </div>
     </MainLayout>
   );

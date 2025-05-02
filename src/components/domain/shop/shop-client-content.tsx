@@ -4,17 +4,19 @@ import React from 'react';
 import { ProductGrid, ProductData } from './product-grid';
 // Assuming the Product interface is exported from the page or a types file
 // Adjust the import path if Product interface is defined elsewhere
-import { Product } from '@/app/[locale]/shop/page'; 
-// import { useRouter } from 'next/navigation'; // Needed for actual navigation in handleViewDetails
-
+import { ProductListItem } from '@/app/[locale]/shop/page'; 
+import { useParams } from 'next/navigation'; // Needed to get locale for Link href
+ 
 type ShopClientContentProps = {
-  initialProducts: Product[]; // Receive raw products
+  initialProducts: ProductListItem[]; // Receive mapped products with slug and translations
 };
 
 export const ShopClientContent: React.FC<ShopClientContentProps> = ({ initialProducts }) => {
-  // const router = useRouter(); // Uncomment for navigation
+  const params = useParams(); // Hook to get URL params
+  const locale = params.locale as string; // Extract locale
 
   // --- Data Transformation --- 
+  // Ensure ProductData type in product-grid.ts includes 'slug'
   const productGridData: ProductData[] = initialProducts.map((product) => {
     // Ensure imageSrc points to the existing .webp files
     const imageBaseUrl = product.image_url?.replace(/\.[^/.]+$/, "") ?? ''; // Remove original extension
@@ -22,10 +24,12 @@ export const ShopClientContent: React.FC<ShopClientContentProps> = ({ initialPro
 
     return {
       id: product.id,
+      slug: product.slug, // Pass slug down
+      locale: locale, // Pass locale down
       title: product.name,
       imageSrc: imageSrc, // Use the corrected .webp path
       imageAlt: product.name ?? 'Product image',
-      price: `${product.price.toFixed(2)} ${product.currency ?? 'EUR'}`, 
+      price: `${product.price.toFixed(2)} EUR`, // Assume EUR if currency isn't passed (it's not in ProductListItem)
     };
   });
 
@@ -33,12 +37,6 @@ export const ShopClientContent: React.FC<ShopClientContentProps> = ({ initialPro
   const handleAddToCart = (productId: string | number) => {
     console.log(`Adding product ${productId} to cart (Client Handler).`);
     // TODO: Implement actual cart logic (e.g., using Zustand, Context, or Server Actions)
-  };
-
-  const handleViewDetails = (productId: string | number) => {
-    console.log(`Viewing details for product ${productId} (Client Handler).`);
-    // TODO: Implement actual navigation
-    // Example: router.push(`/shop/${productId}`); // Adjust locale handling as needed
   };
 
   // You might want to handle loading/empty states here as well, 
@@ -52,7 +50,7 @@ export const ShopClientContent: React.FC<ShopClientContentProps> = ({ initialPro
     <ProductGrid 
       products={productGridData} 
       onAddToCart={handleAddToCart}
-      onViewDetails={handleViewDetails} 
+      locale={locale} // Pass locale for Link construction
       // Pass other necessary props like isLoading if managed here
     />
   );

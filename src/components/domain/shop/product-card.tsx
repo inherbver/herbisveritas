@@ -27,18 +27,16 @@ export interface ProductCardProps {
   price: string;
   /** Optional discount percentage */
   discountPercent?: number;
-  /** Optional href for the product link. Can be a string or an object for dynamic routes. */
-  href?: AppPathname | { pathname: AppPathname; params?: Record<string, string | number> };
-  /** Optional slug for dynamic routes, used if href is an object */
-  slug?: string;
+  /** Slug for dynamic routes */
+  slug: string;
+  /** Locale */
+  locale: string;
   /** Whether the product is loading */
   isLoading?: boolean;
   /** Whether the product is out of stock */
   isOutOfStock?: boolean;
   /** Callback for adding the product to cart */
   onAddToCart: (productId: string | number) => void;
-  /** Callback for viewing product details */
-  onViewDetails?: (productId: string | number) => void;
   /** Optional custom class name */
   className?: string;
 }
@@ -52,11 +50,11 @@ export function ProductCard({
   imageAlt,
   price,
   discountPercent,
-  href,
+  slug,
+  locale,
   isLoading = false,
   isOutOfStock = false,
   onAddToCart,
-  onViewDetails,
   className,
 }: ProductCardProps) {
   const t = useTranslations("ProductCard");
@@ -88,20 +86,14 @@ export function ProductCard({
     if (!isOutOfStock) onAddToCart(id);
   };
 
-  const handleCardClick = () => {
-    if (onViewDetails && !isOutOfStock) {
-      onViewDetails(id);
-    }
-  };
+  const linkHref = { pathname: '/products/[slug]' as AppPathname, params: { slug: slug } };
 
   const cardContent = (
     <>
       <div
         className={cn(
           "relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90",
-          "cursor-pointer"
         )}
-        onClick={handleCardClick}
       >
         <Image
           src={imageSrc}
@@ -131,7 +123,7 @@ export function ProductCard({
       </div>
 
       {/* Content Area - V2: Standard padding, flex-grow, WHITE BACKGROUND */}
-      <div className="flex flex-grow flex-col bg-background p-4" onClick={handleCardClick}>
+      <div className="flex flex-grow flex-col bg-background p-4">
         <h2
           id={`product-title-${id}`}
           className="mb-1 line-clamp-2 text-lg font-semibold leading-tight"
@@ -185,14 +177,14 @@ export function ProductCard({
   const commonCardClasses = cn(
     "relative flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden h-full",
     "transition-all duration-300 ease-in-out group",
-    href && !isOutOfStock ? "hover:shadow-xl hover:border-primary/50 cursor-pointer" : "",
+    !isOutOfStock ? "hover:shadow-xl hover:border-primary/50" : "",
     className
   );
 
-  const isLinkable = href && !isOutOfStock;
+  const isLinkable = !isLoading && !isOutOfStock && slug;
 
   return isLinkable ? (
-    <NextLink href={href as React.ComponentProps<typeof NextLink>["href"]} passHref={false}>
+    <NextLink href={linkHref} passHref={false} className="contents">
       <div className={commonCardClasses} aria-labelledby={`product-title-${id}`}>
         {cardContent}
       </div>
@@ -200,7 +192,6 @@ export function ProductCard({
   ) : (
     <div
       className={cn(commonCardClasses, isOutOfStock ? "opacity-80" : "")}
-      onClick={handleCardClick}
     >
       {cardContent}
     </div>
