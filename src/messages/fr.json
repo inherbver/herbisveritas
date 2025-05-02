@@ -81,6 +81,8 @@
     "logout": "Déconnexion"
   },
   "ShopPage": {
-    "title": "Boutique"
+    "title": "Boutique",
+    "errorFetchingData": "Erreur lors de la récupération des produits.",
+    "noProductsFound": "Aucun produit trouvé."
   }
 }

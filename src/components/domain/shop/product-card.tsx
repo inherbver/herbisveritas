@@ -109,7 +109,6 @@ export function ProductCard({
           fill
           sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
-          priority
         />
         <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
           {discountPercent && !isOutOfStock && (

@@ -86,6 +86,11 @@
     "logout": "Logout"
   },
   "ShopPage": {
-    "title": "Shop"
+    "title": "Shop",
+    "errorFetchingData": "Error fetching products.",
+    "noProductsFound": "No products found."
+  },
+  "NotFoundPage": {
+    "title": "Page not found"
   }
 }
