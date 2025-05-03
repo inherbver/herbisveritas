@@ -84,29 +84,61 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
         </Button>
 
         {/* Information Tabs */}
-        <Tabs defaultValue="properties" className="w-full">
-          <TabsList className="mb-4 grid w-full grid-cols-3">
+        {/* Set default tab to description */}
+        <Tabs defaultValue="description" className="w-full">
+          {/* Update grid columns to 4 */}
+          <TabsList className="mb-4 grid w-full grid-cols-4">
+            {/* Add Description tab trigger first */}
+            <TabsTrigger value="description">{t("descriptionTab")}</TabsTrigger>
             <TabsTrigger value="properties">{t("propertiesTab")}</TabsTrigger>
             <TabsTrigger value="composition">{t("compositionTab")}</TabsTrigger>
             <TabsTrigger value="usage">{t("usageTab")}</TabsTrigger>
           </TabsList>
+          {/* Add Description tab content */}
           <TabsContent
-            value="properties"
-            className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground" // Added prose classes
+            value="description"
+            className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground"
           >
-            {/* Use dangerouslySetInnerHTML if properties contain HTML, otherwise render directly */}
-            <p>{product.properties || t("noProperties")}</p>
+            {/* Use dangerouslySetInnerHTML if description_long contains HTML, otherwise render directly */}
+            <p>{product.description_long || t("noDescription")}</p>
+          </TabsContent>
+          <TabsContent value="properties" className="max-w-none overflow-y-auto pr-2">
+            {product.properties ? (
+              <ul className="mt-2 list-inside list-disc space-y-1 text-gray-700">
+                {product.properties
+                  .split(/\n|\\n/) // Split on actual newline OR literal \n
+                  .map((line) => line.trim())
+                  .filter((line) => line.length > 0)
+                  .map((line, index) => (
+                    <li key={index}>{line.replace(/^\*\s*/, "")}</li>
+                  ))}
+              </ul>
+            ) : (
+              <p>{t("noProperties")}</p>
+            )}
           </TabsContent>
           <TabsContent
             value="composition"
             className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground"
           >
-            <h4 className="mb-2 font-semibold">{t("inciList")}</h4>
-            <p className="break-words text-xs">
-              {product.inciList && product.inciList.length > 0
-                ? product.inciList.join(", ")
-                : t("noInci")}
-            </p>
+            {/* Display composition text if available */}
+            {product.compositionText && (
+              <div className="mb-4">
+                {/* Optional: Add a heading? e.g., <h4>{t("compositionDetails")}</h4> */}
+                <div className="whitespace-pre-wrap">{product.compositionText}</div>
+              </div>
+            )}
+            {/* Display INCI list heading and content */}
+            <h4 className="mb-1 text-sm font-semibold">{t("inciList")}</h4>
+            {product.inciList && product.inciList.length > 0 ? (
+              <p className="break-words text-xs">{product.inciList.join(", ")}</p>
+            ) : (
+              <p className="text-xs italic">{t("noInci")}</p>
+            )}
+            {/* Show message if both compositionText and inciList are missing */}
+            {!product.compositionText && (!product.inciList || product.inciList.length === 0) && (
+              <p>{t("noCompositionText")}</p> // Add a specific message maybe?
+            )}
           </TabsContent>
           <TabsContent
             value="usage"

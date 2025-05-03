@@ -36,12 +36,15 @@
     "quantity": "Quantity",
     "addToCart": "Add to cart",
     "propertiesTab": "Properties",
+    "descriptionTab": "Description",
     "compositionTab": "Composition",
     "usageTab": "Usage tips",
     "inciList": "INCI List",
     "noProperties": "Product properties not available.",
+    "noDescription": "Description not available",
     "noInci": "INCI list not available.",
     "noUsage": "Usage instructions not available.",
+    "noCompositionText": "Composition not available.",
     "close": "Close"
   },
   "Header": {

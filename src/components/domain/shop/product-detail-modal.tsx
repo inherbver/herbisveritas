@@ -18,9 +18,11 @@ export interface ProductDetailData {
   id: string | number;
   name: string;
   shortDescription?: string;
+  description_long?: string;
   price: string;
   images: { src: string; alt: string }[];
   properties?: string;
+  compositionText?: string;
   inci?: string;
   inciList?: string[];
   usageInstructions?: string;

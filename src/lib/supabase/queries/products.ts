@@ -1,32 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { Locale } from "@/i18n-config";
-import { ProductDetailData } from "@/components/domain/shop/product-detail-modal";
-
-// Define the expected shape of the data returned by the query
-interface ProductWithTranslation {
-  id: string;
-  slug: string;
-  price: number | null;
-  image_url: string | null;
-  inci_list: string[] | null;
-  product_translations:
-    | {
-        name: string;
-        short_description: string | null;
-        description_long: string | null;
-        usage_instructions: string | null;
-        locale: string;
-      }[]
-    | null;
-}
-
-// Helper function for price formatting (adjust currency as needed)
-function formatPrice(price: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "EUR",
-  }).format(price);
-}
 
 // --- NEW TYPE for getAllProducts query result ---
 // Includes only fields needed for the shop page grid + translations
@@ -44,6 +17,26 @@ export interface ProductForShopQuery {
         name: string;
         short_description: string | null;
         locale: string;
+      }[]
+    | null;
+}
+
+// --- NEW TYPE for getProductBySlug query result ---
+// Includes fields needed for the product detail page + translations
+export interface ProductForDetailQuery {
+  id: string;
+  slug: string;
+  price: number | null;
+  image_url: string | null;
+  inci_list: string[] | null;
+  product_translations:
+    | {
+        name: string;
+        short_description: string | null;
+        description_long: string | null;
+        usage_instructions: string | null;
+        properties: string | null;
+        composition_text: string | null;
       }[]
     | null;
 }
@@ -94,7 +87,7 @@ export async function getAllProducts(locale: Locale): Promise<ProductForShopQuer
 export async function getProductBySlug(
   slug: string,
   locale: Locale
-): Promise<ProductDetailData | null> {
+): Promise<ProductForDetailQuery | null> {
   const supabase = await createClient();
 
   console.log(`Attempting to fetch product with slug: ${slug} for locale: ${locale}`);
@@ -108,21 +101,22 @@ export async function getProductBySlug(
       price,
       image_url,
       inci_list,
-      product_translations!left (
+      product_translations!inner(
         name,
         short_description,
         description_long,
         usage_instructions,
-        locale
+        properties,
+        composition_text
       )
     `
     )
     .eq("slug", slug)
     .eq("product_translations.locale", locale)
-    .single<ProductWithTranslation>();
+    .single();
 
   if (error) {
-    console.error("Error fetching product by slug with translation:", error.message);
+    console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);
     return null;
   }
 
@@ -131,42 +125,8 @@ export async function getProductBySlug(
     return null;
   }
 
-  console.log("--- DEBUG: Raw data from Supabase ---", JSON.stringify(data, null, 2));
-
-  const translationObject =
-    data.product_translations && data.product_translations.length > 0
-      ? data.product_translations[0]
-      : null;
-
-  console.log(
-    "--- DEBUG: Extracted translation object ---",
-    JSON.stringify(translationObject, null, 2)
-  );
-
-  const images = data.image_url
-    ? [
-        {
-          src: data.image_url,
-          alt: `${translationObject?.name || "Product"} image 1`,
-        },
-      ]
-    : [];
-
-  const productDetail: ProductDetailData = {
-    id: data.id,
-    name: translationObject?.name || "Nom Indisponible",
-    shortDescription: translationObject?.short_description || undefined,
-    price: formatPrice(data.price || 0, locale),
-    images: images,
-    properties: translationObject?.description_long || undefined,
-    usageInstructions: translationObject?.usage_instructions || undefined,
-    inciList: data.inci_list || undefined,
-  };
-
-  console.log("--- DEBUG: Final productDetail object ---", JSON.stringify(productDetail, null, 2));
-
-  console.log(`Successfully fetched product: ${productDetail.name}`);
-  return productDetail;
+  console.log(`Successfully fetched product data for slug: ${slug}, locale: ${locale}`);
+  return data;
 }
 
 // --- Important Next Steps ---

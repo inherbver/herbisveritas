@@ -23,12 +23,15 @@
     "quantity": "Quantité",
     "addToCart": "Ajouter au panier",
     "propertiesTab": "Propriétés",
+    "descriptionTab": "Description",
     "compositionTab": "Composition",
     "usageTab": "Conseils d'utilisation",
     "inciList": "Liste INCI",
     "noProperties": "Propriétés du produit non disponibles.",
+    "noDescription": "Description non disponible",
     "noInci": "Liste INCI non disponible.",
     "noUsage": "Conseils d'utilisation non disponibles.",
+    "noCompositionText": "Composition non disponible.",
     "close": "Fermer"
   },
   "QuantityInput": {
