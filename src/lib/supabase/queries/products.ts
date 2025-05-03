@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Locale } from "@/i18n-config";
-import { ProductDetailData } from "@/components/domain/shop/product-detail-modal"; // Assuming type is reused
+import { ProductDetailData } from "@/components/domain/shop/product-detail-modal";
 
 // Define the expected shape of the data returned by the query
 interface ProductWithTranslation {
@@ -8,22 +8,87 @@ interface ProductWithTranslation {
   slug: string;
   price: number | null;
   image_url: string | null;
-  product_translations: { // Structure attendue de la jointure interne
-    name: string;
-    short_description: string | null;
-    description_long: string | null; // Correspond à 'properties'
-    usage_instructions: string | null;
-  }; // !inner join rend cette partie non-nulle si data est trouvé
+  inci_list: string[] | null;
+  product_translations:
+    | {
+        name: string;
+        short_description: string | null;
+        description_long: string | null;
+        usage_instructions: string | null;
+        locale: string;
+      }[]
+    | null;
 }
 
 // Helper function for price formatting (adjust currency as needed)
 function formatPrice(price: number, locale: Locale): string {
-  // Assuming the 'price' column stores the value directly, not in cents
-  // If 'price' is in cents, divide by 100: price / 100
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "EUR",
-  }).format(price); // Adjust if price is stored in cents
+  }).format(price);
+}
+
+// --- NEW TYPE for getAllProducts query result ---
+// Includes only fields needed for the shop page grid + translations
+export interface ProductForShopQuery {
+  id: string;
+  slug: string;
+  price: number | null;
+  image_url: string | null;
+  stock: number | null;
+  is_new: boolean | null;
+  is_on_promotion: boolean | null;
+  labels: string[] | null;
+  product_translations:
+    | {
+        name: string;
+        short_description: string | null;
+        locale: string;
+      }[]
+    | null;
+}
+
+// --- NEW FUNCTION: getAllProducts ---
+// Fetches all products with their basic details and translations for the shop grid
+export async function getAllProducts(locale: Locale): Promise<ProductForShopQuery[]> {
+  const supabase = await createClient();
+
+  console.log(`Attempting to fetch all products for locale: ${locale}`);
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id,
+      slug,
+      price,
+      image_url,
+      stock,         
+      is_new,        
+      is_on_promotion, 
+      labels,        
+      product_translations!left (
+        name,
+        short_description,
+        locale
+      )
+    `
+    )
+    .eq("product_translations.locale", locale);
+
+  if (error) {
+    console.error("Error fetching all products with translations:", error.message);
+    return [];
+  }
+
+  if (!data) {
+    console.log(`No products found or no translations for locale ${locale}.`);
+    return [];
+  }
+
+  console.log(`Successfully fetched ${data.length} products for locale ${locale}`);
+
+  return data as ProductForShopQuery[];
 }
 
 export async function getProductBySlug(
@@ -32,38 +97,32 @@ export async function getProductBySlug(
 ): Promise<ProductDetailData | null> {
   const supabase = await createClient();
 
-  console.log(
-    `Attempting to fetch product with slug: ${slug} for locale: ${locale}`
-  );
+  console.log(`Attempting to fetch product with slug: ${slug} for locale: ${locale}`);
 
-  // Updated query joining products with product_translations
   const { data, error } = await supabase
-    .from("products") // Start from the products table
+    .from("products")
     .select(
       `
       id,
       slug,
       price,
       image_url,
-      product_translations!inner (
+      inci_list,
+      product_translations!left (
         name,
         short_description,
         description_long,
-        usage_instructions
+        usage_instructions,
+        locale
       )
     `
     )
-    .eq("slug", slug) // Filter products table by slug
-    .eq("product_translations.locale", locale) // Filter translations table by locale
-    .single<ProductWithTranslation>(); // Expect a single result with the defined type
+    .eq("slug", slug)
+    .eq("product_translations.locale", locale)
+    .single<ProductWithTranslation>();
 
   if (error) {
-    console.error(
-      "Error fetching product by slug with translation:",
-      error.message
-    );
-    // Handle specific errors e.g., P0001 if no translation found for locale?
-    // Or rely on .single() error if product itself not found.
+    console.error("Error fetching product by slug with translation:", error.message);
     return null;
   }
 
@@ -72,31 +131,39 @@ export async function getProductBySlug(
     return null;
   }
 
-  // --- Map the fetched data to the ProductDetailData structure ---
-  // Note: With the generic type applied, TypeScript should correctly infer types below.
-  const translation = data.product_translations; // Access the joined translation data
+  console.log("--- DEBUG: Raw data from Supabase ---", JSON.stringify(data, null, 2));
 
-  // Image mapping: Use the single image_url
+  const translationObject =
+    data.product_translations && data.product_translations.length > 0
+      ? data.product_translations[0]
+      : null;
+
+  console.log(
+    "--- DEBUG: Extracted translation object ---",
+    JSON.stringify(translationObject, null, 2)
+  );
+
   const images = data.image_url
     ? [
         {
           src: data.image_url,
-          alt: `${translation.name || "Product"} image 1`,
+          alt: `${translationObject?.name || "Product"} image 1`,
         },
       ]
-    : []; // Provide an empty array if image_url is null
+    : [];
 
   const productDetail: ProductDetailData = {
     id: data.id,
-    name: translation.name, // Use translated name
-    shortDescription: translation.short_description || undefined, // Use translated short desc
-    price: formatPrice(data.price || 0, locale), // Format price from products
+    name: translationObject?.name || "Nom Indisponible",
+    shortDescription: translationObject?.short_description || undefined,
+    price: formatPrice(data.price || 0, locale),
     images: images,
-    // Map description_long to 'properties' in the display component
-    properties: translation.description_long || undefined,
-    // Map usage_instructions to 'usageInstructions' in the display component
-    usageInstructions: translation.usage_instructions || undefined,
+    properties: translationObject?.description_long || undefined,
+    usageInstructions: translationObject?.usage_instructions || undefined,
+    inciList: data.inci_list || undefined,
   };
+
+  console.log("--- DEBUG: Final productDetail object ---", JSON.stringify(productDetail, null, 2));
 
   console.log(`Successfully fetched product: ${productDetail.name}`);
   return productDetail;

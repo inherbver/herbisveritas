@@ -1,27 +1,15 @@
 import { getTranslations } from "next-intl/server";
 import { MainLayout } from "@/components/layout/main-layout";
-import { createClient } from "@/lib/supabase/server";
-import { Metadata } from "next";
+import { type Metadata } from "next";
 import { ShopClientContent } from "@/components/domain/shop/shop-client-content";
+import { getAllProducts, ProductForShopQuery } from "@/lib/supabase/queries/products";
+import { Locale } from "@/i18n-config";
+import { ProductListItem } from "@/types/product-types";
 
+// Define Props type if not already defined globally
 type Props = {
   params: { locale: string };
 };
-
-// Define the expected shape of the data for product cards on the shop page
-export interface ProductListItem {
-  id: string;
-  slug: string; // Needed for the link
-  price: number;
-  image_url?: string | null;
-  stock: number; // May be needed for 'out of stock' badges etc.
-  is_new?: boolean | null;
-  is_on_promotion?: boolean | null;
-  labels?: string[] | null;
-  // Translated fields from the join
-  name: string;
-  short_description?: string | null;
-}
 
 /*
 export interface Product {
@@ -44,8 +32,10 @@ export interface Product {
 }
 */
 
+// Make the function async
 export async function generateMetadata(_props: Props): Promise<Metadata> {
-  const locale = _props.params.locale;
+  // Explicitly await params before accessing properties
+  const { locale } = await Promise.resolve(_props.params);
   const t = await getTranslations({ locale, namespace: "ShopPage" });
   return {
     title: t("title"),
@@ -53,46 +43,48 @@ export async function generateMetadata(_props: Props): Promise<Metadata> {
 }
 
 export default async function ShopPage(_props: Props) {
-  const locale = _props.params.locale; // Get locale from params
+  // Await the params promise before accessing its properties
+  // Assert the type to Locale
+  const { locale } = (await _props.params) as { locale: Locale };
+
   // Fetch translations for the server component (title, errors)
   const t = await getTranslations("ShopPage");
 
-  // Fetch products with join on translations
-  const supabase = await createClient();
-  // Updated query to fetch slug and join with translations
-  const { data: productsData, error } = await supabase
-    .from("products")
-    .select(
-      `
-      id,
-      slug, 
-      price,
-      image_url,
-      stock,
-      is_new,
-      is_on_promotion,
-      labels,
-      product_translations!inner (
-        name,
-        short_description
-      )
-    `
-    )
-    .eq("is_active", true) // Only fetch active products
-    .eq("product_translations.locale", locale); // Filter translations by locale
+  // --- Data Fetching ---
+  let productsData: ProductForShopQuery[];
+  let fetchError: Error | null = null; // Initialize fetchError explicitly as Error | null
 
-  if (error) {
-    console.error("Error fetching products:", error);
+  try {
+    // Use the new function to fetch products with translations
+    // Pass the correctly typed locale
+    productsData = await getAllProducts(locale);
+  } catch (error) {
+    // Comment out error log for production
+    // console.error("ShopPage: Failed to fetch products:", error);
+    fetchError = error instanceof Error ? error : new Error("Unknown fetch error"); // Assign caught error
+    // Assign empty array to avoid further errors down the line if fetchError is handled
+    productsData = [];
+  }
+
+  // --- Handle Fetch Error ---
+  // Render error message if fetching failed
+  if (fetchError) {
     return (
       <MainLayout>
-        <div className="container py-8">
-          <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
-          <p className="mt-10 text-center text-red-500">{t("errorFetchingData")}</p>
+        <div className="container py-8 text-center">
+          <h1 className="mb-6 text-3xl font-bold text-red-600">{t("errorFetchingData")}</h1>
+          <p>{t("tryAgainLater", { defaultMessage: "Veuillez réessayer plus tard." })}</p>
+          {/* Optional: Log error details for debugging in development? */}
+          {process.env.NODE_ENV === "development" && (
+            <pre className="mt-4 text-left text-xs text-muted-foreground">{fetchError.message}</pre>
+          )}
         </div>
       </MainLayout>
     );
   }
 
+  // --- Handle No Products Found (after successful fetch) ---
+  // Check if productsData is empty *after* handling fetch error
   if (!productsData || productsData.length === 0) {
     return (
       <MainLayout>
@@ -104,20 +96,28 @@ export default async function ShopPage(_props: Props) {
     );
   }
 
-  // Map the raw Supabase data to our ProductListItem structure
-  // We use 'any' temporarily for the input type, Supabase might provide better types
-  const productListItems: ProductListItem[] = productsData.map((p: any) => ({
-    id: p.id,
-    slug: p.slug,
-    price: p.price,
-    image_url: p.image_url,
-    stock: p.stock,
-    is_new: p.is_new,
-    is_on_promotion: p.is_on_promotion,
-    labels: p.labels,
-    name: p.product_translations.name, // Access joined data
-    short_description: p.product_translations.short_description, // Access joined data
-  }));
+  // Map the raw Supabase data (now typed with ProductForShopQuery) to ProductListItem
+  const productListItems: ProductListItem[] = productsData.map((p: ProductForShopQuery) => {
+    // Extract translation safely
+    const translation =
+      p.product_translations && p.product_translations.length > 0
+        ? p.product_translations[0]
+        : null;
+
+    return {
+      id: p.id,
+      slug: p.slug,
+      price: p.price, // Price directly from product
+      image_url: p.image_url, // Image URL directly from product
+      stock: p.stock, // Stock directly from product
+      is_new: p.is_new,
+      is_on_promotion: p.is_on_promotion,
+      labels: p.labels,
+      // Use translated name and description, provide fallbacks
+      name: translation?.name || "Nom Indisponible",
+      short_description: translation?.short_description || undefined,
+    };
+  });
 
   return (
     <MainLayout>

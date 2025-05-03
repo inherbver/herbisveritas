@@ -80,6 +80,8 @@
       "loginPrompt": "Déjà un compte ?",
       "loginLink": "Connectez-vous"
     },
+    "loginTitle": "Connexion",
+    "registerTitle": "Inscription",
     "logout": "Déconnexion"
   },
   "ShopPage": {

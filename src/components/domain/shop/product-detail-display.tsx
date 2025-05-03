@@ -15,9 +15,7 @@ interface ProductDetailDisplayProps {
   // onAddToCart: (productId: string | number, quantity: number) => void;
 }
 
-export default function ProductDetailDisplay({
-  product,
-}: ProductDetailDisplayProps) {
+export default function ProductDetailDisplay({ product }: ProductDetailDisplayProps) {
   // Use a relevant namespace, assuming "ProductDetail" exists or reusing "ProductDetailModal"
   const t = useTranslations("ProductDetailModal"); // Or "ProductDetail"
   const [quantity, setQuantity] = React.useState(1);
@@ -77,11 +75,7 @@ export default function ProductDetailDisplay({
           <label htmlFor={`quantity-${product.id}`} className="text-sm font-medium">
             {t("quantity")}
           </label>
-          <QuantityInput
-            id={`quantity-${product.id}`}
-            value={quantity}
-            onChange={setQuantity}
-          />
+          <QuantityInput id={`quantity-${product.id}`} value={quantity} onChange={setQuantity} />
         </div>
 
         {/* Add to Cart Button */}
@@ -101,20 +95,24 @@ export default function ProductDetailDisplay({
             className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground" // Added prose classes
           >
             {/* Use dangerouslySetInnerHTML if properties contain HTML, otherwise render directly */}
-             <p>{product.properties || t("noProperties")}</p>
+            <p>{product.properties || t("noProperties")}</p>
           </TabsContent>
           <TabsContent
             value="composition"
             className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground"
           >
             <h4 className="mb-2 font-semibold">{t("inciList")}</h4>
-            <p className="break-words text-xs">{product.inci || t("noInci")}</p>
+            <p className="break-words text-xs">
+              {product.inciList && product.inciList.length > 0
+                ? product.inciList.join(", ")
+                : t("noInci")}
+            </p>
           </TabsContent>
           <TabsContent
             value="usage"
             className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground"
           >
-             <p>{product.usageInstructions || t("noUsage")}</p>
+            <p>{product.usageInstructions || t("noUsage")}</p>
           </TabsContent>
         </Tabs>
       </div>

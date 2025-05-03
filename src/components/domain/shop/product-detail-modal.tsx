@@ -22,6 +22,7 @@ export interface ProductDetailData {
   images: { src: string; alt: string }[];
   properties?: string;
   inci?: string;
+  inciList?: string[];
   usageInstructions?: string;
 }
 
@@ -46,6 +47,13 @@ export function ProductDetailModal({
       setQuantity(1);
     }
   }, [isOpen, product]);
+
+  // Moved log into useEffect to track product prop changes
+  React.useEffect(() => {
+    if (product) {
+      console.log("DEBUG Client (useEffect): product.inciList in Modal =", product.inciList);
+    }
+  }, [product]);
 
   if (!product) {
     return null;
@@ -77,7 +85,7 @@ export function ProductDetailModal({
                 alt={product.images[0].alt}
                 width={400}
                 height={400}
-                className="max-h-[400px] w-auto object-contain"
+                className="h-auto max-h-[400px] w-auto object-contain"
               />
             ) : (
               <div className="text-muted-foreground">{t("noImage")}</div>
@@ -129,7 +137,11 @@ export function ProductDetailModal({
                 className="max-h-40 overflow-y-auto pr-2 text-sm text-muted-foreground"
               >
                 <h4 className="mb-2 font-semibold">{t("inciList")}</h4>
-                <p className="break-words text-xs">{product.inci || t("noInci")}</p>
+                <p className="break-words text-xs">
+                  {product.inciList && product.inciList.length > 0
+                    ? product.inciList.join(", ")
+                    : t("noInci")}
+                </p>
               </TabsContent>
               <TabsContent
                 value="usage"
