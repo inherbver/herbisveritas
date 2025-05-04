@@ -9,9 +9,9 @@ import {
   NavigationMenuList,
   NavigationMenuItem,
   NavigationMenuLink,
-  // navigationMenuTriggerStyle, // Import if using default trigger styles
+  navigationMenuTriggerStyle, // Import if using default trigger styles
 } from "@/components/ui/navigation-menu";
-import { Sheet, SheetTrigger, SheetContent, SheetClose } from "@/components/ui/sheet";
+import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle } from "@/components/ui/sheet";
 import { ShoppingCart, User, Menu, Info } from "lucide-react"; // Icons
 
 // Placeholder pour le composant Logo
@@ -51,41 +51,29 @@ export function Header() {
 
         {/* 4. Navigation Principale (Desktop) */}
         <nav className="hidden flex-1 md:flex md:justify-center">
-          {" "}
-          {/* Centered navigation */}
           <NavigationMenu>
             <NavigationMenuList className="gap-6">
               <NavigationMenuItem>
-                <Link href="/" legacyBehavior passHref>
-                  <NavigationMenuLink
-                    asChild
-                    className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground"
-                  >
-                    <a>Accueil</a>
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink asChild>
+                  <Link href="/" className={navigationMenuTriggerStyle()}>
+                    Accueil
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/shop" legacyBehavior passHref>
-                  <NavigationMenuLink
-                    asChild
-                    className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground"
-                  >
-                    <a>Produits</a>
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink asChild>
+                  <Link href="/shop" className={navigationMenuTriggerStyle()}>
+                    Produits
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/about" legacyBehavior passHref>
-                  <NavigationMenuLink
-                    asChild
-                    className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground"
-                  >
-                    <a>À Propos</a>
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink asChild>
+                  <Link href="/about" className={navigationMenuTriggerStyle()}>
+                    À Propos
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
-              {/* Add more links if needed */}
             </NavigationMenuList>
           </NavigationMenu>
         </nav>
@@ -127,15 +115,13 @@ export function Header() {
 
           {/* Mobile Menu Trigger (Hamburger) */}
           <Sheet>
-            {" "}
-            {/* Wrap trigger and content */}
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden" aria-label="Ouvrir le menu">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] pt-10 sm:w-[350px]">
-              {/* Add Logo inside sheet */}
+              <SheetTitle className="sr-only">Menu principal</SheetTitle>
               <div className="mb-6 pl-4">
                 <Logo />
               </div>
@@ -143,47 +129,37 @@ export function Header() {
                 <SheetClose asChild>
                   <Link
                     href="/"
-                    legacyBehavior
-                    passHref
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    <a>Accueil</a>
+                    Accueil
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
                     href="/shop"
-                    legacyBehavior
-                    passHref
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    <a>Produits</a>
+                    Produits
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
                     href="/about"
-                    legacyBehavior
-                    passHref
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    <a>À Propos</a>
+                    À Propos
                   </Link>
                 </SheetClose>
 
-                {/* Optional separator */}
                 <hr className="my-4 border-border" />
 
-                {/* Mobile Auth Buttons/Links */}
                 {isLoggedIn ? (
                   <SheetClose asChild>
                     <Link
                       href="/account"
-                      legacyBehavior
-                      passHref
                       className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      <a>Mon Compte</a>
+                      Mon Compte
                     </Link>
                   </SheetClose>
                 ) : (
@@ -191,36 +167,22 @@ export function Header() {
                     <SheetClose asChild>
                       <Link
                         href="/login"
-                        legacyBehavior
-                        passHref
                         className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                       >
-                        <a>Connexion</a>
+                        Connexion
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
                       <Link
                         href="/register"
-                        legacyBehavior
-                        passHref
                         className="hover:bg-primary/90 rounded-md bg-primary px-3 py-2 text-base font-medium text-primary-foreground transition-colors"
                       >
-                        <a>Inscription</a>
+                        Inscription
                       </Link>
                     </SheetClose>
                   </>
                 )}
               </nav>
-
-              {/* Explicit Close Button (Optional but good UX) */}
-              {/* 
-              <SheetClose asChild>
-                <Button variant="ghost" size="icon" className="absolute right-4 top-4">
-                  <X className="h-5 w-5"/>
-                  <span className="sr-only">Fermer</span>
-                </Button>
-              </SheetClose>
-               */}
             </SheetContent>
           </Sheet>
         </div>
