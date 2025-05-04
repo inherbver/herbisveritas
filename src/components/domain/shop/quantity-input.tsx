@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion } from "framer-motion"; // Import motion
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus } from "lucide-react";
@@ -53,7 +54,9 @@ export function QuantityInput({
 
   return (
     <div className={cn("flex items-center", className)}>
+      {/* Use asChild to let Button render a motion.button */}
       <Button
+        asChild
         variant="outline"
         size="icon"
         className="h-8 w-8 shrink-0 rounded-r-none" // Adjusted for seamless look
@@ -61,7 +64,9 @@ export function QuantityInput({
         disabled={value <= min}
         aria-label={t("decreaseQuantity")}
       >
-        <Minus className="h-4 w-4" />
+        <motion.button whileTap={{ scale: 0.9 }}>
+          <Minus className="h-4 w-4" />
+        </motion.button>
       </Button>
       <Input
         id={id}
@@ -74,7 +79,9 @@ export function QuantityInput({
         className="h-8 w-14 rounded-none border-x-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0" // Remove horizontal borders & focus ring
         aria-label={t("quantity")}
       />
+      {/* Use asChild to let Button render a motion.button */}
       <Button
+        asChild
         variant="outline"
         size="icon"
         className="h-8 w-8 shrink-0 rounded-l-none" // Adjusted for seamless look
@@ -82,7 +89,9 @@ export function QuantityInput({
         disabled={value >= max}
         aria-label={t("increaseQuantity")}
       >
-        <Plus className="h-4 w-4" />
+        <motion.button whileTap={{ scale: 0.9 }}>
+          <Plus className="h-4 w-4" />
+        </motion.button>
       </Button>
     </div>
   );
