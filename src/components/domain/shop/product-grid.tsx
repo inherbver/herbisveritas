@@ -6,10 +6,7 @@ import { ProductCard, ProductCardProps } from "./product-card";
 import { cn } from "@/lib/utils";
 
 // Define a type for the product data, excluding functions and generated IDs
-export type ProductData = Omit<
-  ProductCardProps,
-  "onAddToCart" | "className" | "isLoading"
-> & {
+export type ProductData = Omit<ProductCardProps, "onAddToCart" | "className" | "isLoading"> & {
   id: string | number; // Ensure id is part of the data type expected
   slug: string; // Add slug, anticipating it will be in ProductCardProps
 };
@@ -52,7 +49,7 @@ export function ProductGrid({
       <div className={gridClasses}>
         {Array.from({ length: loadingSkeletons }).map((_, index) => (
           // Render the ProductCard in its loading state
-          (<ProductCard
+          <ProductCard
             key={`skeleton-${index}`}
             isLoading={true}
             id={`skeleton-${index}`}
@@ -63,7 +60,7 @@ export function ProductGrid({
             slug="" // Add dummy slug for skeleton
             locale="" // Add dummy locale for skeleton
             onAddToCart={() => {}}
-          />)
+          />
         ))}
       </div>
     );

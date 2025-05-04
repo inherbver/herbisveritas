@@ -93,7 +93,6 @@ async function Header({ className, ...props }: React.HTMLAttributes<HTMLElement>
           </Button>
         </div>
       </div>
-
       {/* Mobile menu logic needs to be extracted to a Client Component */}
     </header>
   );

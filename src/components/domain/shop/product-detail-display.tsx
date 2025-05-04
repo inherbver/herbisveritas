@@ -73,7 +73,6 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
         </AspectRatio>
         {/* TODO: Consider adding an image gallery/carousel if multiple images exist */}
       </figure>
-
       {/* Right Column: Details, Actions, Tabs */}
       {/* Use <article> for the main product information and actions */}
       <article className="flex flex-col pt-6 md:pt-0">

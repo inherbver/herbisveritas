@@ -39,11 +39,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     // NE PAS inclure <html> ou <body> ici.
     // ClientLayout enveloppe la structure interne.
+    // NE PAS inclure <html> ou <body> ici.
     <ClientLayout locale={locale} messages={messages} timeZone={timeZone}>
       <Header />
       {children} {/* Main tag removed, handled by page-specific layouts like MainLayout */}
       {/* <Footer /> */}
     </ClientLayout>
-    // NE PAS inclure <html> ou <body> ici.
   );
 }

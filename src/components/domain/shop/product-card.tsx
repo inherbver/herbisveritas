@@ -29,8 +29,6 @@ export interface ProductCardProps {
   discountPercent?: number;
   /** Slug for dynamic routes */
   slug: string;
-  /** Locale */
-  locale: string;
   /** Whether the product is loading */
   isLoading?: boolean;
   /** Whether the product is out of stock */
@@ -51,7 +49,6 @@ export function ProductCard({
   price,
   discountPercent,
   slug,
-  locale,
   isLoading = false,
   isOutOfStock = false,
   onAddToCart,
@@ -86,13 +83,13 @@ export function ProductCard({
     if (!isOutOfStock) onAddToCart(id);
   };
 
-  const linkHref = { pathname: '/products/[slug]' as AppPathname, params: { slug: slug } };
+  const linkHref = { pathname: "/products/[slug]" as AppPathname, params: { slug: slug } };
 
   const cardContent = (
     <>
       <div
         className={cn(
-          "relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90",
+          "relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90"
         )}
       >
         <Image
@@ -190,10 +187,6 @@ export function ProductCard({
       </div>
     </NextLink>
   ) : (
-    <div
-      className={cn(commonCardClasses, isOutOfStock ? "opacity-80" : "")}
-    >
-      {cardContent}
-    </div>
+    <div className={cn(commonCardClasses, isOutOfStock ? "opacity-80" : "")}>{cardContent}</div>
   );
 }
