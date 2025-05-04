@@ -18,6 +18,7 @@ interface ProductDetailDisplayProps {
 export default function ProductDetailDisplay({ product }: ProductDetailDisplayProps) {
   // Use a relevant namespace, assuming "ProductDetail" exists or reusing "ProductDetailModal"
   const t = useTranslations("ProductDetailModal"); // Or "ProductDetail"
+  const tDisplay = useTranslations("ProductDetailDisplay"); // For labels specific to this component
   const [quantity, setQuantity] = React.useState(1);
 
   // Simplified Add to Cart Handler for the page context
@@ -63,11 +64,16 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
         {product.shortDescription && (
           <p className="mb-4 text-lg text-muted-foreground">{product.shortDescription}</p>
         )}
-
+        {/* Unit */}
+        {product.unit && (
+          <p className="-mt-3 mb-4 text-sm text-muted-foreground">({product.unit})</p>
+        )}
         {/* Price */}
         <div className="mb-6 text-3xl font-semibold text-green-700 dark:text-green-500">
           {product.price}
-          {/* TODO: Add logic for discounts/original price if needed */}
+        </div>
+        <div className="-mt-5 mb-6 text-sm text-muted-foreground">
+          {tDisplay("taxInclusiveLabel")}
         </div>
 
         {/* Quantity Input */}

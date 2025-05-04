@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Locale } from "@/i18n-config";
+import { type Database } from "@/types/supabase";
 
 // --- NEW TYPE for getAllProducts query result ---
 // Includes only fields needed for the shop page grid + translations
@@ -84,10 +85,15 @@ export async function getAllProducts(locale: Locale): Promise<ProductForShopQuer
   return data as ProductForShopQuery[];
 }
 
+// Define the specific type for the getProductBySlug query result
+type ProductDataFromQuery = Database["public"]["Tables"]["products"]["Row"] & {
+  product_translations: Database["public"]["Tables"]["product_translations"]["Row"][]; // It's an array!
+};
+
 export async function getProductBySlug(
   slug: string,
   locale: Locale
-): Promise<ProductForDetailQuery | null> {
+): Promise<ProductDataFromQuery | null> {
   const supabase = await createClient();
 
   console.log(`Attempting to fetch product with slug: ${slug} for locale: ${locale}`);
@@ -101,6 +107,7 @@ export async function getProductBySlug(
       price,
       image_url,
       inci_list,
+      unit,
       product_translations!inner(
         name,
         short_description,
@@ -112,8 +119,8 @@ export async function getProductBySlug(
     `
     )
     .eq("slug", slug)
-    .eq("product_translations.locale", locale)
-    .single();
+    .eq("product_translations.locale", locale) // Re-enable locale filter
+    .single<ProductDataFromQuery>();
 
   if (error) {
     console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);

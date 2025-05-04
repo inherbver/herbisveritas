@@ -32,7 +32,8 @@
     "noInci": "Liste INCI non disponible.",
     "noUsage": "Conseils d'utilisation non disponibles.",
     "noCompositionText": "Composition non disponible.",
-    "close": "Fermer"
+    "close": "Fermer",
+    "defaultDescription": "Découvrez ce produit plus en détail."
   },
   "QuantityInput": {
     "quantity": "Quantité",
@@ -52,6 +53,9 @@
     "outOfStockLabel": "Produit actuellement indisponible",
     "productNotFound": "Produit non trouvé",
     "defaultDescription": "Découvrez plus de détails sur ce produit."
+  },
+  "ProductDetailDisplay": {
+    "taxInclusiveLabel": "TTC (Toutes Taxes Comprises)"
   },
   "Header": {
     "home": "Accueil",

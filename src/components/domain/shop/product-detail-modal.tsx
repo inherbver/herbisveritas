@@ -17,11 +17,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export interface ProductDetailData {
   id: string | number;
   name: string;
-  shortDescription?: string;
-  description_long?: string;
+  shortDescription?: string | null;
+  description_long?: string | null;
+  unit?: string | null;
   price: string;
-  images: { src: string; alt: string }[];
-  properties?: string;
+  images?: { src: string; alt: string }[];
+  properties?: string | null;
   compositionText?: string;
   inci?: string;
   inciList?: string[];

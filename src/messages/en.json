@@ -45,6 +45,7 @@
     "noInci": "INCI list not available.",
     "noUsage": "Usage instructions not available.",
     "noCompositionText": "Composition not available.",
+    "defaultDescription": "Discover this product in more detail.",
     "close": "Close"
   },
   "Header": {
@@ -97,5 +98,8 @@
   },
   "NotFoundPage": {
     "title": "Page not found"
+  },
+  "ProductDetailDisplay": {
+    "taxInclusiveLabel": "incl. VAT"
   }
 }
