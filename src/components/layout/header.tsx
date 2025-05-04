@@ -57,22 +57,31 @@ export function Header() {
             <NavigationMenuList className="gap-6">
               <NavigationMenuItem>
                 <Link href="/" legacyBehavior passHref>
-                  <NavigationMenuLink className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground">
-                    Accueil
+                  <NavigationMenuLink
+                    asChild
+                    className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground"
+                  >
+                    <a>Accueil</a>
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <Link href="/shop" legacyBehavior passHref>
-                  <NavigationMenuLink className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground">
-                    Produits
+                  <NavigationMenuLink
+                    asChild
+                    className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground"
+                  >
+                    <a>Produits</a>
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <Link href="/about" legacyBehavior passHref>
-                  <NavigationMenuLink className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground">
-                    À Propos
+                  <NavigationMenuLink
+                    asChild
+                    className="text-foreground/80 text-sm font-semibold transition-colors hover:text-foreground"
+                  >
+                    <a>À Propos</a>
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -134,25 +143,31 @@ export function Header() {
                 <SheetClose asChild>
                   <Link
                     href="/"
+                    legacyBehavior
+                    passHref
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    Accueil
+                    <a>Accueil</a>
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
                     href="/shop"
+                    legacyBehavior
+                    passHref
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    Produits
+                    <a>Produits</a>
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
                     href="/about"
+                    legacyBehavior
+                    passHref
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    À Propos
+                    <a>À Propos</a>
                   </Link>
                 </SheetClose>
 
@@ -163,28 +178,34 @@ export function Header() {
                 {isLoggedIn ? (
                   <SheetClose asChild>
                     <Link
-                      href="/account" // Example account link
+                      href="/account"
+                      legacyBehavior
+                      passHref
                       className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      Mon Compte
+                      <a>Mon Compte</a>
                     </Link>
                   </SheetClose>
                 ) : (
                   <>
                     <SheetClose asChild>
                       <Link
-                        href="/login" // Example login link
+                        href="/login"
+                        legacyBehavior
+                        passHref
                         className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                       >
-                        Connexion
+                        <a>Connexion</a>
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
                       <Link
-                        href="/register" // Example register link
+                        href="/register"
+                        legacyBehavior
+                        passHref
                         className="hover:bg-primary/90 rounded-md bg-primary px-3 py-2 text-base font-medium text-primary-foreground transition-colors"
                       >
-                        Inscription
+                        <a>Inscription</a>
                       </Link>
                     </SheetClose>
                   </>
