@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { locales, Locale } from "@/i18n-config";
 import ClientLayout from "@/components/layout/client-layout";
 import { setRequestLocale, getTimeZone } from "next-intl/server";
-import { Header } from "@/components/shared/header";
+import { Header } from "@/components/layout/header"; // Updated import path
 import "@/app/globals.css"; // Import global styles
 
 interface Props {

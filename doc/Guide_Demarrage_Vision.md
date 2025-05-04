@@ -43,7 +43,7 @@ src/
 🔹 **Objectif :** Construire des blocs UI complexes et réutilisables à travers différentes pages.
 🔹 **Blocs :**
 
-*   **Déjà installés :** Breadcrumb, CardGrid/ListView, FilterPanel, Footer, Header, HeroSection, Modal, Pagination, SearchBar
+*   **Déjà installés :** Breadcrumb, CardGrid/ListView, FilterPanel, Footer, HeroSection, Modal, Pagination, SearchBar
 *   **À ajouter pour MVP :** _(Aucun prévu pour le MVP initial)_
 
 #### 4. `src/components/layout/`
@@ -51,7 +51,7 @@ src/
 🔹 **Objectif :** Définir les structures et gabarits de page principaux.
 🔹 **Layouts :**
 
-*   **Déjà installés :** AuthLayout, Container, ErrorLayout, MainLayout
+*   **Déjà installés :** AuthLayout, Container, ErrorLayout, Header, MainLayout
 *   **À ajouter pour MVP :** DashboardLayout (optionnel post-MVP)
 
 #### 5. `src/components/domain/`
