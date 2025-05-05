@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   Dialog,
   DialogContent,
@@ -14,44 +15,58 @@ import { useTranslations } from "next-intl";
 import { QuantityInput } from "./quantity-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductDetailData } from "@/types/product-types";
+import { addToCart } from "@/actions/cartActions";
+import { toast } from "sonner";
 
 interface ProductDetailModalProps {
   product: ProductDetailData | null;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onAddToCart: (productId: string | number, quantity: number) => void;
 }
 
-export function ProductDetailModal({
-  product,
-  isOpen,
-  onOpenChange,
-  onAddToCart,
-}: ProductDetailModalProps) {
+// Internal Submit Button for the modal
+function SubmitButton() {
+  const { pending } = useFormStatus();
   const t = useTranslations("ProductDetailModal");
-  const [quantity, setQuantity] = React.useState(1);
 
-  React.useEffect(() => {
+  return (
+    <Button type="submit" size="lg" className="w-full" disabled={pending} aria-disabled={pending}>
+      {/* Use correct keys from the JSON */}
+      {pending ? t("addingToCart") : t("addToCart")}
+    </Button>
+  );
+}
+
+export function ProductDetailModal({ product, isOpen, onOpenChange }: ProductDetailModalProps) {
+  const t = useTranslations("ProductDetailModal");
+  const [quantity, setQuantity] = useState(1);
+
+  // Form state management
+  const initialState = { success: false, message: "" };
+  const [state, formAction] = useActionState(addToCart, initialState);
+
+  // Reset quantity and potentially form state when modal opens/changes product
+  useEffect(() => {
     if (isOpen) {
       setQuantity(1);
+      // Reset form state if needed, though useFormState might handle this
     }
   }, [isOpen, product]);
 
-  // Moved log into useEffect to track product prop changes
-  React.useEffect(() => {
-    if (product) {
-      console.log("DEBUG Client (useEffect): product.inciList in Modal =", product.inciList);
+  // Toast notifications based on form state
+  useEffect(() => {
+    if (state.message) {
+      if (state.success) {
+        toast.success(state.message);
+        // Optionally close the modal on success?
+        // onOpenChange(false);
+      } else {
+        toast.error(state.message);
+      }
     }
-  }, [product]);
+  }, [state]);
 
-  if (!product) {
-    return null;
-  }
-
-  const handleAddToCart = () => {
-    onAddToCart(product.id, quantity);
-    onOpenChange(false);
-  };
+  if (!product) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -99,15 +114,17 @@ export function ProductDetailModal({
                 {t("quantity")}
               </label>
               <QuantityInput
-                id={`quantity-${product.id}`}
+                id={`modal-quantity-${product.id}`}
                 value={quantity}
                 onChange={setQuantity}
               />
+              {/* Add to Cart Form */}
+              <form action={formAction} className="w-full">
+                <input type="hidden" name="productId" value={product.id} />
+                <input type="hidden" name="quantity" value={quantity} />
+                <SubmitButton />
+              </form>
             </div>
-
-            <Button size="lg" className="mb-8 w-full" onClick={handleAddToCart}>
-              {t("addToCart")}
-            </Button>
 
             <Tabs defaultValue="properties" className="mt-auto w-full">
               <TabsList className="mb-4 grid w-full grid-cols-3">

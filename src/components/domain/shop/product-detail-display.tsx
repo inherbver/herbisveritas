@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion"; // Import motion
@@ -9,6 +10,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Removed T
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 // Import the data type from the modal file for now
 import { ProductDetailData } from "@/types/product-types"; // Import from centralized location
+import { addToCart } from "@/actions/cartActions"; // Added action import
+import { toast } from "sonner"; // Added toast import
+import { Button } from "@/components/ui/button"; // Ensure Button is imported
 
 // Define animation variants for the main container if needed, or apply directly
 const containerVariants = {
@@ -22,23 +26,59 @@ interface ProductDetailDisplayProps {
   // onAddToCart: (productId: string | number, quantity: number) => void;
 }
 
+// Internal Submit Button component using useFormStatus
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  const t = useTranslations("ProductDetailModal"); // Changed namespace
+
+  return (
+    // Use Button component with asChild
+    <Button
+      type="submit"
+      size="lg"
+      className="w-full" // Button handles sizing and base styles
+      disabled={pending}
+      aria-disabled={pending}
+      asChild // Pass the underlying component via children
+    >
+      {/* Apply motion to the underlying button element */}
+      <motion.button
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      >
+        {/* Use correct keys from the JSON */}
+        {pending ? t("addingToCart") : t("addToCart")}
+      </motion.button>
+    </Button>
+  );
+}
+
 export default function ProductDetailDisplay({ product }: ProductDetailDisplayProps) {
   // Use a relevant namespace, assuming "ProductDetail" exists or reusing "ProductDetailModal"
   const t = useTranslations("ProductDetailModal"); // Or "ProductDetail"
   const tDisplay = useTranslations("ProductDetailDisplay"); // For labels specific to this component
-  const [quantity, setQuantity] = React.useState(1);
-  const [activeTab, setActiveTab] = React.useState("description"); // Track active tab for AnimatePresence
+  const [activeTab, setActiveTab] = useState("description");
+  const [quantity, setQuantity] = useState(1);
 
-  // Simplified Add to Cart Handler for the page context
-  const handleAddToCart = () => {
-    // TODO: Implement actual add to cart logic for the page
-    // This might involve calling a server action, updating context/store, etc.
-    console.log(`Adding ${quantity} of product ${product.id} to cart.`);
-    // Example: onAddToCart(product.id, quantity); // If passed as prop
-  };
+  // Initial state for the form
+  const initialState = { success: false, message: "" };
+  // useActionState hook to manage the action's state
+  const [state, formAction] = useActionState(addToCart, initialState);
 
-  // No need for the !product check if page.tsx handles notFound()
-  // But good as a fallback if props could be null/undefined
+  // Show toast notification based on form state
+  useEffect(() => {
+    if (state.message) {
+      if (state.success) {
+        toast.success(state.message);
+        // Optionally reset quantity or clear form here
+        // setQuantity(1);
+      } else {
+        toast.error(state.message);
+      }
+    }
+  }, [state]); // Depend on the state object itself
+
   if (!product) {
     return <div>{t("productNotFound", { defaultMessage: "Produit non trouvé." })}</div>; // Add default message
   }
@@ -99,19 +139,13 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
           <QuantityInput id={`quantity-${product.id}`} value={quantity} onChange={setQuantity} />
         </div>
 
-        {/* Add to Cart Button */}
-        <motion.button
-          whileHover={{
-            scale: 1.03,
-            boxShadow: "0px 5px 15px rgba(0, 0, 0, 0.1)",
-          }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          className={`hover:bg-primary/90 mb-8 inline-flex h-11 w-full max-w-sm items-center justify-center whitespace-nowrap rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50`}
-          onClick={handleAddToCart}
-        >
-          {t("addToCart")}
-        </motion.button>
+        {/* Form to handle adding to cart */}
+        <form action={formAction} className="w-full">
+          {/* Hidden inputs to pass data to the server action */}
+          <input type="hidden" name="productId" value={product.id} />
+          <input type="hidden" name="quantity" value={quantity} />
+          <SubmitButton />
+        </form>
 
         {/* Information Tabs */}
         {/* We need to manage the active tab state for AnimatePresence */}

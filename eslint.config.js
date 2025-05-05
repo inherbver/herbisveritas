@@ -2,6 +2,7 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import globals from "globals"; // Import globals for node environment
+import pluginReactHooks from "eslint-plugin-react-hooks"; // Import the plugin
 
 export default tseslint.config(
   // Règles recommandées par ESLint
@@ -35,6 +36,18 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: "^_", // Ignore spécifiquement les erreurs catch commençant par _
         },
       ],
+    },
+  },
+
+  // Configuration pour React Hooks
+  {
+    plugins: {
+      "react-hooks": pluginReactHooks, // Declare the plugin
+    },
+    rules: {
+      ...pluginReactHooks.configs.recommended.rules, // Apply recommended rules
+      // You can override specific rules here if needed, e.g.:
+      // 'react-hooks/exhaustive-deps': 'warn',
     },
   },
 
