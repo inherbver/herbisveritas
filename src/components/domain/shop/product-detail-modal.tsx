@@ -13,21 +13,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { QuantityInput } from "./quantity-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-export interface ProductDetailData {
-  id: string | number;
-  name: string;
-  shortDescription?: string | null;
-  description_long?: string | null;
-  unit?: string | null;
-  price: string;
-  images?: { src: string; alt: string }[];
-  properties?: string | null;
-  compositionText?: string;
-  inci?: string;
-  inciList?: string[];
-  usageInstructions?: string;
-}
+import { ProductDetailData } from "@/types/product-types";
 
 interface ProductDetailModalProps {
   product: ProductDetailData | null;

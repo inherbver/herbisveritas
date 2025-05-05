@@ -8,7 +8,7 @@ import { QuantityInput } from "./quantity-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Removed TabsContent
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 // Import the data type from the modal file for now
-import { ProductDetailData } from "./product-detail-modal";
+import { ProductDetailData } from "@/types/product-types"; // Import from centralized location
 
 // Define animation variants for the main container if needed, or apply directly
 const containerVariants = {

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Locale } from "@/i18n-config";
 import { type Database } from "@/types/supabase";
+import { cache } from "react";
 
 // --- NEW TYPE for getAllProducts query result ---
 // Includes only fields needed for the shop page grid + translations
@@ -90,18 +91,16 @@ type ProductDataFromQuery = Database["public"]["Tables"]["products"]["Row"] & {
   product_translations: Database["public"]["Tables"]["product_translations"]["Row"][]; // It's an array!
 };
 
-export async function getProductBySlug(
-  slug: string,
-  locale: Locale
-): Promise<ProductDataFromQuery | null> {
-  const supabase = await createClient();
+export const getProductBySlug = cache(
+  async (slug: string, locale: Locale): Promise<ProductDataFromQuery | null> => {
+    const supabase = await createClient();
 
-  console.log(`Attempting to fetch product with slug: ${slug} for locale: ${locale}`);
+    console.log(`Attempting to fetch product with slug: ${slug} for locale: ${locale}`);
 
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      `
+    const { data, error } = await supabase
+      .from("products")
+      .select(
+        `
       id,
       slug,
       price,
@@ -117,24 +116,25 @@ export async function getProductBySlug(
         composition_text
       )
     `
-    )
-    .eq("slug", slug)
-    .eq("product_translations.locale", locale) // Re-enable locale filter
-    .single<ProductDataFromQuery>();
+      )
+      .eq("slug", slug)
+      .eq("product_translations.locale", locale) // Re-enable locale filter
+      .single<ProductDataFromQuery>();
 
-  if (error) {
-    console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);
-    return null;
+    if (error) {
+      console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);
+      return null;
+    }
+
+    if (!data) {
+      console.log(`Product with slug ${slug} not found or no translation for locale ${locale}.`);
+      return null;
+    }
+
+    console.log(`Successfully fetched product data for slug: ${slug}, locale: ${locale}`);
+    return data;
   }
-
-  if (!data) {
-    console.log(`Product with slug ${slug} not found or no translation for locale ${locale}.`);
-    return null;
-  }
-
-  console.log(`Successfully fetched product data for slug: ${slug}, locale: ${locale}`);
-  return data;
-}
+);
 
 // --- Important Next Steps ---
 // 1. Populate the `product_translations` table with data for each product and locale.

@@ -1,6 +1,10 @@
 // src/types/product-types.ts
 
-// Defines the structure expected by the ProductCard or ProductGrid components
+// Centralized type definitions for Product related data structures
+
+/**
+ * Data structure used for displaying products in a grid or card view.
+ */
 export interface ProductListItem {
   id: string;
   slug: string;
@@ -14,3 +18,23 @@ export interface ProductListItem {
   labels: string[] | null;
   // Add any other fields the ProductCard/Grid might need
 }
+
+/**
+ * Data structure used for displaying product details
+ * (in modals, full pages, etc.)
+ */
+export interface ProductDetailData {
+  id: string | number;
+  name: string;
+  shortDescription?: string | null;
+  description_long?: string | null;
+  unit?: string | null;
+  price: string; // Formatted price
+  images?: { src: string; alt: string }[];
+  properties?: string | null; // Could be structured later (e.g., { key: string; value: string }[])
+  compositionText?: string;
+  inciList?: string[];
+  usageInstructions?: string;
+}
+
+// Add other product-related types here as needed
