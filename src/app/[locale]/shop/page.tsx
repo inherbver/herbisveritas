@@ -4,11 +4,24 @@ import { type Metadata } from "next";
 import { ShopClientContent } from "@/components/domain/shop/shop-client-content";
 import { getAllProducts, ProductForShopQuery } from "@/lib/supabase/queries/products";
 import { Locale } from "@/i18n-config";
-import { ProductListItem } from "@/types/product-types";
 
 // Define Props type if not already defined globally
 type Props = {
   params: { locale: string };
+};
+
+// Define the type for the data mapped for the grid
+export type ProductListItem = {
+  id: string;
+  slug: string;
+  price: number;
+  image_url?: string | null;
+  stock: number;
+  is_new?: boolean | null;
+  is_on_promotion?: boolean | null;
+  labels?: string[] | null;
+  name: string;
+  short_description?: string | null;
 };
 
 /*
@@ -59,8 +72,6 @@ export default async function ShopPage(_props: Props) {
     // Pass the correctly typed locale
     productsData = await getAllProducts(locale);
   } catch (error) {
-    // Comment out error log for production
-    // console.error("ShopPage: Failed to fetch products:", error);
     fetchError = error instanceof Error ? error : new Error("Unknown fetch error"); // Assign caught error
     // Assign empty array to avoid further errors down the line if fetchError is handled
     productsData = [];
@@ -107,12 +118,12 @@ export default async function ShopPage(_props: Props) {
     return {
       id: p.id,
       slug: p.slug,
-      price: p.price, // Price directly from product
+      price: p.price ?? 0, // Default null price to 0
       image_url: p.image_url, // Image URL directly from product
-      stock: p.stock, // Stock directly from product
+      stock: p.stock ?? 0, // Default null stock to 0
       is_new: p.is_new,
       is_on_promotion: p.is_on_promotion,
-      labels: p.labels,
+      labels: p.labels ?? [], // Default null labels to empty array
       // Use translated name and description, provide fallbacks
       name: translation?.name || "Nom Indisponible",
       short_description: translation?.short_description || undefined,

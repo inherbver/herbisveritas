@@ -1,10 +1,10 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { getProductBySlug } from "@/lib/mocks/products";
-import { getTranslations } from "next-intl/server";
-import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { getProductBySlug } from "@/lib/supabase/queries/products";
+import { Locale } from "@/i18n-config";
 import { formatPrice } from "@/lib/utils/formatters";
+import ProductDetailDisplay from "@/components/domain/shop/product-detail-display";
+import { ProductDetailData } from "@/types/product-types";
 
 interface ProductDetailPageProps {
   params: {
@@ -14,57 +14,45 @@ interface ProductDetailPageProps {
 }
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const awaitedParams = await params;
-  const { slug, locale } = awaitedParams;
+  const { slug, locale } = params;
 
-  const product = await getProductBySlug(slug);
+  const productData = await getProductBySlug(slug, locale as Locale);
 
-  if (!product) {
+  if (!productData) {
     notFound();
   }
 
-  const t = await getTranslations({ locale });
+  const translation = productData.product_translations.find((t) => t.locale === locale);
 
-  const localizedLongDescription =
-    product.longDescription[locale as keyof typeof product.longDescription] ||
-    product.longDescription.en;
+  if (!translation) {
+    console.error(`Missing translation for locale ${locale} and product ${slug}`);
+    notFound();
+  }
+
+  const productForDisplay: ProductDetailData = {
+    id: productData.id,
+    name: translation.name ?? "Nom indisponible",
+    shortDescription: translation.short_description,
+    description_long: translation.description_long,
+    unit: productData.unit,
+    price: formatPrice(productData.price, locale),
+    // Map image_url to the images array expected by ProductDetailData
+    images: productData.image_url
+      ? [{ src: productData.image_url, alt: translation.name ?? productData.slug }]
+      : undefined, // Assign undefined if no image URL
+    // Map properties, converting null to undefined
+    properties: translation.properties ?? undefined,
+    // Map compositionText, converting null to undefined
+    compositionText: translation.composition_text ?? undefined,
+    inciList: productData.inci_list ?? [], // Ensure inciList is always an array
+    // Map usageInstructions, converting null to undefined
+    usageInstructions: translation.usage_instructions ?? undefined,
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Card className="overflow-hidden">
-        {product.imageUrl && (
-          <div className="relative h-64 w-full bg-muted sm:h-96">
-            <Image
-              src={product.imageUrl}
-              alt={product.title}
-              layout="fill"
-              objectFit="cover"
-              priority
-            />
-          </div>
-        )}
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold">{product.title}</CardTitle>
-          <p className="mt-2 text-2xl font-semibold text-primary">
-            {formatPrice(product.price, locale)}
-          </p>
-        </CardHeader>
-        <CardContent>
-          <CardDescription className="mt-4 text-lg">{localizedLongDescription}</CardDescription>
-          <div className="mt-6">
-            <p>
-              <span className="font-semibold">{t("ProductDetail.categoryLabel")}:</span>{" "}
-              {product.category.name}
-            </p>
-            {product.isOutOfStock && (
-              <p className="mt-2 font-semibold text-destructive">
-                {t("ProductDetail.outOfStockLabel")}
-              </p>
-            )}
-            {/* TODO: Add 'Add to Cart' button */}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Pass the transformed data without locale */}
+      <ProductDetailDisplay product={productForDisplay} />
     </div>
   );
 }

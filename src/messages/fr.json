@@ -4,7 +4,8 @@
     "description": "Ceci est la page d'accueil en français."
   },
   "NotFound": {
-    "title": "Page non trouvée"
+    "title": "Page non trouvée",
+    "description": "Désolé, la page que vous recherchez n'existe pas."
   },
   "TestPage": {
     "title": "Page de Test des Composants Métier",
@@ -34,7 +35,8 @@
     "noUsage": "Conseils d'utilisation non disponibles.",
     "noCompositionText": "Composition non disponible.",
     "close": "Fermer",
-    "defaultDescription": "Découvrez ce produit plus en détail."
+    "defaultDescription": "Découvrez ce produit plus en détail.",
+    "productDetails": "Détails du produit"
   },
   "QuantityInput": {
     "quantity": "Quantité",
@@ -100,5 +102,8 @@
   "SearchBar": {
     "placeholder": "Rechercher des produits...",
     "searchButtonLabel": "Rechercher"
+  },
+  "shop": {
+    "addedToCartFeedback": "{productName} ajouté au panier !"
   }
 }

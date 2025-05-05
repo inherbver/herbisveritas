@@ -8,13 +8,16 @@ import { ProductDetailData } from "@/types/product-types";
 import { Locale } from "@/i18n-config";
 import { formatPrice } from "@/lib/utils";
 
+// Define Props type with correct params structure
+// Props type for the page component
 type Props = {
-  params: Promise<{ slug: string; locale: Locale }>;
+  params: { slug: string; locale: Locale }; // Correct: params is an object
+  // searchParams?: { [key: string]: string | string[] | undefined }; // Optional: if you need search params
 };
 
 // --- Generate Metadata ---
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug, locale } = await params;
+  const { slug, locale } = params; // Removed await
   const t = await getTranslations({ locale, namespace: "ProductDetailModal" });
   const product = await getProductBySlug(slug, locale);
 
@@ -34,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // --- Page Component ---
 export default async function ProductDetailPage({ params }: Props) {
-  const { slug, locale } = await params;
+  const { slug, locale } = params; // Removed await
   const productData = await getProductBySlug(slug, locale);
 
   if (!productData) {

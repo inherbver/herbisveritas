@@ -61,7 +61,6 @@ export async function loginAction(
   }
 
   // 3. Rediriger si succès
-  console.log("Connexion réussie pour:", email);
   redirect("/");
 }
 
@@ -111,7 +110,6 @@ export async function signUpAction(
   // Supabase renvoie data.user non null si l'inscription a réussi,
   // même si l'email n'est pas encore confirmé.
   if (data.user) {
-    console.log("Inscription initiée pour:", email, "ID:", data.user.id);
     // Vérifier si la confirmation par email est requise (comportement par défaut)
     // Si data.session est null et data.user n'est pas null, la confirmation est probablement requise.
     if (!data.session) {

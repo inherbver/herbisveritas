@@ -96,12 +96,13 @@ export default function TestComponentsPage() {
   });
 
   // Fonction de soumission (exemple simple)
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    // Do something with the form values.
+    // ✅ This will be type-safe and validated.
     toast("Formulaire soumis!", {
       description: `Nom d'utilisateur: ${values.username}`,
     });
-  }
+  };
 
   const handleToast = () => {
     toast("Événement déclenché!", {

@@ -1,11 +1,13 @@
 "use client";
 
 import React from "react";
-import { ProductGrid, ProductData } from "./product-grid";
+import { ProductGrid, ProductData } from "@/components/domain/shop/product-grid";
 // Assuming the Product interface is exported from the page or a types file
 // Adjust the import path if Product interface is defined elsewhere
 import { ProductListItem } from "@/app/[locale]/shop/page";
 import { useParams } from "next/navigation"; // Needed to get locale for Link href
+import { toast } from "sonner"; // Correct import for toast
+import { useTranslations } from "next-intl"; // Correct hook name
 
 type ShopClientContentProps = {
   initialProducts: ProductListItem[]; // Receive mapped products with slug and translations
@@ -14,6 +16,7 @@ type ShopClientContentProps = {
 export const ShopClientContent: React.FC<ShopClientContentProps> = ({ initialProducts }) => {
   const params = useParams(); // Hook to get URL params
   const locale = params.locale as string; // Extract locale
+  const t = useTranslations("shop"); // Correct usage: assign directly
 
   // --- Data Transformation ---
   // Ensure ProductData type in product-grid.ts includes 'slug'
@@ -35,8 +38,8 @@ export const ShopClientContent: React.FC<ShopClientContentProps> = ({ initialPro
 
   // --- Handlers defined in the Client Component ---
   const handleAddToCart = (productId: string | number) => {
-    console.log(`Adding product ${productId} to cart (Client Handler).`);
-    // TODO: Implement actual cart logic (e.g., using Zustand, Context, or Server Actions)
+    // console.log(`Adding product ${productId} to cart (Client Handler).`);
+    toast.success(t("addedToCartFeedback", { productName: productId })); // Example feedback
   };
 
   // You might want to handle loading/empty states here as well,

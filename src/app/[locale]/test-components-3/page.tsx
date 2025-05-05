@@ -7,10 +7,8 @@ import { Container } from "@/components/layout"; // Pour un minimum de mise en p
 import { ProductGrid, ProductData } from "@/components/domain/shop/product-grid"; // Import ProductGrid and ProductData
 import { Separator } from "@/components/ui/separator";
 import { useTranslations } from "next-intl";
-import {
-  ProductDetailModal,
-  ProductDetailData,
-} from "@/components/domain/shop/product-detail-modal"; // Import Modal and its data type
+import { ProductDetailModal } from "@/components/domain/shop/product-detail-modal"; // Import Modal
+import { ProductDetailData } from "@/types/product-types"; // Correct import path
 
 // Données de test pour les catégories
 const testCategories: CategoryOption[] = [
@@ -105,7 +103,6 @@ export default function TestComponentsPage3() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleFilterChange = (newSelection: string[]) => {
-    console.log("Nouvelles catégories sélectionnées:", newSelection); // Log pour le debug
     setSelectedCats(newSelection);
     setIsLoadingProducts(true);
     setTimeout(() => {
@@ -116,9 +113,6 @@ export default function TestComponentsPage3() {
   // Handler for AddToCart button (updated for quantity)
   const handleAddToCart = (productId: string | number, quantity: number = 1) => {
     const product = mockProducts.find((p) => p.id === productId);
-    console.log(
-      `Added ${quantity} x product ID "${productId}" (${product?.title}) to cart (simulation)`
-    );
     alert(`Ajouté au panier : ${quantity} x ${product?.title || "Produit inconnu"}`); // Simple alert for now
     // Close modal if it was open when adding from modal
     if (isModalOpen) {
@@ -134,7 +128,6 @@ export default function TestComponentsPage3() {
       // For mock data, we assume it does after updating the mockProducts array
       setSelectedProduct(product as ProductDetailData);
       setIsModalOpen(true);
-      console.log(`Viewing details for product ID "${productId}"`);
     }
   };
 

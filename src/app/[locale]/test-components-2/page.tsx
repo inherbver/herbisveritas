@@ -130,7 +130,7 @@ export default function TestComponentsPage2() {
                 description: "Ceci est une notification via Sonner.",
                 action: {
                   label: "Annuler",
-                  onClick: () => console.log("Action Annuler cliquée"),
+                  onClick: () => {}, // Add empty handler to satisfy type
                 },
               });
             }}

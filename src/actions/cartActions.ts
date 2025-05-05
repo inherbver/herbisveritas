@@ -2,6 +2,7 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache"; // Import revalidatePath
 
 // Define a schema for input validation (good practice)
 const addToCartSchema = z.object({
@@ -34,39 +35,35 @@ export async function addToCart(
   // Return early if validation fails
   if (!validatedFields.success) {
     console.error("Add to cart validation failed:", validatedFields.error.flatten().fieldErrors);
+    // Format Zod errors into a single message string
+    const errorMessage = Object.values(validatedFields.error.flatten().fieldErrors)
+      .flat()
+      .join(", ");
     return {
       success: false,
-      message:
-        "Erreur de validation: " +
-        Object.values(validatedFields.error.flatten().fieldErrors).flat().join(", "),
+      message: `Erreur de validation: ${errorMessage}`,
     };
   }
 
-  const { productId, quantity } = validatedFields.data;
-
-  console.log(`Server Action: Adding to cart... Product ID: ${productId}, Quantity: ${quantity}`);
+  const { productId, quantity: _quantity } = validatedFields.data;
 
   try {
-    // --- Simulate async operation (e.g., database update) ---
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    // --------------------------------------------------------
+    // --- Simulate adding to cart logic (Replace with your actual logic) ---
+    // Example: Simulate an API call or database update
+    await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
 
-    // TODO: Implement actual cart logic here:
-    // - Get user session/cart identifier (e.g., from cookies, session)
-    // - Check product availability/stock
-    // - Add/update item in database or session storage
-    // - Potentially revalidate cart data cache (revalidatePath/revalidateTag)
+    // Simulate success
+    const success = true;
 
-    console.log("Server Action: Product added successfully.");
-    return {
-      success: true,
-      message: "Produit ajouté au panier !", // Use translations later
-    };
+    if (success) {
+      revalidatePath("/[locale]/shop", "layout"); // Revalidate shop page
+      revalidatePath(`/[locale]/products/${productId}`); // Revalidate product detail page
+      return { success: true, message: "Produit ajouté au panier!" };
+    } else {
+      return { success: false, message: "Échec de l'ajout au panier (simulation)." };
+    }
   } catch (error) {
     console.error("Server Action: Error adding to cart:", error);
-    return {
-      success: false,
-      message: "Erreur lors de l'ajout au panier.",
-    };
+    return { success: false, message: "Une erreur s'est produite." };
   }
 }

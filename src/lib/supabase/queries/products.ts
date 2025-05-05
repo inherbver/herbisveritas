@@ -48,8 +48,6 @@ export interface ProductForDetailQuery {
 export async function getAllProducts(locale: Locale): Promise<ProductForShopQuery[]> {
   const supabase = await createClient();
 
-  console.log(`Attempting to fetch all products for locale: ${locale}`);
-
   const { data, error } = await supabase
     .from("products")
     .select(
@@ -77,11 +75,8 @@ export async function getAllProducts(locale: Locale): Promise<ProductForShopQuer
   }
 
   if (!data) {
-    console.log(`No products found or no translations for locale ${locale}.`);
     return [];
   }
-
-  console.log(`Successfully fetched ${data.length} products for locale ${locale}`);
 
   return data as ProductForShopQuery[];
 }
@@ -94,8 +89,6 @@ type ProductDataFromQuery = Database["public"]["Tables"]["products"]["Row"] & {
 export const getProductBySlug = cache(
   async (slug: string, locale: Locale): Promise<ProductDataFromQuery | null> => {
     const supabase = await createClient();
-
-    console.log(`Attempting to fetch product with slug: ${slug} for locale: ${locale}`);
 
     const { data, error } = await supabase
       .from("products")
@@ -122,16 +115,17 @@ export const getProductBySlug = cache(
       .single<ProductDataFromQuery>();
 
     if (error) {
-      console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);
+      if (error.code !== "PGRST116") {
+        // PGRST116: 'Searched for item with key "(...)" but not found'
+        console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);
+      }
       return null;
     }
 
     if (!data) {
-      console.log(`Product with slug ${slug} not found or no translation for locale ${locale}.`);
       return null;
     }
 
-    console.log(`Successfully fetched product data for slug: ${slug}, locale: ${locale}`);
     return data;
   }
 );
