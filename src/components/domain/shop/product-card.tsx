@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import useCartStore from "@/stores/cartStore";
+import type { CartItem } from "@/types/cart";
 
 export interface ProductCardProps {
   /** Unique identifier for the product */
@@ -23,8 +25,8 @@ export interface ProductCardProps {
   imageSrc: string;
   /** Alt text for the product image */
   imageAlt: string;
-  /** Product price */
-  price: string;
+  /** Product price - S'assurer que c'est un nombre pour le store */
+  price: number;
   /** Optional discount percentage */
   discountPercent?: number;
   /** Slug for dynamic routes */
@@ -33,8 +35,6 @@ export interface ProductCardProps {
   isLoading?: boolean;
   /** Whether the product is out of stock */
   isOutOfStock?: boolean;
-  /** Callback for adding the product to cart */
-  onAddToCart: (productId: string | number) => void;
   /** Optional custom class name */
   className?: string;
 }
@@ -51,10 +51,10 @@ export function ProductCard({
   slug,
   isLoading = false,
   isOutOfStock = false,
-  onAddToCart,
   className,
 }: ProductCardProps) {
   const t = useTranslations("ProductCard");
+  const addItemToCart = useCartStore((state) => state.addItem);
 
   if (isLoading) {
     return (
@@ -80,54 +80,70 @@ export function ProductCard({
 
   const handleAddToCartClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    if (!isOutOfStock) onAddToCart(id);
+    if (!isOutOfStock) {
+      const itemToAdd: Omit<CartItem, "quantity"> = {
+        productId: String(id), // S'assurer que productId est une string pour CartItem
+        name: title,
+        price: price, // price est déjà un nombre
+        image: imageSrc, // Corrigé de imageUrl à image
+        slug: slug,
+        // Pas besoin de variantId, stockKeepingUnit, weight, dimensions pour l'instant
+        // ou les ajouter si CartItem les requiert et qu'ils sont disponibles
+      };
+      addItemToCart(itemToAdd);
+    }
   };
 
   const linkHref = { pathname: "/products/[slug]" as AppPathname, params: { slug: slug } };
 
   const cardContent = (
     <>
-      <div
-        className={cn(
-          "relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90"
-        )}
-      >
-        <Image
-          src={imageSrc}
-          alt={imageAlt}
-          fill
-          sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-        <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
-          {discountPercent && !isOutOfStock && (
-            <Badge variant="destructive" className="text-xs shadow-md">
-              -{discountPercent}%
-            </Badge>
+      <NextLink href={linkHref} passHref={false} className="group contents">
+        <div
+          className={cn(
+            "relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90"
           )}
-          {isOutOfStock && (
-            <Badge variant="secondary" className="text-xs uppercase shadow-md">
-              {t("outOfStock")}
-            </Badge>
-          )}
-        </div>
-        {isOutOfStock && (
-          <div
-            className="absolute inset-0 bg-white/60 backdrop-blur-[1px] dark:bg-black/50"
-            aria-hidden="true"
+        >
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            fill
+            sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          {/* Badges and overlay remain inside the image div but outside the link for image */}
+        </div>
+      </NextLink>
+      <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+        {discountPercent && !isOutOfStock && (
+          <Badge variant="destructive" className="text-xs shadow-md">
+            -{discountPercent}%
+          </Badge>
+        )}
+        {isOutOfStock && (
+          <Badge variant="secondary" className="text-xs uppercase shadow-md">
+            {t("outOfStock")}
+          </Badge>
         )}
       </div>
+      {isOutOfStock && (
+        <div
+          className="absolute inset-0 bg-white/60 backdrop-blur-[1px] dark:bg-black/50"
+          aria-hidden="true"
+        />
+      )}
 
       {/* Content Area - V2: Standard padding, flex-grow, WHITE BACKGROUND */}
       <div className="flex flex-grow flex-col bg-background p-4">
-        <h2
-          id={`product-title-${id}`}
-          className="mb-1 line-clamp-2 text-lg font-semibold leading-tight"
-          title={title}
-        >
-          {title}
-        </h2>
+        <NextLink href={linkHref} passHref={false} className="contents">
+          <h2
+            id={`product-title-${id}`}
+            className="mb-1 line-clamp-2 text-lg font-semibold leading-tight hover:underline"
+            title={title}
+          >
+            {title}
+          </h2>
+        </NextLink>
 
         {(subtitle || meta) && (
           <div className="mb-2 line-clamp-1 text-sm text-muted-foreground">
@@ -142,9 +158,9 @@ export function ProductCard({
         <div className="mt-auto flex items-center justify-between pt-2">
           <p
             className="mr-2 text-xl font-bold text-green-700 dark:text-green-400"
-            aria-label={`Price: ${price}`}
+            aria-label={`Price: ${price.toFixed(2)} €`}
           >
-            {price}
+            {price.toFixed(2)} €
           </p>
 
           <Button
@@ -178,15 +194,9 @@ export function ProductCard({
     className
   );
 
-  const isLinkable = !isLoading && !isOutOfStock && slug;
-
-  return isLinkable ? (
-    <NextLink href={linkHref} passHref={false} className="contents">
-      <div className={commonCardClasses} aria-labelledby={`product-title-${id}`}>
-        {cardContent}
-      </div>
-    </NextLink>
-  ) : (
-    <div className={cn(commonCardClasses, isOutOfStock ? "opacity-80" : "")}>{cardContent}</div>
+  return (
+    <article className={cn(commonCardClasses, isOutOfStock ? "opacity-80" : "")}>
+      {cardContent}
+    </article>
   );
 }

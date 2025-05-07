@@ -18,24 +18,18 @@ export interface ProductGridProps {
   isLoading?: boolean;
   /** Number of skeleton placeholders to show while loading */
   loadingSkeletons?: number;
-  /** Callback function when a product's add to cart button is clicked */
-  onAddToCart: (productId: string | number) => void; // Expects the ID
   /** Optional CSS classes for the grid container */
   className?: string;
   /** Optional message when products array is empty */
   noProductsMessage?: string;
-  /** Current locale, needed for Link construction */
-  locale: string;
 }
 
 export function ProductGrid({
   products,
   isLoading = false,
   loadingSkeletons = 8, // Default skeletons adjusted for 4 cols
-  onAddToCart,
   className,
   noProductsMessage,
-  locale, // Destructure locale
 }: ProductGridProps) {
   const t = useTranslations("ProductGrid");
 
@@ -56,10 +50,8 @@ export function ProductGrid({
             title="Loading..."
             imageSrc=""
             imageAlt=""
-            price=""
+            price={0} // Pass a numeric value (0) for the 'price' prop of skeleton ProductCards
             slug="" // Add dummy slug for skeleton
-            locale="" // Add dummy locale for skeleton
-            onAddToCart={() => {}}
           />
         ))}
       </div>
@@ -80,9 +72,6 @@ export function ProductGrid({
         <ProductCard
           key={product.id}
           {...product} // Spread the product data (now includes id and slug)
-          onAddToCart={onAddToCart} // Pass the handler function directly
-          locale={locale} // Pass locale down to ProductCard for Link
-          // Removed incorrect 'titleId' and 'index' props
         />
       ))}
     </div>

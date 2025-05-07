@@ -35,6 +35,7 @@
     "noImage": "Image not available",
     "quantity": "Quantity",
     "addToCart": "Add to cart",
+    "addingToCart": "Adding to cart...",
     "propertiesTab": "Properties",
     "descriptionTab": "Description",
     "compositionTab": "Composition",
@@ -101,5 +102,41 @@
   },
   "ProductDetailDisplay": {
     "taxInclusiveLabel": "incl. VAT"
+  },
+  "CartSheet": {
+    "yourCartTitle": "Your Cart",
+    "closeButton": "Close"
+  },
+  "CartDisplay": {
+    "title": "Your Cart Contents",
+    "yourCart": "Your Cart",
+    "emptyCart": "Your cart is currently empty.",
+    "total": "Total:",
+    "subtotal": "Subtotal:",
+    "item_singular": "item",
+    "item_plural": "items",
+    "removeItemAriaLabel": "Remove {itemName} from cart",
+    "updateQuantityAriaLabel": "Update quantity for {itemName}",
+    "increaseQuantityAriaLabel": "Increase quantity of {itemName}",
+    "decreaseQuantityAriaLabel": "Decrease quantity of {itemName}",
+    "proceedToCheckout": "Proceed to Checkout",
+    "continueShopping": "Continue Shopping",
+    "remove": "Remove",
+    "clearCart": "Clear Cart",
+    "unitPrice": "Unit Price",
+    "decreaseQuantity": "Decrease quantity",
+    "increaseQuantity": "Increase quantity",
+    "removeItem": "Remove item",
+    "shippingTaxesCalculatedAtCheckout": "Shipping and taxes calculated at checkout.",
+    "checkout": "Checkout",
+    "or": "or"
+  },
+  "Global": {
+    "cart": "Cart",
+    "itemCount": "{count, plural, =0 {no items} one {# item} other {# items}}",
+    "openCart": "Open Cart"
+  },
+  "shop": {
+    "addedToCartFeedback": "Product {productName} added to cart!"
   }
 }

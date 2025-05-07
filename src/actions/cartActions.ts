@@ -1,5 +1,4 @@
 // src/actions/cartActions.ts
-/*
 "use server";
 
 import { z } from "zod";
@@ -35,7 +34,6 @@ export async function addToCart(
 
   // Return early if validation fails
   if (!validatedFields.success) {
-    console.error("Add to cart validation failed:", validatedFields.error.flatten().fieldErrors);
     // Format Zod errors into a single message string
     const errorMessage = Object.values(validatedFields.error.flatten().fieldErrors)
       .flat()
@@ -58,17 +56,15 @@ export async function addToCart(
 
     if (success) {
       revalidatePath("/[locale]/shop", "layout"); // Revalidate shop page
-      revalidatePath(`/[locale]/products/${productId}`); // Revalidate product detail page
+      revalidatePath(`/[locale]/products/${productId}`, "page"); // Revalidate product detail page
       return { success: true, message: "Produit ajouté au panier!" };
     } else {
       return { success: false, message: "Échec de l'ajout au panier (simulation)." };
     }
-  } catch (error) {
-    console.error("Server Action: Error adding to cart:", error);
+  } catch (_error) {
     return { success: false, message: "Une erreur s'est produite." };
   }
 }
-*/
 
 // Les nouvelles Server Actions pour le panier (Phase 4 de notre plan)
 // seront implémentées ici.

@@ -9,6 +9,7 @@ export interface CartItem {
   price: number; // Prix unitaire du produit
   quantity: number; // Quantité de ce produit dans le panier
   image?: string; // URL de l'image du produit (optionnel)
+  slug?: string; // Slug du produit pour la navigation (optionnel)
   // Vous pouvez ajouter d'autres champs spécifiques au produit si nécessaire
   // par exemple, variantId, couleur, taille, etc.
 }

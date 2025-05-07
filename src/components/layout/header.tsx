@@ -12,7 +12,8 @@ import {
   navigationMenuTriggerStyle, // Import if using default trigger styles
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle } from "@/components/ui/sheet";
-import { ShoppingCart, User, Menu, Info } from "lucide-react"; // Icons
+import { User, Menu, Info } from "lucide-react"; // Icons
+import { CartSheet } from "@/components/domain/shop/cart-sheet"; // Ajout de l'import
 
 // Placeholder pour le composant Logo
 const Logo = () => (
@@ -84,16 +85,7 @@ export function Header() {
           <Button variant="ghost" size="icon" aria-label="Mon compte">
             <User className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" aria-label="Panier">
-            <ShoppingCart className="h-5 w-5" />
-            {/* Optional: Badge for item count */}
-            {/* {cartItemCount > 0 && ( */}
-            {/*   <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground"> */}
-            {/*     {cartItemCount} */}
-            {/*   </span> */}
-            {/* )} */}
-          </Button>
-
+          <CartSheet /> {/* Remplacement du bouton Panier */}
           {/* Auth Buttons (Desktop) */}
           <div className="hidden items-center gap-2 md:flex">
             {/* TODO: Add conditional logic based on isLoggedIn */}
@@ -112,7 +104,6 @@ export function Header() {
               </>
             )}
           </div>
-
           {/* Mobile Menu Trigger (Hamburger) */}
           <Sheet>
             <SheetTrigger asChild>

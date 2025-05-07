@@ -17,7 +17,7 @@ type Props = {
 
 // --- Generate Metadata ---
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug, locale } = params; // Removed await
+  const { slug, locale } = await params; // Added await
   const t = await getTranslations({ locale, namespace: "ProductDetailModal" });
   const product = await getProductBySlug(slug, locale);
 
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // --- Page Component ---
 export default async function ProductDetailPage({ params }: Props) {
-  const { slug, locale } = params; // Removed await
+  const { slug, locale } = await params; // Added await
   const productData = await getProductBySlug(slug, locale);
 
   if (!productData) {

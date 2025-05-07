@@ -2,13 +2,13 @@
 "use client"; // Nécessaire car nous utilisons useState et passons un handler
 
 import React, { useState } from "react";
-import { CategoryFilter, CategoryOption } from "@/components/domain/shop/category-filter"; // Importe le composant et son type
-import { Container } from "@/components/layout"; // Pour un minimum de mise en page
-import { ProductGrid, ProductData } from "@/components/domain/shop/product-grid"; // Import ProductGrid and ProductData
+import { CategoryFilter, CategoryOption } from "@/components/domain/shop/category-filter";
+import { Container } from "@/components/layout";
+import { ProductGrid } from "@/components/domain/shop/product-grid";
 import { Separator } from "@/components/ui/separator";
 import { useTranslations } from "next-intl";
-import { ProductDetailModal } from "@/components/domain/shop/product-detail-modal"; // Import Modal
-import { ProductDetailData } from "@/types/product-types"; // Correct import path
+import { ProductDetailModal } from "@/components/domain/shop/product-detail-modal";
+import { ProductDetailData } from "@/types/product-types";
 
 // Données de test pour les catégories
 const testCategories: CategoryOption[] = [
@@ -27,8 +27,26 @@ const testCategories: CategoryOption[] = [
   { label: "Nouveautés", value: "nouveautes", count: 9 },
 ];
 
+// Interface for mock product data to allow string price initially
+interface MockProductType {
+  id: string | number;
+  title: string;
+  subtitle?: string;
+  imageSrc: string;
+  imageAlt: string;
+  meta?: string;
+  price: string; // Price as string from mock data
+  discountPercent?: number;
+  slug: string;
+  isOutOfStock?: boolean;
+  // Modal specific data
+  properties?: string;
+  inci?: string; // Corrected to match mock data structure (was inciList in ProductDetailData type)
+  usageInstructions?: string;
+}
+
 // Mock data updated to include fields for ProductDetailData
-const mockProducts: (ProductData & Partial<ProductDetailData>)[] = [
+const mockProducts: MockProductType[] = [
   {
     id: "prod-baume-lavande",
     title: "Baume Apaisant à la Lavande",
@@ -110,28 +128,6 @@ export default function TestComponentsPage3() {
     }, 1500); // Simulate network delay
   };
 
-  // Handler for AddToCart button (updated for quantity)
-  const handleAddToCart = (productId: string | number, quantity: number = 1) => {
-    const product = mockProducts.find((p) => p.id === productId);
-    alert(`Ajouté au panier : ${quantity} x ${product?.title || "Produit inconnu"}`); // Simple alert for now
-    // Close modal if it was open when adding from modal
-    if (isModalOpen) {
-      setIsModalOpen(false);
-    }
-  };
-
-  // Handler for viewing product details
-  const handleViewDetails = (productId: string | number) => {
-    const product = mockProducts.find((p) => p.id === productId);
-    if (product) {
-      // Ensure the found product matches the ProductDetailData structure
-      // For mock data, we assume it does after updating the mockProducts array
-      setSelectedProduct(product as ProductDetailData);
-      setIsModalOpen(true);
-    }
-  };
-
-  // Handler for closing the modal
   const handleModalClose = (isOpen: boolean) => {
     setIsModalOpen(isOpen);
     if (!isOpen) {
@@ -162,18 +158,27 @@ export default function TestComponentsPage3() {
       <section>
         <h2 className="mb-6 text-2xl font-semibold">{t("productCardTitle")}</h2>
         <ProductGrid
-          products={mockProducts.map((product) => ({
-            ...product,
-            href: {
-              pathname: "/product/[slug]", // Correct canonical path pattern with placeholder
-              params: { slug: product.slug ?? "" }, // Actual slug parameter
-            },
-            // Provide the callback handlers expected by ProductCard
-          }))}
+          products={mockProducts.map((product) => {
+            // Convert price string "XX,XX €" to a number
+            const priceString = product.price; // Price is already a string in MockProductType
+            const numericPrice = parseFloat(priceString.replace(/[^0-9,-]/g, "").replace(",", "."));
+
+            return {
+              // Spread common props from MockProductType that ProductData expects
+              id: product.id,
+              title: product.title,
+              subtitle: product.subtitle,
+              imageSrc: product.imageSrc,
+              imageAlt: product.imageAlt,
+              meta: product.meta,
+              slug: product.slug,
+              isOutOfStock: product.isOutOfStock,
+              discountPercent: product.discountPercent,
+              // Ensure price is a number for ProductData
+              price: numericPrice,
+            };
+          })}
           isLoading={isLoadingProducts} // Pass the loading state
-          onAddToCart={handleAddToCart} // Pass the handler
-          onViewDetails={handleViewDetails} // Pass the new view details handler
-          // loadingSkeletons={4} // Optionally override default skeletons
         />
       </section>
       {/* Render the ProductDetailModal */}
@@ -181,7 +186,6 @@ export default function TestComponentsPage3() {
         product={selectedProduct} // Pass the selected product data
         isOpen={isModalOpen} // Control visibility with state
         onOpenChange={handleModalClose} // Handler for closing the modal
-        onAddToCart={handleAddToCart} // Pass the add to cart handler (which now accepts quantity)
       />
     </Container>
   );

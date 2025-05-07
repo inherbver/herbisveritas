@@ -105,5 +105,31 @@
   },
   "shop": {
     "addedToCartFeedback": "{productName} ajouté au panier !"
+  },
+  "CartSheet": {
+    "yourCartTitle": "Votre Panier"
+  },
+  "CartDisplay": {
+    "yourCart": "Votre Panier",
+    "emptyCart": "Votre panier est actuellement vide.",
+    "continueShopping": "Continuer les achats",
+    "productImageAlt": "Image de {productName}",
+    "unitPrice": "Prix unitaire",
+    "quantity": "Quantité",
+    "decreaseQuantity": "Diminuer la quantité de {itemName}",
+    "increaseQuantity": "Augmenter la quantité de {itemName}",
+    "removeItem": "Supprimer {itemName} du panier",
+    "subtotal": "Sous-total",
+    "totalItems": "{count, plural, =0 {0 articles} one {1 article} other {# articles}}",
+    "clearCart": "Vider le panier",
+    "checkout": "Passer à la caisse",
+    "or": "Ou",
+    "remove": "Supprimer",
+    "shippingTaxesCalculatedAtCheckout": "Frais de port et taxes calculés à la caisse."
+  },
+  "Global": {
+    "openCart": "Ouvrir le panier",
+    "itemCount": "{count, plural, =0 {0 articles} one {1 article} other {# articles}}",
+    "checkout": "Passer à la caisse"
   }
 }
