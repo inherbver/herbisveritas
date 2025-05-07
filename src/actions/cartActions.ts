@@ -1,4 +1,5 @@
 // src/actions/cartActions.ts
+/*
 "use server";
 
 import { z } from "zod";
@@ -67,3 +68,7 @@ export async function addToCart(
     return { success: false, message: "Une erreur s'est produite." };
   }
 }
+*/
+
+// Les nouvelles Server Actions pour le panier (Phase 4 de notre plan)
+// seront implémentées ici.
