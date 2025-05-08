@@ -11,9 +11,18 @@ import {
   NavigationMenuLink,
   navigationMenuTriggerStyle, // Import if using default trigger styles
 } from "@/components/ui/navigation-menu";
-import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetClose,
+  SheetTitle,
+  SheetDescription,
+  SheetHeader,
+} from "@/components/ui/sheet"; // Importer SheetDescription
 import { User, Menu, Info } from "lucide-react"; // Icons
 import { CartSheet } from "@/components/domain/shop/cart-sheet"; // Ajout de l'import
+import { useTranslations } from "next-intl"; // Correction de l'import
 
 // Placeholder pour le composant Logo
 const Logo = () => (
@@ -27,6 +36,8 @@ const Logo = () => (
 );
 
 export function Header() {
+  const tGlobal = useTranslations("Global");
+
   // const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false); // State for mobile menu - uncomment if needed
 
   // Placeholder for dynamic data (e.g., cart count, auth status)
@@ -107,15 +118,20 @@ export function Header() {
           {/* Mobile Menu Trigger (Hamburger) */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Ouvrir le menu">
+              <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-6 w-6" />
+                <span className="sr-only">{tGlobal("openMenu")}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] pt-10 sm:w-[350px]">
-              <SheetTitle className="sr-only">Menu principal</SheetTitle>
-              <div className="mb-6 pl-4">
-                <Logo />
-              </div>
+              <SheetHeader className="mb-6 text-center">
+                {/* Ajout du logo ici, centré et avec une marge en bas */}
+                <div className="mx-auto mb-4 w-fit">
+                  <Logo />
+                </div>
+                <SheetTitle className="text-2xl font-bold">{tGlobal("menu")}</SheetTitle>
+                <SheetDescription>{tGlobal("mobileMenuDescription")}</SheetDescription>
+              </SheetHeader>
               <nav className="flex flex-col gap-4 px-4">
                 <SheetClose asChild>
                   <Link

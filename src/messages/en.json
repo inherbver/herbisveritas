@@ -47,7 +47,8 @@
     "noUsage": "Usage instructions not available.",
     "noCompositionText": "Composition not available.",
     "defaultDescription": "Discover this product in more detail.",
-    "close": "Close"
+    "close": "Close",
+    "productDetailDescription": "Details for product {productName}"
   },
   "Header": {
     "home": "Home",
@@ -104,6 +105,24 @@
     "taxInclusiveLabel": "incl. VAT"
   },
   "CartSheet": {
+    "cartTitle": "Your Cart",
+    "cartDescription": "Current contents of your shopping cart.",
+    "continueShopping": "Continue shopping",
+    "emptyCart": "Your cart is empty.",
+    "emptyCartSuggestion": "Browse our products and add something you like!",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "removeProduct": "Remove {productName} from cart",
+    "updateQuantity": "Update quantity of {productName}",
+    "quantity": "Quantity",
+    "itemAddedToCart": "Item added to cart",
+    "itemRemovedFromCart": "Item removed from cart",
+    "itemUpdatedInCart": "Quantity updated in cart",
+    "errorAddingToCart": "Error adding to cart",
+    "errorRemovingFromCart": "Error removing from cart",
+    "errorUpdatingCart": "Error updating cart",
+    "viewCart": "View cart",
+    "proceedToCheckout": "Proceed to checkout",
     "yourCartTitle": "Your Cart",
     "closeButton": "Close"
   },
@@ -132,11 +151,43 @@
     "or": "or"
   },
   "Global": {
+    "home": "Home",
+    "shop": "Shop",
+    "about": "About",
+    "contact": "Contact",
+    "account": "Account",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
     "cart": "Cart",
+    "search": "Search",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "mobileMenuDescription": "Main site navigation for mobile.",
+    "allProducts": "All Products",
+    "newArrivals": "New Arrivals",
+    "featuredProducts": "Featured Products",
+    "bestSellers": "Best Sellers",
+    "onSale": "On Sale",
+    "viewAll": "View All",
+    "addToCart": "Add to Cart",
+    "removeFromCart": "Remove from Cart",
+    "updateCart": "Update Cart",
+    "proceedToCheckout": "Proceed to Checkout",
     "itemCount": "{count, plural, =0 {no items} one {# item} other {# items}}",
-    "openCart": "Open Cart"
+    "openCart": "Open Cart",
+    "checkout": "Checkout"
   },
   "shop": {
     "addedToCartFeedback": "Product {productName} added to cart!"
+  },
+  "CategoryFilter": {
+    "filterByCategory": "Filter by category",
+    "categoryFilterDescription": "Select a category to refine the results.",
+    "allCategories": "All categories",
+    "clearFilters": "Clear filters",
+    "applyFilters": "Apply filters",
+    "noCategoriesFound": "No categories found"
   }
 }

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -88,16 +89,16 @@ const CategoryFilter = React.forwardRef<HTMLDivElement, CategoryFilterProps>(
             {/* Peut être 'bottom' pour une approche mobile différente */}
             <SheetHeader>
               <SheetTitle>{t("filterByCategory")}</SheetTitle>
-              {/* <SheetDescription>...</SheetDescription> */}
+              <SheetDescription>{t("categoryFilterDescription")}</SheetDescription>
             </SheetHeader>
             {/* Zone scrollable pour la liste des catégories */}
-            <ScrollArea className="h-[calc(100vh-150px)] pr-4">
+            <ScrollArea className="h-[calc(100vh-8rem)] flex-grow">
               {" "}
               {/* Ajuster la hauteur si nécessaire */}
               <div className="grid gap-4 py-4">
                 {availableCategories.length > 0 ? (
                   // Affiche chaque catégorie comme une checkbox
-                  (availableCategories.map((category) => (
+                  availableCategories.map((category) => (
                     <div key={category.value} className="flex items-center space-x-2">
                       <Checkbox
                         id={`category-${category.value}`}
@@ -117,10 +118,10 @@ const CategoryFilter = React.forwardRef<HTMLDivElement, CategoryFilterProps>(
                         )}
                       </Label>
                     </div>
-                  )))
+                  ))
                 ) : (
                   // Message si aucune catégorie n'est disponible
-                  (<p className="text-sm text-muted-foreground">{t("noCategoriesAvailable")}</p>)
+                  <p className="text-sm text-muted-foreground">{t("noCategoriesAvailable")}</p>
                 )}
               </div>
             </ScrollArea>

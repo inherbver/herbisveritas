@@ -50,10 +50,10 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -344,13 +344,16 @@ export default function TestComponentsPage() {
         <h2 className="mb-4 font-serif text-xl font-semibold">Boîte de Dialogue (Dialog)</h2>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">Ouvrir Dialogue</Button>
+            <Button variant="outline">Ouvrir la modale de test</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Êtes-vous s&apos;ûr?</DialogTitle>
-              <DialogDescription>Cette action ne peut pas être annulée.</DialogDescription>
+              <DialogTitle>Modale de Test</DialogTitle>
+              <DialogDescription>
+                Ceci est une description pour la modale de test. Elle aide à l'accessibilité.
+              </DialogDescription>
             </DialogHeader>
+            <p>Contenu de la modale de test.</p>
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="secondary">

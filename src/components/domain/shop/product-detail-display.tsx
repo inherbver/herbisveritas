@@ -120,6 +120,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
               src={product.images[0].src}
               alt={product.images[0].alt}
               fill // Make image fill the AspectRatio container
+              sizes="(max-width: 768px) 100vw, 50vw" // Ajout de la propriété sizes
               className="object-cover" // Cover the area, cropping if needed
               priority // Prioritize loading the main product image
             />

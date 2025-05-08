@@ -20,6 +20,7 @@
     "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
   },
   "ProductDetailModal": {
+    "productDetailDescription": "Détails pour le produit {productName}",
     "noImage": "Image non disponible",
     "quantity": "Quantité",
     "addToCart": "Ajouter au panier",
@@ -107,6 +108,24 @@
     "addedToCartFeedback": "{productName} ajouté au panier !"
   },
   "CartSheet": {
+    "cartTitle": "Votre Panier",
+    "cartDescription": "Contenu actuel de votre panier d'achats.",
+    "continueShopping": "Continuer vos achats",
+    "emptyCart": "Votre panier est vide.",
+    "emptyCartSuggestion": "Parcourez nos produits et ajoutez quelque chose qui vous plaît !",
+    "subtotal": "Sous-total",
+    "checkout": "Passer à la caisse",
+    "removeProduct": "Retirer {productName} du panier",
+    "updateQuantity": "Mettre à jour la quantité de {productName}",
+    "quantity": "Quantité",
+    "itemAddedToCart": "Article ajouté au panier",
+    "itemRemovedFromCart": "Article retiré du panier",
+    "itemUpdatedInCart": "Quantité mise à jour dans le panier",
+    "errorAddingToCart": "Erreur lors de l'ajout au panier",
+    "errorRemovingFromCart": "Erreur lors de la suppression du panier",
+    "errorUpdatingCart": "Erreur lors de la mise à jour du panier",
+    "viewCart": "Voir le panier",
+    "proceedToCheckout": "Procéder au paiement",
     "yourCartTitle": "Votre Panier"
   },
   "CartDisplay": {
@@ -130,6 +149,15 @@
   "Global": {
     "openCart": "Ouvrir le panier",
     "itemCount": "{count, plural, =0 {0 articles} one {1 article} other {# articles}}",
-    "checkout": "Passer à la caisse"
+    "checkout": "Passer à la caisse",
+    "mobileMenuDescription": "Navigation principale du site pour mobile."
+  },
+  "CategoryFilter": {
+    "filterByCategory": "Filtrer par catégorie",
+    "categoryFilterDescription": "Sélectionnez une catégorie pour affiner les résultats.",
+    "allCategories": "Toutes les catégories",
+    "clearFilters": "Effacer les filtres",
+    "applyFilters": "Appliquer les filtres",
+    "noCategoriesFound": "Aucune catégorie trouvée"
   }
 }

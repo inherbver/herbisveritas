@@ -5,11 +5,11 @@ import { useTranslations } from "next-intl";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
   // SheetClose, // Optionnel, pour un bouton de fermeture explicite à l'intérieur
-  // SheetDescription, // Si nécessaire
   // SheetFooter,      // Si nécessaire
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -45,9 +45,8 @@ export function CartSheet() {
       <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-lg">
         <SheetHeader className="p-6 pb-4">
           <SheetTitle>{t("yourCartTitle")}</SheetTitle>
-          {/* <SheetDescription>
-            {t('yourCartDescription')}
-          </SheetDescription> */}
+          {/* TODO: S'assurer que le texte de description est pertinent et traduit */}
+          <SheetDescription>{t("cartDescription")}</SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
           <CartDisplay />
