@@ -177,7 +177,8 @@
     "proceedToCheckout": "Proceed to Checkout",
     "itemCount": "{count, plural, =0 {no items} one {# item} other {# items}}",
     "openCart": "Open Cart",
-    "checkout": "Checkout"
+    "checkout": "Checkout",
+    "profileNavigation": "Profile Navigation"
   },
   "shop": {
     "addedToCartFeedback": "Product {productName} added to cart!"
@@ -189,5 +190,11 @@
     "clearFilters": "Clear filters",
     "applyFilters": "Apply filters",
     "noCategoriesFound": "No categories found"
+  },
+  "ProfileNav": {
+    "navigationLabel": "Profile Navigation",
+    "account": "My Account",
+    "addresses": "My Addresses",
+    "orders": "My Orders"
   }
 }

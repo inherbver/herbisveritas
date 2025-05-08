@@ -9,6 +9,12 @@ export const pathnames = {
     en: "/products",
     fr: "/produits",
   },
+  // --- START: Product detail page ---
+  "/product/[slug]": {
+    en: "/product/[slug]",
+    fr: "/produit/[slug]",
+  },
+  // --- END: Product detail page ---
   "/about": {
     en: "/about",
     fr: "/a-propos",
@@ -23,7 +29,7 @@ export const pathnames = {
   },
   "/contact": {
     en: "/contact",
-    fr: "/contact",
+    fr: "/contact", // Ou '/contactez-nous'
   },
   "/legal": {
     en: "/legal",
@@ -33,20 +39,28 @@ export const pathnames = {
     en: "/shop",
     fr: "/boutique",
   },
-  // Dynamic product route
-  "/product/[slug]": {
-    en: "/product/[slug]",
-    fr: "/product/[slug]", // Using 'product' for French locale to match folder structure
-  },
-  // Add authentication paths
   "/login": {
     en: "/login",
-    fr: "/login", // Ou /connexion
+    fr: "/connexion",
   },
   "/register": {
     en: "/register",
-    fr: "/register", // Ou /inscription
+    fr: "/inscription",
   },
+  // --- START: Profile Pages ---
+  "/profile/account": {
+    en: "/profile/account",
+    fr: "/profil/mon-compte",
+  },
+  "/profile/addresses": {
+    en: "/profile/addresses",
+    fr: "/profil/mes-adresses",
+  },
+  "/profile/orders": {
+    en: "/profile/orders",
+    fr: "/profil/mes-commandes",
+  },
+  // --- END: Profile Pages ---
   // Ajoutez d'autres chemins ici...
 } as const;
 

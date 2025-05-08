@@ -147,10 +147,24 @@
     "shippingTaxesCalculatedAtCheckout": "Frais de port et taxes calculés à la caisse."
   },
   "Global": {
+    "home": "Accueil",
+    "shop": "Boutique",
+    "about": "À propos",
+    "contact": "Contact",
+    "account": "Compte",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "register": "Inscription",
+    "cart": "Panier",
+    "search": "Recherche",
+    "menu": "Menu",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "mobileMenuDescription": "Navigation principale du site pour mobile.",
+    "allProducts": "Tous les produits",
     "openCart": "Ouvrir le panier",
     "itemCount": "{count, plural, =0 {0 articles} one {1 article} other {# articles}}",
-    "checkout": "Passer à la caisse",
-    "mobileMenuDescription": "Navigation principale du site pour mobile."
+    "checkout": "Passer à la caisse"
   },
   "CategoryFilter": {
     "filterByCategory": "Filtrer par catégorie",
@@ -159,5 +173,11 @@
     "clearFilters": "Effacer les filtres",
     "applyFilters": "Appliquer les filtres",
     "noCategoriesFound": "Aucune catégorie trouvée"
+  },
+  "ProfileNav": {
+    "navigationLabel": "Navigation du profil",
+    "account": "Mon Compte",
+    "addresses": "Mes Adresses",
+    "orders": "Mes Commandes"
   }
 }

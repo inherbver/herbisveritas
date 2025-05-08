@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Locale } from "@/i18n-config";
 import { type Database } from "@/types/supabase";
 import { cache } from "react";
@@ -46,7 +46,7 @@ export interface ProductForDetailQuery {
 // --- NEW FUNCTION: getAllProducts ---
 // Fetches all products with their basic details and translations for the shop grid
 export async function getAllProducts(locale: Locale): Promise<ProductForShopQuery[]> {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("products")
@@ -88,7 +88,7 @@ type ProductDataFromQuery = Database["public"]["Tables"]["products"]["Row"] & {
 
 export const getProductBySlug = cache(
   async (slug: string, locale: Locale): Promise<ProductDataFromQuery | null> => {
-    const supabase = await createClient();
+    const supabase = await createSupabaseServerClient();
 
     const { data, error } = await supabase
       .from("products")

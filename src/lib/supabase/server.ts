@@ -1,15 +1,11 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-// La fonction doit être async pour utiliser await
-export async function createClient() {
-  // Utiliser await pour récupérer le store de cookies
-  const cookieStore = await cookies();
+// Modifiée pour être async et utiliser await cookies()
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies(); // Traiter comme async basé sur les erreurs TS
 
-  // Crée un client Supabase côté serveur qui peut lire/écrire les cookies.
-  // Nécessite NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans l'environnement.
-  // Si vous avez besoin d'opérations privilégiées (ex: bypass RLS), vous aurez besoin
-  // de créer un client *service_role* séparé avec SUPABASE_SERVICE_ROLE_KEY.
+  // Crée et retourne un client Supabase côté serveur
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -23,7 +19,7 @@ export async function createClient() {
             cookieStore.set({ name, value, ...options });
           } catch (_error) {
             // Le bloc `set` peut échouer si appelé depuis une Server Component.
-            // Cela est attendu car ils ne peuvent pas définir de cookies.
+            // Ceci est attendu car ils ne peuvent pas définir de cookies.
             // Les Server Actions et les Route Handlers PEUVENT définir des cookies.
           }
         },
@@ -38,4 +34,23 @@ export async function createClient() {
       },
     }
   );
+}
+
+// getSupabaseUserSession reste async et attend maintenant createSupabaseServerClient
+export async function getSupabaseUserSession() {
+  // Crée un client Supabase côté serveur
+  const supabase = await createSupabaseServerClient(); // Await ici
+
+  // Récupère la session utilisateur
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    console.error("Erreur lors de la récupération de la session Supabase:", error.message);
+    return null;
+  }
+
+  return session;
 }
