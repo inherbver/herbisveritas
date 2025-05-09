@@ -178,7 +178,8 @@
     "itemCount": "{count, plural, =0 {no items} one {# item} other {# items}}",
     "openCart": "Open Cart",
     "checkout": "Checkout",
-    "profileNavigation": "Profile Navigation"
+    "profileNavigation": "Profile Navigation",
+    "notProvided": "Not provided"
   },
   "shop": {
     "addedToCartFeedback": "Product {productName} added to cart!"
@@ -196,5 +197,14 @@
     "account": "My Account",
     "addresses": "My Addresses",
     "orders": "My Orders"
+  },
+  "AccountPage": {
+    "title": "My Account",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "phone": "Phone",
+    "accountCreated": "Account created on",
+    "editHint": "The information on this page is read-only. Editing will be available soon."
   }
 }

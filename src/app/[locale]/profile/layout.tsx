@@ -7,14 +7,12 @@ import { getTranslations } from "next-intl/server"; // Import pour Server Compon
 
 interface ProfileLayoutProps {
   children: ReactNode;
-  params: {
-    locale: string;
-  };
+  params: Promise<{ locale: string }>;
 }
 
 // Ne pas déstructurer params dans la signature ici
 export default async function ProfileLayout(props: ProfileLayoutProps) {
-  const locale = props.params.locale; // Lire locale ici
+  const { locale } = await props.params; // Await params
 
   // loginRedirectUrl peut être défini ici car il ne dépend que de locale
   const loginRedirectUrl = `/${locale}/login`;

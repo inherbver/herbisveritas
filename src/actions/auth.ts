@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server"; // Importe le client Supabase côté serveur
+import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe le client Supabase côté serveur
 
 // --- Schéma Login ---
 const loginSchema = z.object({
@@ -37,7 +37,7 @@ export async function loginAction(
   prevState: ActionResult | undefined,
   formData: FormData
 ): Promise<ActionResult> {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServerClient();
 
   // 1. Valider les données
   const validatedFields = loginSchema.safeParse({
@@ -69,7 +69,7 @@ export async function signUpAction(
   prevState: ActionResult | undefined,
   formData: FormData
 ): Promise<ActionResult> {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServerClient();
 
   // 1. Valider les données du formulaire avec Zod (incluant la confirmation de mdp)
   const validatedFields = signUpSchema.safeParse({
@@ -129,7 +129,7 @@ export async function signUpAction(
 
 // --- Logout Action ---
 export async function logoutAction() {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   // Redirect to homepage after logout
   // Note: We use the Link component's type knowledge implicitly here
