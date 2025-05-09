@@ -1,52 +1,87 @@
 "use client";
 
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema, ProfileFormValues } from "@/lib/schemas/profileSchema";
 import { ProfileData } from "@/types/profile";
-import { useTranslations } from "next-intl";
-// import { updateProfileAction } from '@/actions/profileActions'; // Future Server Action
+import { useTranslations, useLocale } from "next-intl";
+import { updateUserProfile, UpdateProfileFormState } from "@/actions/profileActions";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import { useEffect } from "react";
 
 interface UpdateProfileFormProps {
-  initialData: ProfileData;
-  // locale: string; // Pourrait être utile pour passer aux Server Actions ou pour des logiques spécifiques
+  userProfile: ProfileData | null;
 }
 
-export default function UpdateProfileForm({ initialData }: UpdateProfileFormProps) {
-  const t = useTranslations("ProfileEditPage.form"); // Namespace pour les traductions du formulaire
+const initialState: UpdateProfileFormState = {
+  success: false,
+  message: "",
+  errors: {},
+  resetKey: undefined,
+};
+
+function SubmitButton({ text, pendingText }: { text: string; pendingText: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="hover:bg-primary/90 flex w-full justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
+    >
+      {pending ? pendingText : text}
+    </button>
+  );
+}
+
+export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProps) {
+  const t = useTranslations("ProfileEditPage.form");
   const tGlobal = useTranslations("Global");
+  const locale = useLocale();
+
+  const [formState, formAction] = useActionState(updateUserProfile, initialState);
 
   const {
     register,
-    handleSubmit,
-    formState: { errors, isSubmitting, isDirty },
-    // reset, // Utile pour réinitialiser le formulaire après soumission
+    // handleSubmit,
+    formState: { errors: clientErrors },
+    reset,
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      first_name: initialData.first_name || "",
-      last_name: initialData.last_name || "",
-      phone_number: initialData.phone_number || "",
+      first_name: userProfile?.first_name || "",
+      last_name: userProfile?.last_name || "",
+      phone_number: userProfile?.phone_number || "",
     },
   });
 
-  const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
-    console.log("Form data submitted:", data);
-    // try {
-    //   const result = await updateProfileAction(data);
-    //   if (result.success) {
-    //     // Afficher un toast de succès
-    //     // reset(data); // Réinitialise le formulaire avec les nouvelles données soumises pour que isDirty devienne false
-    //   } else {
-    //     // Afficher un toast d'erreur avec result.error
-    //   }
-    // } catch (error) {
-    //   // Afficher un toast d'erreur générique
-    // }
-  };
+  useEffect(() => {
+    if (formState.success && formState.resetKey) {
+      reset({
+        first_name: userProfile?.first_name || "",
+        last_name: userProfile?.last_name || "",
+        phone_number: userProfile?.phone_number || "",
+      });
+    }
+  }, [formState.success, formState.resetKey, reset, userProfile]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form action={formAction} className="space-y-6">
+      <input type="hidden" name="locale" value={locale} />
+
+      {formState?.message && (
+        <div
+          className={`rounded-md p-3 text-sm ${
+            formState.success
+              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+              : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+          }`}
+          role={formState.success ? "status" : "alert"}
+        >
+          {formState.message}
+        </div>
+      )}
+
       <div>
         <label htmlFor="first_name" className="block text-sm font-medium text-foreground">
           {t("firstName.label")}
@@ -55,12 +90,13 @@ export default function UpdateProfileForm({ initialData }: UpdateProfileFormProp
           id="first_name"
           type="text"
           {...register("first_name")}
-          className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+          className="bg-input mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           aria-describedby="first_name-error"
+          aria-invalid={clientErrors.first_name || formState?.errors?.first_name ? "true" : "false"}
         />
-        {errors.first_name && (
-          <p id="first_name-error" className="mt-2 text-sm text-destructive">
-            {errors.first_name.message}
+        {(clientErrors.first_name || formState?.errors?.first_name) && (
+          <p id="first_name-error" className="mt-1 text-sm text-destructive">
+            {clientErrors.first_name?.message || formState?.errors?.first_name?.[0]}
           </p>
         )}
       </div>
@@ -73,12 +109,13 @@ export default function UpdateProfileForm({ initialData }: UpdateProfileFormProp
           id="last_name"
           type="text"
           {...register("last_name")}
-          className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+          className="bg-input mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           aria-describedby="last_name-error"
+          aria-invalid={clientErrors.last_name || formState?.errors?.last_name ? "true" : "false"}
         />
-        {errors.last_name && (
-          <p id="last_name-error" className="mt-2 text-sm text-destructive">
-            {errors.last_name.message}
+        {(clientErrors.last_name || formState?.errors?.last_name) && (
+          <p id="last_name-error" className="mt-1 text-sm text-destructive">
+            {clientErrors.last_name?.message || formState?.errors?.last_name?.[0]}
           </p>
         )}
       </div>
@@ -91,24 +128,21 @@ export default function UpdateProfileForm({ initialData }: UpdateProfileFormProp
           id="phone_number"
           type="tel"
           {...register("phone_number")}
-          className="mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+          className="bg-input mt-1 block w-full rounded-md border-border shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           aria-describedby="phone_number-error"
+          aria-invalid={
+            clientErrors.phone_number || formState?.errors?.phone_number ? "true" : "false"
+          }
         />
-        {errors.phone_number && (
-          <p id="phone_number-error" className="mt-2 text-sm text-destructive">
-            {errors.phone_number.message}
+        {(clientErrors.phone_number || formState?.errors?.phone_number) && (
+          <p id="phone_number-error" className="mt-1 text-sm text-destructive">
+            {clientErrors.phone_number?.message || formState?.errors?.phone_number?.[0]}
           </p>
         )}
       </div>
 
-      <div>
-        <button
-          type="submit"
-          disabled={isSubmitting || !isDirty}
-          className="hover:bg-primary/90 flex w-full justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
-        >
-          {isSubmitting ? tGlobal("saving") : tGlobal("save_changes")}
-        </button>
+      <div className="pt-2">
+        <SubmitButton text={tGlobal("save_changes")} pendingText={tGlobal("saving")} />
       </div>
     </form>
   );
