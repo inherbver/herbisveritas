@@ -150,6 +150,22 @@
     "checkout": "Checkout",
     "or": "or"
   },
+  "ProfileEditPage": {
+    "title": "Edit My Profile",
+    "subtitle": "Update your personal information.",
+    "formDataTitle": "Profile Information",
+    "form": {
+      "firstName": {
+        "label": "First Name"
+      },
+      "lastName": {
+        "label": "Last Name"
+      },
+      "phoneNumber": {
+        "label": "Phone Number"
+      }
+    }
+  },
   "Global": {
     "home": "Home",
     "shop": "Shop",
@@ -179,7 +195,10 @@
     "openCart": "Open Cart",
     "checkout": "Checkout",
     "profileNavigation": "Profile Navigation",
-    "notProvided": "Not provided"
+    "notProvided": "Not provided",
+    "saving": "Saving...",
+    "save_changes": "Save Changes",
+    "form_placeholder": "Form content here..."
   },
   "shop": {
     "addedToCartFeedback": "Product {productName} added to cart!"

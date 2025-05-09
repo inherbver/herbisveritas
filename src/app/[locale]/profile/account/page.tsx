@@ -2,17 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
 import { redirect as navRedirect } from "next/navigation";
 import { LOGIN_REDIRECT_URL } from "@/lib/constants";
-
-interface ProfileData {
-  first_name: string | null;
-  last_name: string | null;
-  phone_number: string | null;
-  role: string | null;
-}
-
-interface Props {
-  params: Promise<{ locale: string }>;
-}
+import { ProfileData } from "@/types/profile";
 
 // Helper pour formater la date
 function formatDate(dateString: string, locale: string) {
@@ -23,7 +13,7 @@ function formatDate(dateString: string, locale: string) {
   });
 }
 
-export default async function AccountPage({ params }: Props) {
+export default async function AccountPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "AccountPage" });
   const tGlobal = await getTranslations({ locale, namespace: "Global" });

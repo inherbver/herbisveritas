@@ -169,6 +169,22 @@
     "applyFilters": "Appliquer les filtres",
     "noCategoriesFound": "Aucune catégorie trouvée"
   },
+  "ProfileEditPage": {
+    "title": "Modifier mon profil",
+    "subtitle": "Mettez à jour vos informations personnelles.",
+    "formDataTitle": "Informations du profil",
+    "form": {
+      "firstName": {
+        "label": "Prénom"
+      },
+      "lastName": {
+        "label": "Nom"
+      },
+      "phoneNumber": {
+        "label": "Numéro de téléphone"
+      }
+    }
+  },
   "Global": {
     "appName": "In Herbis Veritas",
     "toggleLanguage": "Changer de langue",
@@ -208,6 +224,9 @@
     "menu": "Menu",
     "mobileMenuDescription": "Navigation principale du site pour mobile.",
     "openCart": "Ouvrir le panier",
-    "itemCount": "{count, plural, =0 {aucun article} one {# article} other {# articles}}"
+    "itemCount": "{count, plural, =0 {aucun article} one {# article} other {# articles}}",
+    "saving": "Enregistrement...",
+    "save_changes": "Enregistrer les modifications",
+    "form_placeholder": "Contenu du formulaire ici..."
   }
 }
