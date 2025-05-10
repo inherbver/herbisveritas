@@ -278,36 +278,6 @@
     "addresses": "My Addresses",
     "orders": "My Orders"
   },
-  "AccountPage": {
-    "title": "My Account",
-    "generalInfo": {
-      "title": "General Information",
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "email": "Email Address",
-      "phone": "Phone",
-      "role": "Role",
-      "accountCreated": "Account created on"
-    },
-    "terms": {
-      "status": "Terms & Conditions Status",
-      "acceptedOn": "Accepted on:",
-      "notAccepted": "Not yet accepted."
-    },
-    "shippingAddress": {
-      "title": "Shipping Address",
-      "line1": "Address Line 1",
-      "line2": "Address Line 2",
-      "postalCode": "Postal Code",
-      "city": "City",
-      "country": "Country",
-      "notProvided": "No shipping address provided yet."
-    },
-    "metadata": {
-      "title": "My Account - Inherbis",
-      "description": "View your account details, shipping address, and manage your preferences."
-    }
-  },
   "Legal": {
     "acceptTermsAndConditions": "I accept the terms and conditions"
   }
