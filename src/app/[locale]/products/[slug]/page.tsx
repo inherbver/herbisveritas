@@ -11,13 +11,13 @@ import { formatPrice } from "@/lib/utils";
 // Define Props type with correct params structure
 // Props type for the page component
 type Props = {
-  params: { slug: string; locale: Locale }; // Correct: params is an object
+  params: Promise<{ slug: string; locale: Locale }>; // Ensure params is a Promise
   // searchParams?: { [key: string]: string | string[] | undefined }; // Optional: if you need search params
 };
 
 // --- Generate Metadata ---
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug, locale } = await params; // Added await
+  const { slug, locale } = await params; // This is now correct as params is a Promise
   const t = await getTranslations({ locale, namespace: "ProductDetailModal" });
   const product = await getProductBySlug(slug, locale);
 
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // --- Page Component ---
 export default async function ProductDetailPage({ params }: Props) {
-  const { slug, locale } = await params; // Added await
+  const { slug, locale } = await params; // This is now correct as params is a Promise
   const productData = await getProductBySlug(slug, locale);
 
   if (!productData) {

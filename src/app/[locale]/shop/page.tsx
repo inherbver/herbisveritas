@@ -7,7 +7,7 @@ import { Locale } from "@/i18n-config";
 
 // Define Props type if not already defined globally
 type Props = {
-  params: { locale: string };
+  params: Promise<{ locale: Locale }>;
 };
 
 // Define the type for the data mapped for the grid
@@ -48,7 +48,7 @@ export interface Product {
 // Make the function async
 export async function generateMetadata(_props: Props): Promise<Metadata> {
   // Explicitly await params before accessing properties
-  const { locale } = await Promise.resolve(_props.params);
+  const { locale } = await _props.params;
   const t = await getTranslations({ locale, namespace: "ShopPage" });
   return {
     title: t("title"),
@@ -57,8 +57,7 @@ export async function generateMetadata(_props: Props): Promise<Metadata> {
 
 export default async function ShopPage(_props: Props) {
   // Await the params promise before accessing its properties
-  // Assert the type to Locale
-  const { locale } = (await _props.params) as { locale: Locale };
+  const { locale } = await _props.params;
 
   // Fetch translations for the server component (title, errors)
   const t = await getTranslations("ShopPage");

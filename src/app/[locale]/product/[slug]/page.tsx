@@ -7,14 +7,14 @@ import ProductDetailDisplay from "@/components/domain/shop/product-detail-displa
 import { ProductDetailData } from "@/types/product-types";
 
 interface ProductDetailPageProps {
-  params: {
+  params: Promise<{
     slug: string;
     locale: string;
-  };
+  }>;
 }
 
-export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const { slug, locale } = params;
+export default async function ProductDetailPage(props: ProductDetailPageProps) {
+  const { slug, locale } = await props.params;
 
   const productData = await getProductBySlug(slug, locale as Locale);
 
