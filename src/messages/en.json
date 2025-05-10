@@ -104,6 +104,36 @@
   "ProductDetailDisplay": {
     "taxInclusiveLabel": "incl. VAT"
   },
+  "AccountPage": {
+    "title": "My Account",
+    "generalInfo": {
+      "title": "General Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email Address",
+      "phone": "Phone",
+      "role": "Role",
+      "accountCreated": "Account created on"
+    },
+    "terms": {
+      "status": "Terms & Conditions Status",
+      "acceptedOn": "Accepted on:",
+      "notAccepted": "Not yet accepted."
+    },
+    "shippingAddress": {
+      "title": "Shipping Address",
+      "line1": "Address Line 1",
+      "line2": "Address Line 2",
+      "postalCode": "Postal Code",
+      "city": "City",
+      "country": "Country",
+      "notProvided": "No shipping address provided yet."
+    },
+    "metadata": {
+      "title": "My Account - Inherbis",
+      "description": "View your account details, shipping address, and manage your preferences."
+    }
+  },
   "CartSheet": {
     "cartTitle": "Your Cart",
     "cartDescription": "Current contents of your shopping cart.",
@@ -152,7 +182,7 @@
   },
   "ProfileEditPage": {
     "title": "Edit My Profile",
-    "subtitle": "Update your personal information.",
+    "subtitle": "Update your personal information and shipping address.",
     "formDataTitle": "Profile Information",
     "form": {
       "firstName": {
@@ -163,7 +193,29 @@
       },
       "phoneNumber": {
         "label": "Phone Number"
+      },
+      "shipping_address_line1": {
+        "label": "Address Line 1"
+      },
+      "shipping_address_line2": {
+        "label": "Address Line 2 (Optional)"
+      },
+      "shipping_postal_code": {
+        "label": "Postal Code"
+      },
+      "shipping_city": {
+        "label": "City"
+      },
+      "shipping_country": {
+        "label": "Country"
+      },
+      "terms_accepted": {
+        "label": "I accept the terms and conditions."
       }
+    },
+    "metadata": {
+      "title": "Edit Your Profile - Inherbis",
+      "description": "Manage and update your account details, including shipping address and preferences."
     }
   },
   "Global": {
@@ -198,7 +250,13 @@
     "notProvided": "Not provided",
     "saving": "Saving...",
     "save_changes": "Save Changes",
-    "form_placeholder": "Form content here..."
+    "form_placeholder": "Form content here...",
+    "edit_profile": "Edit Profile",
+    "roles": {
+      "user": "User",
+      "editor": "Editor",
+      "admin": "Admin"
+    }
   },
   "shop": {
     "addedToCartFeedback": "Product {productName} added to cart!"
@@ -219,11 +277,32 @@
   },
   "AccountPage": {
     "title": "My Account",
-    "firstName": "First Name",
-    "lastName": "Last Name",
-    "email": "Email Address",
-    "phone": "Phone",
-    "accountCreated": "Account created on",
-    "editHint": "The information on this page is read-only. Editing will be available soon."
+    "generalInfo": {
+      "title": "General Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email Address",
+      "phone": "Phone",
+      "role": "Role",
+      "accountCreated": "Account created on"
+    },
+    "terms": {
+      "status": "Terms & Conditions Status",
+      "acceptedOn": "Accepted on:",
+      "notAccepted": "Not yet accepted."
+    },
+    "shippingAddress": {
+      "title": "Shipping Address",
+      "line1": "Address Line 1",
+      "line2": "Address Line 2",
+      "postalCode": "Postal Code",
+      "city": "City",
+      "country": "Country",
+      "notProvided": "No shipping address provided yet."
+    },
+    "metadata": {
+      "title": "My Account - Inherbis",
+      "description": "View your account details, shipping address, and manage your preferences."
+    }
   }
 }

@@ -1,114 +1,94 @@
-// import { getTranslations } from 'next-intl/server';
+import { setRequestLocale } from "next-intl/server";
+import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import UpdateProfileForm from "./UpdateProfileForm";
 import { ProfileData } from "@/types/profile";
-import { redirect as navRedirect } from "next/navigation";
-import { LOGIN_REDIRECT_URL } from "@/lib/constants";
-import UpdateProfileForm from "./UpdateProfileForm"; // Futur composant client
-import { SupabaseClient } from "@supabase/supabase-js"; // Added import
+import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
 
-interface EditAccountPageProps {
+interface Props {
   params: { locale: string };
 }
 
-async function getUserProfile(supabaseClient: SupabaseClient): Promise<ProfileData | null> {
+export async function generateMetadata({ params: { locale } }: Props): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: "ProfileEditPage.metadata" });
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
+
+export default async function EditProfilePage({ params: { locale } }: Props) {
+  setRequestLocale(locale);
+  const t = await getTranslations("ProfileEditPage");
+  const supabase = await createSupabaseServerClient();
+
   const {
     data: { user },
-    error: userError,
-  } = await supabaseClient.auth.getUser();
+  } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    console.error("Error fetching user or user not found:", userError);
-    return null;
+  if (!user) {
+    redirect(`/${locale}/auth/signin?next=/profile/account/edit`);
   }
 
-  const { data: profile, error: profileError } = await supabaseClient
+  const {
+    data: dbProfileData, // Renommé pour éviter la confusion avec la variable finale
+    error: profileError,
+  } = await supabase
     .from("profiles")
-    .select("first_name, last_name, phone_number, role")
+    .select(
+      `
+      id,
+      first_name,
+      last_name,
+      phone_number,
+      role,
+      shipping_address_line1,
+      shipping_address_line2,
+      shipping_postal_code,
+      shipping_city,
+      shipping_country,
+      terms_accepted_at
+    `
+    )
     .eq("id", user.id)
     .single();
 
-  if (profileError) {
-    if (profileError.code === "PGRST116") {
-      // Cas où l'utilisateur est authentifié mais n'a pas encore de profil.
-      // Ce n'est pas une "erreur" au sens strict pour une page d'édition.
-      console.log(
-        `No profile found for user (ID: ${user.id}), returning empty profile data. This is expected for new users.`
-      );
-    } else {
-      // Vraie erreur inattendue lors de la récupération du profil
-      console.error("Unexpected error fetching profile:", {
-        message: profileError.message,
-        code: profileError.code,
-        details: profileError.details,
-        fullError: profileError, // Pour avoir tous les détails si nécessaire
-      });
-    }
-    // Dans les deux cas (PGRST116 ou autre erreur), on retourne un profil "vide"
-    // pour que le formulaire s'affiche. Une gestion d'erreur plus poussée (ex: page d'erreur)
-    // pourrait être envisagée pour les erreurs inattendues si userProfile devenait null ici.
-    return {
-      first_name: null,
-      last_name: null,
-      phone_number: null,
-      role: null, // Le rôle devrait idéalement provenir de la session ou d'une source fiable
-    } as ProfileData; // Cast si on est sûr de la structure minimale
+  let userProfile: ProfileData | null = null;
+
+  if (profileError && profileError.code !== "PGRST116") {
+    // PGRST116: 'No rows found'. Pour toute autre erreur, on log et userProfile reste null.
+    console.error("Error fetching profile:", profileError);
+    // Ici, on pourrait choisir de lancer une erreur ou de retourner un composant d'erreur.
+    // Pour l'instant, si une erreur inattendue survient, le formulaire s'affichera vide.
+  } else if (dbProfileData) {
+    // Si les données sont là (pas d'erreur ou PGRST116 mais un profil existe déjà - peu probable avec .single() et PGRST116)
+    userProfile = {
+      id: dbProfileData.id, // id est bien présent et non null
+      first_name: dbProfileData.first_name,
+      last_name: dbProfileData.last_name,
+      phone_number: dbProfileData.phone_number,
+      role: dbProfileData.role,
+      shipping_address_line1: dbProfileData.shipping_address_line1,
+      shipping_address_line2: dbProfileData.shipping_address_line2,
+      shipping_postal_code: dbProfileData.shipping_postal_code,
+      shipping_city: dbProfileData.shipping_city,
+      shipping_country: dbProfileData.shipping_country,
+      terms_accepted_at: dbProfileData.terms_accepted_at,
+    };
   }
-  return profile;
-}
-
-export default async function EditAccountPage({ params }: EditAccountPageProps) {
-  // const { locale } = params; // Commented out as 't' is unused, and 'locale' was only for 't'
-
-  // Valider si params.locale (de l'URL) correspond à la locale de la requête (optionnel mais bon à vérifier)
-  // Note: params.locale n'est plus directement accessible après le renommage et await
-  // console.log('Locale from params:', locale);
-
-  const supabase = await createSupabaseServerClient();
-
-  // const t = await getTranslations({ locale, namespace: 'ProfileEditPage' }); // Commented out as 't' is unused
-  // const tGlobal = await getTranslations({ locale, namespace: 'Global' }); // Ensure tGlobal is commented out
-
-  const userProfile = await getUserProfile(supabase);
-
-  if (!userProfile) {
-    // Si getUserProfile retourne null parce que l'utilisateur n'est pas authentifié (pas juste profil non trouvé)
-    // alors rediriger vers login.
-    // Pour l'instant, on suppose que si userProfile est null, c'est une absence d'utilisateur authentifié.
-    const redirectUrl = `${LOGIN_REDIRECT_URL}?locale=${params.locale}&from=/profile/account/edit`;
-    return navRedirect(redirectUrl);
-  }
+  // Si dbProfileData est null (ex: PGRST116, le profil n'existe pas encore), userProfile reste null.
 
   return (
-    <section className="space-y-6">
-      <header>
-        {/* <h1 className="text-2xl font-semibold">{t('title')}</h1> */}
-        {/* <p className="text-muted-foreground">{t('subtitle')}</p> */}
+    <section className="mx-auto w-full max-w-2xl">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          {t("title")}
+        </h1>
+        <p className="mt-2 text-lg text-muted-foreground">{t("subtitle")}</p>
       </header>
-
-      <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
-        {/* <h2 className="text-xl font-semibold mb-4">{t('formDataTitle')}</h2> */}
-        <UpdateProfileForm
-          userProfile={userProfile} // userProfile from getUserProfile should now always be an object
-          // submitButtonText={t('updateProfileButton')}
-          // labels={{
-          //   firstName: t('firstNameLabel'),
-          //   lastName: t('lastNameLabel'),
-          //   phoneNumber: t('phoneNumberLabel'),
-          // }}
-        />
-        {/* Placeholder pour le formulaire */}
-        {/* <div className="p-4 border-2 border-dashed border-border rounded-md">
-          <p className="text-center text-muted-foreground">
-            {tGlobal('form_placeholder')} (UpdateProfileForm.tsx)
-          </p>
-          <pre className="mt-4 p-2 bg-muted rounded text-xs overflow-auto">
-            {JSON.stringify(userProfile, null, 2)}
-          </pre>
-        </div> */}
-      </div>
-
-      {/* Exemple d'utilisation des traductions Globales */}
-      {/* <p>{tGlobal('required_fields')}</p> */}
+      {/* La prop userProfile attend ProfileData | null, ce qui est maintenant garanti */}
+      <UpdateProfileForm userProfile={userProfile} />
     </section>
   );
 }

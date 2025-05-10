@@ -1,30 +1,41 @@
 {
-  "HomePage": {
-    "title": "Bienvenue (FR)",
-    "description": "Ceci est la page d'accueil en français."
+  "LocaleSwitcher": {
+    "switchLocale": "Passer en {locale, select, fr {français} en {anglais} other {inconnu}}"
   },
-  "NotFound": {
-    "title": "Page non trouvée",
-    "description": "Désolé, la page que vous recherchez n'existe pas."
+  "HomePage": {
+    "title": "Bienvenue chez Inherbis",
+    "description": "Votre source de produits de qualité."
+  },
+  "Error": {
+    "title": "Erreur",
+    "description": "Quelque chose s'est mal passé."
   },
   "TestPage": {
-    "title": "Page de Test des Composants Métier",
-    "categoryFilterTitle": "Test du Filtre par Catégories",
+    "title": "Page de Test des Composants de Domaine",
+    "categoryFilterTitle": "Test du Filtre de Catégorie",
     "selectedCategoriesLabel": "Catégories sélectionnées",
     "noneSelected": "Aucune",
-    "productCardTitle": "Grille de Produits (Test)"
+    "productCardTitle": "Test de la Carte Produit"
   },
   "Filters": {
     "filterByCategory": "Filtrer par catégorie",
     "close": "Fermer",
     "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
   },
+  "ProductCard": {
+    "addToCart": "Ajouter au panier",
+    "outOfStock": "Rupture de stock",
+    "discountBadge": "-{discountPercent}%",
+    "priceAccessibilityLabel": "Prix : {price}"
+  },
+  "ProductGrid": {
+    "noProductsFound": "Aucun produit ne correspond à vos critères."
+  },
   "ProductDetailModal": {
-    "productDetailDescription": "Détails pour le produit {productName}",
     "noImage": "Image non disponible",
     "quantity": "Quantité",
     "addToCart": "Ajouter au panier",
-    "addingToCart": "Ajout en cours...",
+    "addingToCart": "Ajout au panier...",
     "propertiesTab": "Propriétés",
     "descriptionTab": "Description",
     "compositionTab": "Composition",
@@ -33,66 +44,53 @@
     "noProperties": "Propriétés du produit non disponibles.",
     "noDescription": "Description non disponible",
     "noInci": "Liste INCI non disponible.",
-    "noUsage": "Conseils d'utilisation non disponibles.",
+    "noUsage": "Instructions d'utilisation non disponibles.",
     "noCompositionText": "Composition non disponible.",
-    "close": "Fermer",
     "defaultDescription": "Découvrez ce produit plus en détail.",
-    "productDetails": "Détails du produit"
+    "close": "Fermer",
+    "productDetailDescription": "Détails du produit {productName}"
+  },
+  "Header": {
+    "home": "Accueil",
+    "products": "Produits",
+    "about": "À propos",
+    "logoAriaLabel": "Retour à la page d'accueil",
+    "cartAriaLabel": "Panier d'achats",
+    "mobileMenuAriaLabel": "Ouvrir le menu mobile"
   },
   "QuantityInput": {
     "quantity": "Quantité",
     "decreaseQuantity": "Diminuer la quantité",
     "increaseQuantity": "Augmenter la quantité"
   },
-  "ProductGrid": {
-    "noProductsFound": "Aucun produit trouvé."
-  },
-  "ProductCard": {
-    "addToCart": "Ajouter au panier",
-    "viewDetails": "Voir les détails",
-    "outOfStock": "Épuisé"
-  },
   "ProductDetail": {
     "categoryLabel": "Catégorie",
-    "outOfStockLabel": "Produit actuellement indisponible",
+    "outOfStockLabel": "Actuellement indisponible",
     "productNotFound": "Produit non trouvé",
     "defaultDescription": "Découvrez plus de détails sur ce produit."
-  },
-  "ProductDetailDisplay": {
-    "taxInclusiveLabel": "TTC (Toutes Taxes Comprises)"
-  },
-  "Header": {
-    "home": "Accueil",
-    "products": "Produits",
-    "about": "À Propos",
-    "logoAriaLabel": "Retour à l'accueil",
-    "cartAriaLabel": "Panier d'achats",
-    "mobileMenuAriaLabel": "Ouvrir le menu mobile"
   },
   "Auth": {
     "LoginForm": {
       "title": "Connexion",
-      "description": "Entrez votre email pour vous connecter à votre compte",
+      "description": "Entrez votre email ci-dessous pour vous connecter à votre compte",
       "emailLabel": "Email",
       "passwordLabel": "Mot de passe",
       "submitButton": "Se connecter",
       "loading": "Connexion en cours...",
-      "registerPrompt": "Pas encore de compte ?",
-      "registerLink": "Inscrivez-vous"
+      "registerPrompt": "Vous n'avez pas de compte ?",
+      "registerLink": "S'inscrire"
     },
     "RegisterForm": {
       "title": "Créer un compte",
-      "description": "Entrez vos informations pour créer un nouveau compte",
+      "description": "Entrez vos informations ci-dessous pour créer votre compte",
       "emailLabel": "Email",
       "passwordLabel": "Mot de passe",
       "confirmPasswordLabel": "Confirmer le mot de passe",
       "submitButton": "S'inscrire",
       "loading": "Inscription en cours...",
-      "loginPrompt": "Déjà un compte ?",
-      "loginLink": "Connectez-vous"
+      "loginPrompt": "Vous avez déjà un compte ?",
+      "loginLink": "Se connecter"
     },
-    "loginTitle": "Connexion",
-    "registerTitle": "Inscription",
     "logout": "Déconnexion"
   },
   "ShopPage": {
@@ -100,17 +98,16 @@
     "errorFetchingData": "Erreur lors de la récupération des produits.",
     "noProductsFound": "Aucun produit trouvé."
   },
-  "SearchBar": {
-    "placeholder": "Rechercher des produits...",
-    "searchButtonLabel": "Rechercher"
+  "NotFoundPage": {
+    "title": "Page non trouvée"
   },
-  "shop": {
-    "addedToCartFeedback": "{productName} ajouté au panier !"
+  "ProductDetailDisplay": {
+    "taxInclusiveLabel": "TTC"
   },
   "CartSheet": {
     "cartTitle": "Votre Panier",
-    "cartDescription": "Contenu actuel de votre panier d'achats.",
-    "continueShopping": "Continuer vos achats",
+    "cartDescription": "Contenu actuel de votre panier.",
+    "continueShopping": "Continuer les achats",
     "emptyCart": "Votre panier est vide.",
     "emptyCartSuggestion": "Parcourez nos produits et ajoutez quelque chose qui vous plaît !",
     "subtotal": "Sous-total",
@@ -122,57 +119,41 @@
     "itemRemovedFromCart": "Article retiré du panier",
     "itemUpdatedInCart": "Quantité mise à jour dans le panier",
     "errorAddingToCart": "Erreur lors de l'ajout au panier",
-    "errorRemovingFromCart": "Erreur lors de la suppression du panier",
+    "errorRemovingFromCart": "Erreur lors du retrait du panier",
     "errorUpdatingCart": "Erreur lors de la mise à jour du panier",
     "viewCart": "Voir le panier",
     "proceedToCheckout": "Procéder au paiement",
-    "yourCartTitle": "Votre Panier"
+    "yourCartTitle": "Votre Panier",
+    "closeButton": "Fermer"
   },
   "CartDisplay": {
+    "title": "Contenu de Votre Panier",
     "yourCart": "Votre Panier",
     "emptyCart": "Votre panier est actuellement vide.",
-    "continueShopping": "Continuer les achats",
-    "productImageAlt": "Image de {productName}",
-    "unitPrice": "Prix unitaire",
-    "quantity": "Quantité",
-    "decreaseQuantity": "Diminuer la quantité de {itemName}",
-    "increaseQuantity": "Augmenter la quantité de {itemName}",
-    "removeItem": "Supprimer {itemName} du panier",
-    "subtotal": "Sous-total",
-    "totalItems": "{count, plural, =0 {0 articles} one {1 article} other {# articles}}",
-    "clearCart": "Vider le panier",
-    "checkout": "Passer à la caisse",
-    "or": "Ou",
-    "remove": "Supprimer",
-    "shippingTaxesCalculatedAtCheckout": "Frais de port et taxes calculés à la caisse."
-  },
-  "ProfileNav": {
-    "navigationLabel": "Navigation du profil",
-    "account": "Mon Compte",
-    "addresses": "Mes Adresses",
-    "orders": "Mes Commandes"
-  },
-  "AccountPage": {
-    "title": "Mon Compte",
-    "firstName": "Prénom",
-    "lastName": "Nom",
-    "email": "Adresse e-mail",
-    "phone": "Téléphone",
-    "accountCreated": "Compte créé le",
-    "editHint": "Les informations de cette page sont en lecture seule. La modification sera bientôt disponible."
-  },
-  "CategoryFilter": {
-    "filterByCategory": "Filtrer par catégorie",
-    "categoryFilterDescription": "Sélectionnez une catégorie pour affiner les résultats.",
-    "allCategories": "Toutes les catégories",
-    "clearFilters": "Effacer les filtres",
-    "applyFilters": "Appliquer les filtres",
-    "noCategoriesFound": "Aucune catégorie trouvée"
+    "total": "Total :",
+    "subtotal": "Sous-total :",
+    "item_singular": "article",
+    "item_plural": "articles",
+    "removeItemAriaLabel": "Retirer {itemName} du panier",
+    "updateQuantityAriaLabel": "Mettre à jour la quantité pour {itemName}",
+    "increaseQuantityAriaLabel": "Augmenter la quantité de {itemName}",
+    "decreaseQuantityAriaLabel": "Diminuer la quantité de {itemName}",
+    "proceedToCheckout": "Procéder au Paiement",
+    "continueShopping": "Continuer les Achats",
+    "remove": "Retirer",
+    "clearCart": "Vider le Panier",
+    "unitPrice": "Prix Unitaire",
+    "decreaseQuantity": "Diminuer la quantité",
+    "increaseQuantity": "Augmenter la quantité",
+    "removeItem": "Retirer l'article",
+    "shippingTaxesCalculatedAtCheckout": "Frais de port et taxes calculés au moment du paiement.",
+    "checkout": "Paiement",
+    "or": "ou"
   },
   "ProfileEditPage": {
-    "title": "Modifier mon profil",
-    "subtitle": "Mettez à jour vos informations personnelles.",
-    "formDataTitle": "Informations du profil",
+    "title": "Modifier Mon Profil",
+    "subtitle": "Mettez à jour vos informations personnelles et votre adresse de livraison.",
+    "formDataTitle": "Informations du Profil",
     "form": {
       "firstName": {
         "label": "Prénom"
@@ -182,51 +163,116 @@
       },
       "phoneNumber": {
         "label": "Numéro de téléphone"
+      },
+      "shipping_address_line1": {
+        "label": "Adresse Ligne 1"
+      },
+      "shipping_address_line2": {
+        "label": "Adresse Ligne 2 (Optionnel)"
+      },
+      "shipping_postal_code": {
+        "label": "Code Postal"
+      },
+      "shipping_city": {
+        "label": "Ville"
+      },
+      "shipping_country": {
+        "label": "Pays"
+      },
+      "terms_accepted": {
+        "label": "J'accepte les termes et conditions."
       }
+    },
+    "metadata": {
+      "title": "Modifier Votre Profil - Inherbis",
+      "description": "Gérez et mettez à jour les détails de votre compte, y compris l'adresse de livraison et les préférences."
     }
   },
   "Global": {
-    "appName": "In Herbis Veritas",
-    "toggleLanguage": "Changer de langue",
-    "english": "Anglais",
-    "french": "Français",
-    "searchPlaceholder": "Rechercher des produits...",
+    "home": "Accueil",
+    "shop": "Boutique",
+    "about": "À Propos",
+    "contact": "Contact",
+    "account": "Compte",
     "login": "Connexion",
     "logout": "Déconnexion",
     "register": "Inscription",
     "cart": "Panier",
-    "emptyCart": "Votre panier est vide.",
-    "viewCart": "Voir le panier",
-    "checkout": "Passer la commande",
-    "subtotal": "Sous-total",
-    "total": "Total",
-    "remove": "Supprimer",
-    "quantity": "Quantité",
-    "product": "Produit",
-    "price": "Prix",
-    "copyright": " {year} In Herbis Veritas. Tous droits réservés.",
-    "shop": "Boutique",
-    "homepage": "Accueil",
-    "products": "Produits",
-    "about": "À Propos",
-    "contact": "Contact",
-    "notFoundTitle": "Page non trouvée",
-    "notFoundText": "Désolé, la page que vous recherchez n'existe pas.",
-    "goHome": "Retour à l'accueil",
-    "addedToCart": "Ajouté au panier",
-    "openMenu": "Ouvrir le menu",
-    "closeMenu": "Fermer le menu",
-    "shopAll": "Tous les produits",
-    "profileNavigation": "Navigation du profil",
-    "notProvided": "Non fourni",
-    "account": "Compte",
     "search": "Recherche",
     "menu": "Menu",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
     "mobileMenuDescription": "Navigation principale du site pour mobile.",
-    "openCart": "Ouvrir le panier",
+    "allProducts": "Tous les Produits",
+    "newArrivals": "Nouveautés",
+    "featuredProducts": "Produits en Vedette",
+    "bestSellers": "Meilleures Ventes",
+    "onSale": "Promotions",
+    "viewAll": "Voir Tout",
+    "addToCart": "Ajouter au Panier",
+    "removeFromCart": "Retirer du Panier",
+    "updateCart": "Mettre à Jour le Panier",
+    "proceedToCheckout": "Procéder au Paiement",
     "itemCount": "{count, plural, =0 {aucun article} one {# article} other {# articles}}",
+    "openCart": "Ouvrir le Panier",
+    "checkout": "Paiement",
+    "profileNavigation": "Navigation du Profil",
+    "notProvided": "Non fourni",
     "saving": "Enregistrement...",
-    "save_changes": "Enregistrer les modifications",
-    "form_placeholder": "Contenu du formulaire ici..."
+    "save_changes": "Enregistrer les Modifications",
+    "form_placeholder": "Contenu du formulaire ici...",
+    "edit_profile": "Modifier le Profil",
+    "roles": {
+      "user": "Utilisateur",
+      "editor": "Éditeur",
+      "admin": "Administrateur"
+    }
+  },
+  "shop": {
+    "addedToCartFeedback": "Produit {productName} ajouté au panier !"
+  },
+  "CategoryFilter": {
+    "filterByCategory": "Filtrer par catégorie",
+    "categoryFilterDescription": "Sélectionnez une catégorie pour affiner les résultats.",
+    "allCategories": "Toutes les catégories",
+    "clearFilters": "Effacer les filtres",
+    "applyFilters": "Appliquer les filtres",
+    "noCategoriesFound": "Aucune catégorie trouvée"
+  },
+  "ProfileNav": {
+    "navigationLabel": "Navigation du Profil",
+    "account": "Mon Compte",
+    "addresses": "Mes Adresses",
+    "orders": "Mes Commandes"
+  },
+  "AccountPage": {
+    "title": "Mon Compte",
+    "metadata": {
+      "title": "Mon Compte - Inherbis",
+      "description": "Visualisez les détails de votre compte, votre adresse de livraison et gérez vos préférences."
+    },
+    "generalInfo": {
+      "title": "Informations Générales",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Adresse Email",
+      "phone": "Téléphone",
+      "role": "Rôle",
+      "accountCreated": "Compte créé le"
+    },
+    "terms": {
+      "status": "Statut des Conditions Générales",
+      "acceptedOn": "Acceptées le :",
+      "notAccepted": "Pas encore acceptées."
+    },
+    "shippingAddress": {
+      "title": "Adresse de Livraison",
+      "line1": "Adresse Ligne 1",
+      "line2": "Adresse Ligne 2",
+      "postalCode": "Code Postal",
+      "city": "Ville",
+      "country": "Pays",
+      "notProvided": "Aucune adresse de livraison fournie pour le moment."
+    }
   }
 }

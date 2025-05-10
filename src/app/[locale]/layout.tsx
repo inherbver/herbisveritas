@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import { locales, Locale } from "@/i18n-config";
 import ClientLayout from "@/components/layout/client-layout";
 import { setRequestLocale, getTimeZone } from "next-intl/server";
-import { Header } from "@/components/layout/header"; // Updated import path
-import "@/app/globals.css"; // Import global styles
+import { Header } from "@/components/layout/header";
+import { Toaster } from "@/components/ui/sonner";
+import "@/app/globals.css";
 
 interface Props {
   children: ReactNode;
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 }
 
 async function loadMessages(locale: string) {
@@ -21,28 +22,37 @@ async function loadMessages(locale: string) {
   }
 }
 
-export default async function LocaleLayout({ children, params }: Props) {
-  const { locale } = await params;
+export async function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
 
-  if (!locales.includes(locale as Locale)) {
+export default async function LocaleLayout({ children, params }: Props) {
+  const { locale: currentLocale } = await params;
+
+  if (!locales.includes(currentLocale as Locale)) {
     console.warn(
-      `Invalid locale "${locale}" requested, falling back to default or triggering notFound.`
+      `LocaleLayout: Invalid locale '${currentLocale}' received. Available locales are: ${locales.join(", ")}. Falling back to default locale '${locales[0]}'.`
     );
     notFound();
   }
 
-  setRequestLocale(locale);
+  await setRequestLocale(currentLocale);
 
-  const messages = await loadMessages(locale);
-  const timeZone = await getTimeZone({ locale });
+  let messages;
+  try {
+    messages = await loadMessages(currentLocale);
+  } catch (error) {
+    console.error("Failed to load messages:", error);
+    notFound();
+  }
+
+  const timeZone = await getTimeZone({ locale: currentLocale });
 
   return (
-    // NE PAS inclure <html> ou <body> ici.
-    // ClientLayout enveloppe la structure interne.
-    // NE PAS inclure <html> ou <body> ici.
-    <ClientLayout locale={locale} messages={messages} timeZone={timeZone}>
+    <ClientLayout locale={currentLocale} messages={messages} timeZone={timeZone}>
       <Header />
-      {children} {/* Main tag removed, handled by page-specific layouts like MainLayout */}
+      <Toaster richColors position="bottom-right" />
+      {children}
       {/* <Footer /> */}
     </ClientLayout>
   );
