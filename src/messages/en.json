@@ -194,19 +194,22 @@
       "phoneNumber": {
         "label": "Phone Number"
       },
-      "shipping_address_line1": {
+      "shippingAddress": {
+        "title": "Shipping Address"
+      },
+      "shippingAddressLine1": {
         "label": "Address Line 1"
       },
-      "shipping_address_line2": {
+      "shippingAddressLine2": {
         "label": "Address Line 2 (Optional)"
       },
-      "shipping_postal_code": {
+      "shippingPostalCode": {
         "label": "Postal Code"
       },
-      "shipping_city": {
+      "shippingCity": {
         "label": "City"
       },
-      "shipping_country": {
+      "shippingCountry": {
         "label": "Country"
       },
       "terms_accepted": {
@@ -304,5 +307,8 @@
       "title": "My Account - Inherbis",
       "description": "View your account details, shipping address, and manage your preferences."
     }
+  },
+  "Legal": {
+    "acceptTermsAndConditions": "I accept the terms and conditions"
   }
 }

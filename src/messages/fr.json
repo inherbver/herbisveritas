@@ -164,19 +164,22 @@
       "phoneNumber": {
         "label": "Numéro de téléphone"
       },
-      "shipping_address_line1": {
+      "shippingAddress": {
+        "title": "Adresse de livraison"
+      },
+      "shippingAddressLine1": {
         "label": "Adresse Ligne 1"
       },
-      "shipping_address_line2": {
+      "shippingAddressLine2": {
         "label": "Adresse Ligne 2 (Optionnel)"
       },
-      "shipping_postal_code": {
+      "shippingPostalCode": {
         "label": "Code Postal"
       },
-      "shipping_city": {
+      "shippingCity": {
         "label": "Ville"
       },
-      "shipping_country": {
+      "shippingCountry": {
         "label": "Pays"
       },
       "terms_accepted": {
@@ -274,5 +277,8 @@
       "country": "Pays",
       "notProvided": "Aucune adresse de livraison fournie pour le moment."
     }
+  },
+  "Legal": {
+    "acceptTermsAndConditions": "J'accepte les termes et conditions"
   }
 }

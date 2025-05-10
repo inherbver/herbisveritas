@@ -10,7 +10,8 @@ interface Props {
   params: { locale: string };
 }
 
-export async function generateMetadata({ params: { locale } }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "ProfileEditPage.metadata" });
   return {
     title: t("title"),
@@ -18,7 +19,10 @@ export async function generateMetadata({ params: { locale } }: Props): Promise<M
   };
 }
 
-export default async function EditProfilePage({ params: { locale } }: Props) {
+export default async function EditProfilePage(props: Props) {
+  const { locale } = await props.params;
+
+  // Set the locale for this request
   setRequestLocale(locale);
   const t = await getTranslations("ProfileEditPage");
   const supabase = await createSupabaseServerClient();
