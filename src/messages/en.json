@@ -221,6 +221,71 @@
       "description": "Manage and update your account details, including shipping address and preferences."
     }
   },
+  "AddressForm": {
+    "formTitleNewShipping": "Add a new shipping address",
+    "formTitleNewBilling": "Add a new billing address",
+    "formTitleEditShipping": "Edit shipping address",
+    "formTitleEditBilling": "Edit billing address",
+    "fieldLabels": {
+      "full_name": "Full Name",
+      "company_name": "Company Name (Optional)",
+      "address_line1": "Address Line 1",
+      "address_line2": "Address Line 2 (Optional)",
+      "postal_code": "Postal Code",
+      "city": "City",
+      "country_code": "Country Code (e.g., US)",
+      "state_province_region": "State/Province/Region (Optional)",
+      "phone_number": "Phone Number (Optional)"
+    },
+    "checkboxLabelIsDefault": "Set as default address",
+    "placeholders": {
+      "full_name": "Enter full name",
+      "company_name": "Enter company name",
+      "address_line1": "Street address, P.O. box, company name, c/o",
+      "address_line2": "Apartment, suite, unit, building, floor, etc.",
+      "postal_code": "Enter postal code",
+      "city": "Enter city",
+      "country_code": "US",
+      "state_province_region": "Enter state/province/region",
+      "phone_number": "Enter phone number"
+    },
+    "buttons": {
+      "save": "Save Address",
+      "saving": "Saving...",
+      "cancel": "Cancel"
+    },
+    "serverActions": {
+      "validationError": "Validation failed. Please check the form fields.",
+      "addSuccess": "Address added successfully.",
+      "addError": "Failed to add address. Please try again.",
+      "updateSuccess": "Address updated successfully.",
+      "updateError": "Failed to update address. Please try again."
+    }
+  },
+  "ProfileNav": {
+    "navigationLabel": "Profile Navigation",
+    "account": "My Account",
+    "addresses": "My Addresses",
+    "orders": "My Orders"
+  },
+  "Legal": {
+    "acceptTermsAndConditions": "I accept the terms and conditions"
+  },
+  "AddressesPage": {
+    "title": "My Addresses",
+    "shippingAddressTitle": "Shipping Address",
+    "billingAddressTitle": "Billing Address",
+    "noShippingAddress": "No shipping address on file.",
+    "noBillingAddress": "No billing address on file. Billing address is the same as shipping address.",
+    "addAddressButton": "Add New Address",
+    "editAddressButton": "Edit Address",
+    "phone": "Phone",
+    "notProvided": "Not provided",
+    "metadata": {
+      "title": "My Addresses - Inherbis",
+      "description": "Manage your shipping and billing addresses."
+    }
+  },
   "Global": {
     "home": "Home",
     "shop": "Shop",
@@ -271,14 +336,5 @@
     "clearFilters": "Clear filters",
     "applyFilters": "Apply filters",
     "noCategoriesFound": "No categories found"
-  },
-  "ProfileNav": {
-    "navigationLabel": "Profile Navigation",
-    "account": "My Account",
-    "addresses": "My Addresses",
-    "orders": "My Orders"
-  },
-  "Legal": {
-    "acceptTermsAndConditions": "I accept the terms and conditions"
   }
 }

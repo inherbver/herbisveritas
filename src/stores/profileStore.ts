@@ -50,6 +50,12 @@ export const useProfileStore = create<AdminProfileEditState & { actions: AdminPr
             last_name: "User",
             phone_number: "0123456789",
             role: "user",
+            shipping_address_line1: null,
+            shipping_address_line2: null,
+            shipping_postal_code: null,
+            shipping_city: null,
+            shipping_country: null,
+            terms_accepted_at: null,
           };
 
           if (!data) {
