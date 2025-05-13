@@ -13,7 +13,6 @@ const nextConfig = {
     if (dev && !isServer) {
       config.ignoreWarnings = [
         { message: /unreachable code after return statement/ },
-        { message: /Invalid URL: file:\/\// },
       ];
     }
     return config;

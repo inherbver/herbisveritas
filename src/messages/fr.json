@@ -1,7 +1,4 @@
 {
-  "LocaleSwitcher": {
-    "switchLocale": "Passer en {locale, select, fr {français} en {anglais} other {inconnu}}"
-  },
   "HomePage": {
     "title": "Bienvenue chez Inherbis",
     "description": "Votre source de produits de qualité."
@@ -49,14 +46,6 @@
     "defaultDescription": "Découvrez ce produit plus en détail.",
     "close": "Fermer",
     "productDetailDescription": "Détails du produit {productName}"
-  },
-  "Header": {
-    "home": "Accueil",
-    "products": "Produits",
-    "about": "À propos",
-    "logoAriaLabel": "Retour à la page d'accueil",
-    "cartAriaLabel": "Panier d'achats",
-    "mobileMenuAriaLabel": "Ouvrir le menu mobile"
   },
   "QuantityInput": {
     "quantity": "Quantité",
@@ -189,46 +178,6 @@
     "metadata": {
       "title": "Modifier Votre Profil - Inherbis",
       "description": "Gérez et mettez à jour les détails de votre compte, y compris l'adresse de livraison et les préférences."
-    }
-  },
-  "Global": {
-    "home": "Accueil",
-    "shop": "Boutique",
-    "about": "À Propos",
-    "contact": "Contact",
-    "account": "Compte",
-    "login": "Connexion",
-    "logout": "Déconnexion",
-    "register": "Inscription",
-    "cart": "Panier",
-    "search": "Recherche",
-    "menu": "Menu",
-    "openMenu": "Ouvrir le menu",
-    "closeMenu": "Fermer le menu",
-    "mobileMenuDescription": "Navigation principale du site pour mobile.",
-    "allProducts": "Tous les Produits",
-    "newArrivals": "Nouveautés",
-    "featuredProducts": "Produits en Vedette",
-    "bestSellers": "Meilleures Ventes",
-    "onSale": "Promotions",
-    "viewAll": "Voir Tout",
-    "addToCart": "Ajouter au Panier",
-    "removeFromCart": "Retirer du Panier",
-    "updateCart": "Mettre à Jour le Panier",
-    "proceedToCheckout": "Procéder au Paiement",
-    "itemCount": "{count, plural, =0 {aucun article} one {# article} other {# articles}}",
-    "openCart": "Ouvrir le Panier",
-    "checkout": "Paiement",
-    "profileNavigation": "Navigation du Profil",
-    "notProvided": "Non fourni",
-    "saving": "Enregistrement...",
-    "save_changes": "Enregistrer les Modifications",
-    "form_placeholder": "Contenu du formulaire ici...",
-    "edit_profile": "Modifier le Profil",
-    "roles": {
-      "user": "Utilisateur",
-      "editor": "Éditeur",
-      "admin": "Administrateur"
     }
   },
   "shop": {

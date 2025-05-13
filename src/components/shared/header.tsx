@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Menu, ShoppingCart, LogIn, UserPlus, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTranslations } from "next-intl/server";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logoutAction } from "@/actions/auth";
 
 async function Header({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
   const t = await getTranslations("Header");
   const authT = await getTranslations("Auth");
 
-  const supabase = await createClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

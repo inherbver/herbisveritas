@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { locales, Locale } from "@/i18n-config";
 import ClientLayout from "@/components/layout/client-layout";
-import { setRequestLocale, getTimeZone } from "next-intl/server";
+import { setRequestLocale, getTimeZone, getMessages } from "next-intl/server";
 import { Header } from "@/components/layout/header";
 import { Toaster } from "@/components/ui/sonner";
 import "@/app/globals.css";
@@ -10,16 +10,6 @@ import "@/app/globals.css";
 interface Props {
   children: ReactNode;
   params: { locale: string };
-}
-
-async function loadMessages(locale: string) {
-  try {
-    const messages = (await import(`../../messages/${locale}.json`)).default;
-    return messages;
-  } catch (error) {
-    console.error(`Failed to load messages for locale ${locale}:`, error);
-    notFound();
-  }
 }
 
 export async function generateStaticParams() {
@@ -40,9 +30,9 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   let messages;
   try {
-    messages = await loadMessages(currentLocale);
+    messages = await getMessages();
   } catch (error) {
-    console.error("Failed to load messages:", error);
+    console.error("Failed to load messages via getMessages():", error);
     notFound();
   }
 

@@ -23,17 +23,21 @@ import {
 import { User, Menu, Info } from "lucide-react"; // Icons
 import { CartSheet } from "@/components/domain/shop/cart-sheet"; // Ajout de l'import
 import { useTranslations } from "next-intl"; // Correction de l'import
+import LocaleSwitcher from "./locale-switcher"; // Import du composant
 
 // Placeholder pour le composant Logo
-const Logo = () => (
-  <Link
-    href="/"
-    className="font-serif text-xl font-bold text-primary md:text-2xl"
-    aria-label="In Herbis Veritas - Accueil"
-  >
-    In Herbis Veritas
-  </Link>
-);
+const Logo = () => {
+  const tGlobal = useTranslations("Global"); // Ajout pour accéder aux traductions dans Logo
+  return (
+    <Link
+      href="/"
+      className="font-serif text-xl font-bold text-primary md:text-2xl"
+      aria-label={tGlobal("Header.logoAriaLabel")} // Traduction
+    >
+      In Herbis Veritas
+    </Link>
+  );
+};
 
 export function Header() {
   const tGlobal = useTranslations("Global");
@@ -68,21 +72,21 @@ export function Header() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link href="/" className={navigationMenuTriggerStyle()}>
-                    Accueil
+                    {tGlobal("Header.home")} {/* Traduction */}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link href="/shop" className={navigationMenuTriggerStyle()}>
-                    Produits
+                    {tGlobal("Header.products")} {/* Traduction */}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link href="/about" className={navigationMenuTriggerStyle()}>
-                    À Propos
+                    {tGlobal("Header.about")} {/* Traduction */}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
@@ -93,7 +97,8 @@ export function Header() {
         {/* 5. Actions Utilitaires (Desktop) + Trigger Mobile */}
         <div className="flex items-center justify-end gap-2 md:gap-3">
           {/* Icons */}
-          <Button variant="ghost" size="icon" aria-label="Mon compte">
+          <LocaleSwitcher />
+          <Button variant="ghost" size="icon" aria-label={tGlobal("Header.accountAriaLabel")}> {/* Traduction */}
             <User className="h-5 w-5" />
           </Button>
           <CartSheet /> {/* Remplacement du bouton Panier */}
@@ -102,15 +107,15 @@ export function Header() {
             {/* TODO: Add conditional logic based on isLoggedIn */}
             {isLoggedIn ? (
               <Button variant="outline" size="sm">
-                Mon Compte
+                {tGlobal("Header.accountAriaLabel")} {/* Traduction */}
               </Button>
             ) : (
               <>
                 <Button variant="ghost" size="sm">
-                  Connexion
+                  {tGlobal("Header.login")} {/* Traduction */}
                 </Button>
                 <Button variant="default" size="sm">
-                  Inscription
+                  {tGlobal("Header.register")} {/* Traduction */}
                 </Button>
               </>
             )}
@@ -120,7 +125,7 @@ export function Header() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-6 w-6" />
-                <span className="sr-only">{tGlobal("openMenu")}</span>
+                <span className="sr-only">{tGlobal("Header.mobileMenuAriaLabel")}</span> {/* Traduction et clé mise à jour */}
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] pt-10 sm:w-[350px]">
@@ -129,8 +134,8 @@ export function Header() {
                 <div className="mx-auto mb-4 w-fit">
                   <Logo />
                 </div>
-                <SheetTitle className="text-2xl font-bold">{tGlobal("menu")}</SheetTitle>
-                <SheetDescription>{tGlobal("mobileMenuDescription")}</SheetDescription>
+                <SheetTitle className="text-2xl font-bold">{tGlobal("Header.mobileSheetTitle")}</SheetTitle> {/* Traduction et clé mise à jour */}
+                <SheetDescription>{tGlobal("Header.mobileSheetDescription")}</SheetDescription> {/* Traduction et clé mise à jour */}
               </SheetHeader>
               <nav className="flex flex-col gap-4 px-4">
                 <SheetClose asChild>
@@ -138,7 +143,7 @@ export function Header() {
                     href="/"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    Accueil
+                    {tGlobal("Header.home")} {/* Traduction */}
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
@@ -146,7 +151,7 @@ export function Header() {
                     href="/shop"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    Produits
+                    {tGlobal("Header.products")} {/* Traduction */}
                   </Link>
                 </SheetClose>
                 <SheetClose asChild>
@@ -154,7 +159,7 @@ export function Header() {
                     href="/about"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    À Propos
+                    {tGlobal("Header.about")} {/* Traduction */}
                   </Link>
                 </SheetClose>
 
@@ -166,7 +171,7 @@ export function Header() {
                       href="/account"
                       className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
-                      Mon Compte
+                      {tGlobal("Header.account")} {/* Traduction */}
                     </Link>
                   </SheetClose>
                 ) : (
@@ -176,7 +181,7 @@ export function Header() {
                         href="/login"
                         className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                       >
-                        Connexion
+                        {tGlobal("Header.login")} {/* Traduction */}
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
@@ -184,7 +189,7 @@ export function Header() {
                         href="/register"
                         className="hover:bg-primary/90 rounded-md bg-primary px-3 py-2 text-base font-medium text-primary-foreground transition-colors"
                       >
-                        Inscription
+                        {tGlobal("Header.register")} {/* Traduction */}
                       </Link>
                     </SheetClose>
                   </>

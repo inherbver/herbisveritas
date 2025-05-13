@@ -1,5 +1,5 @@
 import { createNavigation } from "next-intl/navigation";
-import { locales, defaultLocale } from "../i18n-config"; // Importe depuis le middleware
+import { locales, defaultLocale, localePrefix } from "../i18n-config";
 
 // Optionnel: Définir des pathnames spécifiques par locale si nécessaire
 // Exemple: '/about' en anglais devient '/a-propos' en français
@@ -67,9 +67,10 @@ export const pathnames = {
 // Type for canonical pathnames based on the keys of the pathnames object
 export type AppPathname = keyof typeof pathnames;
 
-export const { Link, redirect, usePathname, useRouter, getPathname } = createNavigation({
-  locales,
-  defaultLocale,
-  localePrefix: "as-needed", // Doit correspondre à la config du middleware
-  pathnames,
+export const { Link, redirect, usePathname, useRouter, getPathname } = 
+  createNavigation({
+    locales,
+    defaultLocale,
+    localePrefix, 
+    pathnames,
 });
