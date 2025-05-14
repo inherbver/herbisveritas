@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LOGIN_REDIRECT_URL } from "@/lib/constants";
 import { ProfileData } from "@/types/profile";
 import { Metadata } from "next";
+import ChangePasswordForm from "@/components/domain/auth/change-password-form"; // Ensuring correct absolute path
 
 // Helper pour formater la date
 function formatDate(dateString: string | null | undefined, locale: string): string {
@@ -333,15 +334,10 @@ export default async function AccountPage(props: AccountPageProps) {
         className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg"
       >
         <div className="px-4 py-5 sm:p-6">
-          <div className="flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">{t("password.title")}</h2>
-            <Link
-              href={`/${currentLocale}/profile/change-password`}
-              className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              {t("password.changeLink")}
-            </Link>
           </div>
+          <ChangePasswordForm />
         </div>
       </article>
     </section>

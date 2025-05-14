@@ -363,5 +363,22 @@
     "saveChanges": "Save Changes",
     "anErrorOccurred": "An error occurred. Please try again.",
     "operationSuccessful": "Operation successful."
+  },
+  "ChangePasswordForm": {
+    "newPasswordLabel": "New Password",
+    "confirmPasswordLabel": "Confirm New Password",
+    "SubmitButton": {
+      "idle": "Update Password",
+      "pending": "Updating..."
+    },
+    "validation": {
+      "minLength": "Password must be at least 8 characters long.",
+      "passwordsMustMatch": "Passwords do not match."
+    },
+    "notifications": {
+      "success": "Password updated successfully!",
+      "error": "Failed to update password: {error}",
+      "serverError": "Server error: {error}"
+    }
   }
 }

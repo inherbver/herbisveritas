@@ -355,5 +355,22 @@
     "saveChanges": "Enregistrer les modifications",
     "anErrorOccurred": "Une erreur est survenue. Veuillez réessayer.",
     "operationSuccessful": "Opération réussie."
+  },
+  "ChangePasswordForm": {
+    "newPasswordLabel": "Nouveau mot de passe",
+    "confirmPasswordLabel": "Confirmer le nouveau mot de passe",
+    "SubmitButton": {
+      "idle": "Mettre à jour le mot de passe",
+      "pending": "Mise à jour..."
+    },
+    "validation": {
+      "minLength": "Le mot de passe doit contenir au moins 8 caractères.",
+      "passwordsMustMatch": "Les mots de passe ne correspondent pas."
+    },
+    "notifications": {
+      "success": "Mot de passe mis à jour avec succès !",
+      "error": "Échec de la mise à jour du mot de passe : {error}",
+      "serverError": "Erreur serveur : {error}"
+    }
   }
 }
