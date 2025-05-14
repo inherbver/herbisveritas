@@ -6,7 +6,11 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils"; // Supposant que vous avez cn pour classnames
 
 // Définir un type plus spécifique pour les chemins du profil
-type ProfilePathname = "/profile/account" | "/profile/addresses" | "/profile/orders";
+type ProfilePathname =
+  | "/profile/account"
+  | "/profile/addresses"
+  | "/profile/orders"
+  | "/profile/password";
 
 interface NavLinkItem {
   href: ProfilePathname;
@@ -17,6 +21,7 @@ const profileNavLinks: NavLinkItem[] = [
   { href: "/profile/account", labelKey: "account" },
   { href: "/profile/addresses", labelKey: "addresses" },
   { href: "/profile/orders", labelKey: "orders" },
+  { href: "/profile/password", labelKey: "password" }, // Nouveau lien
   // Ajoutez d'autres liens ici si nécessaire
 ];
 
@@ -55,3 +60,4 @@ export default function ProfileNavLinks() {
 // "account": "My Account" (ou "Mon Compte")
 // "addresses": "My Addresses" (ou "Mes Adresses")
 // "orders": "My Orders" (ou "Mes Commandes")
+// "password": "My Password" (ou "Mon Mot de Passe")

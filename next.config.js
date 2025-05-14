@@ -9,13 +9,26 @@ const withNextIntl = createNextIntlPlugin(
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   productionBrowserSourceMaps: false,
-  webpack(config, { dev, isServer }) {
+  experimental: {
+    // typedRoutes: true, // Enable typed routes for better type safety
+  },
+  webpack: (config, { dev, isServer }) => {
+    // Solution 3.1: Attempt to fix source map URLs for Turbopack/Firefox
+    // https://nextjs.org/docs/api-reference/next.config.js/custom-webpack-config
+    // While these are Webpack settings, Turbopack might pick them up or have similar behavior.
+    if (dev) {
+      config.output.devtoolNamespace = "herbisveritas-app"; // Using a project-specific namespace
+      config.output.devtoolModuleFilenameTemplate = (info) =>
+        `webpack://${config.output.devtoolNamespace}/${info.absoluteResourcePath.replace(/\\/g, "/")}`;
+    }
+
     if (dev && !isServer) {
-      config.ignoreWarnings = [
-        { message: /unreachable code after return statement/ },
-      ];
+      config.ignoreWarnings = [{ message: /unreachable code after return statement/ }];
     }
     return config;
+  },
+  images: {
+    // Existing image config...
   },
 };
 

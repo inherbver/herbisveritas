@@ -118,6 +118,18 @@
       "country": "Country",
       "notProvided": "No shipping address provided yet."
     },
+    "billingAddress": {
+      "title": "Billing Address",
+      "line1": "Address Line 1",
+      "line2": "Address Line 2",
+      "postalCode": "Postal Code",
+      "city": "City",
+      "country": "Country",
+      "notProvided": "No billing address provided yet."
+    },
+    "shippingAndBillingAddress": {
+      "title": "Shipping and Billing Address"
+    },
     "metadata": {
       "title": "My Account - Inherbis",
       "description": "View your account details, shipping address, and manage your preferences."
@@ -184,13 +196,13 @@
         "label": "Phone Number"
       },
       "shippingAddress": {
-        "title": "Shipping Address"
+        "title": "Main Shipping Address"
       },
       "shippingAddressLine1": {
-        "label": "Address Line 1"
+        "label": "Street number, street name"
       },
       "shippingAddressLine2": {
-        "label": "Address Line 2 (Optional)"
+        "label": "Additional address details (Building, floor, door...)"
       },
       "shippingPostalCode": {
         "label": "Postal Code"
@@ -199,6 +211,27 @@
         "label": "City"
       },
       "shippingCountry": {
+        "label": "Country"
+      },
+      "billingAddressIsDifferent": {
+        "label": "My billing address is different from my shipping address"
+      },
+      "billingAddress": {
+        "title": "Billing Address"
+      },
+      "billingAddressLine1": {
+        "label": "Street number, street name"
+      },
+      "billingAddressLine2": {
+        "label": "Additional address details (Building, floor, door...)"
+      },
+      "billingPostalCode": {
+        "label": "Postal Code"
+      },
+      "billingCity": {
+        "label": "City"
+      },
+      "billingCountry": {
         "label": "Country"
       },
       "terms_accepted": {
@@ -252,10 +285,11 @@
     }
   },
   "ProfileNav": {
-    "navigationLabel": "Profile Navigation",
+    "navigationLabel": "Profile navigation",
     "account": "My Account",
     "addresses": "My Addresses",
-    "orders": "My Orders"
+    "orders": "My Orders",
+    "password": "My Password"
   },
   "Legal": {
     "acceptTermsAndConditions": "I accept the terms and conditions"
@@ -285,5 +319,50 @@
     "clearFilters": "Clear filters",
     "applyFilters": "Apply filters",
     "noCategoriesFound": "No categories found"
+  },
+  "PasswordPage": {
+    "metadata": {
+      "title": "Change My Password - Inherbis",
+      "description": "Update the password for your Inherbis account."
+    },
+    "title": "Change My Password",
+    "form": {
+      "currentPassword": {
+        "label": "Current Password",
+        "placeholder": "Enter your current password"
+      },
+      "newPassword": {
+        "label": "New Password",
+        "placeholder": "Enter your new password",
+        "description": "Minimum 8 characters."
+      },
+      "confirmPassword": {
+        "label": "Confirm New Password",
+        "placeholder": "Confirm your new password"
+      },
+      "submitButton": "Change Password",
+      "submitButtonLoading": "Changing...",
+      "feedback": {
+        "updateSuccess": "Your password has been updated successfully.",
+        "updateErrorDefault": "An error occurred while updating. Please try again.",
+        "newPasswordMustBeDifferent": "New password must be different from the old one."
+      }
+    },
+    "validation": {
+      "currentPasswordRequired": "Current password is required.",
+      "newPasswordMinLength": "New password must be at least 8 characters long.",
+      "passwordsDoNotMatch": "New passwords do not match."
+    }
+  },
+  "Global": {
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "submit": "Submit",
+    "saving": "Saving...",
+    "pending": "Pending...",
+    "saveChanges": "Save Changes",
+    "anErrorOccurred": "An error occurred. Please try again.",
+    "operationSuccessful": "Operation successful."
   }
 }

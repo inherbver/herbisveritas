@@ -141,7 +141,7 @@
   },
   "ProfileEditPage": {
     "title": "Modifier Mon Profil",
-    "subtitle": "Mettez à jour vos informations personnelles et votre adresse de livraison.",
+    "subtitle": "Mettez à jour vos informations personnelles et vos préférences de compte.",
     "formDataTitle": "Informations du Profil",
     "form": {
       "firstName": {
@@ -154,13 +154,13 @@
         "label": "Numéro de téléphone"
       },
       "shippingAddress": {
-        "title": "Adresse de livraison"
+        "title": "Adresse de Livraison Principale"
       },
       "shippingAddressLine1": {
-        "label": "Adresse Ligne 1"
+        "label": "Numéro de rue, rue"
       },
       "shippingAddressLine2": {
-        "label": "Adresse Ligne 2 (Optionnel)"
+        "label": "Complément d'adresse (Résidence, étage, porte...)"
       },
       "shippingPostalCode": {
         "label": "Code Postal"
@@ -169,6 +169,27 @@
         "label": "Ville"
       },
       "shippingCountry": {
+        "label": "Pays"
+      },
+      "billingAddressIsDifferent": {
+        "label": "Mon adresse de facturation est différente de mon adresse de livraison"
+      },
+      "billingAddress": {
+        "title": "Adresse de Facturation"
+      },
+      "billingAddressLine1": {
+        "label": "Numéro de rue, rue"
+      },
+      "billingAddressLine2": {
+        "label": "Complément d'adresse (Résidence, étage, porte...)"
+      },
+      "billingPostalCode": {
+        "label": "Code Postal"
+      },
+      "billingCity": {
+        "label": "Ville"
+      },
+      "billingCountry": {
         "label": "Pays"
       },
       "terms_accepted": {
@@ -195,14 +216,11 @@
     "navigationLabel": "Navigation du profil",
     "account": "Mon Compte",
     "addresses": "Mes Adresses",
-    "orders": "Mes Commandes"
+    "orders": "Mes Commandes",
+    "password": "Mon Mot de Passe"
   },
   "AccountPage": {
     "title": "Mon Compte",
-    "metadata": {
-      "title": "Mon Compte - Inherbis",
-      "description": "Visualisez les détails de votre compte, votre adresse de livraison et gérez vos préférences."
-    },
     "generalInfo": {
       "title": "Informations Générales",
       "firstName": "Prénom",
@@ -212,11 +230,6 @@
       "role": "Rôle",
       "accountCreated": "Compte créé le"
     },
-    "terms": {
-      "status": "Statut des Conditions Générales",
-      "acceptedOn": "Acceptées le :",
-      "notAccepted": "Pas encore acceptées."
-    },
     "shippingAddress": {
       "title": "Adresse de Livraison",
       "line1": "Adresse Ligne 1",
@@ -225,6 +238,22 @@
       "city": "Ville",
       "country": "Pays",
       "notProvided": "Aucune adresse de livraison fournie pour le moment."
+    },
+    "shippingAndBillingAddress": {
+      "title": "Adresse de Livraison et de facturation"
+    },
+    "billingAddress": {
+      "title": "Adresse de facturation"
+    },
+    "terms": {
+      "title": "Termes et Conditions",
+      "status": "Statut d'acceptation des termes",
+      "acceptedOn": "Acceptées le :",
+      "notAccepted": "Pas encore acceptées."
+    },
+    "metadata": {
+      "title": "Mon Compte - Inherbis",
+      "description": "Visualisez les détails de votre compte, votre adresse de livraison et gérez vos préférences."
     }
   },
   "Legal": {
@@ -288,5 +317,50 @@
       "updateSuccess": "Adresse mise à jour avec succès.",
       "updateError": "Échec de la mise à jour de l'adresse. Veuillez réessayer."
     }
+  },
+  "PasswordPage": {
+    "metadata": {
+      "title": "Changer Mon Mot de Passe - Inherbis",
+      "description": "Mettez à jour le mot de passe de votre compte Inherbis."
+    },
+    "title": "Changer Mon Mot de Passe",
+    "form": {
+      "currentPassword": {
+        "label": "Mot de passe actuel",
+        "placeholder": "Saisissez votre mot de passe actuel"
+      },
+      "newPassword": {
+        "label": "Nouveau mot de passe",
+        "placeholder": "Saisissez votre nouveau mot de passe",
+        "description": "Minimum 8 caractères."
+      },
+      "confirmPassword": {
+        "label": "Confirmer le nouveau mot de passe",
+        "placeholder": "Confirmez votre nouveau mot de passe"
+      },
+      "submitButton": "Changer le mot de passe",
+      "submitButtonLoading": "Changement en cours...",
+      "feedback": {
+        "updateSuccess": "Votre mot de passe a été mis à jour avec succès.",
+        "updateErrorDefault": "Une erreur est survenue lors de la mise à jour. Veuillez réessayer.",
+        "newPasswordMustBeDifferent": "Le nouveau mot de passe doit être différent de l'ancien."
+      }
+    },
+    "validation": {
+      "currentPasswordRequired": "Le mot de passe actuel est requis.",
+      "newPasswordMinLength": "Le nouveau mot de passe doit contenir au moins 8 caractères.",
+      "passwordsDoNotMatch": "Les nouveaux mots de passe ne correspondent pas."
+    }
+  },
+  "Global": {
+    "loading": "Chargement...",
+    "success": "Succès",
+    "error": "Erreur",
+    "submit": "Envoyer",
+    "saving": "Enregistrement...",
+    "pending": "En cours...",
+    "saveChanges": "Enregistrer les modifications",
+    "anErrorOccurred": "Une erreur est survenue. Veuillez réessayer.",
+    "operationSuccessful": "Opération réussie."
   }
 }

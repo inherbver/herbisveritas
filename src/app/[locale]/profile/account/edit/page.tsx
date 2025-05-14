@@ -52,7 +52,13 @@ export default async function EditProfilePage(props: Props) {
       shipping_postal_code,
       shipping_city,
       shipping_country,
-      terms_accepted_at
+      terms_accepted_at,
+      billing_address_is_different,
+      billing_address_line1,
+      billing_address_line2,
+      billing_postal_code,
+      billing_city,
+      billing_country
     `
     )
     .eq("id", user.id)
@@ -79,6 +85,12 @@ export default async function EditProfilePage(props: Props) {
       shipping_city: dbProfileData.shipping_city,
       shipping_country: dbProfileData.shipping_country,
       terms_accepted_at: dbProfileData.terms_accepted_at,
+      billing_address_is_different: dbProfileData.billing_address_is_different,
+      billing_address_line1: dbProfileData.billing_address_line1,
+      billing_address_line2: dbProfileData.billing_address_line2,
+      billing_postal_code: dbProfileData.billing_postal_code,
+      billing_city: dbProfileData.billing_city,
+      billing_country: dbProfileData.billing_country,
     };
   }
   // Si dbProfileData est null (ex: PGRST116, le profil n'existe pas encore), userProfile reste null.

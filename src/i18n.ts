@@ -7,76 +7,60 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   if (locales.includes(requestLocale as Locale)) {
     localeToUse = requestLocale as Locale;
   }
-  console.log(`[i18n] Using locale: ${localeToUse} (requested: ${requestLocale})`);
 
-  let globalNamespaceContent: any = undefined; // Contenu de Global.json
-  let rootLevelMessages: any = undefined;    // Contenu de [locale].json (ancien format plat)
+  let globalNamespaceContent: Record<string, unknown> | undefined = undefined;
+  let rootLevelMessages: Record<string, unknown> | undefined = undefined;
 
-  // Charger le contenu du namespace 'Global' (src/i18n/messages/[locale]/Global.json)
   try {
     const rawGlobalImport = await import(`@/i18n/messages/${localeToUse}/Global.json`);
-    console.log(`[i18n] Raw import for @/i18n/messages/${localeToUse}/Global.json:`, JSON.stringify(rawGlobalImport, null, 2));
     globalNamespaceContent = rawGlobalImport.default;
-    console.log(`[i18n] Content from @/i18n/messages/${localeToUse}/Global.json after .default:`, JSON.stringify(globalNamespaceContent, null, 2));
-  } catch (error) {
-    console.error(`[i18n] ERROR importing @/i18n/messages/${localeToUse}/Global.json:`, error);
+  } catch (_error) {
     if (localeToUse !== defaultLocale) {
-      console.warn(`[i18n] Attempting fallback for Global namespace content to locale: ${defaultLocale}`);
       try {
-        const rawFallbackGlobalImport = await import(`@/i18n/messages/${defaultLocale}/Global.json`);
-        console.log(`[i18n] Raw fallback import for @/i18n/messages/${defaultLocale}/Global.json:`, JSON.stringify(rawFallbackGlobalImport, null, 2));
+        const rawFallbackGlobalImport = await import(
+          `@/i18n/messages/${defaultLocale}/Global.json`
+        );
         globalNamespaceContent = rawFallbackGlobalImport.default;
-        console.log(`[i18n] Fallback content from @/i18n/messages/${defaultLocale}/Global.json after .default:`, JSON.stringify(globalNamespaceContent, null, 2));
-      } catch (fallbackError) {
-        console.error(`[i18n] ERROR importing fallback @/i18n/messages/${defaultLocale}/Global.json:`, fallbackError);
+      } catch (_fallbackError) {
+        console.warn(
+          `Could not load fallback messages for Global.json (default locale: ${defaultLocale}).`
+        );
       }
     }
   }
 
-  // Charger les messages de premier niveau (src/messages/[locale].json)
   try {
     const rawRootImport = await import(`@/messages/${localeToUse}.json`);
-    console.log(`[i18n] Raw import for @/messages/${localeToUse}.json:`, JSON.stringify(rawRootImport, null, 2));
     rootLevelMessages = rawRootImport.default;
-    console.log(`[i18n] Content from @/messages/${localeToUse}.json after .default:`, JSON.stringify(rootLevelMessages, null, 2));
-  } catch (error) {
-    console.error(`[i18n] ERROR importing @/messages/${localeToUse}.json:`, error);
+  } catch (_error) {
     if (localeToUse !== defaultLocale) {
-      console.warn(`[i18n] Attempting fallback for root level messages to locale: ${defaultLocale}`);
       try {
         const rawFallbackRootImport = await import(`@/messages/${defaultLocale}.json`);
-        console.log(`[i18n] Raw fallback import for @/messages/${defaultLocale}.json:`, JSON.stringify(rawFallbackRootImport, null, 2));
         rootLevelMessages = rawFallbackRootImport.default;
-        console.log(`[i18n] Fallback content from @/messages/${defaultLocale}.json after .default:`, JSON.stringify(rootLevelMessages, null, 2));
-      } catch (fallbackError) {
-        console.error(`[i18n] ERROR importing fallback @/messages/${defaultLocale}.json:`, fallbackError);
+      } catch (_fallbackError) {
+        console.warn(`Could not load fallback root messages for locale ${defaultLocale}.json.`);
       }
     }
   }
-  
-  // Assurer que les objets messages ne sont pas undefined
-  console.log('[i18n] Before || {}: globalNamespaceContent:', JSON.stringify(globalNamespaceContent, null, 2));
-  console.log('[i18n] Before || {}: rootLevelMessages:', JSON.stringify(rootLevelMessages, null, 2));
+
   globalNamespaceContent = globalNamespaceContent || {};
   rootLevelMessages = rootLevelMessages || {};
-  console.log('[i18n] After || {}: globalNamespaceContent:', JSON.stringify(globalNamespaceContent, null, 2));
-  console.log('[i18n] After || {}: rootLevelMessages:', JSON.stringify(rootLevelMessages, null, 2));
 
   const mergedMessages = {
-    ...rootLevelMessages, // Les messages plats sont à la racine
-    Global: globalNamespaceContent // Le contenu de Global.json est sous la clé 'Global'
+    ...rootLevelMessages,
+    Global: globalNamespaceContent,
   };
-  console.log('[i18n] Final mergedMessages structure:', JSON.stringify(mergedMessages, null, 2));
 
-  // Déclencher notFound seulement si absolument aucun message n'a été chargé
-  if (Object.keys(rootLevelMessages).length === 0 && Object.keys(globalNamespaceContent).length === 0) {
-    console.error(`[i18n] Critital: No messages could be loaded for locale ${localeToUse} or its fallback ${defaultLocale} from any source. Triggering notFound.`);
+  if (
+    Object.keys(rootLevelMessages).length === 0 &&
+    Object.keys(globalNamespaceContent).length === 0
+  ) {
     notFound();
   }
 
   return {
-    locale: localeToUse, 
+    locale: localeToUse,
     messages: mergedMessages,
-    timeZone: "Europe/Paris", 
+    timeZone: "Europe/Paris",
   };
 });

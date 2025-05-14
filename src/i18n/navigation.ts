@@ -60,6 +60,10 @@ export const pathnames = {
     en: "/profile/orders",
     fr: "/profil/mes-commandes",
   },
+  "/profile/password": {
+    en: "/profile/password",
+    fr: "/profil/mon-mot-de-passe",
+  },
   // --- END: Profile Pages ---
   // Ajoutez d'autres chemins ici...
 } as const;
@@ -67,10 +71,9 @@ export const pathnames = {
 // Type for canonical pathnames based on the keys of the pathnames object
 export type AppPathname = keyof typeof pathnames;
 
-export const { Link, redirect, usePathname, useRouter, getPathname } = 
-  createNavigation({
-    locales,
-    defaultLocale,
-    localePrefix, 
-    pathnames,
+export const { Link, redirect, usePathname, useRouter, getPathname } = createNavigation({
+  locales,
+  defaultLocale,
+  localePrefix,
+  pathnames,
 });

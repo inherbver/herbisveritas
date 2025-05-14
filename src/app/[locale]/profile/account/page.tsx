@@ -42,12 +42,26 @@ export default async function AccountPage(props: AccountPageProps) {
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    console.error("Error fetching user or no user found:", userError);
+  // Si aucun utilisateur n'est authentifié
+  if (!user) {
+    // Ne pas considérer l'absence de session comme une erreur serveur à logger pour un invité.
+    // Rediriger vers la page de connexion.
+    // Logger une erreur seulement si userError existe et n'est pas une AuthSessionMissingError.
+    if (userError && userError.name !== "AuthSessionMissingError") {
+      console.error("Error fetching user:", userError);
+    }
     const redirectTo = `/${currentLocale}${LOGIN_REDIRECT_URL}?next=/profile/account`;
-    navRedirect(redirectTo);
+    return navRedirect(redirectTo); // Utiliser return pour arrêter l'exécution ici
   }
 
+  // Si userError existe même si user est potentiellement non-null (moins courant)
+  if (userError) {
+    console.error("An error occurred while fetching user data:", userError);
+    const redirectTo = `/${currentLocale}${LOGIN_REDIRECT_URL}?next=/profile/account`;
+    return navRedirect(redirectTo); // Utiliser return pour arrêter l'exécution ici
+  }
+
+  // À ce stade, l'utilisateur est authentifié et userError est null.
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
@@ -61,7 +75,13 @@ export default async function AccountPage(props: AccountPageProps) {
       shipping_postal_code,
       shipping_city,
       shipping_country,
-      terms_accepted_at
+      terms_accepted_at,
+      billing_address_is_different,
+      billing_address_line1,
+      billing_address_line2,
+      billing_postal_code,
+      billing_city,
+      billing_country
     `
     )
     .eq("id", user.id)
@@ -85,6 +105,12 @@ export default async function AccountPage(props: AccountPageProps) {
     shipping_city: profile?.shipping_city || "",
     shipping_country: profile?.shipping_country || "",
     terms_accepted_at: profile?.terms_accepted_at,
+    billing_address_is_different: profile?.billing_address_is_different || false,
+    billing_address_line1: profile?.billing_address_line1 || "",
+    billing_address_line2: profile?.billing_address_line2 || "",
+    billing_postal_code: profile?.billing_postal_code || "",
+    billing_city: profile?.billing_city || "",
+    billing_country: profile?.billing_country || "",
   };
 
   return (
@@ -162,7 +188,9 @@ export default async function AccountPage(props: AccountPageProps) {
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h2 className="mb-4 text-xl font-semibold text-foreground">
-            {t("shippingAddress.title")}
+            {userInfo.billing_address_is_different
+              ? t("shippingAddress.title")
+              : t("shippingAndBillingAddress.title")}
           </h2>
           {userInfo.shipping_postal_code || userInfo.shipping_city ? (
             <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
@@ -214,6 +242,68 @@ export default async function AccountPage(props: AccountPageProps) {
           )}
         </div>
       </article>
+
+      {/* Section Adresse de Facturation (si différente) */}
+      {userInfo.billing_address_is_different && (
+        <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h2 className="mb-4 text-xl font-semibold text-foreground">
+              {t("billingAddress.title")}
+            </h2>
+            {userInfo.billing_postal_code || userInfo.billing_city ? (
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    {t("shippingAddress.line1")} {/* Réutilisation de la clé */}
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-foreground">
+                    {userInfo.billing_address_line1 || tGlobal("notProvided")}
+                  </dd>
+                </div>
+                {userInfo.billing_address_line2 && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-muted-foreground">
+                      {t("shippingAddress.line2")} {/* Réutilisation de la clé */}
+                    </dt>
+                    <dd className="mt-1 text-lg font-semibold text-foreground">
+                      {userInfo.billing_address_line2}
+                    </dd>
+                  </div>
+                )}
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    {t("shippingAddress.postalCode")} {/* Réutilisation de la clé */}
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-foreground">
+                    {userInfo.billing_postal_code || tGlobal("notProvided")}
+                  </dd>
+                </div>
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    {t("shippingAddress.city")} {/* Réutilisation de la clé */}
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-foreground">
+                    {userInfo.billing_city || tGlobal("notProvided")}
+                  </dd>
+                </div>
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    {t("shippingAddress.country")} {/* Réutilisation de la clé */}
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-foreground">
+                    {userInfo.billing_country || tGlobal("notProvided")}
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-muted-foreground">
+                {/* Peut-être une clé billingAddress.notProvided ? Pour l'instant, réutilisation. */}{" "}
+                {t("shippingAddress.notProvided")}
+              </p>
+            )}
+          </div>
+        </article>
+      )}
     </section>
   );
 }
