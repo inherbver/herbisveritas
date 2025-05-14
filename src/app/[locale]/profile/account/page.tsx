@@ -125,7 +125,11 @@ export default async function AccountPage(props: AccountPageProps) {
         </Link>
       </header>
 
-      <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
+      {/* Section Informations Personnelles et Adresses */}
+      <article
+        id="personal-info-addresses"
+        className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg"
+      >
         <div className="px-4 py-5 sm:p-6">
           <h2 className="mb-4 text-xl font-semibold text-foreground">{t("generalInfo.title")}</h2>
           <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
@@ -304,6 +308,42 @@ export default async function AccountPage(props: AccountPageProps) {
           </div>
         </article>
       )}
+
+      {/* Section Mes Commandes */}
+      <article
+        id="my-orders"
+        className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg"
+      >
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">{t("orders.title")}</h2>
+            <Link
+              href={`/${currentLocale}/profile/orders`}
+              className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              {t("orders.viewLink")}
+            </Link>
+          </div>
+        </div>
+      </article>
+
+      {/* Section Mon Mot de Passe */}
+      <article
+        id="change-password"
+        className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg"
+      >
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">{t("password.title")}</h2>
+            <Link
+              href={`/${currentLocale}/profile/change-password`}
+              className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              {t("password.changeLink")}
+            </Link>
+          </div>
+        </div>
+      </article>
     </section>
   );
 }

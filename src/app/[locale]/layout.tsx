@@ -30,7 +30,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   let messages;
   try {
-    messages = await getMessages();
+    messages = await getMessages({ locale: currentLocale });
   } catch (error) {
     console.error("Failed to load messages via getMessages():", error);
     notFound();

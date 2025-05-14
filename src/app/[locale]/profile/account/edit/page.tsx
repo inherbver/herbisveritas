@@ -24,7 +24,8 @@ export default async function EditProfilePage(props: Props) {
 
   // Set the locale for this request
   setRequestLocale(locale);
-  const t = await getTranslations("ProfileEditPage");
+  // Explicitly pass locale to getTranslations
+  const t = await getTranslations({ locale, namespace: "ProfileEditPage" });
   const supabase = await createSupabaseServerClient();
 
   const {

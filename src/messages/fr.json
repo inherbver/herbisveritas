@@ -140,9 +140,12 @@
     "or": "ou"
   },
   "ProfileEditPage": {
-    "title": "Modifier Mon Profil",
-    "subtitle": "Mettez à jour vos informations personnelles et vos préférences de compte.",
-    "formDataTitle": "Informations du Profil",
+    "metadata": {
+      "title": "Modifier le Profil - Herbis Veritas",
+      "description": "Mettez à jour vos informations personnelles et vos adresses."
+    },
+    "title": "Modifier le Profil",
+    "subtitle": "Mettez à jour vos coordonnées personnelles et gérez vos adresses.",
     "form": {
       "firstName": {
         "label": "Prénom"
@@ -154,16 +157,16 @@
         "label": "Numéro de téléphone"
       },
       "shippingAddress": {
-        "title": "Adresse de Livraison Principale"
+        "title": "Adresse de livraison"
       },
       "shippingAddressLine1": {
-        "label": "Numéro de rue, rue"
+        "label": "Ligne d'adresse 1"
       },
       "shippingAddressLine2": {
-        "label": "Complément d'adresse (Résidence, étage, porte...)"
+        "label": "Ligne d'adresse 2 (Optionnel)"
       },
       "shippingPostalCode": {
-        "label": "Code Postal"
+        "label": "Code postal"
       },
       "shippingCity": {
         "label": "Ville"
@@ -175,42 +178,24 @@
         "label": "Mon adresse de facturation est différente de mon adresse de livraison"
       },
       "billingAddress": {
-        "title": "Adresse de Facturation"
+        "title": "Adresse de facturation"
       },
       "billingAddressLine1": {
-        "label": "Numéro de rue, rue"
+        "label": "Ligne d'adresse 1"
       },
       "billingAddressLine2": {
-        "label": "Complément d'adresse (Résidence, étage, porte...)"
+        "label": "Ligne d'adresse 2 (Optionnel)"
       },
       "billingPostalCode": {
-        "label": "Code Postal"
+        "label": "Code postal"
       },
       "billingCity": {
         "label": "Ville"
       },
       "billingCountry": {
         "label": "Pays"
-      },
-      "terms_accepted": {
-        "label": "J'accepte les termes et conditions."
       }
-    },
-    "metadata": {
-      "title": "Modifier Votre Profil - Inherbis",
-      "description": "Gérez et mettez à jour les détails de votre compte, y compris l'adresse de livraison et les préférences."
     }
-  },
-  "shop": {
-    "addedToCartFeedback": "Produit {productName} ajouté au panier !"
-  },
-  "CategoryFilter": {
-    "filterByCategory": "Filtrer par catégorie",
-    "categoryFilterDescription": "Sélectionnez une catégorie pour affiner les résultats.",
-    "allCategories": "Toutes les catégories",
-    "clearFilters": "Effacer les filtres",
-    "applyFilters": "Appliquer les filtres",
-    "noCategoriesFound": "Aucune catégorie trouvée"
   },
   "ProfileNav": {
     "navigationLabel": "Navigation du profil",
@@ -220,40 +205,48 @@
     "password": "Mon Mot de Passe"
   },
   "AccountPage": {
+    "metadata": {
+      "title": "Mon Compte - Herbis Veritas",
+      "description": "Gérez les informations de votre compte, vos commandes et votre mot de passe."
+    },
     "title": "Mon Compte",
     "generalInfo": {
-      "title": "Informations Générales",
+      "title": "Informations Personnelles",
       "firstName": "Prénom",
       "lastName": "Nom",
-      "email": "Adresse Email",
-      "phone": "Téléphone",
+      "email": "Adresse E-mail",
+      "phone": "Numéro de Téléphone",
       "role": "Rôle",
-      "accountCreated": "Compte créé le"
+      "accountCreated": "Compte Créé le"
+    },
+    "terms": {
+      "status": "Termes et Conditions",
+      "acceptedOn": "Acceptés le",
+      "notAccepted": "Pas encore acceptés"
     },
     "shippingAddress": {
       "title": "Adresse de Livraison",
-      "line1": "Adresse Ligne 1",
-      "line2": "Adresse Ligne 2",
+      "line1": "Ligne d'adresse 1",
+      "line2": "Ligne d'adresse 2 (Optionnel)",
       "postalCode": "Code Postal",
       "city": "Ville",
       "country": "Pays",
       "notProvided": "Aucune adresse de livraison fournie pour le moment."
     },
-    "shippingAndBillingAddress": {
-      "title": "Adresse de Livraison et de facturation"
-    },
     "billingAddress": {
-      "title": "Adresse de facturation"
+      "title": "Adresse de Facturation",
+      "notProvided": "Aucune adresse de facturation fournie pour le moment."
     },
-    "terms": {
-      "title": "Termes et Conditions",
-      "status": "Statut d'acceptation des termes",
-      "acceptedOn": "Acceptées le :",
-      "notAccepted": "Pas encore acceptées."
+    "shippingAndBillingAddress": {
+      "title": "Adresse de Livraison & Facturation"
     },
-    "metadata": {
-      "title": "Mon Compte - Inherbis",
-      "description": "Visualisez les détails de votre compte, votre adresse de livraison et gérez vos préférences."
+    "orders": {
+      "title": "Mes Commandes",
+      "viewLink": "Voir mes commandes"
+    },
+    "password": {
+      "title": "Mon Mot de Passe",
+      "changeLink": "Changer mon mot de passe"
     }
   },
   "Legal": {

@@ -93,48 +93,6 @@
   "ProductDetailDisplay": {
     "taxInclusiveLabel": "incl. VAT"
   },
-  "AccountPage": {
-    "title": "My Account",
-    "generalInfo": {
-      "title": "General Information",
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "email": "Email Address",
-      "phone": "Phone",
-      "role": "Role",
-      "accountCreated": "Account created on"
-    },
-    "terms": {
-      "status": "Terms & Conditions Status",
-      "acceptedOn": "Accepted on:",
-      "notAccepted": "Not yet accepted."
-    },
-    "shippingAddress": {
-      "title": "Shipping Address",
-      "line1": "Address Line 1",
-      "line2": "Address Line 2",
-      "postalCode": "Postal Code",
-      "city": "City",
-      "country": "Country",
-      "notProvided": "No shipping address provided yet."
-    },
-    "billingAddress": {
-      "title": "Billing Address",
-      "line1": "Address Line 1",
-      "line2": "Address Line 2",
-      "postalCode": "Postal Code",
-      "city": "City",
-      "country": "Country",
-      "notProvided": "No billing address provided yet."
-    },
-    "shippingAndBillingAddress": {
-      "title": "Shipping and Billing Address"
-    },
-    "metadata": {
-      "title": "My Account - Inherbis",
-      "description": "View your account details, shipping address, and manage your preferences."
-    }
-  },
   "CartSheet": {
     "cartTitle": "Your Cart",
     "cartDescription": "Current contents of your shopping cart.",
@@ -182,9 +140,12 @@
     "or": "or"
   },
   "ProfileEditPage": {
-    "title": "Edit My Profile",
-    "subtitle": "Update your personal information and shipping address.",
-    "formDataTitle": "Profile Information",
+    "metadata": {
+      "title": "Edit Profile - Herbis Veritas",
+      "description": "Update your personal information and addresses."
+    },
+    "title": "Edit Profile",
+    "subtitle": "Update your personal details and manage your addresses.",
     "form": {
       "firstName": {
         "label": "First Name"
@@ -196,13 +157,13 @@
         "label": "Phone Number"
       },
       "shippingAddress": {
-        "title": "Main Shipping Address"
+        "title": "Shipping Address"
       },
       "shippingAddressLine1": {
-        "label": "Street number, street name"
+        "label": "Address Line 1"
       },
       "shippingAddressLine2": {
-        "label": "Additional address details (Building, floor, door...)"
+        "label": "Address Line 2 (Optional)"
       },
       "shippingPostalCode": {
         "label": "Postal Code"
@@ -220,10 +181,10 @@
         "title": "Billing Address"
       },
       "billingAddressLine1": {
-        "label": "Street number, street name"
+        "label": "Address Line 1"
       },
       "billingAddressLine2": {
-        "label": "Additional address details (Building, floor, door...)"
+        "label": "Address Line 2 (Optional)"
       },
       "billingPostalCode": {
         "label": "Postal Code"
@@ -233,14 +194,59 @@
       },
       "billingCountry": {
         "label": "Country"
-      },
-      "terms_accepted": {
-        "label": "I accept the terms and conditions."
       }
-    },
+    }
+  },
+  "ProfileNav": {
+    "navigationLabel": "Profile Navigation",
+    "account": "My Account",
+    "addresses": "My Addresses",
+    "orders": "My Orders",
+    "password": "My Password"
+  },
+  "AccountPage": {
     "metadata": {
-      "title": "Edit Your Profile - Inherbis",
-      "description": "Manage and update your account details, including shipping address and preferences."
+      "title": "My Account - Herbis Veritas",
+      "description": "Manage your account information, orders, and password."
+    },
+    "title": "My Account",
+    "generalInfo": {
+      "title": "Personal Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "role": "Role",
+      "accountCreated": "Account Created"
+    },
+    "terms": {
+      "status": "Terms and Conditions",
+      "acceptedOn": "Accepted on",
+      "notAccepted": "Not yet accepted"
+    },
+    "shippingAddress": {
+      "title": "Shipping Address",
+      "line1": "Address Line 1",
+      "line2": "Address Line 2 (Optional)",
+      "postalCode": "Postal Code",
+      "city": "City",
+      "country": "Country",
+      "notProvided": "No shipping address provided yet."
+    },
+    "billingAddress": {
+      "title": "Billing Address",
+      "notProvided": "No billing address provided yet."
+    },
+    "shippingAndBillingAddress": {
+      "title": "Shipping & Billing Address"
+    },
+    "orders": {
+      "title": "My Orders",
+      "viewLink": "View Orders"
+    },
+    "password": {
+      "title": "My Password",
+      "changeLink": "Change Password"
     }
   },
   "AddressForm": {
@@ -283,13 +289,6 @@
       "updateSuccess": "Address updated successfully.",
       "updateError": "Failed to update address. Please try again."
     }
-  },
-  "ProfileNav": {
-    "navigationLabel": "Profile navigation",
-    "account": "My Account",
-    "addresses": "My Addresses",
-    "orders": "My Orders",
-    "password": "My Password"
   },
   "Legal": {
     "acceptTermsAndConditions": "I accept the terms and conditions"
