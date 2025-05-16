@@ -1,0 +1,51 @@
+{
+  "addresses": {
+    "title": "Mes Adresses"
+  },
+  "password": {
+    "sectionTitle": "Mon Mot de Passe",
+    "description": "Modifiez votre mot de passe et vos paramètres de sécurité."
+  },
+  "metadata": {
+    "title": "Mon Compte - In Herbis Veritas",
+    "description": "Gérez les informations de votre compte, vos adresses et votre mot de passe sur In Herbis Veritas."
+  },
+  "title": "Mon Espace Compte",
+  "generalInfo": {
+    "title": "Informations Personnelles",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Adresse E-mail",
+    "phone": "Numéro de Téléphone",
+    "role": "Rôle",
+    "accountCreated": "Compte Créé le"
+  },
+  "terms": {
+    "status": "Statut des Conditions Générales",
+    "acceptedOn": "Acceptées le",
+    "notAccepted": "Non acceptées"
+  },
+  "shippingAddress": {
+    "title": "Adresse de Livraison",
+    "line1": "Ligne d'adresse 1",
+    "line2": "Ligne d'adresse 2 (optionnel)",
+    "postalCode": "Code Postal",
+    "city": "Ville",
+    "country": "Pays"
+  },
+  "shippingAndBillingAddress": {
+    "title": "Adresse de Livraison et de Facturation"
+  },
+  "billingAddress": {
+    "title": "Adresse de Facturation",
+    "line1": "Ligne d'adresse 1",
+    "line2": "Ligne d'adresse 2 (optionnel)",
+    "postalCode": "Code Postal",
+    "city": "Ville",
+    "country": "Pays"
+  },
+  "orders": {
+    "title": "Mes Commandes",
+    "viewLink": "Voir mes commandes"
+  }
+}

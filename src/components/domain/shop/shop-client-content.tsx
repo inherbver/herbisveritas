@@ -10,7 +10,7 @@ interface ShopClientContentProps {
 }
 
 export const ShopClientContent: React.FC<ShopClientContentProps> = ({ initialProducts }) => {
-  const t = useTranslations("shop");
+  const t = useTranslations("ShopPage");
 
   const productGridData: ProductData[] = initialProducts
     .filter((product) => product.price !== null)

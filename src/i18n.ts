@@ -18,28 +18,101 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   try {
     globalNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Global.json`)).default;
   } catch (_e) {
-    // Si Global.json n'est pas trouvé, on continue sans, ce n'est pas bloquant.
-    // On pourrait vouloir logguer une erreur ici dans un vrai système de logging
+    console.error(`[i18n] Failed to load Global.json for locale ${localeToUse}:`, _e);
   }
 
+  let accountPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    accountPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AccountPage.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load AccountPage.json for locale ${localeToUse}:`, _e);
+  }
+
+  let profileNavNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    profileNavNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ProfileNav.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load ProfileNav.json for locale ${localeToUse}:`, _e);
+  }
+
+  let cartSheetNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    cartSheetNamespaceContent = (await import(`./i18n/messages/${localeToUse}/CartSheet.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load CartSheet.json for locale ${localeToUse}:`, _e);
+  }
+
+  let passwordPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    passwordPageNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/PasswordPage.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load PasswordPage.json for locale ${localeToUse}:`, e);
+  }
+
+  let profileEditPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    profileEditPageNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/ProfileEditPage.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load ProfileEditPage.json for locale ${localeToUse}:`, e);
+  }
+
+  let shopPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    shopPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ShopPage.json`))
+      .default;
+  } catch (e) {
+    console.error(`[i18n] FAILED TO LOAD ShopPage.json for locale ${localeToUse}:`, e);
+  }
+
+  // Tentative de chargement pour un fichier de messages racine (si applicable)
   let rootMessagesContent: Record<string, unknown> | undefined = undefined;
   try {
+    // Corrigé le chemin pour être cohérent avec les autres, pointant vers src/i18n/messages/
     rootMessagesContent = (await import(`./messages/${localeToUse}.json`)).default;
   } catch (_e) {
-    // C'est plus critique si le fichier de messages racine est manquant.
-    // On pourrait décider de `notFound()` ici si les messages racine sont essentiels.
-    // Pour l'instant, on logue et on continue, ce qui peut entraîner des messages manquants.
+    // Pas critique si ce fichier n'existe pas, car les namespaces sont chargés séparément.
   }
 
   const safeGlobal = globalNamespaceContent || {};
+  const safeAccountPage = accountPageNamespaceContent || {};
+  const safeProfileNav = profileNavNamespaceContent || {};
+  const safeCartSheet = cartSheetNamespaceContent || {};
+  const safePasswordPage = passwordPageNamespaceContent || {};
+  const safeProfileEditPage = profileEditPageNamespaceContent || {};
+  const safeShopPage = shopPageNamespaceContent || {};
   const safeRoot = rootMessagesContent || {};
 
   const mergedMessages = {
-    ...safeRoot,
+    ...safeRoot, // Les messages racines en premier (s'ils existent)
     ...(Object.keys(safeGlobal).length > 0 ? { Global: safeGlobal } : {}),
+    ...(Object.keys(safeAccountPage).length > 0 ? { AccountPage: safeAccountPage } : {}),
+    ...(Object.keys(safeProfileNav).length > 0 ? { ProfileNav: safeProfileNav } : {}),
+    ...(Object.keys(safeCartSheet).length > 0 ? { CartSheet: safeCartSheet } : {}),
+    ...(Object.keys(safePasswordPage).length > 0 ? { PasswordPage: safePasswordPage } : {}),
+    ...(Object.keys(safeProfileEditPage).length > 0
+      ? { ProfileEditPage: safeProfileEditPage }
+      : {}),
+    ...(Object.keys(safeShopPage).length > 0 ? { ShopPage: safeShopPage } : {}),
   };
 
-  if (Object.keys(safeRoot).length === 0 && Object.keys(safeGlobal).length === 0) {
+  // Condition pour notFound si AUCUN message n'est chargé (ni racine, ni aucun des namespaces)
+  if (
+    Object.keys(safeRoot).length === 0 &&
+    Object.keys(safeGlobal).length === 0 &&
+    Object.keys(safeAccountPage).length === 0 &&
+    Object.keys(safeProfileNav).length === 0 &&
+    Object.keys(safeCartSheet).length === 0 &&
+    Object.keys(safePasswordPage).length === 0 &&
+    Object.keys(safeProfileEditPage).length === 0 &&
+    Object.keys(safeShopPage).length === 0
+  ) {
     notFound();
   }
 

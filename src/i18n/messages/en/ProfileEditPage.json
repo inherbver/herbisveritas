@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "title": "Edit Profile",
+    "description": "Modify your profile information."
+  },
+  "title": "Edit My Profile",
+  "subtitle": "Manage your personal information and addresses.",
+  "error": {
+    "loadingProfile": "Error loading profile.",
+    "profileNotFound": "Profile not found."
+  },
+  "form": {
+    "firstName": {
+      "label": "First Name",
+      "placeholder": "Enter your first name"
+    },
+    "lastName": {
+      "label": "Last Name",
+      "placeholder": "Enter your last name"
+    },
+    "phoneNumber": {
+      "label": "Phone Number",
+      "placeholder": "Enter your phone number"
+    },
+    "shippingAddress": {
+      "title": "Shipping Address"
+    },
+    "shippingAddressLine1": {
+      "label": "Address (line 1)",
+      "placeholder": "Street address, P.O. box, company name, c/o"
+    },
+    "shippingAddressLine2": {
+      "label": "Address (line 2, optional)",
+      "placeholder": "Apartment, suite, unit, building, floor, etc."
+    },
+    "shippingPostalCode": {
+      "label": "Postal Code",
+      "placeholder": "Enter your postal code"
+    },
+    "shippingCity": {
+      "label": "City",
+      "placeholder": "Enter your city"
+    },
+    "shippingCountry": {
+      "label": "Country",
+      "placeholder": "Enter your country"
+    },
+    "billingAddressIsDifferent": {
+      "label": "My billing address is different from my shipping address"
+    },
+    "billingAddress": {
+      "title": "Billing Address"
+    },
+    "billingAddressLine1": {
+      "label": "Address (line 1)",
+      "placeholder": "Street address, P.O. box, company name, c/o"
+    },
+    "billingAddressLine2": {
+      "label": "Address (line 2, optional)",
+      "placeholder": "Apartment, suite, unit, building, floor, etc."
+    },
+    "billingPostalCode": {
+      "label": "Postal Code",
+      "placeholder": "Enter your postal code"
+    },
+    "billingCity": {
+      "label": "City",
+      "placeholder": "Enter your city"
+    },
+    "billingCountry": {
+      "label": "Country",
+      "placeholder": "Enter your country"
+    },
+    "toast": {
+      "updateSuccess": "Profile updated successfully!",
+      "updateError": "Error updating profile."
+    }
+  }
+}

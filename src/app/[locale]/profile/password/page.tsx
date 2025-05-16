@@ -10,8 +10,8 @@ interface PasswordPageProps {
 }
 
 export async function generateMetadata(props: PasswordPageProps): Promise<Metadata> {
-  // const { locale } = await props.params; // Correction: params est un objet direct
-  const locale = props.params.locale;
+  const { locale } = await props.params; // Correction: params est un objet direct
+  // const locale = props.params.locale; // Original line commented out
   const t = await getTranslations({ locale, namespace: "PasswordPage" });
   return {
     title: t("metadata.title"),
@@ -20,8 +20,8 @@ export async function generateMetadata(props: PasswordPageProps): Promise<Metada
 }
 
 export default async function PasswordPage(props: PasswordPageProps) {
-  // const { locale } = await props.params; // Correction: params est un objet direct
-  const locale = props.params.locale;
+  const { locale } = await props.params; // Correction: params est un objet direct
+  // const locale = props.params.locale; // Original line commented out
   const t = await getTranslations({ locale, namespace: "PasswordPage" });
 
   const supabase = await createSupabaseServerClient();

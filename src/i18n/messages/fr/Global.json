@@ -53,5 +53,10 @@
     "user": "Utilisateur",
     "editor": "Éditeur",
     "admin": "Administrateur"
-  }
+  },
+  "loading": "Chargement...",
+  "success": "Succès",
+  "error": "Erreur",
+  "edit": "Modifier",
+  "manage": "Gérer"
 }

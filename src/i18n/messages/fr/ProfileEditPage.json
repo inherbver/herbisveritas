@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "title": "Modifier le Profil",
+    "description": "Modifiez les informations de votre profil."
+  },
+  "title": "Modifier Mon Profil",
+  "subtitle": "Gérez vos informations personnelles et adresses.",
+  "error": {
+    "loadingProfile": "Erreur lors du chargement du profil.",
+    "profileNotFound": "Profil non trouvé."
+  },
+  "form": {
+    "firstName": {
+      "label": "Prénom",
+      "placeholder": "Entrez votre prénom"
+    },
+    "lastName": {
+      "label": "Nom de famille",
+      "placeholder": "Entrez votre nom de famille"
+    },
+    "phoneNumber": {
+      "label": "Numéro de téléphone",
+      "placeholder": "Entrez votre numéro de téléphone"
+    },
+    "shippingAddress": {
+      "title": "Adresse de Livraison"
+    },
+    "shippingAddressLine1": {
+      "label": "Adresse (ligne 1)",
+      "placeholder": "Numéro et nom de rue"
+    },
+    "shippingAddressLine2": {
+      "label": "Adresse (ligne 2, optionnel)",
+      "placeholder": "Appartement, étage, etc."
+    },
+    "shippingPostalCode": {
+      "label": "Code Postal",
+      "placeholder": "Entrez votre code postal"
+    },
+    "shippingCity": {
+      "label": "Ville",
+      "placeholder": "Entrez votre ville"
+    },
+    "shippingCountry": {
+      "label": "Pays",
+      "placeholder": "Entrez votre pays"
+    },
+    "billingAddressIsDifferent": {
+      "label": "Mon adresse de facturation est différente de mon adresse de livraison"
+    },
+    "billingAddress": {
+      "title": "Adresse de Facturation"
+    },
+    "billingAddressLine1": {
+      "label": "Adresse (ligne 1)",
+      "placeholder": "Numéro et nom de rue"
+    },
+    "billingAddressLine2": {
+      "label": "Adresse (ligne 2, optionnel)",
+      "placeholder": "Appartement, étage, etc."
+    },
+    "billingPostalCode": {
+      "label": "Code Postal",
+      "placeholder": "Entrez votre code postal"
+    },
+    "billingCity": {
+      "label": "Ville",
+      "placeholder": "Entrez votre ville"
+    },
+    "billingCountry": {
+      "label": "Pays",
+      "placeholder": "Entrez votre pays"
+    },
+    "toast": {
+      "updateSuccess": "Profil mis à jour avec succès !",
+      "updateError": "Erreur lors de la mise à jour du profil."
+    }
+  }
+}

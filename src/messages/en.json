@@ -82,38 +82,11 @@
     },
     "logout": "Logout"
   },
-  "ShopPage": {
-    "title": "Shop",
-    "errorFetchingData": "Error fetching products.",
-    "noProductsFound": "No products found."
-  },
   "NotFoundPage": {
     "title": "Page not found"
   },
   "ProductDetailDisplay": {
     "taxInclusiveLabel": "incl. VAT"
-  },
-  "CartSheet": {
-    "cartTitle": "Your Cart",
-    "cartDescription": "Current contents of your shopping cart.",
-    "continueShopping": "Continue shopping",
-    "emptyCart": "Your cart is empty.",
-    "emptyCartSuggestion": "Browse our products and add something you like!",
-    "subtotal": "Subtotal",
-    "checkout": "Checkout",
-    "removeProduct": "Remove {productName} from cart",
-    "updateQuantity": "Update quantity of {productName}",
-    "quantity": "Quantity",
-    "itemAddedToCart": "Item added to cart",
-    "itemRemovedFromCart": "Item removed from cart",
-    "itemUpdatedInCart": "Quantity updated in cart",
-    "errorAddingToCart": "Error adding to cart",
-    "errorRemovingFromCart": "Error removing from cart",
-    "errorUpdatingCart": "Error updating cart",
-    "viewCart": "View cart",
-    "proceedToCheckout": "Proceed to checkout",
-    "yourCartTitle": "Your Cart",
-    "closeButton": "Close"
   },
   "CartDisplay": {
     "title": "Your Cart Contents",
@@ -138,116 +111,6 @@
     "shippingTaxesCalculatedAtCheckout": "Shipping and taxes calculated at checkout.",
     "checkout": "Checkout",
     "or": "or"
-  },
-  "ProfileEditPage": {
-    "metadata": {
-      "title": "Edit Profile - Herbis Veritas",
-      "description": "Update your personal information and addresses."
-    },
-    "title": "Edit Profile",
-    "subtitle": "Update your personal details and manage your addresses.",
-    "form": {
-      "firstName": {
-        "label": "First Name"
-      },
-      "lastName": {
-        "label": "Last Name"
-      },
-      "phoneNumber": {
-        "label": "Phone Number"
-      },
-      "shippingAddress": {
-        "title": "Shipping Address"
-      },
-      "shippingAddressLine1": {
-        "label": "Address Line 1"
-      },
-      "shippingAddressLine2": {
-        "label": "Address Line 2 (Optional)"
-      },
-      "shippingPostalCode": {
-        "label": "Postal Code"
-      },
-      "shippingCity": {
-        "label": "City"
-      },
-      "shippingCountry": {
-        "label": "Country"
-      },
-      "billingAddressIsDifferent": {
-        "label": "My billing address is different from my shipping address"
-      },
-      "billingAddress": {
-        "title": "Billing Address"
-      },
-      "billingAddressLine1": {
-        "label": "Address Line 1"
-      },
-      "billingAddressLine2": {
-        "label": "Address Line 2 (Optional)"
-      },
-      "billingPostalCode": {
-        "label": "Postal Code"
-      },
-      "billingCity": {
-        "label": "City"
-      },
-      "billingCountry": {
-        "label": "Country"
-      }
-    }
-  },
-  "ProfileNav": {
-    "navigationLabel": "Profile Navigation",
-    "account": "My Account",
-    "addresses": "My Addresses",
-    "orders": "My Orders",
-    "password": "My Password"
-  },
-  "AccountPage": {
-    "metadata": {
-      "title": "My Account - Herbis Veritas",
-      "description": "Manage your account information, orders, and password."
-    },
-    "title": "My Account",
-    "generalInfo": {
-      "title": "Personal Information",
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "email": "Email Address",
-      "phone": "Phone Number",
-      "role": "Role",
-      "accountCreated": "Account Created"
-    },
-    "terms": {
-      "status": "Terms and Conditions",
-      "acceptedOn": "Accepted on",
-      "notAccepted": "Not yet accepted"
-    },
-    "shippingAddress": {
-      "title": "Shipping Address",
-      "line1": "Address Line 1",
-      "line2": "Address Line 2 (Optional)",
-      "postalCode": "Postal Code",
-      "city": "City",
-      "country": "Country",
-      "notProvided": "No shipping address provided yet."
-    },
-    "billingAddress": {
-      "title": "Billing Address",
-      "notProvided": "No billing address provided yet."
-    },
-    "shippingAndBillingAddress": {
-      "title": "Shipping & Billing Address"
-    },
-    "orders": {
-      "title": "My Orders",
-      "viewLink": "View Orders"
-    },
-    "password": {
-      "title": "My Password",
-      "changeLink": "Change Password"
-    }
   },
   "AddressForm": {
     "formTitleNewShipping": "Add a new shipping address",
@@ -293,21 +156,6 @@
   "Legal": {
     "acceptTermsAndConditions": "I accept the terms and conditions"
   },
-  "AddressesPage": {
-    "title": "My Addresses",
-    "shippingAddressTitle": "Shipping Address",
-    "billingAddressTitle": "Billing Address",
-    "noShippingAddress": "No shipping address on file.",
-    "noBillingAddress": "No billing address on file. Billing address is the same as shipping address.",
-    "addAddressButton": "Add New Address",
-    "editAddressButton": "Edit Address",
-    "phone": "Phone",
-    "notProvided": "Not provided",
-    "metadata": {
-      "title": "My Addresses - Inherbis",
-      "description": "Manage your shipping and billing addresses."
-    }
-  },
   "shop": {
     "addedToCartFeedback": "Product {productName} added to cart!"
   },
@@ -318,67 +166,5 @@
     "clearFilters": "Clear filters",
     "applyFilters": "Apply filters",
     "noCategoriesFound": "No categories found"
-  },
-  "PasswordPage": {
-    "metadata": {
-      "title": "Change My Password - Inherbis",
-      "description": "Update the password for your Inherbis account."
-    },
-    "title": "Change My Password",
-    "form": {
-      "currentPassword": {
-        "label": "Current Password",
-        "placeholder": "Enter your current password"
-      },
-      "newPassword": {
-        "label": "New Password",
-        "placeholder": "Enter your new password",
-        "description": "Minimum 8 characters."
-      },
-      "confirmPassword": {
-        "label": "Confirm New Password",
-        "placeholder": "Confirm your new password"
-      },
-      "submitButton": "Change Password",
-      "submitButtonLoading": "Changing...",
-      "feedback": {
-        "updateSuccess": "Your password has been updated successfully.",
-        "updateErrorDefault": "An error occurred while updating. Please try again.",
-        "newPasswordMustBeDifferent": "New password must be different from the old one."
-      }
-    },
-    "validation": {
-      "currentPasswordRequired": "Current password is required.",
-      "newPasswordMinLength": "New password must be at least 8 characters long.",
-      "passwordsDoNotMatch": "New passwords do not match."
-    }
-  },
-  "Global": {
-    "loading": "Loading...",
-    "success": "Success",
-    "error": "Error",
-    "submit": "Submit",
-    "saving": "Saving...",
-    "pending": "Pending...",
-    "saveChanges": "Save Changes",
-    "anErrorOccurred": "An error occurred. Please try again.",
-    "operationSuccessful": "Operation successful."
-  },
-  "ChangePasswordForm": {
-    "newPasswordLabel": "New Password",
-    "confirmPasswordLabel": "Confirm New Password",
-    "SubmitButton": {
-      "idle": "Update Password",
-      "pending": "Updating..."
-    },
-    "validation": {
-      "minLength": "Password must be at least 8 characters long.",
-      "passwordsMustMatch": "Passwords do not match."
-    },
-    "notifications": {
-      "success": "Password updated successfully!",
-      "error": "Failed to update password: {error}",
-      "serverError": "Server error: {error}"
-    }
   }
 }

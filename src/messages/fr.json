@@ -82,38 +82,11 @@
     },
     "logout": "Déconnexion"
   },
-  "ShopPage": {
-    "title": "Boutique",
-    "errorFetchingData": "Erreur lors de la récupération des produits.",
-    "noProductsFound": "Aucun produit trouvé."
-  },
   "NotFoundPage": {
     "title": "Page non trouvée"
   },
   "ProductDetailDisplay": {
     "taxInclusiveLabel": "TTC"
-  },
-  "CartSheet": {
-    "cartTitle": "Votre Panier",
-    "cartDescription": "Contenu actuel de votre panier.",
-    "continueShopping": "Continuer les achats",
-    "emptyCart": "Votre panier est vide.",
-    "emptyCartSuggestion": "Parcourez nos produits et ajoutez quelque chose qui vous plaît !",
-    "subtotal": "Sous-total",
-    "checkout": "Passer à la caisse",
-    "removeProduct": "Retirer {productName} du panier",
-    "updateQuantity": "Mettre à jour la quantité de {productName}",
-    "quantity": "Quantité",
-    "itemAddedToCart": "Article ajouté au panier",
-    "itemRemovedFromCart": "Article retiré du panier",
-    "itemUpdatedInCart": "Quantité mise à jour dans le panier",
-    "errorAddingToCart": "Erreur lors de l'ajout au panier",
-    "errorRemovingFromCart": "Erreur lors du retrait du panier",
-    "errorUpdatingCart": "Erreur lors de la mise à jour du panier",
-    "viewCart": "Voir le panier",
-    "proceedToCheckout": "Procéder au paiement",
-    "yourCartTitle": "Votre Panier",
-    "closeButton": "Fermer"
   },
   "CartDisplay": {
     "title": "Contenu de Votre Panier",
@@ -139,133 +112,8 @@
     "checkout": "Paiement",
     "or": "ou"
   },
-  "ProfileEditPage": {
-    "metadata": {
-      "title": "Modifier le Profil - Herbis Veritas",
-      "description": "Mettez à jour vos informations personnelles et vos adresses."
-    },
-    "title": "Modifier le Profil",
-    "subtitle": "Mettez à jour vos coordonnées personnelles et gérez vos adresses.",
-    "form": {
-      "firstName": {
-        "label": "Prénom"
-      },
-      "lastName": {
-        "label": "Nom"
-      },
-      "phoneNumber": {
-        "label": "Numéro de téléphone"
-      },
-      "shippingAddress": {
-        "title": "Adresse de livraison"
-      },
-      "shippingAddressLine1": {
-        "label": "Ligne d'adresse 1"
-      },
-      "shippingAddressLine2": {
-        "label": "Ligne d'adresse 2 (Optionnel)"
-      },
-      "shippingPostalCode": {
-        "label": "Code postal"
-      },
-      "shippingCity": {
-        "label": "Ville"
-      },
-      "shippingCountry": {
-        "label": "Pays"
-      },
-      "billingAddressIsDifferent": {
-        "label": "Mon adresse de facturation est différente de mon adresse de livraison"
-      },
-      "billingAddress": {
-        "title": "Adresse de facturation"
-      },
-      "billingAddressLine1": {
-        "label": "Ligne d'adresse 1"
-      },
-      "billingAddressLine2": {
-        "label": "Ligne d'adresse 2 (Optionnel)"
-      },
-      "billingPostalCode": {
-        "label": "Code postal"
-      },
-      "billingCity": {
-        "label": "Ville"
-      },
-      "billingCountry": {
-        "label": "Pays"
-      }
-    }
-  },
-  "ProfileNav": {
-    "navigationLabel": "Navigation du profil",
-    "account": "Mon Compte",
-    "addresses": "Mes Adresses",
-    "orders": "Mes Commandes",
-    "password": "Mon Mot de Passe"
-  },
-  "AccountPage": {
-    "metadata": {
-      "title": "Mon Compte - Herbis Veritas",
-      "description": "Gérez les informations de votre compte, vos commandes et votre mot de passe."
-    },
-    "title": "Mon Compte",
-    "generalInfo": {
-      "title": "Informations Personnelles",
-      "firstName": "Prénom",
-      "lastName": "Nom",
-      "email": "Adresse E-mail",
-      "phone": "Numéro de Téléphone",
-      "role": "Rôle",
-      "accountCreated": "Compte Créé le"
-    },
-    "terms": {
-      "status": "Termes et Conditions",
-      "acceptedOn": "Acceptés le",
-      "notAccepted": "Pas encore acceptés"
-    },
-    "shippingAddress": {
-      "title": "Adresse de Livraison",
-      "line1": "Ligne d'adresse 1",
-      "line2": "Ligne d'adresse 2 (Optionnel)",
-      "postalCode": "Code Postal",
-      "city": "Ville",
-      "country": "Pays",
-      "notProvided": "Aucune adresse de livraison fournie pour le moment."
-    },
-    "billingAddress": {
-      "title": "Adresse de Facturation",
-      "notProvided": "Aucune adresse de facturation fournie pour le moment."
-    },
-    "shippingAndBillingAddress": {
-      "title": "Adresse de Livraison & Facturation"
-    },
-    "orders": {
-      "title": "Mes Commandes",
-      "viewLink": "Voir mes commandes"
-    },
-    "password": {
-      "title": "Mon Mot de Passe",
-      "changeLink": "Changer mon mot de passe"
-    }
-  },
   "Legal": {
     "acceptTermsAndConditions": "J'accepte les termes et conditions"
-  },
-  "AddressesPage": {
-    "title": "Mes Adresses",
-    "shippingAddressTitle": "Adresse de Livraison",
-    "billingAddressTitle": "Adresse de Facturation",
-    "noShippingAddress": "Aucune adresse de livraison enregistrée.",
-    "noBillingAddress": "Aucune adresse de facturation enregistrée. L'adresse de facturation est la même que l'adresse de livraison.",
-    "addAddressButton": "Ajouter une nouvelle adresse",
-    "editAddressButton": "Modifier l'adresse",
-    "phone": "Téléphone",
-    "notProvided": "Non fourni",
-    "metadata": {
-      "title": "Mes Adresses - Inherbis",
-      "description": "Gérez vos adresses de livraison et de facturation."
-    }
   },
   "AddressForm": {
     "formTitleNewShipping": "Ajouter une nouvelle adresse de livraison",
@@ -309,68 +157,6 @@
       "addError": "Échec de l'ajout de l'adresse. Veuillez réessayer.",
       "updateSuccess": "Adresse mise à jour avec succès.",
       "updateError": "Échec de la mise à jour de l'adresse. Veuillez réessayer."
-    }
-  },
-  "PasswordPage": {
-    "metadata": {
-      "title": "Changer Mon Mot de Passe - Inherbis",
-      "description": "Mettez à jour le mot de passe de votre compte Inherbis."
-    },
-    "title": "Changer Mon Mot de Passe",
-    "form": {
-      "currentPassword": {
-        "label": "Mot de passe actuel",
-        "placeholder": "Saisissez votre mot de passe actuel"
-      },
-      "newPassword": {
-        "label": "Nouveau mot de passe",
-        "placeholder": "Saisissez votre nouveau mot de passe",
-        "description": "Minimum 8 caractères."
-      },
-      "confirmPassword": {
-        "label": "Confirmer le nouveau mot de passe",
-        "placeholder": "Confirmez votre nouveau mot de passe"
-      },
-      "submitButton": "Changer le mot de passe",
-      "submitButtonLoading": "Changement en cours...",
-      "feedback": {
-        "updateSuccess": "Votre mot de passe a été mis à jour avec succès.",
-        "updateErrorDefault": "Une erreur est survenue lors de la mise à jour. Veuillez réessayer.",
-        "newPasswordMustBeDifferent": "Le nouveau mot de passe doit être différent de l'ancien."
-      }
-    },
-    "validation": {
-      "currentPasswordRequired": "Le mot de passe actuel est requis.",
-      "newPasswordMinLength": "Le nouveau mot de passe doit contenir au moins 8 caractères.",
-      "passwordsDoNotMatch": "Les nouveaux mots de passe ne correspondent pas."
-    }
-  },
-  "Global": {
-    "loading": "Chargement...",
-    "success": "Succès",
-    "error": "Erreur",
-    "submit": "Envoyer",
-    "saving": "Enregistrement...",
-    "pending": "En cours...",
-    "saveChanges": "Enregistrer les modifications",
-    "anErrorOccurred": "Une erreur est survenue. Veuillez réessayer.",
-    "operationSuccessful": "Opération réussie."
-  },
-  "ChangePasswordForm": {
-    "newPasswordLabel": "Nouveau mot de passe",
-    "confirmPasswordLabel": "Confirmer le nouveau mot de passe",
-    "SubmitButton": {
-      "idle": "Mettre à jour le mot de passe",
-      "pending": "Mise à jour..."
-    },
-    "validation": {
-      "minLength": "Le mot de passe doit contenir au moins 8 caractères.",
-      "passwordsMustMatch": "Les mots de passe ne correspondent pas."
-    },
-    "notifications": {
-      "success": "Mot de passe mis à jour avec succès !",
-      "error": "Échec de la mise à jour du mot de passe : {error}",
-      "serverError": "Erreur serveur : {error}"
     }
   }
 }

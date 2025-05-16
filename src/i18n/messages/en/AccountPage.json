@@ -1,0 +1,51 @@
+{
+  "addresses": {
+    "title": "My Addresses"
+  },
+  "password": {
+    "sectionTitle": "My Password",
+    "description": "Change your password and security settings."
+  },
+  "metadata": {
+    "title": "My Account - In Herbis Veritas",
+    "description": "Manage your account information, addresses, and password on In Herbis Veritas."
+  },
+  "title": "My Account Area",
+  "generalInfo": {
+    "title": "Personal Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "role": "Role",
+    "accountCreated": "Account Created On"
+  },
+  "terms": {
+    "status": "Terms and Conditions Status",
+    "acceptedOn": "Accepted on",
+    "notAccepted": "Not accepted"
+  },
+  "shippingAddress": {
+    "title": "Shipping Address",
+    "line1": "Address Line 1",
+    "line2": "Address Line 2 (optional)",
+    "postalCode": "Postal Code",
+    "city": "City",
+    "country": "Country"
+  },
+  "shippingAndBillingAddress": {
+    "title": "Shipping and Billing Address"
+  },
+  "billingAddress": {
+    "title": "Billing Address",
+    "line1": "Address Line 1",
+    "line2": "Address Line 2 (optional)",
+    "postalCode": "Postal Code",
+    "city": "City",
+    "country": "Country"
+  },
+  "orders": {
+    "title": "My Orders",
+    "viewLink": "View my orders"
+  }
+}
