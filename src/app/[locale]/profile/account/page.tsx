@@ -7,6 +7,114 @@ import { ProfileData } from "@/types/profile";
 import { Metadata } from "next";
 import { LogoutButton } from "@/components/domain/profile/logout-button"; // Import LogoutButton
 
+// Minimal Address type definition (ideally import from a shared types file)
+interface Address {
+  id: string;
+  user_id: string;
+  address_type: "shipping" | "billing";
+  is_default: boolean;
+  company_name?: string | null;
+  full_name?: string | null;
+  address_line1: string;
+  address_line2?: string | null;
+  postal_code: string;
+  city: string;
+  country_code: string; // Matches 'addresses' table
+  state_province_region?: string | null;
+  phone_number?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Helper component to display an address (can be moved to a separate file)
+// This is a simplified version of DisplayAddress from AddressesPage
+const AccountDisplayAddress = ({
+  address,
+  title,
+  t, // translations from AccountPage
+}: {
+  address: Address | null;
+  title: string;
+  t: (key: string) => string; // More specific type for t function
+}) => {
+  if (!address) {
+    return (
+      <>
+        <h3 className="mb-2 text-lg font-medium text-foreground">{title}</h3>
+        <p className="text-muted-foreground">{t("addressNotProvided")}</p>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <h3 className="mb-2 text-lg font-medium text-foreground">{title}</h3>
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        {address.full_name && (
+          <div className="sm:col-span-2">
+            <dt className="text-sm font-medium text-muted-foreground">
+              {t("addressFields.fullName")}
+            </dt>
+            <dd className="mt-1 text-base text-foreground">{address.full_name}</dd>
+          </div>
+        )}
+        {address.company_name && (
+          <div className="sm:col-span-2">
+            <dt className="text-sm font-medium text-muted-foreground">
+              {t("addressFields.companyName")}
+            </dt>
+            <dd className="mt-1 text-base text-foreground">{address.company_name}</dd>
+          </div>
+        )}
+        <div className="sm:col-span-2">
+          <dt className="text-sm font-medium text-muted-foreground">{t("addressFields.line1")}</dt>
+          <dd className="mt-1 text-base text-foreground">{address.address_line1}</dd>
+        </div>
+        {address.address_line2 && (
+          <div className="sm:col-span-2">
+            <dt className="text-sm font-medium text-muted-foreground">
+              {t("addressFields.line2")}
+            </dt>
+            <dd className="mt-1 text-base text-foreground">{address.address_line2}</dd>
+          </div>
+        )}
+        <div className="sm:col-span-1">
+          <dt className="text-sm font-medium text-muted-foreground">
+            {t("addressFields.postalCode")}
+          </dt>
+          <dd className="mt-1 text-base text-foreground">{address.postal_code}</dd>
+        </div>
+        <div className="sm:col-span-1">
+          <dt className="text-sm font-medium text-muted-foreground">{t("addressFields.city")}</dt>
+          <dd className="mt-1 text-base text-foreground">{address.city}</dd>
+        </div>
+        {address.state_province_region && (
+          <div className="sm:col-span-1">
+            <dt className="text-sm font-medium text-muted-foreground">
+              {t("addressFields.stateProvinceRegion")}
+            </dt>
+            <dd className="mt-1 text-base text-foreground">{address.state_province_region}</dd>
+          </div>
+        )}
+        <div className={address.state_province_region ? "sm:col-span-1" : "sm:col-span-2"}>
+          <dt className="text-sm font-medium text-muted-foreground">
+            {t("addressFields.country")}
+          </dt>
+          <dd className="mt-1 text-base text-foreground">{address.country_code}</dd>
+        </div>
+        {address.phone_number && (
+          <div className="sm:col-span-2">
+            <dt className="text-sm font-medium text-muted-foreground">
+              {t("addressFields.phone")}
+            </dt>
+            <dd className="mt-1 text-base text-foreground">{address.phone_number}</dd>
+          </div>
+        )}
+      </dl>
+    </>
+  );
+};
+
 // Helper pour formater la date
 function formatDate(dateString: string | null | undefined, locale: string): string {
   if (!dateString) return "N/A";
@@ -71,22 +179,58 @@ export default async function AccountPage(props: AccountPageProps) {
       last_name,
       phone_number,
       role,
-      shipping_address_line1,
-      shipping_address_line2,
-      shipping_postal_code,
-      shipping_city,
-      shipping_country,
       terms_accepted_at,
-      billing_address_is_different,
-      billing_address_line1,
-      billing_address_line2,
-      billing_postal_code,
-      billing_city,
-      billing_country
+      billing_address_is_different
     `
     )
     .eq("id", user.id)
-    .single<ProfileData>();
+    .single<
+      Omit<
+        ProfileData,
+        | "shipping_address_line1"
+        | "shipping_address_line2"
+        | "shipping_postal_code"
+        | "shipping_city"
+        | "shipping_country"
+        | "billing_address_line1"
+        | "billing_address_line2"
+        | "billing_postal_code"
+        | "billing_city"
+        | "billing_country"
+      >
+    >();
+
+  // Fetch addresses from the 'addresses' table
+  const { data: userAddresses, error: addressesError } = await supabase
+    .from("addresses")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("is_default", { ascending: false })
+    .order("address_type", { ascending: true });
+
+  if (addressesError) {
+    console.error("Error fetching user addresses:", addressesError);
+    // Handle error appropriately, maybe show a message to the user
+  }
+
+  let displayShippingAddress: Address | null = null;
+  let displayBillingAddress: Address | null = null;
+
+  if (userAddresses) {
+    displayShippingAddress =
+      userAddresses.find(
+        (addr: Address) => addr.address_type === "shipping" && addr.is_default === true
+      ) ||
+      userAddresses.find((addr: Address) => addr.address_type === "shipping") ||
+      null;
+
+    displayBillingAddress =
+      userAddresses.find(
+        (addr: Address) => addr.address_type === "billing" && addr.is_default === true
+      ) ||
+      userAddresses.find((addr: Address) => addr.address_type === "billing") ||
+      null;
+  }
 
   if (profileError && profileError.code !== "PGRST116") {
     console.error("Error fetching profile:", profileError);
@@ -100,18 +244,11 @@ export default async function AccountPage(props: AccountPageProps) {
     phone: profile?.phone_number || user.phone || "",
     role: profile?.role || tGlobal("roles.user"),
     accountCreated: user.created_at,
-    shipping_address_line1: profile?.shipping_address_line1 || "",
-    shipping_address_line2: profile?.shipping_address_line2 || "",
-    shipping_postal_code: profile?.shipping_postal_code || "",
-    shipping_city: profile?.shipping_city || "",
-    shipping_country: profile?.shipping_country || "",
     terms_accepted_at: profile?.terms_accepted_at,
     billing_address_is_different: profile?.billing_address_is_different || false,
-    billing_address_line1: profile?.billing_address_line1 || "",
-    billing_address_line2: profile?.billing_address_line2 || "",
-    billing_postal_code: profile?.billing_postal_code || "",
-    billing_city: profile?.billing_city || "",
-    billing_country: profile?.billing_country || "",
+    // Addresses will be handled by the new display components
+    shippingAddress: displayShippingAddress,
+    billingAddress: displayBillingAddress,
   };
 
   return (
@@ -202,125 +339,27 @@ export default async function AccountPage(props: AccountPageProps) {
               {tGlobal("manage")}
             </Link>
           </div>
-          {/* Affichage de l'adresse de livraison principale */}
-          <h3 className="mb-2 text-lg font-medium text-foreground">
-            {userInfo.billing_address_is_different
-              ? t("shippingAddress.title")
-              : t("shippingAndBillingAddress.title")}
-          </h3>
-          {userInfo.shipping_postal_code || userInfo.shipping_city ? (
-            <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <dt className="text-sm font-medium text-muted-foreground">
-                  {t("shippingAddress.line1")}
-                </dt>
-                <dd className="mt-1 text-lg font-semibold text-foreground">
-                  {userInfo.shipping_address_line1 || tGlobal("notProvided")}
-                </dd>
-              </div>
-              {userInfo.shipping_address_line2 && (
-                <div className="sm:col-span-2">
-                  <dt className="text-sm font-medium text-muted-foreground">
-                    {t("shippingAddress.line2")}
-                  </dt>
-                  <dd className="mt-1 text-lg font-semibold text-foreground">
-                    {userInfo.shipping_address_line2}
-                  </dd>
-                </div>
-              )}
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-muted-foreground">
-                  {t("shippingAddress.postalCode")}
-                </dt>
-                <dd className="mt-1 text-lg font-semibold text-foreground">
-                  {userInfo.shipping_postal_code || tGlobal("notProvided")}
-                </dd>
-              </div>
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-muted-foreground">
-                  {t("shippingAddress.city")}
-                </dt>
-                <dd className="mt-1 text-lg font-semibold text-foreground">
-                  {userInfo.shipping_city || tGlobal("notProvided")}
-                </dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-sm font-medium text-muted-foreground">
-                  {t("shippingAddress.country")}
-                </dt>
-                <dd className="mt-1 text-lg font-semibold text-foreground">
-                  {userInfo.shipping_country || tGlobal("notProvided")}
-                </dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="text-muted-foreground">{t("shippingAddress.notProvided")}</p>
-          )}
+          <AccountDisplayAddress
+            address={userInfo.shippingAddress}
+            title={
+              userInfo.billing_address_is_different
+                ? t("shippingAddress.title")
+                : t("shippingAndBillingAddress.title")
+            }
+            t={t}
+          />
         </div>
 
-        {/* Adresse de Facturation (si différente) */}
         {userInfo.billing_address_is_different && (
           <>
             <hr className="my-4 border-border" />
             <div className="px-4 py-5 sm:p-6">
-              {" "}
-              {/* Ajout du div pour padding */}
-              <h3 className="mb-2 text-lg font-medium text-foreground">
-                {t("billingAddress.title")}
-              </h3>
-              {userInfo.billing_postal_code || userInfo.billing_city ? (
-                <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <dt className="text-sm font-medium text-muted-foreground">
-                      {t("shippingAddress.line1")} {/* Réutilisation de la clé */}
-                    </dt>
-                    <dd className="mt-1 text-lg font-semibold text-foreground">
-                      {userInfo.billing_address_line1 || tGlobal("notProvided")}
-                    </dd>
-                  </div>
-                  {userInfo.billing_address_line2 && (
-                    <div className="sm:col-span-2">
-                      <dt className="text-sm font-medium text-muted-foreground">
-                        {t("shippingAddress.line2")} {/* Réutilisation de la clé */}
-                      </dt>
-                      <dd className="mt-1 text-lg font-semibold text-foreground">
-                        {userInfo.billing_address_line2}
-                      </dd>
-                    </div>
-                  )}
-                  <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-muted-foreground">
-                      {t("shippingAddress.postalCode")} {/* Réutilisation de la clé */}
-                    </dt>
-                    <dd className="mt-1 text-lg font-semibold text-foreground">
-                      {userInfo.billing_postal_code || tGlobal("notProvided")}
-                    </dd>
-                  </div>
-                  <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-muted-foreground">
-                      {t("shippingAddress.city")} {/* Réutilisation de la clé */}
-                    </dt>
-                    <dd className="mt-1 text-lg font-semibold text-foreground">
-                      {userInfo.billing_city || tGlobal("notProvided")}
-                    </dd>
-                  </div>
-                  <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-muted-foreground">
-                      {t("shippingAddress.country")} {/* Réutilisation de la clé */}
-                    </dt>
-                    <dd className="mt-1 text-lg font-semibold text-foreground">
-                      {userInfo.billing_country || tGlobal("notProvided")}
-                    </dd>
-                  </div>
-                </dl>
-              ) : (
-                <p className="text-muted-foreground">
-                  {/* Peut-être une clé billingAddress.notProvided ? Pour l'instant, réutilisation. */}{" "}
-                  {t("shippingAddress.notProvided")}
-                </p>
-              )}
-            </div>{" "}
-            {/* Fermeture du div de padding */}
+              <AccountDisplayAddress
+                address={userInfo.billingAddress}
+                title={t("billingAddress.title")}
+                t={t}
+              />
+            </div>
           </>
         )}
       </article>

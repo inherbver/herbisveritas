@@ -4,12 +4,31 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { profileSchema } from "@/lib/schemas/profileSchema";
+
+// New schema for account information only
+const accountInfoSchema = z.object({
+  first_name: z
+    .string()
+    .min(2, { message: "First name must be at least 2 characters." })
+    .max(50, { message: "First name must be at most 50 characters." })
+    .trim(),
+  last_name: z
+    .string()
+    .min(2, { message: "Last name must be at least 2 characters." })
+    .max(50, { message: "Last name must be at most 50 characters." })
+    .trim(),
+  phone_number: z
+    .string()
+    .regex(/^(\+\d{1,3}[- ]?)?\d{10}$/, { message: "Invalid phone number format." })
+    .or(z.literal("")) // Allows empty string
+    .nullable(), // Allows null
+});
 
 export interface UpdateProfileFormState {
+  // This state type might need to be adjusted if its errors field is tied to the full profileSchema
   success: boolean;
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof profileSchema>, string[]>> | null;
+  errors?: Partial<Record<keyof z.infer<typeof accountInfoSchema>, string[]>> | null; // Adjusted to accountInfoSchema
   resetKey?: string; // To help trigger form reset on successful submission
 }
 
@@ -31,35 +50,17 @@ export async function updateUserProfile(
     };
   }
 
-  const rawFormValueForBillingDifferent = formData.get("billing_address_is_different");
-  console.log("Raw 'billing_address_is_different' from formData:", rawFormValueForBillingDifferent);
-  console.log(
-    "Type of raw 'billing_address_is_different' from formData:",
-    typeof rawFormValueForBillingDifferent
-  );
-
   const rawFormData = {
     first_name: formData.get("first_name"),
     last_name: formData.get("last_name"),
     phone_number: formData.get("phone_number"),
-    shipping_address_line1: formData.get("shipping_address_line1"),
-    shipping_address_line2: formData.get("shipping_address_line2"),
-    shipping_postal_code: formData.get("shipping_postal_code"),
-    shipping_city: formData.get("shipping_city"),
-    shipping_country: formData.get("shipping_country"),
-    billing_address_is_different: rawFormValueForBillingDifferent === "true",
-    billing_address_line1: formData.get("billing_address_line1"),
-    billing_address_line2: formData.get("billing_address_line2"),
-    billing_postal_code: formData.get("billing_postal_code"),
-    billing_city: formData.get("billing_city"),
-    billing_country: formData.get("billing_country"),
   };
 
-  console.log("Processed rawFormData for Zod:", JSON.stringify(rawFormData, null, 2));
+  // console.log("Processed rawFormData for Zod:", JSON.stringify(rawFormData, null, 2));
 
   const locale = (formData.get("locale") as string) || "en";
 
-  const validationResult = profileSchema.safeParse(rawFormData);
+  const validationResult = accountInfoSchema.safeParse(rawFormData);
 
   if (!validationResult.success) {
     console.log("Validation errors:", validationResult.error.flatten());
@@ -70,39 +71,17 @@ export async function updateUserProfile(
     };
   }
 
-  const profileUpdateData = validationResult.data;
-  console.log(
-    "'billing_address_is_different' after Zod parsing:",
-    profileUpdateData.billing_address_is_different
-  );
+  const accountInfoUpdateData = validationResult.data;
 
   const dataToUpsert: any = {
     id: user.id,
     updated_at: new Date().toISOString(),
-    first_name: profileUpdateData.first_name,
-    last_name: profileUpdateData.last_name,
-    phone_number: profileUpdateData.phone_number,
-    shipping_address_line1: profileUpdateData.shipping_address_line1,
-    shipping_address_line2: profileUpdateData.shipping_address_line2,
-    shipping_postal_code: profileUpdateData.shipping_postal_code,
-    shipping_city: profileUpdateData.shipping_city,
-    shipping_country: profileUpdateData.shipping_country,
-    billing_address_is_different: profileUpdateData.billing_address_is_different,
+    first_name: accountInfoUpdateData.first_name,
+    last_name: accountInfoUpdateData.last_name,
+    phone_number: accountInfoUpdateData.phone_number,
   };
 
-  console.log(
-    "'billing_address_is_different' in dataToUpsert before Supabase:",
-    dataToUpsert.billing_address_is_different
-  );
-
-  if (profileUpdateData.billing_address_is_different) {
-    dataToUpsert.billing_address_line1 = profileUpdateData.billing_address_line1;
-    dataToUpsert.billing_address_line2 = profileUpdateData.billing_address_line2;
-    dataToUpsert.billing_postal_code = profileUpdateData.billing_postal_code;
-    dataToUpsert.billing_city = profileUpdateData.billing_city;
-    dataToUpsert.billing_country = profileUpdateData.billing_country;
-  }
-  // Le bloc 'else' qui mettait les champs à null a été supprimé pour préserver les données.
+  // Removed all address-related logic from dataToUpsert
 
   const { error: upsertError } = await supabase
     .from("profiles")
@@ -144,6 +123,88 @@ interface UpdatePasswordResult {
     message: string;
     code?: string;
   } | null;
+}
+// Add this interface near the top with other type/schema definitions
+interface AddressForSync {
+  id: string;
+  user_id: string;
+  address_type: "shipping" | "billing";
+  is_default: boolean;
+  // We only need these fields for the logic
+}
+
+export async function syncProfileAddressFlag(
+  locale: string,
+  userId?: string // Optional: if called from a context where user ID is already known
+): Promise<{ success: boolean; message?: string }> {
+  const supabase = await createSupabaseServerClient();
+  let currentUserId = userId;
+
+  if (!currentUserId) {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error("syncProfileAddressFlag: User not authenticated.", authError);
+      return { success: false, message: "User not authenticated." };
+    }
+    currentUserId = user.id;
+  }
+
+  const { data: userAddresses, error: fetchAddressesError } = await supabase
+    .from("addresses")
+    .select("id, user_id, address_type, is_default")
+    .eq("user_id", currentUserId);
+
+  if (fetchAddressesError) {
+    console.error("syncProfileAddressFlag: Error fetching user addresses:", fetchAddressesError);
+    return { success: false, message: "Could not fetch user addresses." };
+  }
+
+  const defaultShippingAddress =
+    userAddresses?.find(
+      (addr: AddressForSync) => addr.address_type === "shipping" && addr.is_default
+    ) || null;
+
+  const defaultBillingAddress =
+    userAddresses?.find(
+      (addr: AddressForSync) => addr.address_type === "billing" && addr.is_default
+    ) || null;
+
+  let newBillingAddressIsDifferent = false;
+
+  if (defaultBillingAddress) {
+    if (defaultShippingAddress) {
+      // If both exist, they are different if their IDs are different
+      if (defaultBillingAddress.id !== defaultShippingAddress.id) {
+        newBillingAddressIsDifferent = true;
+      }
+    } else {
+      // Only default billing exists, so it's different from a non-existent default shipping
+      newBillingAddressIsDifferent = true;
+    }
+  }
+  // If no defaultBillingAddress, newBillingAddressIsDifferent remains false.
+
+  const { error: updateProfileError } = await supabase
+    .from("profiles")
+    .update({
+      billing_address_is_different: newBillingAddressIsDifferent,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", currentUserId);
+
+  if (updateProfileError) {
+    console.error("syncProfileAddressFlag: Error updating profile flag:", updateProfileError);
+    return { success: false, message: "Could not update profile address flag." };
+  }
+
+  revalidatePath(`/${locale}/profile/account`);
+  // Potentially revalidate addresses page too if it uses this flag, though less likely.
+  // revalidatePath(`/${locale}/profile/addresses`);
+
+  return { success: true, message: "Profile address flag synchronized." };
 }
 
 export async function updatePassword(

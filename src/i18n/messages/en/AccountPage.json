@@ -2,6 +2,18 @@
   "addresses": {
     "title": "My Addresses"
   },
+  "addressNotProvided": "No address details are available.",
+  "addressFields": {
+    "fullName": "Full Name",
+    "companyName": "Company Name (Optional)",
+    "line1": "Address Line 1",
+    "line2": "Address Line 2 (Optional)",
+    "postalCode": "Postal Code",
+    "city": "City",
+    "stateProvinceRegion": "State/Province/Region (Optional)",
+    "country": "Country",
+    "phone": "Phone Number (Optional)"
+  },
   "password": {
     "sectionTitle": "My Password",
     "description": "Change your password and security settings."

@@ -2,6 +2,18 @@
   "addresses": {
     "title": "Mes Adresses"
   },
+  "addressNotProvided": "Aucun détail d'adresse n'est disponible.",
+  "addressFields": {
+    "fullName": "Nom Complet",
+    "companyName": "Nom de l'Entreprise (Optionnel)",
+    "line1": "Ligne d'Adresse 1",
+    "line2": "Ligne d'Adresse 2 (Optionnel)",
+    "postalCode": "Code Postal",
+    "city": "Ville",
+    "stateProvinceRegion": "État/Province/Région (Optionnel)",
+    "country": "Pays",
+    "phone": "Numéro de Téléphone (Optionnel)"
+  },
   "password": {
     "sectionTitle": "Mon Mot de Passe",
     "description": "Modifiez votre mot de passe et vos paramètres de sécurité."

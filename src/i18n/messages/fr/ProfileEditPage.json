@@ -10,6 +10,9 @@
     "profileNotFound": "Profil non trouvé."
   },
   "form": {
+    "personalInfo": {
+      "title": "Informations Personnelles"
+    },
     "firstName": {
       "label": "Prénom",
       "placeholder": "Entrez votre prénom"

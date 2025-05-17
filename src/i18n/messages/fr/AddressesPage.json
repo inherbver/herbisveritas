@@ -1,0 +1,12 @@
+{
+  "title": "Mes Adresses",
+  "shippingAddressTitle": "Adresse de Livraison",
+  "billingAddressTitle": "Adresse de Facturation",
+  "shippingAndBillingAddressTitle": "Adresse de Livraison et de Facturation",
+  "addAddressButton": "Ajouter une Adresse",
+  "addSeparateBillingAddressButton": "Ajouter une adresse de facturation distincte",
+  "editAddressButton": "Modifier",
+  "noShippingAddress": "Aucune adresse de livraison enregistrée.",
+  "noBillingAddress": "Aucune adresse de facturation enregistrée.",
+  "phone": "Téléphone"
+}

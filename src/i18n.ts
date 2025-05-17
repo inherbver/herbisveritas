@@ -71,6 +71,15 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] FAILED TO LOAD ShopPage.json for locale ${localeToUse}:`, e);
   }
 
+  let addressesPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    addressesPageNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/AddressesPage.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load AddressesPage.json for locale ${localeToUse}:`, e);
+  }
+
   // Tentative de chargement pour un fichier de messages racine (si applicable)
   let rootMessagesContent: Record<string, unknown> | undefined = undefined;
   try {
@@ -87,6 +96,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safePasswordPage = passwordPageNamespaceContent || {};
   const safeProfileEditPage = profileEditPageNamespaceContent || {};
   const safeShopPage = shopPageNamespaceContent || {};
+  const safeAddressesPage = addressesPageNamespaceContent || {};
   const safeRoot = rootMessagesContent || {};
 
   const mergedMessages = {
@@ -100,6 +110,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
       ? { ProfileEditPage: safeProfileEditPage }
       : {}),
     ...(Object.keys(safeShopPage).length > 0 ? { ShopPage: safeShopPage } : {}),
+    ...(Object.keys(safeAddressesPage).length > 0 ? { AddressesPage: safeAddressesPage } : {}),
   };
 
   // Condition pour notFound si AUCUN message n'est chargé (ni racine, ni aucun des namespaces)
@@ -111,7 +122,8 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     Object.keys(safeCartSheet).length === 0 &&
     Object.keys(safePasswordPage).length === 0 &&
     Object.keys(safeProfileEditPage).length === 0 &&
-    Object.keys(safeShopPage).length === 0
+    Object.keys(safeShopPage).length === 0 &&
+    Object.keys(safeAddressesPage).length === 0
   ) {
     notFound();
   }
