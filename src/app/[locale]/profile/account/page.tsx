@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LOGIN_REDIRECT_URL } from "@/lib/constants";
 import { ProfileData } from "@/types/profile";
 import { Metadata } from "next";
+import { LogoutButton } from "@/components/domain/profile/logout-button"; // Import LogoutButton
 
 // Helper pour formater la date
 function formatDate(dateString: string | null | undefined, locale: string): string {
@@ -357,6 +358,21 @@ export default async function AccountPage(props: AccountPageProps) {
               {t("orders.viewLink")}
             </Link>
           </div>
+        </div>
+      </article>
+
+      {/* Section Déconnexion */}
+      <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">{t("logout.sectionTitle")}</h2>{" "}
+            {/* Clef à ajouter */}
+            <LogoutButton />
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t("logout.description")}{" "}
+            {/* Clef à ajouter: "Vous serez déconnecté de votre session actuelle." */}
+          </p>
         </div>
       </article>
     </section>

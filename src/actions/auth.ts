@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe l
 // --- Schéma Login ---
 const loginSchema = z.object({
   email: z.string().email({ message: "L'adresse email n'est pas valide." }),
-  password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères." }),
+  password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
 });
 
 // --- Schéma Inscription ---
@@ -17,26 +17,29 @@ const signUpSchema = z
     email: z.string().email({ message: "L'adresse email n'est pas valide." }),
     password: z
       .string()
-      .min(6, { message: "Le mot de passe doit contenir au moins 6 caractères." }),
-    confirmPassword: z.string(),
+      .min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
+    confirmPassword: z
+      .string()
+      .min(8, { message: "La confirmation du mot de passe doit contenir au moins 8 caractères." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    // Validation personnalisée pour vérifier que les mots de passe correspondent
     message: "Les mots de passe ne correspondent pas.",
-    path: ["confirmPassword"], // Indique que l'erreur concerne le champ confirmPassword
+    path: ["confirmPassword"],
   });
 
 // --- Types d'Actions ---
-interface ActionResult {
+export interface AuthActionResult {
+  success: boolean;
+  message?: string;
   error?: string;
-  message?: string; // Ajouté pour les messages de succès/info
+  fieldErrors?: Record<string, string[]>;
 }
 
 // --- Action de Connexion ---
 export async function loginAction(
-  prevState: ActionResult | undefined,
+  prevState: AuthActionResult | undefined,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<AuthActionResult> {
   const supabase = await createSupabaseServerClient();
 
   // 1. Valider les données
@@ -46,8 +49,16 @@ export async function loginAction(
   });
 
   if (!validatedFields.success) {
-    const errorMessage = validatedFields.error.issues.map((issue) => issue.message).join("\n");
-    return { error: errorMessage };
+    const fieldErrors = validatedFields.error.flatten().fieldErrors;
+    const formErrors = validatedFields.error.flatten().formErrors;
+    return {
+      success: false,
+      error:
+        formErrors.length > 0
+          ? formErrors.join(", ")
+          : "Erreur de validation. Veuillez vérifier les champs.",
+      fieldErrors: fieldErrors as Record<string, string[]>,
+    };
   }
 
   const { email, password } = validatedFields.data;
@@ -57,7 +68,10 @@ export async function loginAction(
 
   if (error) {
     console.error("Erreur Supabase Auth (Login):", error.message);
-    return { error: "L'email ou le mot de passe est incorrect." };
+    return {
+      success: false,
+      error: "L'email ou le mot de passe est incorrect.",
+    };
   }
 
   // 3. Rediriger si succès
@@ -66,9 +80,9 @@ export async function loginAction(
 
 // --- Action d'Inscription ---
 export async function signUpAction(
-  prevState: ActionResult | undefined,
+  prevState: AuthActionResult | undefined,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<AuthActionResult> {
   const supabase = await createSupabaseServerClient();
 
   // 1. Valider les données du formulaire avec Zod (incluant la confirmation de mdp)
@@ -80,8 +94,16 @@ export async function signUpAction(
 
   // Si la validation échoue
   if (!validatedFields.success) {
-    const errorMessage = validatedFields.error.issues.map((issue) => issue.message).join("\n");
-    return { error: errorMessage };
+    const fieldErrors = validatedFields.error.flatten().fieldErrors;
+    const formErrors = validatedFields.error.flatten().formErrors;
+    return {
+      success: false,
+      error:
+        formErrors.length > 0
+          ? formErrors.join(", ")
+          : "Erreur de validation. Veuillez vérifier les champs.",
+      fieldErrors: fieldErrors as Record<string, string[]>,
+    };
   }
 
   const { email, password } = validatedFields.data;
@@ -99,11 +121,15 @@ export async function signUpAction(
   // Si Supabase renvoie une erreur (ex: utilisateur existe déjà)
   if (error) {
     console.error("Erreur Supabase Auth (Signup):", error.message);
-    // Analyser l'erreur pour un message plus spécifique si possible/souhaité
+    let errorMessage = "Une erreur est survenue lors de l'inscription. Veuillez réessayer.";
     if (error.message.includes("User already registered")) {
-      return { error: "Un compte existe déjà avec cette adresse email." };
+      errorMessage = "Un compte existe déjà avec cette adresse email.";
     }
-    return { error: "Une erreur est survenue lors de l'inscription. Veuillez réessayer." };
+    // Vous pourriez ajouter d'autres vérifications d'erreurs spécifiques ici
+    return {
+      success: false,
+      error: errorMessage,
+    };
   }
 
   // 3. Si succès (et la confirmation par email est activée par défaut)
@@ -114,6 +140,7 @@ export async function signUpAction(
     // Si data.session est null et data.user n'est pas null, la confirmation est probablement requise.
     if (!data.session) {
       return {
+        success: true,
         message:
           "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.",
       };
@@ -124,7 +151,10 @@ export async function signUpAction(
   }
 
   // Cas par défaut ou si quelque chose d'inattendu se produit
-  return { error: "Une erreur inattendue est survenue lors de l'inscription." };
+  return {
+    success: false,
+    error: "Une erreur inattendue est survenue lors de l'inscription.",
+  };
 }
 
 // --- Logout Action ---

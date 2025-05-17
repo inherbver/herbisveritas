@@ -44,6 +44,12 @@
     "city": "Ville",
     "country": "Pays"
   },
+  "logout": {
+    "sectionTitle": "Déconnexion",
+    "description": "Vous serez déconnecté de votre session actuelle.",
+    "buttonText": "Se déconnecter",
+    "pendingButtonText": "Déconnexion..."
+  },
   "orders": {
     "title": "Mes Commandes",
     "viewLink": "Voir mes commandes"

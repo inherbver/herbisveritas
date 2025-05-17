@@ -44,6 +44,12 @@
     "city": "City",
     "country": "Country"
   },
+  "logout": {
+    "sectionTitle": "Logout",
+    "description": "You will be logged out of your current session.",
+    "buttonText": "Logout",
+    "pendingButtonText": "Logging out..."
+  },
   "orders": {
     "title": "My Orders",
     "viewLink": "View my orders"

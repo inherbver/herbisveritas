@@ -1,8 +1,11 @@
 "use client";
 
+"use client";
+
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import React from "react";
+import React, { useEffect } from "react"; // Import useEffect
+import { toast } from "sonner"; // Import toast from sonner
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginAction } from "@/actions/auth";
+import { loginAction, type AuthActionResult } from "@/actions/auth"; // Import AuthActionResult
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -29,8 +32,21 @@ function SubmitButton() {
 
 export function LoginForm() {
   const t = useTranslations("Auth.LoginForm");
-  const initialState = { error: undefined };
+  const initialState: AuthActionResult = {
+    success: false,
+    error: undefined,
+    message: undefined,
+    fieldErrors: {},
+  };
   const [state, formAction] = useActionState(loginAction, initialState);
+
+  useEffect(() => {
+    if (state.error) {
+      toast.error(state.error);
+    }
+    // loginAction redirects on success, so a success toast here might not be seen
+    // or could be shown just before redirection.
+  }, [state.error, state.message, state.success]);
 
   return (
     <Card className="w-full max-w-sm">
@@ -45,12 +61,22 @@ export function LoginForm() {
           <div className="space-y-2">
             <Label htmlFor="email">{t("emailLabel")}</Label>
             <Input id="email" name="email" type="email" placeholder="m@exemple.com" required />
+            {state.fieldErrors?.email && (
+              <p className="text-sm font-medium text-destructive">
+                {state.fieldErrors.email.join(", ")}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("passwordLabel")}</Label>
             <Input id="password" name="password" type="password" required />
+            {state.fieldErrors?.password && (
+              <p className="text-sm font-medium text-destructive">
+                {state.fieldErrors.password.join(", ")}
+              </p>
+            )}
           </div>
-          {state?.error && <p className="text-sm font-medium text-destructive">{state.error}</p>}
+          {/* General form error message is now handled by toast */}
         </CardContent>
         <CardFooter>
           <SubmitButton />
