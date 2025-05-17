@@ -31,7 +31,8 @@
     "line2": "Address Line 2 (optional)",
     "postalCode": "Postal Code",
     "city": "City",
-    "country": "Country"
+    "country": "Country",
+    "notProvided": "No shipping address provided."
   },
   "shippingAndBillingAddress": {
     "title": "Shipping and Billing Address"

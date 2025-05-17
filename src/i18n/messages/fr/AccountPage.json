@@ -31,7 +31,8 @@
     "line2": "Ligne d'adresse 2 (optionnel)",
     "postalCode": "Code Postal",
     "city": "Ville",
-    "country": "Pays"
+    "country": "Pays",
+    "notProvided": "Aucune adresse de livraison fournie."
   },
   "shippingAndBillingAddress": {
     "title": "Adresse de Livraison et de Facturation"

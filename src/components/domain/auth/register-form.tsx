@@ -42,13 +42,14 @@ export function RegisterForm() {
   const [state, formAction] = useActionState(signUpAction, initialState);
 
   useEffect(() => {
+    console.log("RegisterForm state updated:", state);
     if (state.error) {
       toast.error(state.error);
     }
     if (state.success && state.message) {
       toast.success(state.message);
     }
-  }, [state.error, state.message, state.success]);
+  }, [state]);
 
   return (
     <Card className="w-full max-w-sm">
