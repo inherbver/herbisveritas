@@ -4,6 +4,9 @@ import { type Metadata } from "next";
 import { ShopClientContent } from "@/components/domain/shop/shop-client-content";
 import { getAllProducts, ProductForShopQuery } from "@/lib/supabase/queries/products";
 import { Locale } from "@/i18n-config";
+import { Hero } from "@/components/shared/hero";
+import { getActiveFeaturedHeroItem, type FeaturedHeroItem } from "@/lib/supabase/queries/hero";
+import { AppPathname } from "@/i18n/navigation";
 
 // Define Props type if not already defined globally
 type Props = {
@@ -61,6 +64,17 @@ export default async function ShopPage(_props: Props) {
 
   // Fetch translations for the server component (title, errors)
   const t = await getTranslations("ShopPage");
+  const tHero = await getTranslations("HeroComponent"); // Translations for Hero CTA
+
+  // --- Fetch Featured Hero Item Data ---
+  let featuredHeroData: FeaturedHeroItem | null = null;
+  try {
+    // featuredHeroData = await getActiveFeaturedHeroItem(locale); // Pass locale if slug needs it
+    featuredHeroData = await getActiveFeaturedHeroItem();
+  } catch (error) {
+    console.error("Error fetching featured hero item for ShopPage:", error);
+    // Non-critical, so we don't block the page if hero fails to load
+  }
 
   // --- Data Fetching ---
   let productsData: ProductForShopQuery[];
@@ -131,6 +145,18 @@ export default async function ShopPage(_props: Props) {
 
   return (
     <MainLayout>
+      {/* === Hero Section === */}
+      {featuredHeroData && featuredHeroData.productImageUrl && (
+        <Hero
+          heading={featuredHeroData.productName}
+          description={featuredHeroData.customSubtitle}
+          imageUrl={featuredHeroData.productImageUrl}
+          imageAlt={featuredHeroData.productName} // Use product name as alt text
+          ctaLabel={tHero("ctaDiscoverProduct")}
+          ctaLink={`/shop/${featuredHeroData.productSlug}` as AppPathname}
+        />
+      )}
+      {/* === End Hero Section === */}
       <div className="container py-8">
         <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
         <ShopClientContent initialProducts={productListItems} />

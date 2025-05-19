@@ -12,6 +12,7 @@ interface HeroProps extends React.HTMLAttributes<HTMLDivElement> {
   heading: React.ReactNode; // Renommé depuis 'title'
   description?: React.ReactNode;
   imageUrl?: string; // Optionnel: URL pour une image de fond
+  imageAlt?: string; // Optionnel: Texte alternatif pour l'image de fond
   ctaLabel?: string; // Label pour le bouton d'appel à l'action
   ctaLink?: AppPathname; // Use the restricted type
 }
