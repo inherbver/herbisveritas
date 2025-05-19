@@ -6,11 +6,16 @@ import { getAllProducts, ProductForShopQuery } from "@/lib/supabase/queries/prod
 import { Locale } from "@/i18n-config";
 import { Hero } from "@/components/shared/hero";
 import { getActiveFeaturedHeroItem, type FeaturedHeroItem } from "@/lib/supabase/queries/hero";
-import { AppPathname } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation"; // Import Link to use for React.ComponentProps<typeof Link>
 
-// Define Props type if not already defined globally
-type Props = {
-  params: Promise<{ locale: Locale }>;
+// Type for route parameters
+type PageParams = {
+  locale: Locale;
+};
+
+// Props for ShopPage component, params is now a Promise
+type ShopPageProps = {
+  params: Promise<PageParams>;
 };
 
 // Define the type for the data mapped for the grid
@@ -49,57 +54,60 @@ export interface Product {
 */
 
 // Make the function async
-export async function generateMetadata(_props: Props): Promise<Metadata> {
-  // Explicitly await params before accessing properties
-  const { locale } = await _props.params;
+export async function generateMetadata({
+  params: paramsPromise,
+}: {
+  params: Promise<PageParams>;
+}): Promise<Metadata> {
+  const { locale } = await paramsPromise;
   const t = await getTranslations({ locale, namespace: "ShopPage" });
   return {
     title: t("title"),
   };
 }
 
-export default async function ShopPage(_props: Props) {
-  // Await the params promise before accessing its properties
-  const { locale } = await _props.params;
+export default async function ShopPage({ params: paramsPromise }: ShopPageProps) {
+  const { locale } = await paramsPromise;
 
-  // Fetch translations for the server component (title, errors)
   const t = await getTranslations("ShopPage");
-  const tHero = await getTranslations("HeroComponent"); // Translations for Hero CTA
+  const tHero = await getTranslations("HeroComponent");
 
-  // --- Fetch Featured Hero Item Data ---
-  let featuredHeroData: FeaturedHeroItem | null = null;
-  try {
-    // featuredHeroData = await getActiveFeaturedHeroItem(locale); // Pass locale if slug needs it
-    featuredHeroData = await getActiveFeaturedHeroItem();
-  } catch (error) {
-    console.error("Error fetching featured hero item for ShopPage:", error);
-    // Non-critical, so we don't block the page if hero fails to load
+  // --- Fetch Data ---
+  // Use Promise.all to fetch hero item and products in parallel for slight performance improvement
+  const [heroResult, productsResult] = await Promise.allSettled([
+    getActiveFeaturedHeroItem(),
+    getAllProducts(locale),
+  ]);
+
+  let featuredHeroItem: FeaturedHeroItem | null = null;
+  if (heroResult.status === "fulfilled") {
+    featuredHeroItem = heroResult.value;
+  } else {
+    console.error("Error fetching featured hero item for ShopPage:", heroResult.reason);
   }
 
-  // --- Data Fetching ---
-  let productsData: ProductForShopQuery[];
-  let fetchError: Error | null = null; // Initialize fetchError explicitly as Error | null
-
-  try {
-    // Use the new function to fetch products with translations
-    // Pass the correctly typed locale
-    productsData = await getAllProducts(locale);
-  } catch (error) {
-    fetchError = error instanceof Error ? error : new Error("Unknown fetch error"); // Assign caught error
-    // Assign empty array to avoid further errors down the line if fetchError is handled
-    productsData = [];
+  let productsData: ProductForShopQuery[] = [];
+  let fetchError: Error | null = null;
+  if (productsResult.status === "fulfilled") {
+    productsData = productsResult.value;
+  } else {
+    fetchError =
+      productsResult.reason instanceof Error
+        ? productsResult.reason
+        : new Error("Unknown error fetching products");
+    console.error("Error fetching products for ShopPage:", productsResult.reason);
+    productsData = []; // Ensure productsData is an empty array on error
   }
 
-  // --- Handle Fetch Error ---
-  // Render error message if fetching failed
-  if (fetchError) {
+  // --- Handle Product Fetch Error --- (Hero error is non-critical for page load)
+  if (fetchError && productsResult.status === "rejected") {
+    // Only block page if products fetch fails
     return (
       <MainLayout>
         <div className="container py-8 text-center">
           <h1 className="mb-6 text-3xl font-bold text-red-600">{t("errorFetchingData")}</h1>
           <p>{t("tryAgainLater", { defaultMessage: "Veuillez réessayer plus tard." })}</p>
-          {/* Optional: Log error details for debugging in development? */}
-          {process.env.NODE_ENV === "development" && (
+          {process.env.NODE_ENV === "development" && fetchError && (
             <pre className="mt-4 text-left text-xs text-muted-foreground">{fetchError.message}</pre>
           )}
         </div>
@@ -107,56 +115,74 @@ export default async function ShopPage(_props: Props) {
     );
   }
 
-  // --- Handle No Products Found (after successful fetch) ---
-  // Check if productsData is empty *after* handling fetch error
-  if (!productsData || productsData.length === 0) {
-    return (
-      <MainLayout>
-        <div className="container py-8">
-          <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
-          <p className="mt-10 text-center">{t("noProductsFound")}</p>
-        </div>
-      </MainLayout>
-    );
+  // --- Prepare Hero Props ---
+  let heroPropsForComponent = null;
+  if (featuredHeroItem) {
+    heroPropsForComponent = {
+      heading: featuredHeroItem.productName,
+      description: (
+        <>
+          {featuredHeroItem.customSubtitle
+            ? featuredHeroItem.customSubtitle
+            : tHero("fallbackDescription")}
+        </>
+      ),
+      imageUrl: featuredHeroItem.productImageUrl || undefined,
+      imageAlt: featuredHeroItem.productName
+        ? `Image de ${featuredHeroItem.productName}`
+        : tHero("defaultImageAlt"),
+      ctaLabel:
+        tHero("ctaLabel", { productName: featuredHeroItem.productName }) ||
+        tHero("defaultCtaLabel"),
+      ctaLink: {
+        pathname: "/product/[slug]" as const,
+        params: { slug: featuredHeroItem.productSlug },
+      } satisfies React.ComponentProps<typeof Link>["href"],
+    };
+  } else {
+    heroPropsForComponent = {
+      heading: tHero("fallbackHeading"),
+      description: tHero("fallbackDescription"),
+      imageUrl: undefined,
+      imageAlt: tHero("fallbackImageAlt"),
+      ctaLabel: tHero("fallbackCtaLabel"),
+      ctaLink: { pathname: "/products" as const } satisfies React.ComponentProps<
+        typeof Link
+      >["href"],
+    };
   }
 
-  // Map the raw Supabase data (now typed with ProductForShopQuery) to ProductListItem
-  const productListItems: ProductListItem[] = productsData.map((p: ProductForShopQuery) => {
-    // Extract translation safely
-    const translation =
-      p.product_translations && p.product_translations.length > 0
-        ? p.product_translations[0]
-        : null;
-
-    return {
+  // --- Prepare Product List Items for ShopClientContent ---
+  const productListItems: ProductListItem[] = productsData
+    .filter((p) => p.price !== null) // Filter out products with null price
+    .map((p: ProductForShopQuery) => ({
       id: p.id,
       slug: p.slug,
-      price: p.price ?? 0, // Default null price to 0
-      image_url: p.image_url, // Image URL directly from product
-      stock: p.stock ?? 0, // Default null stock to 0
+      name:
+        p.product_translations?.[0]?.name ??
+        t("defaultProductName", { ns: "translationFallbacks" }),
+      short_description: p.product_translations?.[0]?.short_description ?? undefined,
+      price: p.price as number, // Cast to number after filtering nulls
+      image_url: p.image_url,
+      stock: p.stock ?? 0, // Provide default for null stock
       is_new: p.is_new,
       is_on_promotion: p.is_on_promotion,
-      labels: p.labels ?? [], // Default null labels to empty array
-      // Use translated name and description, provide fallbacks
-      name: translation?.name || "Nom Indisponible",
-      short_description: translation?.short_description || undefined,
-    };
-  });
+      labels: p.labels,
+    }));
 
+  // --- Render Page ---
   return (
     <MainLayout>
-      {/* === Hero Section === */}
-      {featuredHeroData && featuredHeroData.productImageUrl && (
-        <Hero
-          heading={featuredHeroData.productName}
-          description={featuredHeroData.customSubtitle}
-          imageUrl={featuredHeroData.productImageUrl}
-          imageAlt={featuredHeroData.productName} // Use product name as alt text
-          ctaLabel={tHero("ctaDiscoverProduct")}
-          ctaLink={`/shop/${featuredHeroData.productSlug}` as AppPathname}
-        />
-      )}
-      {/* === End Hero Section === */}
+      {/* Hero Section, using heroPropsForComponent prepared earlier */}
+      <Hero
+        heading={heroPropsForComponent.heading}
+        description={heroPropsForComponent.description}
+        imageUrl={heroPropsForComponent.imageUrl}
+        imageAlt={heroPropsForComponent.imageAlt}
+        ctaLabel={heroPropsForComponent.ctaLabel}
+        ctaLink={heroPropsForComponent.ctaLink}
+      />
+
       <div className="container py-8">
         <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
         <ShopClientContent initialProducts={productListItems} />

@@ -375,21 +375,106 @@ on profiles for update
 using (auth.uid() = id);
 ```
 
-#### 2. `orders`
+#### 2. `products`
 
 ```sql
--- Les utilisateurs peuvent voir leurs propres commandes
-create policy "Users can view their own orders"
-on orders for select
-using (auth.uid() = user_id);
+-- RLS est activée sur la table public.products
 
--- Les utilisateurs peuvent créer des commandes
-create policy "Users can create orders"
-on orders for insert
-with check (auth.uid() = user_id);
+-- Les utilisateurs anonymes et authentifiés peuvent voir les produits actifs
+DROP POLICY IF EXISTS "Allow public read access to active products" ON public.products;
+CREATE POLICY "Allow public read access to active products"
+ON public.products
+FOR SELECT
+USING (is_active = true);
+
+-- Les administrateurs ont un accès complet aux produits
+DROP POLICY IF EXISTS "Allow admin full access to products" ON public.products;
+CREATE POLICY "Allow admin full access to products"
+ON public.products
+FOR ALL
+USING (public.get_my_custom_role() = 'admin')
+WITH CHECK (public.get_my_custom_role() = 'admin');
 ```
 
-#### 3. `carts` et `cart_items`
+#### 3. `addresses`
+
+```sql
+ALTER TABLE public.addresses ENABLE ROW LEVEL SECURITY;
+
+-- Les utilisateurs authentifiés peuvent gérer (CRUD) leurs propres adresses
+DROP POLICY IF EXISTS "Allow users to manage their own addresses" ON public.addresses;
+CREATE POLICY "Allow users to manage their own addresses"
+ON public.addresses
+FOR ALL
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- Les administrateurs ont un accès complet à toutes les adresses
+DROP POLICY IF EXISTS "Allow admin full access to addresses" ON public.addresses;
+CREATE POLICY "Allow admin full access to addresses"
+ON public.addresses
+FOR ALL
+USING (public.get_my_custom_role() = 'admin')
+WITH CHECK (public.get_my_custom_role() = 'admin');
+```
+
+#### 4. `orders`
+
+```sql
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+
+-- Les utilisateurs peuvent voir leurs propres commandes
+DROP POLICY IF EXISTS "Allow users to view their own orders" ON public.orders;
+CREATE POLICY "Allow users to view their own orders"
+ON public.orders
+FOR SELECT
+USING (auth.uid() = user_id);
+
+-- Les utilisateurs peuvent créer leurs propres commandes
+DROP POLICY IF EXISTS "Allow users to create their own orders" ON public.orders;
+CREATE POLICY "Allow users to create their own orders"
+ON public.orders
+FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+-- Les administrateurs ont un accès complet aux commandes
+DROP POLICY IF EXISTS "Allow admin full access to orders" ON public.orders;
+CREATE POLICY "Allow admin full access to orders"
+ON public.orders
+FOR ALL
+USING (public.get_my_custom_role() = 'admin')
+WITH CHECK (public.get_my_custom_role() = 'admin');
+```
+
+#### 5. `order_items`
+
+```sql
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+
+-- Les utilisateurs peuvent voir les articles de leurs propres commandes
+DROP POLICY IF EXISTS "Allow users to view their own order_items" ON public.order_items;
+CREATE POLICY "Allow users to view their own order_items"
+ON public.order_items
+FOR SELECT
+USING (EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_items.order_id AND o.user_id = auth.uid()));
+
+-- Les utilisateurs peuvent créer des articles pour leurs propres commandes
+DROP POLICY IF EXISTS "Allow users to create their own order_items" ON public.order_items;
+CREATE POLICY "Allow users to create their own order_items"
+ON public.order_items
+FOR INSERT
+WITH CHECK (EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_items.order_id AND o.user_id = auth.uid()));
+
+-- Les administrateurs ont un accès complet aux articles de commande
+DROP POLICY IF EXISTS "Allow admin full access to order_items" ON public.order_items;
+CREATE POLICY "Allow admin full access to order_items"
+ON public.order_items
+FOR ALL
+USING (public.get_my_custom_role() = 'admin')
+WITH CHECK (public.get_my_custom_role() = 'admin');
+```
+
+#### 6. `carts` et `cart_items`
 
 ##### `public.carts`
 
@@ -457,6 +542,27 @@ CREATE POLICY "Allow admin to update all cart_items"
 ON public.cart_items
 FOR UPDATE
 TO authenticated
+USING (public.get_my_custom_role() = 'admin')
+WITH CHECK (public.get_my_custom_role() = 'admin');
+```
+
+#### 7. `featured_hero_items`
+
+```sql
+ALTER TABLE public.featured_hero_items ENABLE ROW LEVEL SECURITY;
+
+-- Accès public en lecture pour les éléments "hero" actifs
+DROP POLICY IF EXISTS "Allow public read access to active hero items" ON public.featured_hero_items;
+CREATE POLICY "Allow public read access to active hero items"
+ON public.featured_hero_items
+FOR SELECT
+USING (is_active = true);
+
+-- Accès complet pour les administrateurs aux éléments "hero"
+DROP POLICY IF EXISTS "Allow admin full access to hero items" ON public.featured_hero_items;
+CREATE POLICY "Allow admin full access to hero items"
+ON public.featured_hero_items
+FOR ALL
 USING (public.get_my_custom_role() = 'admin')
 WITH CHECK (public.get_my_custom_role() = 'admin');
 ```
@@ -553,6 +659,21 @@ AS $function$
   LIMIT 1; -- Assure un seul retour, même si id est une clé primaire
 $function$
 ```
+
+## Fonctionnalités Prévues (V2)
+
+Cette section décrit les tables et fonctionnalités qui sont planifiées pour une version ultérieure du projet mais ne sont pas encore implémentées dans le schéma actuel.
+
+### Tables de Catalogue Avancées (V2)
+
+Les tables suivantes étaient initialement définies dans la documentation mais ne sont pas encore créées dans la base de données. Elles sont conservées ici pour référence future et sont prévues pour une V2 :
+
+- **`categories`**: Pour organiser les produits en catégories (ex: Infusions, Thés, Huiles Essentielles).
+- **`product_categories`**: Table de jonction pour lier les produits à plusieurs catégories.
+- **`product_images`**: Pour associer plusieurs images à un produit ou à ses variantes.
+- **`product_variants`**: Pour gérer les différentes déclinaisons d'un produit (ex: taille, poids, parfum).
+
+Leur réintégration nécessitera leur création, la définition de leurs relations, et la mise en place de politiques RLS appropriées.
 
 ## Migration et Maintenance
 

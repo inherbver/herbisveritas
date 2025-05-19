@@ -1,12 +1,11 @@
 import React from "react";
 import { Heading, Text } from "@/components/primitives";
-import { Link, pathnames } from "@/i18n/navigation"; // Import Link AND pathnames
+import { Link } from "@/i18n/navigation"; // Import Link
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button"; // Importe aussi les variantes pour les liens stylisés en bouton
 
 // Renomme 'title' en 'heading' pour éviter le conflit
 // Define a type for valid pathnames based on the navigation config
-type AppPathname = keyof typeof pathnames;
 
 interface HeroProps extends React.HTMLAttributes<HTMLDivElement> {
   heading: React.ReactNode; // Renommé depuis 'title'
@@ -14,7 +13,7 @@ interface HeroProps extends React.HTMLAttributes<HTMLDivElement> {
   imageUrl?: string; // Optionnel: URL pour une image de fond
   imageAlt?: string; // Optionnel: Texte alternatif pour l'image de fond
   ctaLabel?: string; // Label pour le bouton d'appel à l'action
-  ctaLink?: AppPathname; // Use the restricted type
+  ctaLink?: React.ComponentProps<typeof import("@/i18n/navigation").Link>["href"]; // Only allow Link's href type
 }
 
 const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
@@ -26,6 +25,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       imageUrl,
       ctaLabel,
       ctaLink,
+      imageAlt, // Destructure imageAlt here
       style,
       ...props
     },
@@ -42,6 +42,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           className
         )}
         style={backgroundStyle}
+        aria-label={imageUrl && imageAlt ? imageAlt : undefined} // Add aria-label if image and alt text are present
         {...props}
       >
         {/* Superposition optionnelle pour améliorer la lisibilité sur image */}
@@ -69,7 +70,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           {ctaLabel && ctaLink && (
             <div className="mt-6 flex items-center gap-x-6">
               <Link
-                href={{ pathname: ctaLink }} // Use object syntax
+                href={ctaLink} // ctaLink is already the string or the href object
                 className={cn(buttonVariants({ variant: "default", size: "lg" }))}
               >
                 {ctaLabel}

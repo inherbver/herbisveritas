@@ -166,5 +166,14 @@
     "clearFilters": "Clear filters",
     "applyFilters": "Apply filters",
     "noCategoriesFound": "No categories found"
+  },
+  "HeroComponent": {
+    "defaultImageAlt": "Promotional image",
+    "ctaLabel": "Discover {productName}",
+    "defaultCtaLabel": "Discover our products",
+    "fallbackHeading": "Discover Our Exclusive Collection",
+    "fallbackDescription": "Browse our latest arrivals and find your new favorite.",
+    "fallbackImageAlt": "Hero image for our collection",
+    "fallbackCtaLabel": "Shop Now"
   }
 }
