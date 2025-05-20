@@ -53,6 +53,15 @@ create table public.profiles (
 );
 ```
 
+##### Politiques RLS pour `profiles`
+
+La sécurité pour `public.profiles` est gérée par des politiques RLS. Celles-ci s'appuient sur les [Fonctions d'Aide RLS Standard](#fonctions-daide-rls-standard).
+
+- **Activation :** `ROW LEVEL SECURITY` est activée.
+- **Utilisateurs Authentifiés :** Peuvent `SELECT` et `UPDATE` leur propre profil (via `id = public.current_user_id()`).
+- **Administrateurs (`admin`) :** Accès complet (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) à tous les profils (via `public.is_current_user_admin()`).
+  _(Note : Les politiques SQL exactes sont définies et appliquées via des fichiers de migration.)_
+
 #### 2. `products`
 
 Catalogue des produits disponibles à la vente.
@@ -87,6 +96,15 @@ COMMENT ON COLUMN public.products.is_new IS 'Flag to indicate if the product is 
 COMMENT ON COLUMN public.products.is_on_promotion IS 'Flag to indicate if the product is currently on promotion.';
 COMMENT ON COLUMN public.products.is_active IS 'Controls whether the product is listed and sellable.';
 ```
+
+##### Politiques RLS pour `products`
+
+La sécurité pour `public.products` est gérée par RLS.
+
+- **Activation :** `ROW LEVEL SECURITY` est activée.
+- **Accès Public (`public`) :** `SELECT` des produits actifs (`is_active = true`).
+- **Administrateurs (`admin`) & Développeurs (`dev`) :** Accès complet (`SELECT` tous, `INSERT`, `UPDATE`, `DELETE`) à tous les produits (via `public.is_current_user_admin()` ou `public.is_current_user_dev()`).
+  _(Note : Les politiques SQL exactes sont définies et appliquées via des fichiers de migration.)_
 
 #### 3. `product_variants`
 
@@ -211,6 +229,15 @@ FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column(); -- Assure que la fonction public.update_updated_at_column() existe
 ```
 
+##### Politiques RLS pour `orders`
+
+La sécurité pour `public.orders` est gérée par RLS.
+
+- **Activation :** `ROW LEVEL SECURITY` est activée.
+- **Utilisateurs Authentifiés :** `SELECT` de leurs propres commandes (via `user_id = public.current_user_id()`).
+- **Administrateurs (`admin`) :** `SELECT` de toutes les commandes. Les opérations d'écriture sont généralement gérées par des mécanismes avec privilèges élevés.
+  _(Note : Les politiques SQL exactes sont définies et appliquées via des fichiers de migration.)_
+
 ##### `public.order_items`
 
 Détaille les produits inclus dans chaque commande.
@@ -250,6 +277,15 @@ FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column(); -- Assure que la fonction public.update_updated_at_column() existe
 ```
 
+##### Politiques RLS pour `order_items`
+
+La sécurité pour `public.order_items` est gérée par RLS.
+
+- **Activation :** `ROW LEVEL SECURITY` est activée.
+- **Utilisateurs Authentifiés :** `SELECT` des items appartenant à leurs propres commandes.
+- **Administrateurs (`admin`) :** `SELECT` de tous les items de commande.
+  _(Note : Les politiques SQL exactes sont définies et appliquées via des fichiers de migration.)_
+
 #### 7. `featured_hero_items`
 
 Stores products featured in the hero section, with custom subtitles.
@@ -269,6 +305,15 @@ COMMENT ON COLUMN public.featured_hero_items.product_id IS 'FK to the product be
 COMMENT ON COLUMN public.featured_hero_items.custom_subtitle IS 'Custom subtitle text for the hero section, written by admin.';
 COMMENT ON COLUMN public.featured_hero_items.is_active IS 'Whether this item is currently the active one for the hero section.';
 ```
+
+##### Politiques RLS pour `featured_hero_items`
+
+La sécurité pour `public.featured_hero_items` est gérée par RLS.
+
+- **Activation :** `ROW LEVEL SECURITY` est activée (appliquée lors des migrations RLS).
+- **Accès Public (`public`) :** `SELECT` des items actifs (`is_active = true`).
+- **Administrateurs (`admin`) & Développeurs (`dev`) :** Accès complet (`SELECT` tous, `INSERT`, `UPDATE`, `DELETE`) à tous les items.
+  _(Note : Les politiques SQL exactes sont définies et appliquées via des fichiers de migration.)_
 
 #### 8. `addresses`
 
@@ -293,6 +338,15 @@ create table public.addresses (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 ```
+
+##### Politiques RLS pour `addresses`
+
+La sécurité pour `public.addresses` est gérée par RLS.
+
+- **Activation :** `ROW LEVEL SECURITY` est activée.
+- **Utilisateurs Authentifiés :** Gestion complète (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) de leurs propres adresses (via `user_id = public.current_user_id()`).
+- **Administrateurs (`admin`) :** Accès complet à toutes les adresses.
+  _(Note : Les politiques SQL exactes sont définies et appliquées via des fichiers de migration.)_
 
 #### 9. `carts` et `cart_items`
 
@@ -332,6 +386,16 @@ BEFORE UPDATE ON public.carts
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column(); -- Assure que la fonction public.update_updated_at_column() existe
 ```
+
+##### Politiques RLS pour `carts`
+
+La sécurité pour `public.carts` est gérée par RLS.
+
+- **Activation :** `ROW LEVEL SECURITY` est activée.
+- **Utilisateurs Authentifiés :** Gestion complète de leur propre panier (via `user_id = public.current_user_id()`).
+- **Invités (`anon`) :** Gestion complète de leur propre panier (via `guest_id = public.get_guest_id_from_jwt()` et `user_id IS NULL`).
+- **Administrateurs (`admin`) :** Accès complet à tous les paniers.
+  _(Note : Les politiques SQL exactes sont définies et appliquées via des fichiers de migration.)_
 
 ##### `public.cart_items`
 
@@ -659,6 +723,27 @@ AS $function$
   LIMIT 1; -- Assure un seul retour, même si id est une clé primaire
 $function$
 ```
+
+### Fonctions d'Aide RLS Standard
+
+En complément de `public.get_my_custom_role()`, les fonctions SQL suivantes ont été créées pour simplifier et standardiser l'écriture des politiques RLS à travers la base de données. Elles sont typiquement `STABLE` et `SECURITY INVOKER`.
+
+- **`public.is_current_user_admin() RETURNS boolean`**: Vérifie si l'utilisateur authentifié a le rôle 'admin' basé sur `auth.jwt() ->> 'app_metadata' ->> 'role'`.
+- **`public.is_current_user_dev() RETURNS boolean`**: Vérifie si l'utilisateur authentifié a le rôle 'dev'.
+- **`public.is_current_user_a_user() RETURNS boolean`**: Vérifie si l'utilisateur authentifié a le rôle 'user'.
+- **`public.current_user_id() RETURNS uuid`**: Raccourci pour `auth.uid()`, retourne l'ID de l'utilisateur authentifié.
+- **`public.get_guest_id_from_jwt() RETURNS uuid`**: Tente de récupérer un `guest_id` depuis `auth.jwt() ->> 'app_metadata' ->> 'guest_id'` pour les sessions anonymes.
+
+Ces fonctions sont ensuite utilisées dans les clauses `USING` et `WITH CHECK` des politiques RLS.
+
+##### Politiques RLS pour `cart_items`
+
+La sécurité pour `public.cart_items` est gérée par RLS, suivant la logique du panier parent.
+
+- **Activation :** `ROW LEVEL SECURITY` est activée.
+- **Utilisateurs Authentifiés & Invités (`anon`) :** Gestion complète des items de leur propre panier respectif.
+- **Administrateurs (`admin`) :** Accès complet à tous les items de panier.
+  _(Note : Les politiques SQL exactes sont définies et appliquées via des fichiers de migration.)_
 
 ## Fonctionnalités Prévues (V2)
 
