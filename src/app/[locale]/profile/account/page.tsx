@@ -178,7 +178,6 @@ export default async function AccountPage(props: AccountPageProps) {
       first_name,
       last_name,
       phone_number,
-      role,
       terms_accepted_at,
       billing_address_is_different
     `
@@ -242,7 +241,6 @@ export default async function AccountPage(props: AccountPageProps) {
     lastName: profile?.last_name || "",
     email: user.email || "",
     phone: profile?.phone_number || user.phone || "",
-    role: profile?.role || tGlobal("roles.user"),
     accountCreated: user.created_at,
     terms_accepted_at: profile?.terms_accepted_at,
     billing_address_is_different: profile?.billing_address_is_different || false,
@@ -298,12 +296,6 @@ export default async function AccountPage(props: AccountPageProps) {
               </dt>
               <dd className="mt-1 text-lg font-semibold text-foreground">
                 {userInfo.phone || tGlobal("notProvided")}
-              </dd>
-            </div>
-            <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-muted-foreground">{t("generalInfo.role")}</dt>
-              <dd className="mt-1 text-lg font-semibold capitalize text-foreground">
-                {userInfo.role}
               </dd>
             </div>
             <div className="sm:col-span-1">
