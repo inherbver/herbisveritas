@@ -22,6 +22,8 @@
   "ProductCard": {
     "addToCart": "Ajouter au panier",
     "outOfStock": "Rupture de stock",
+    "newLabel": "Nouveau",
+    "promoLabel": "Promo",
     "discountBadge": "-{discountPercent}%",
     "priceAccessibilityLabel": "Prix : {price}"
   },

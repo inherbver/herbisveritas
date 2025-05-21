@@ -22,6 +22,8 @@
   "ProductCard": {
     "addToCart": "Add to cart",
     "outOfStock": "Out of stock",
+    "newLabel": "New",
+    "promoLabel": "Sale",
     "discountBadge": "-{discountPercent}%",
     "priceAccessibilityLabel": "Price: {price}"
   },

@@ -30,6 +30,7 @@ export type ProductListItem = {
   labels?: string[] | null;
   name: string;
   short_description?: string | null;
+  unit?: string | null; // Ajout du champ unit
 };
 
 /*
@@ -168,6 +169,7 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
       is_new: p.is_new,
       is_on_promotion: p.is_on_promotion,
       labels: p.labels,
+      unit: p.unit, // Ajout du mappage pour unit
     }));
 
   // --- Render Page ---

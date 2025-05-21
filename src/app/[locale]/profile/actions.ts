@@ -11,7 +11,7 @@ const UpdatePasswordSchema = z
       .string()
       .min(8, "Le mot de passe doit contenir au moins 8 caractères.") // TODO: Internationalize
       .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule.") // TODO: Internationalize
-      .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre.") // TODO: Internationalize
+      .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre.") // TODO: Internationali
       .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial."), // TODO: Internationalize
     confirmPassword: z.string(), // Sera validé par .refine côté client, mais on le garde pour la forme ici
   })
@@ -73,13 +73,6 @@ export async function updatePasswordAction(
   }
 
   const { currentPassword, newPassword } = validation.data;
-
-  if (!validation.success) {
-    return {
-      success: false,
-      message: validation.error.errors.map((e) => e.message).join(", "),
-    };
-  }
 
   // 1. Verify current password
   const { error: signInError } = await supabase.auth.signInWithPassword({

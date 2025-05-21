@@ -14,6 +14,7 @@ export interface ProductForShopQuery {
   is_new: boolean | null;
   is_on_promotion: boolean | null;
   labels: string[] | null;
+  unit?: string | null; // Ajout du champ unit
   product_translations:
     | {
         name: string;
@@ -60,6 +61,7 @@ export async function getAllProducts(locale: Locale): Promise<ProductForShopQuer
       is_new,        
       is_on_promotion, 
       labels,        
+      unit,          
       product_translations!left (
         name,
         short_description,

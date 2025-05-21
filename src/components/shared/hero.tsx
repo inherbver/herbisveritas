@@ -37,41 +37,59 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       <section
         ref={ref}
         className={cn(
-          "bg-muted/30 relative flex min-h-[300px] items-center justify-center overflow-hidden py-12 md:min-h-[400px] md:py-20",
+          "bg-muted/30 relative flex flex-col justify-start overflow-hidden md:justify-center", // Changed to flex-col, justify-start for more control, md:justify-center to attempt original centering for larger adjustments
+          "min-h-[450px] py-16 sm:min-h-[500px] sm:py-20 md:min-h-[600px] md:py-24", // Increased min-height and padding
           imageUrl && "bg-cover bg-center bg-no-repeat text-primary-foreground",
           className
         )}
         style={backgroundStyle}
-        aria-label={imageUrl && imageAlt ? imageAlt : undefined} // Add aria-label if image and alt text are present
+        aria-label={imageUrl && imageAlt ? imageAlt : undefined}
         {...props}
       >
-        {/* Superposition optionnelle pour améliorer la lisibilité sur image */}
+        {/* V1 Overlay: Dark overlay + bottom gradient */}
+        {imageUrl && <div aria-hidden="true" className="absolute inset-0 bg-black/40" />}
         {imageUrl && (
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent md:bg-gradient-to-r md:from-black/70 md:to-transparent"
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50" // Gradient from top (transparent) to bottom (semi-opaque black)
           />
         )}
 
-        <div className="container relative z-10 max-w-3xl text-center">
-          <Heading level={1} className={cn(imageUrl && "text-inherit")}>
-            {heading} {/* Utilise la prop renommée */}
+        {/* Content Wrapper: controls max-width, centering, and vertical positioning */}
+        <div
+          className={cn(
+            "container relative z-10 mx-auto flex w-full flex-col items-center text-center",
+            "px-4 sm:px-6 lg:px-8",
+            "mt-[20vh] sm:mt-[18vh] md:mt-0 md:max-w-[600px]" // Desktop: centered (mt-0 because section is justify-center), max-width 600px. Mobile: top margin based on viewport height, full width for text centering
+          )}
+        >
+          <Heading
+            level={1}
+            className={cn(
+              "text-4xl font-bold leading-tight sm:text-5xl md:text-6xl lg:text-7xl", // V1: Increased size, font-bold (700). Base: 2.5rem, SM: 3rem, MD: 3.75rem (for 4rem target), LG: 4.5rem
+              imageUrl ? "text-inherit" : "text-foreground" // Ensure text color is appropriate
+            )}
+          >
+            {heading}
           </Heading>
           {description && (
             <Text
               className={cn(
-                "mt-4 text-lg text-muted-foreground",
-                imageUrl && "text-primary-foreground/90"
+                "mt-4 max-w-prose text-base font-medium sm:mt-5 sm:text-lg md:text-xl", // V1: font-medium (500), adjusted margin, responsive text size
+                imageUrl ? "text-primary-foreground/90" : "text-muted-foreground"
               )}
             >
               {description}
             </Text>
           )}
           {ctaLabel && ctaLink && (
-            <div className="mt-6 flex items-center gap-x-6">
+            <div className="mt-8 flex justify-center sm:mt-10">
               <Link
-                href={ctaLink} // ctaLink is already the string or the href object
-                className={cn(buttonVariants({ variant: "default", size: "lg" }))}
+                href={ctaLink}
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "px-8 py-3 text-base font-semibold md:px-10 md:py-4 md:text-lg" // Ensure button is substantial
+                )}
               >
                 {ctaLabel}
               </Link>

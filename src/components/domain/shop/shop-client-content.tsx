@@ -24,6 +24,11 @@ export const ShopClientContent: React.FC<ShopClientContentProps> = ({ initialPro
         imageSrc: product.image_url || "/placeholder-image.png",
         imageAlt: product.name || "Product image",
         slug: product.slug,
+        // Ajout des nouveaux champs
+        is_new: product.is_new,
+        is_on_promotion: product.is_on_promotion,
+        short_description: product.short_description,
+        unit: product.unit,
       };
     });
 
