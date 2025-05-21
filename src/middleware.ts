@@ -1,7 +1,7 @@
 import createMiddleware from "next-intl/middleware";
 import { locales, defaultLocale, localePrefix, pathnames, localeDetection } from "./i18n-config"; // Import centralisé
 import { createServerClient, type CookieOptions } from "@supabase/ssr"; // <-- Importer Supabase
-import { type NextRequest } from "next/server"; // <-- Importer types Next
+import { type NextRequest, NextResponse } from "next/server"; // <-- Importer types Next & NextResponse
 
 // Créer d'abord le gestionnaire i18n
 const handleI18n = createMiddleware({
@@ -14,8 +14,21 @@ const handleI18n = createMiddleware({
 
 // Exporter une fonction middleware asynchrone
 export async function middleware(request: NextRequest) {
-  // 1. Exécuter le middleware i18n
-  const response = handleI18n(request);
+  let response; // Déclarer la variable response
+
+  if (request.nextUrl.pathname.startsWith("/test-cart-actions")) {
+    // Pour /test-cart-actions, créer une réponse de passage sans traitement i18n.
+    // Les en-têtes de la requête originale sont conservés pour que Supabase puisse y accéder si besoin.
+    response = NextResponse.next({
+      request: {
+        // Important pour que Supabase (et d'autres middlewares potentiels) aient les bons headers
+        headers: request.headers,
+      },
+    });
+  } else {
+    // Pour tous les autres chemins, exécuter le middleware i18n.
+    response = handleI18n(request);
+  }
 
   // 2. Créer un client Supabase pour gérer les cookies sur la requête/réponse
   const supabase = createServerClient(

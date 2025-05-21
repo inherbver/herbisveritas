@@ -1,11 +1,11 @@
+// src/lib/supabase/server.ts
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-// Modifiée pour être async et utiliser await cookies()
+// createSupabaseServerClient redevient async pour gérer correctement le typage de cookies()
 export async function createSupabaseServerClient() {
-  const cookieStore = await cookies(); // Traiter comme async basé sur les erreurs TS
+  const cookieStore = await cookies(); // await est nécessaire pour le typage correct
 
-  // Crée et retourne un client Supabase côté serveur
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -25,9 +25,10 @@ export async function createSupabaseServerClient() {
         },
         remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value: "", ...options });
+            // Utilisation de cookieStore.delete() pour la clarté et la sémantique
+            cookieStore.delete({ name, ...options });
           } catch (_error) {
-            // Le bloc `remove` peut échouer si appelé depuis une Server Component.
+            // Le bloc `delete` peut échouer si appelé depuis une Server Component.
             // Voir la note ci-dessus dans le bloc `set`.
           }
         },
@@ -36,12 +37,11 @@ export async function createSupabaseServerClient() {
   );
 }
 
-// getSupabaseUserSession reste async et attend maintenant createSupabaseServerClient
+// getSupabaseUserSession reste async et attend createSupabaseServerClient
 export async function getSupabaseUserSession() {
-  // Crée un client Supabase côté serveur
-  const supabase = await createSupabaseServerClient(); // Await ici
+  // Appel avec await car createSupabaseServerClient est async
+  const supabase = await createSupabaseServerClient();
 
-  // Récupère la session utilisateur
   const {
     data: { session },
     error,
