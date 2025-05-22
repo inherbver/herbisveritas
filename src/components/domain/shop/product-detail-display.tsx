@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Removed T
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 // Import the data type from the modal file for now
 import { ProductDetailData } from "@/types/product-types"; // Import from centralized location
-import { addToCart } from "@/actions/cartActions"; // Added action import
+import { addItemToCart, type CartActionResult, type CartData } from "@/actions/cartActions"; // Use refactored action
 import { toast } from "sonner"; // Added toast import
 import { Button } from "@/components/ui/button"; // Ensure Button is imported
 import useCartStore from "@/stores/cartStore"; // Import cart store
@@ -65,9 +65,13 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   const addItemToCartStore = useCartStore((state) => state.addItem); // Get addItem from store
 
   // Initial state for the form
-  const initialState = { success: false, message: "" };
+  const initialState: CartActionResult<CartData | null> = {
+    success: false,
+    message: "",
+    data: null,
+  };
   // useActionState hook to manage the action's state
-  const [state, formAction] = useActionState(addToCart, initialState);
+  const [state, formAction] = useActionState(addItemToCart, initialState);
 
   // Show toast notification based on form state and update cart store
   useEffect(() => {

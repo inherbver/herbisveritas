@@ -71,7 +71,6 @@ import { revalidateTag } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   AddToCartInputSchema,
-  type AddToCartInput,
   RemoveFromCartInputSchema,
   type RemoveFromCartInput,
   UpdateCartItemQuantityInputSchema,
@@ -148,9 +147,32 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
 }
 
 export async function addItemToCart(
-  input: AddToCartInput
+  prevState: CartActionResult<CartData | null>,
+  formData: FormData
 ): Promise<CartActionResult<CartData | null>> {
-  const validatedFields = AddToCartInputSchema.safeParse(input);
+  const productId = formData.get("productId") as string;
+  const quantityStr = formData.get("quantity") as string;
+
+  // Validation initiale des données du formulaire
+  if (!productId || !quantityStr) {
+    return {
+      success: false,
+      error: "Product ID and quantity are required in form data.",
+      data: null,
+    };
+  }
+
+  const quantity = parseInt(quantityStr, 10);
+  if (isNaN(quantity)) {
+    return {
+      success: false,
+      error: "Invalid quantity format in form data.",
+      data: null,
+    };
+  }
+
+  // Validation avec Zod
+  const validatedFields = AddToCartInputSchema.safeParse({ productId, quantity });
   if (!validatedFields.success) {
     const firstError =
       Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
@@ -161,7 +183,8 @@ export async function addItemToCart(
       data: { errors: validatedFields.error.flatten().fieldErrors },
     };
   }
-  const { productId, quantity: quantityToAdd } = validatedFields.data;
+  // Utiliser les données validées par Zod
+  const { productId: validProductId, quantity: quantityToAdd } = validatedFields.data;
 
   const activeUserId = await getActiveUserId();
   if (!activeUserId) {
@@ -169,6 +192,7 @@ export async function addItemToCart(
       success: false,
       error:
         "Impossible d'identifier l'utilisateur ou de créer une session invité pour ajouter un article.",
+      data: null,
     };
   }
 
@@ -189,7 +213,7 @@ export async function addItemToCart(
         activeUserId,
         cartError.message
       );
-      return { success: false, error: cartError.message };
+      return { success: false, error: cartError.message, data: null };
     }
 
     if (existingCart) {
@@ -208,7 +232,7 @@ export async function addItemToCart(
           activeUserId,
           newCartError.message
         );
-        return { success: false, error: newCartError.message };
+        return { success: false, error: newCartError.message, data: null };
       }
       cartId = newCart.id;
     }
@@ -217,15 +241,20 @@ export async function addItemToCart(
     // p_guest_id est maintenant toujours null car l'invité est identifié par son activeUserId (anonyme)
     const { error: rpcError } = await supabase.rpc("add_or_update_cart_item", {
       p_cart_id: cartId,
-      p_product_id: productId,
-      p_quantity_to_add: quantityToAdd,
+      p_product_id: validProductId, // Utiliser validProductId
+      p_quantity_to_add: quantityToAdd, // Utiliser quantityToAdd,
       p_user_id: activeUserId,
       p_guest_id: null,
     });
 
     if (rpcError) {
       console.error("Error calling add_or_update_cart_item RPC:", rpcError);
-      throw new Error(`Erreur lors de l'ajout de l'article: ${rpcError.message}`);
+      // Le message d'erreur de la RPC est souvent assez explicite pour l'utilisateur final
+      return {
+        success: false,
+        error: `Erreur lors de l'ajout de l'article: ${rpcError.message}`,
+        data: null,
+      };
     }
 
     revalidateTag("cart");
