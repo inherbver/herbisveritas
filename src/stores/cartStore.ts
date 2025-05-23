@@ -14,15 +14,24 @@ const useCartStore = create<CartStore>()(
       error: null,
 
       // Implémentation des actions
-      addItem: (itemToAdd, quantityToAdd = 1) => {
+      addItem: (
+        itemDetails: {
+          productId: string;
+          name: string;
+          price: number;
+          image?: string;
+          slug?: string;
+        },
+        quantityToAdd: number = 1
+      ) => {
         const currentItems = get().items;
         const existingItemIndex = currentItems.findIndex(
-          (item) => item.productId === itemToAdd.productId
+          (item: CartItem) => item.productId === itemDetails.productId
         );
 
         if (existingItemIndex !== -1) {
           // L'article existe déjà, met à jour la quantité
-          const updatedItems = currentItems.map((item, index) =>
+          const updatedItems = currentItems.map((item: CartItem, index: number) =>
             index === existingItemIndex
               ? { ...item, quantity: item.quantity + quantityToAdd }
               : item
@@ -30,24 +39,37 @@ const useCartStore = create<CartStore>()(
           set({ items: updatedItems });
         } else {
           // L'article n'existe pas, l'ajoute au panier
-          set({ items: [...currentItems, { ...itemToAdd, quantity: quantityToAdd }] });
+          // L'objet CartItem ajouté n'aura pas d' 'id' (cart_item_id) à ce stade,
+          // car il est généré par la BDD ou lors de la synchro.
+          // 'id' est optionnel dans CartItem.
+          const newItem: CartItem = {
+            ...itemDetails,
+            quantity: quantityToAdd,
+            // id: undefined, // Explicitement undefined ou juste omis car optionnel
+          };
+          set({ items: [...currentItems, newItem] });
         }
       },
 
-      removeItem: (productId) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.productId !== productId),
+      removeItem: (cartItemId: string) => {
+        set((state: CartStore) => ({
+          items: state.items.filter((item: CartItem) => item.id !== cartItemId),
         }));
       },
 
-      updateItemQuantity: (productId, newQuantity) => {
+      updateItemQuantity: (cartItemId: string, newQuantity: number) => {
         if (newQuantity <= 0) {
           // Si la quantité est 0 ou moins, supprimer l'article
-          get().removeItem(productId);
+          // S'assurer que l'ID passé à removeItem est bien le cartItemId
+          const itemToRemove = get().items.find((item: CartItem) => item.id === cartItemId);
+          if (itemToRemove && itemToRemove.id) {
+            // Vérifier que itemToRemove.id existe
+            get().removeItem(itemToRemove.id);
+          }
         } else {
-          set((state) => ({
-            items: state.items.map((item) =>
-              item.productId === productId ? { ...item, quantity: newQuantity } : item
+          set((state: CartStore) => ({
+            items: state.items.map((item: CartItem) =>
+              item.id === cartItemId ? { ...item, quantity: newQuantity } : item
             ),
           }));
         }
@@ -58,15 +80,15 @@ const useCartStore = create<CartStore>()(
       },
 
       // Actions internes
-      _setIsLoading: (loading) => {
+      _setIsLoading: (loading: boolean) => {
         set({ isLoading: loading });
       },
 
-      _setError: (error) => {
+      _setError: (error: string | null) => {
         set({ error });
       },
 
-      _setItems: (items) => {
+      _setItems: (items: CartItem[]) => {
         set({ items });
       },
     }),

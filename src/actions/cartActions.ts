@@ -2,29 +2,6 @@
 
 // src/actions/cartActions.ts
 
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string | null;
-  slug: string;
-}
-
-export interface CartItem {
-  id: string; // This is cart_item_id (UUID)
-  product_id: string; // This is the actual product's ID (e.g., prod_cos_003)
-  quantity: number;
-  products: Product[]; // Adjusted to Product[] based on lint error
-}
-
-export interface CartData {
-  id: string; // This is cart_id (UUID)
-  user_id: string | null; // Associated user_id (can be guest's anon UUID)
-  created_at: string;
-  updated_at: string;
-  cart_items: CartItem[];
-}
-
 // Fonction utilitaire pour obtenir l'ID utilisateur (réel ou anonyme)
 async function getActiveUserId(): Promise<string | null> {
   // Crée un client Supabase spécifique pour cette fonction afin d'isoler son utilisation des cookies.
@@ -77,22 +54,109 @@ import {
   type UpdateCartItemQuantityInput,
 } from "@/lib/schemas/cartSchemas";
 
-export interface CartActionResult<SuccessPayload> {
-  success: boolean;
+// cartActions.ts - NOUVEAUX TYPES ET HELPERS (Phase 2)
+import type {
+  CartData as ClientCartData,
+  CartItem as ClientCartItem,
+  CartData,
+  ServerCartItem,
+  ProductDetails,
+} from "@/types/cart"; // Pour transformServerCartToClientItems
+
+// Union discriminée stricte pour CartActionResult
+type SuccessResult<T> = {
+  success: true;
   message?: string;
-  error?: string;
-  data?: SuccessPayload | { errors?: Record<string, string[] | undefined> };
-}
+  data: T; // Toujours présent en cas de succès
+};
+
+type ValidationErrorResult = {
+  success: false;
+  message?: string; // Message général pour l'utilisateur
+  errors: Record<string, string[] | undefined>; // Erreurs de validation Zod spécifiques aux champs
+};
+
+type GeneralErrorResult = {
+  success: false;
+  message?: string; // Message général pour l'utilisateur
+  error: string; // Erreur générale technique ou code d'erreur
+};
+
+export type CartActionResult<T> = SuccessResult<T> | ValidationErrorResult | GeneralErrorResult;
+
+// Type guards pour une utilisation TypeScript-safe
+export const isSuccessResult = <T>(result: CartActionResult<T>): result is SuccessResult<T> => {
+  return result.success === true;
+};
+
+export const isValidationError = <T>(
+  result: CartActionResult<T>
+): result is ValidationErrorResult => {
+  // Vérifie la présence de 'errors' car c'est le discriminateur clé pour ce type d'erreur
+  return result.success === false && Object.prototype.hasOwnProperty.call(result, "errors");
+};
+
+export const isGeneralError = <T>(result: CartActionResult<T>): result is GeneralErrorResult => {
+  // Vérifie la présence de 'error' et l'absence de 'errors' pour distinguer de ValidationErrorResult
+  return (
+    result.success === false &&
+    Object.prototype.hasOwnProperty.call(result, "error") &&
+    !Object.prototype.hasOwnProperty.call(result, "errors")
+  );
+};
+
+// Fonctions utilitaires pour créer les résultats
+export const createSuccessResult = <T>(data: T, message?: string): SuccessResult<T> => ({
+  success: true,
+  data,
+  message,
+});
+
+export const createValidationErrorResult = (
+  errors: Record<string, string[] | undefined>, // Accepte undefined dans le Record
+  message?: string
+): ValidationErrorResult => ({
+  success: false,
+  errors,
+  message,
+});
+
+export const createGeneralErrorResult = (error: string, message?: string): GeneralErrorResult => ({
+  success: false,
+  error,
+  message,
+});
+
+// Fonction pour transformer CartData (structure serveur) en CartItem[] (structure client)
+// Note: ServerCartItem et ProductDetails sont définis dans src/types/cart.ts
+// et CartData (la structure serveur complète) est aussi définie là-bas.
+export const transformServerCartToClientItems = (cartData: ClientCartData): ClientCartItem[] => {
+  if (!cartData || !cartData.cart_items) {
+    return [];
+  }
+  return cartData.cart_items.map((serverItem) => ({
+    id: serverItem.id, // cart_item_id
+    productId: serverItem.product_id,
+    name: serverItem.products?.name || "Produit inconnu", // Accès direct si 'products' est un objet
+    price: serverItem.products?.price || 0,
+    quantity: serverItem.quantity,
+    image: serverItem.products?.image_url || undefined,
+    slug: serverItem.products?.slug || undefined,
+  }));
+};
+
+// Les anciennes interfaces Product, CartItem (serveur), CartData (serveur)
+// et CartActionResult (ancienne version) ont été supprimées.
+// Les fonctions existantes (getCart, addItemToCart, etc.) devront être adaptées
+// pour utiliser ces nouveaux types et fonctions utilitaires.
 
 export async function getCart(): Promise<CartActionResult<CartData | null>> {
   const activeUserId = await getActiveUserId();
 
   if (!activeUserId) {
-    return {
-      success: false,
-      error: "Impossible d'identifier l'utilisateur ou de créer une session invité.",
-      data: null,
-    };
+    return createGeneralErrorResult(
+      "Impossible d'identifier l'utilisateur ou de créer une session invité."
+    );
   }
 
   const supabase = await createSupabaseServerClient(); // Client pour les opérations DB
@@ -127,22 +191,63 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
       .maybeSingle();
 
     if (queryError) {
-      console.error("Error fetching cart:", queryError.message);
-      return { success: false, error: queryError.message, data: null };
+      console.error("Erreur lors de la récupération du panier:", queryError.message);
+      return createGeneralErrorResult(`Erreur Supabase: ${queryError.message}`);
     }
 
-    return {
-      success: true,
-      data: cart,
-      message: cart ? "Panier récupéré." : "Panier vide ou nouvel utilisateur/invité.",
-    };
-  } catch (e: unknown) {
-    let errorMessage = "Une erreur inattendue est survenue.";
-    if (e instanceof Error) {
-      errorMessage = e.message;
+    // Vérification explicite et gestion de tous les cas
+    if (!cart) {
+      return createSuccessResult(null, "Aucun panier actif trouvé.");
     }
-    console.error("Unexpected error in getCart:", errorMessage);
-    return { success: false, error: errorMessage, data: null };
+
+    // À ce point, cart est définitivement non-null
+    // Utilisation d'une assertion non-null pour être explicite avec TypeScript
+    const currentCart = cart!;
+
+    // Transformation des items du panier
+    const itemsToTransform = currentCart.cart_items || [];
+
+    // Define the type for items directly from Supabase before transformation
+    interface RawSupabaseCartItem {
+      id: string;
+      product_id: string;
+      quantity: number;
+      products: ProductDetails | ProductDetails[] | null; // Reflects Supabase's potential output for joined 'products'
+    }
+
+    const transformedCartItems = itemsToTransform.map(
+      (item: RawSupabaseCartItem): ServerCartItem => {
+        // Logique de transformation de item.products
+        const productData =
+          Array.isArray(item.products) && item.products.length > 0
+            ? item.products[0]
+            : !Array.isArray(item.products) && item.products
+              ? item.products
+              : null;
+        return {
+          id: item.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          products: productData as ProductDetails | null,
+        };
+      }
+    );
+
+    // Construction de l'objet CartData final
+    const finalCartData: CartData = {
+      id: currentCart.id,
+      user_id: currentCart.user_id,
+      created_at: currentCart.created_at,
+      updated_at: currentCart.updated_at,
+      cart_items: transformedCartItems,
+    };
+
+    return createSuccessResult(finalCartData, "Panier récupéré avec succès.");
+  } catch (e: unknown) {
+    console.error("Erreur inattendue dans getCart:", (e as Error).message);
+    return createGeneralErrorResult(
+      (e as Error).message || "Une erreur serveur inattendue est survenue."
+    );
   }
 }
 
@@ -155,20 +260,18 @@ export async function addItemToCart(
 
   // Validation initiale des données du formulaire
   if (!productId || !quantityStr) {
-    return {
-      success: false,
-      error: "Product ID and quantity are required in form data.",
-      data: null,
-    };
+    return createGeneralErrorResult(
+      "Product ID and quantity are required in form data.",
+      "Données du formulaire invalides."
+    );
   }
 
   const quantity = parseInt(quantityStr, 10);
   if (isNaN(quantity)) {
-    return {
-      success: false,
-      error: "Invalid quantity format in form data.",
-      data: null,
-    };
+    return createGeneralErrorResult(
+      "Invalid quantity format in form data.",
+      "Format de quantité invalide."
+    );
   }
 
   // Validation avec Zod
@@ -177,23 +280,16 @@ export async function addItemToCart(
     const firstError =
       Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
       "Erreur de validation.";
-    return {
-      success: false,
-      error: firstError,
-      data: { errors: validatedFields.error.flatten().fieldErrors },
-    };
+    return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
   }
   // Utiliser les données validées par Zod
   const { productId: validProductId, quantity: quantityToAdd } = validatedFields.data;
 
   const activeUserId = await getActiveUserId();
   if (!activeUserId) {
-    return {
-      success: false,
-      error:
-        "Impossible d'identifier l'utilisateur ou de créer une session invité pour ajouter un article.",
-      data: null,
-    };
+    return createGeneralErrorResult(
+      "Impossible d'identifier l'utilisateur ou de créer une session invité pour ajouter au panier."
+    );
   }
 
   const supabase = await createSupabaseServerClient(); // Client pour les opérations DB
@@ -213,7 +309,9 @@ export async function addItemToCart(
         activeUserId,
         cartError.message
       );
-      return { success: false, error: cartError.message, data: null };
+      return createGeneralErrorResult(
+        `Erreur lors de la recherche du panier: ${cartError.message}`
+      );
     }
 
     if (existingCart) {
@@ -232,7 +330,9 @@ export async function addItemToCart(
           activeUserId,
           newCartError.message
         );
-        return { success: false, error: newCartError.message, data: null };
+        return createGeneralErrorResult(
+          `Erreur lors de la création du panier: ${newCartError.message}`
+        );
       }
       cartId = newCart.id;
     }
@@ -250,41 +350,38 @@ export async function addItemToCart(
     if (rpcError) {
       console.error("Error calling add_or_update_cart_item RPC:", rpcError);
       // Le message d'erreur de la RPC est souvent assez explicite pour l'utilisateur final
-      return {
-        success: false,
-        error: `Erreur lors de l'ajout de l'article: ${rpcError.message}`,
-        data: null,
-      };
+      return createGeneralErrorResult(`Erreur lors de l'ajout de l'article: ${rpcError.message}`);
     }
 
     revalidateTag("cart");
 
-    const { data: updatedCartData, error: fetchError, success: fetchSuccess } = await getCart();
-    if (!fetchSuccess || fetchError) {
-      console.warn(
-        "Article ajouté/mis à jour, mais échec de la récupération du panier à jour:",
-        fetchError
-      );
-      return {
-        success: true,
-        message: "Article ajouté/mis à jour. Rafraîchissez pour voir les changements.",
-        data: null,
-      };
+    const cartStateAfterRpc = await getCart(); // Renamed for clarity
+
+    if (!isSuccessResult(cartStateAfterRpc)) {
+      // cartStateAfterRpc is a GeneralErrorResult or ValidationErrorResult from getCart()
+      let technicalDetail = "Détail de l'erreur de getCart non disponible.";
+      if (cartStateAfterRpc.success === false && "error" in cartStateAfterRpc) {
+        // GeneralErrorResult
+        technicalDetail = cartStateAfterRpc.error;
+      } else if (cartStateAfterRpc.success === false && "errors" in cartStateAfterRpc) {
+        // ValidationErrorResult
+        technicalDetail = `Erreurs de validation du panier: ${JSON.stringify(cartStateAfterRpc.errors)}`;
+      }
+
+      const userMessage = `Article ajouté/mis à jour avec succès, mais la récupération de l'état du panier a échoué: ${cartStateAfterRpc.message || "Erreur inconnue lors de la récupération du panier."}`;
+      console.warn(`${userMessage} Détails techniques: ${technicalDetail}`);
+      return createGeneralErrorResult(technicalDetail, userMessage);
     }
 
-    return {
-      success: true,
-      message: "Article ajouté/mis à jour dans le panier.",
-      data: updatedCartData,
-    };
+    // If we reach here, cartStateAfterRpc is SuccessResult<CartData | null>.
+    // The original 'updatedCartData' is now cartStateAfterRpc.data.
+
+    return createSuccessResult(cartStateAfterRpc.data, "Article ajouté/mis à jour dans le panier.");
   } catch (error: unknown) {
     console.error("Error in addItemToCart:", (error as Error).message);
-    return {
-      success: false,
-      error:
-        (error as Error).message || "Une erreur inattendue est survenue lors de l'ajout au panier.",
-      data: null,
-    };
+    return createGeneralErrorResult(
+      (error as Error).message || "Une erreur inattendue est survenue lors de l'ajout au panier."
+    );
   }
 }
 
@@ -296,22 +393,16 @@ export async function removeItemFromCart(
     const firstError =
       Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
       "Erreur de validation.";
-    return {
-      success: false,
-      error: firstError,
-      data: { errors: validatedFields.error.flatten().fieldErrors },
-    };
+    return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
   }
   const { cartItemId } = validatedFields.data;
 
   const supabase = await createSupabaseServerClient();
   const activeUserId = await getActiveUserId(); // Assurez-vous que activeUserId est défini ici
   if (!activeUserId) {
-    return {
-      success: false,
-      error:
-        "Impossible d'identifier l'utilisateur ou de créer une session invité pour supprimer un article.",
-    };
+    return createGeneralErrorResult(
+      "Impossible d'identifier l'utilisateur ou de créer une session invité pour supprimer l'article."
+    );
   }
 
   try {
@@ -324,14 +415,14 @@ export async function removeItemFromCart(
 
     if (fetchItemError) {
       console.error(
-        "Erreur lors de la récupération de l'article du panier pour suppression:",
+        "Erreur lors de la récupération de l'article pour suppression:",
         fetchItemError.message
       );
-      return { success: false, error: `Erreur interne: ${fetchItemError.message}` };
+      return createGeneralErrorResult(`Erreur interne: ${fetchItemError.message}`);
     }
 
     if (!itemData) {
-      return { success: false, error: "Article du panier non trouvé." };
+      return createGeneralErrorResult("Article du panier non trouvé pour la suppression.");
     }
 
     // @ts-expect-error itemData.carts is expected to be an object if found. Verifying ownership.
@@ -341,10 +432,9 @@ export async function removeItemFromCart(
         cartItemId,
         activeUserId
       );
-      return {
-        success: false,
-        error: "Action non autorisée: cet article n'appartient pas à votre panier.",
-      };
+      return createGeneralErrorResult(
+        "Action non autorisée: cet article n'appartient pas à votre panier."
+      );
     }
 
     // 2. Supprimer l'article du panier
@@ -354,41 +444,42 @@ export async function removeItemFromCart(
       .eq("id", cartItemId);
 
     if (deleteItemError) {
-      console.error("Error deleting cart item:", deleteItemError.message);
-      throw new Error(
-        `Erreur lors de la suppression de l'article du panier: ${deleteItemError.message}`
+      console.error("Erreur lors de la suppression de l'article:", deleteItemError.message);
+      return createGeneralErrorResult(
+        `Erreur lors de la suppression de l'article: ${deleteItemError.message}`
       );
     }
 
     revalidateTag("cart");
 
-    const {
-      data: updatedCartResult,
-      error: fetchCartError,
-      success: fetchSuccess,
-    } = await getCart();
-    if (!fetchSuccess || fetchCartError) {
-      console.warn(
-        "Article supprimé, mais échec de la récupération du panier à jour:",
-        fetchCartError
-      );
-      return {
-        success: true,
-        message: "Article supprimé. Rafraîchissez pour voir les changements.",
-        data: null,
-      };
+    const cartStateAfterRemove = await getCart(); // Renamed for clarity
+
+    if (!isSuccessResult(cartStateAfterRemove)) {
+      // cartStateAfterRemove is a GeneralErrorResult or ValidationErrorResult from getCart()
+      let technicalDetail = "Détail de l'erreur de getCart non disponible.";
+      if (cartStateAfterRemove.success === false && "error" in cartStateAfterRemove) {
+        // GeneralErrorResult
+        technicalDetail = cartStateAfterRemove.error;
+      } else if (cartStateAfterRemove.success === false && "errors" in cartStateAfterRemove) {
+        // ValidationErrorResult
+        technicalDetail = `Erreurs de validation du panier: ${JSON.stringify(cartStateAfterRemove.errors)}`;
+      }
+
+      const userMessage = `Article supprimé avec succès, mais la récupération de l'état du panier a échoué: ${cartStateAfterRemove.message || "Erreur inconnue lors de la récupération du panier."}`;
+      console.warn(`${userMessage} Détails techniques: ${technicalDetail}`);
+      return createGeneralErrorResult(technicalDetail, userMessage);
     }
 
-    return { success: true, message: "Article supprimé du panier.", data: updatedCartResult };
+    // If we reach here, cartStateAfterRemove is SuccessResult<CartData | null>.
+    // The original 'updatedCartResult' is now cartStateAfterRemove.data.
+
+    return createSuccessResult(cartStateAfterRemove.data, "Article supprimé du panier.");
   } catch (e: unknown) {
     console.error("Error in removeItemFromCart:", (e as Error).message);
-    return {
-      success: false,
-      error:
-        (e as Error).message ||
-        "Une erreur inattendue est survenue lors de la suppression de l'article.",
-      data: null,
-    };
+    return createGeneralErrorResult(
+      (e as Error).message ||
+        "Une erreur inattendue est survenue lors de la suppression de l'article."
+    );
   }
 }
 
@@ -400,21 +491,15 @@ export async function updateCartItemQuantity(
     const firstError =
       Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
       "Erreur de validation.";
-    return {
-      success: false,
-      error: firstError,
-      data: { errors: validatedFields.error.flatten().fieldErrors },
-    };
+    return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
   }
   const { cartItemId, quantity } = validatedFields.data;
 
   const activeUserId = await getActiveUserId();
   if (!activeUserId) {
-    return {
-      success: false,
-      error:
-        "Impossible d'identifier l'utilisateur ou de créer une session invité pour mettre à jour la quantité.",
-    };
+    return createGeneralErrorResult(
+      "Impossible d'identifier l'utilisateur ou de créer une session invité pour mettre à jour la quantité."
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -438,11 +523,11 @@ export async function updateCartItemQuantity(
         "Erreur lors de la récupération de l'article pour mise à jour de quantité:",
         fetchItemError.message
       );
-      return { success: false, error: `Erreur interne: ${fetchItemError.message}` };
+      return createGeneralErrorResult(`Erreur interne: ${fetchItemError.message}`);
     }
 
     if (!itemData) {
-      return { success: false, error: "Article du panier non trouvé pour la mise à jour." };
+      return createGeneralErrorResult("Article du panier non trouvé pour la mise à jour.");
     }
 
     // @ts-expect-error itemData.carts is expected to be an object if found, and activeUserId should be defined. Verifying ownership.
@@ -452,10 +537,9 @@ export async function updateCartItemQuantity(
         cartItemId,
         activeUserId
       );
-      return {
-        success: false,
-        error: "Action non autorisée: cet article n'appartient pas à votre panier.",
-      };
+      return createGeneralErrorResult(
+        "Action non autorisée: cet article n'appartient pas à votre panier."
+      );
     }
 
     // 2. Mettre à jour la quantité de l'article
@@ -469,45 +553,37 @@ export async function updateCartItemQuantity(
         "Erreur lors de la mise à jour de la quantité de l'article:",
         updateItemError.message
       );
-      return {
-        success: false,
-        error: `Erreur lors de la mise à jour de la quantité: ${updateItemError.message}`,
-      };
+      return createGeneralErrorResult(
+        `Erreur lors de la mise à jour de la quantité: ${updateItemError.message}`
+      );
     }
 
     revalidateTag("cart");
 
-    const {
-      data: updatedCartResult,
-      error: fetchCartError,
-      success: fetchSuccess,
-    } = await getCart();
-    if (!fetchSuccess || fetchCartError) {
-      console.warn(
-        "Quantité mise à jour/article supprimé, mais échec de la récupération du panier à jour:",
-        fetchCartError
-      );
-      return {
-        success: true,
-        message: "Opération sur l'article réussie. Rafraîchissez pour voir les changements.",
-        data: null,
-      };
-    }
+    const cartStateAfterUpdate = await getCart(); // Renamed for clarity
 
-    return {
-      success: true,
-      message: "Quantité de l'article mise à jour.",
-      data: updatedCartResult,
-    };
+    if (!isSuccessResult(cartStateAfterUpdate)) {
+      // cartStateAfterUpdate is a GeneralErrorResult or ValidationErrorResult from getCart()
+      let technicalDetail = "Détail de l'erreur de getCart non disponible.";
+      if (cartStateAfterUpdate.success === false && "error" in cartStateAfterUpdate) {
+        // GeneralErrorResult
+        technicalDetail = cartStateAfterUpdate.error;
+      } else if (cartStateAfterUpdate.success === false && "errors" in cartStateAfterUpdate) {
+        // ValidationErrorResult
+        technicalDetail = `Erreurs de validation du panier: ${JSON.stringify(cartStateAfterUpdate.errors)}`;
+      }
+
+      const userMessage = `Quantité mise à jour avec succès, mais la récupération de l'état du panier a échoué: ${cartStateAfterUpdate.message || "Erreur inconnue lors de la récupération du panier."}`;
+      console.warn(`${userMessage} Détails techniques: ${technicalDetail}`);
+      return createGeneralErrorResult(technicalDetail, userMessage);
+    }
+    return createSuccessResult(cartStateAfterUpdate.data, "Quantité de l'article mise à jour.");
   } catch (e: unknown) {
     console.error("Error in updateCartItemQuantity:", (e as Error).message);
-    return {
-      success: false,
-      error:
-        (e as Error).message ||
-        "Une erreur inattendue est survenue lors de la mise à jour de la quantité.",
-      data: null,
-    };
+    return createGeneralErrorResult(
+      (e as Error).message ||
+        "Une erreur inattendue est survenue lors de la mise à jour de la quantité."
+    );
   }
 }
 
