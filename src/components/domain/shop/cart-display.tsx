@@ -98,7 +98,7 @@ export function CartDisplay() {
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => updateItemQuantity(item.productId, item.quantity - 1)}
+                    onClick={() => item.id && updateItemQuantity(item.id, item.quantity - 1)}
                     aria-label={t("decreaseQuantity", { itemName: item.name })}
                   >
                     <MinusIcon className="h-4 w-4" />
@@ -110,7 +110,7 @@ export function CartDisplay() {
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => updateItemQuantity(item.productId, item.quantity + 1)}
+                    onClick={() => item.id && updateItemQuantity(item.id, item.quantity + 1)}
                     aria-label={t("increaseQuantity", { itemName: item.name })}
                   >
                     <PlusIcon className="h-4 w-4" />
@@ -121,7 +121,7 @@ export function CartDisplay() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => item.id && removeItem(item.id)}
                     className="hover:text-destructive/80 font-medium text-destructive"
                     aria-label={t("removeItem", { itemName: item.name })}
                   >
