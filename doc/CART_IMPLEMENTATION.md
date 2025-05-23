@@ -1,168 +1,117 @@
-# Implémentation du Panier d'Achat
+# Implémentation du Panier d'Achat HerbisVeritas
 
 ## Vue d'ensemble
 
-Le système de panier d'achat repose principalement sur des **Server Actions** Next.js pour la logique métier principale (ajout, modification, suppression d'articles). Supabase est utilisé comme backend pour la persistance des données et l'authentification, y compris pour les utilisateurs invités (anonymes). Une gestion d'état côté client (par exemple, avec Zustand) peut être utilisée pour optimiser l'expérience utilisateur et refléter les changements de manière réactive.
+Le système de panier d'achat HerbisVeritas combine des **Server Actions** Next.js pour la logique métier principale (communication avec la base de données) et un store d'état côté client **Zustand** (`src/stores/cartStore.ts`) pour une expérience utilisateur réactive et la gestion locale de l'état du panier. Supabase sert de backend pour la persistance des données et l'authentification (y compris pour les utilisateurs invités).
 
-## Architecture Côté Serveur
+## Architecture
 
-### Actions Serveur (`src/actions/cartActions.ts`)
+### 1. État Côté Client (Zustand - `src/stores/cartStore.ts`)
 
-Les fonctionnalités principales du panier sont implémentées en tant que Server Actions, assurant que la logique métier s'exécute côté serveur.
+- **Rôle :** Gère l'état local du panier (liste des articles, quantités), fournit des actions pour manipuler cet état localement, et interagit avec les Server Actions pour la synchronisation avec le backend.
+- **Types Clés (dans `src/types/cart.ts`) :**
+  - `CartItem`: Représente un article dans le panier côté client.
+    - `id?: string`: L'identifiant unique de l'article dans la table `cart_items` de la base de données (UUID). Optionnel car un article ajouté localement n'a pas d'ID BDD avant synchronisation.
+    - `productId: string`: L'identifiant du produit (ex: SKU ou ID de la table `products`).
+    - `name: string`, `price: number`, `image?: string`, `slug?: string`: Autres détails du produit.
+    - `quantity: number`.
+  - `CartState`: Définit la structure de l'état du store Zustand (items, isLoading, error).
+  - `CartActions`: Interface pour les actions du store (`addItem`, `removeItem`, `updateItemQuantity`, `clearCart`, `_setItems`, `_setIsLoading`, `_setError`).
+- **Actions Principales du Store :**
+  - `addItem(itemDetails: { productId: string; name: string; price: number; image?: string; slug?: string }, quantityToAdd: number = 1)`: Ajoute un article au store local. Si l'article (basé sur `productId`) existe déjà, sa quantité est mise à jour.
+  - `removeItem(cartItemId: string)`: Supprime un article du store local en utilisant son `cart_item_id` (le `id` de `CartItem`).
+  - `updateItemQuantity(cartItemId: string, newQuantity: number)`: Met à jour la quantité d'un article dans le store local via son `cart_item_id`. Si `newQuantity <= 0`, l'article est supprimé.
+  - `clearCart()`: Vide le panier localement.
+  - `_setItems(items: CartItem[])`, `_setIsLoading(loading: boolean)`, `_setError(error: string | null)`: Actions "internes" pour mettre à jour l'état, typiquement après un appel à une Server Action.
 
-- **`getCart(): Promise<CartActionResult<CartData | null>>`**: Récupère le panier de l'utilisateur actif (authentifié ou invité). Crée un panier (et une session anonyme si nécessaire pour un invité) si aucun n'existe.
-- **`addItemToCart(input: AddToCartInput): Promise<CartActionResult<CartData | null>>`**: Ajoute un produit au panier ou met à jour sa quantité. Utilise la fonction RPC `add_or_update_cart_item`.
-- **`removeItemFromCart(input: RemoveFromCartInput): Promise<CartActionResult<CartData | null>>`**: Supprime un article spécifique du panier. Utilise également la fonction RPC `add_or_update_cart_item` (en passant une quantité qui mènera à la suppression).
-- **`updateCartItemQuantity(input: UpdateCartItemQuantityInput): Promise<CartActionResult<CartData | null>>`**: Met à jour la quantité d'un article spécifique dans le panier. Utilise la fonction RPC `add_or_update_cart_item`.
+### 2. Actions Côté Serveur (`src/actions/cartActions.ts`)
 
-Chaque action retourne un objet `CartActionResult` indiquant le succès/échec, des messages, et les données du panier mises à jour ou les erreurs de validation.
+- **Rôle :** Gèrent toute la logique métier nécessitant une interaction avec la base de données Supabase (création/récupération de panier, ajout/modification/suppression d'articles en BDD).
+- **Types Clés (dans `src/types/cart.ts` et `src/actions/cartActions.ts`) :**
+  - `ServerCartItem`: Représente un article tel que stocké/retourné par le serveur.
+    - `id: string`: Le `cart_item_id` (UUID).
+    - `product_id: string`.
+    - `quantity: number`.
+    - `products: ProductDetails | null`: Détails du produit joints. `ProductDetails` contient `id`, `name`, `price`, `image_url`, etc.
+  - `CartData`: Représente l'ensemble du panier tel que stocké/retourné par le serveur (inclut `id` du panier, `user_id`, `cart_items: ServerCartItem[]`).
+  - `CartActionResult<T>`: Type de retour standard pour les Server Actions, indiquant succès/échec, message, et données (`T` étant typiquement `CartData | null` ou des erreurs de validation).
+- **Actions Serveur Principales :**
+  - `getCart(): Promise<CartActionResult<CartData | null>>`: Récupère le panier de l'utilisateur actif. Crée un panier (et gère la session anonyme si besoin) si aucun n'existe. Transforme les `cart_items` pour que `products` soit `ProductDetails | null`.
+  - `addItemToCart(formData: FormData): Promise<CartActionResult<CartData | null>>`: Ajoute un produit au panier en BDD ou met à jour sa quantité. Utilise la fonction RPC `add_or_update_cart_item`. Valide les entrées avec Zod.
+  - `removeItemFromCart(formData: FormData): Promise<CartActionResult<CartData | null>>`: Supprime un article du panier en BDD. Valide les entrées.
+  - `updateCartItemQuantity(formData: FormData): Promise<CartActionResult<CartData | null>>`: Met à jour la quantité d'un article en BDD. Valide les entrées.
+- **Gestion des Utilisateurs :**
+  - Utilise `getActiveUserId()` pour obtenir l'UID de l'utilisateur (authentifié ou anonyme Supabase).
+  - La table `carts` a une colonne `user_id` pour l'UID.
+- **Validation :** Schémas Zod (`src/lib/schemas/cartSchemas.ts`) pour valider les entrées des Server Actions.
 
-### Gestion des Utilisateurs
+### 3. Interaction Client-Serveur
 
-- **Utilisateurs Authentifiés**: Identifiés par leur `auth.uid()` standard.
-- **Utilisateurs Invités (Anonymes)**:
-  - Une session anonyme Supabase est créée si nécessaire (par exemple, lors du premier appel à `getCart` ou `addItemToCart` par un utilisateur non identifié).
-  - Ces utilisateurs anonymes ont également un `auth.uid()` unique.
-  - La fonction `getActiveUserId()` (dans `src/actions/cartActions.ts`) gère la récupération de l'UID de l'utilisateur actif, qu'il soit pleinement authentifié ou anonyme.
-- La table `carts` utilise une seule colonne `user_id` qui stocke l'`auth.uid()` pour les deux types d'utilisateurs.
+- Les composants React (ex: `CartDisplay`, `ProductCard`, `ProductDetailDisplay`) interagissent principalement avec le store Zustand.
+- Le store Zustand, ou les composants directement (surtout pour les actions initiées par des formulaires comme dans `ProductDetailDisplay`), appellent les Server Actions.
+- Après une Server Action réussie, l'état du store Zustand est mis à jour (`_setItems`, `_setIsLoading`, `_setError`) avec les données fraîches du serveur pour refléter les changements dans l'interface utilisateur.
+- `revalidateTag('cart')` est utilisé après les mutations serveur pour invalider le cache Next.js.
 
-### Validation des Données
+## Points Clés et Complexités
 
-- La validation des entrées des Server Actions est effectuée à l'aide de schémas Zod (définis dans `src/lib/schemas/cartSchemas.ts`).
-- Cela inclut la validation des `productId` (TEXT) et `cartItemId` (UUID).
+1.  **Double Gestion d'ID (`productId` vs `cart_item_id`) :**
 
-### Types de Données Principaux (TypeScript)
+    - `productId`: Identifie le produit de manière unique dans le catalogue. Utilisé pour vérifier si un _type_ de produit est déjà dans le panier lors de l'ajout.
+    - `cart_item_id` (stocké comme `id` dans `CartItem` du store Zustand et `ServerCartItem`): Identifiant unique (UUID) de la _ligne_ spécifique dans la table `cart_items` de la BDD. **Crucial pour les opérations de mise à jour et de suppression d'un article spécifique du panier.**
+    - **Complexité :** S'assurer que les composants et le store utilisent le bon identifiant pour la bonne opération. Les actions du store `removeItem` et `updateItemQuantity` opèrent sur `cart_item_id`. L'action `addItem` opère initialement sur `productId` pour la logique d'existence, mais l'objet `CartItem` résultant (s'il provient du serveur) aura un `cart_item_id`.
 
-Ces types sont définis dans `src/actions/cartActions.ts`:
+2.  **Synchronisation État Client (Zustand) et Serveur (Supabase) :**
 
-\`\`\`typescript
-export interface Product {
-id: string; // Identifiant du produit (format spécifique au produit, ex: 'prod_abc123')
-name: string;
-price: number;
-image_url?: string;
-slug: string;
-}
+    - Le store Zustand offre une réactivité immédiate. Les Server Actions assurent la persistance.
+    - **Complexité :** Maintenir la cohérence. Après chaque Server Action modifiant le panier, `getCart` est typiquement rappelé (ou ses données sont retournées directement) pour mettre à jour l'état Zustand avec les données serveur les plus récentes. Cela évite les désynchronisations. La gestion des états de chargement et d'erreur pendant ces synchronisations est importante.
 
-export interface CartItem {
-id: string; // Identifiant de l'item dans le panier (cart_item_id, UUID)
-product_id: string; // Référence à Product.id (TEXT)
-quantity: number;
-product: Product; // Détails du produit associés (populés côté client ou serveur si nécessaire)
-}
+3.  **Gestion Optimiste vs. Pessimiste des Mises à Jour :**
 
-export interface CartData {
-id: string; // Identifiant du panier (cart_id, UUID)
-user_id: string | null; // auth.uid() de l'utilisateur (authentifié ou anonyme)
-created_at: string;
-updated_at: string;
-cart_items: CartItem[]; // Liste des articles dans le panier
-}
+    - Actuellement, l'approche semble plutôt pessimiste : l'UI attend le retour de la Server Action avant de refléter pleinement le changement (bien que le store Zustand puisse être mis à jour immédiatement pour certaines actions simples, la "vérité" vient du serveur).
+    - **Complexité (potentielle) :** Implémenter des mises à jour optimistes (mettre à jour l'UI immédiatement, puis annuler si l'action serveur échoue) ajouterait de la complexité mais améliorerait la sensation de réactivité. Ce n'est pas explicitement l'approche actuelle mais un point à considérer.
 
-// Résultat standard retourné par les actions du panier
-export interface CartActionResult<T> {
-success: boolean;
-message?: string;
-error?: string; // Erreur générale ou de base de données
-data?: T | { errors?: Record<string, string[] | undefined> }; // Données en cas de succès, ou erreurs de validation Zod
-}
-\`\`\`
+4.  **Transformation des Données entre Client et Serveur :**
 
-### Interaction avec la Base de Données
+    - Exemple : `ServerCartItem.products` est `ProductDetails | null`, mais la donnée brute de Supabase pourrait être un tableau si la jointure retourne plusieurs produits (ce qui ne devrait pas arriver avec la structure actuelle mais nécessite une transformation défensive).
+    - Les prix peuvent nécessiter un parsing (`product.price` dans `ProductDetailDisplay` est une chaîne `XX.XX €`).
+    - **Complexité :** Assurer des transformations de types robustes et une gestion des cas où les données ne sont pas dans le format attendu.
 
-- **Fonction RPC `public.add_or_update_cart_item`**:
+5.  **Gestion des Utilisateurs Anonymes et Authentifiés :**
 
-  - Signature: `(p_cart_id UUID, p_product_id TEXT, p_quantity_to_add INT)`
-  - Logique:
-    - Recherche un `cart_item` existant pour le `p_cart_id` et `p_product_id`.
-    - Si trouvé, met à jour la quantité (`quantity = quantity + p_quantity_to_add`).
-    - Si non trouvé et `p_quantity_to_add > 0`, insère un nouvel item.
-    - Si la quantité résultante est `<= 0`, supprime l'item.
-    - Met à jour `updated_at` pour les tables `cart_items` et `carts`.
-    - Retourne les `cart_items` mis à jour du panier.
-  - L'identification de l'utilisateur est implicitement gérée par `auth.uid()` via la fonction `public.current_user_id()` utilisée dans les RLS des tables.
+    - La logique `getActiveUserId` et la création transparente de sessions anonymes par Supabase simplifient cela, mais il faut s'assurer que les politiques RLS sont correctement appliquées pour les deux types d'utilisateurs.
+    - **Complexité :** Moins une complexité de code qu'une complexité de configuration et de test pour s'assurer que la sécurité et l'isolation des données sont maintenues.
 
-- **Sécurité**: Les Row Level Security (RLS) policies sur les tables `carts` et `cart_items` garantissent que les utilisateurs ne peuvent accéder et modifier que leurs propres données de panier. Ceci est basé sur `public.current_user_id()`.
+6.  **Flux d'Actions avec `useActionState` (pour les formulaires) :**
+    - Dans `ProductDetailDisplay`, `useActionState` est utilisé pour gérer l'état de la Server Action `addItemToCart` initiée par un formulaire.
+    - **Complexité :** Comprendre le cycle de vie de `useActionState`, gérer l'état initial, les états `pending`, et les résultats (succès/erreur) pour mettre à jour l'UI (via `toast`) et le store Zustand.
 
-### Gestion du Cache
+## Schéma de la Base de Données (Résumé Pertinent)
 
-- Après chaque opération de mutation réussie, `revalidateTag('cart')` est appelé pour invalider le cache Next.js associé aux données du panier.
-
-## Architecture Côté Client (Exemple)
-
-Bien que la logique principale soit côté serveur, le client peut maintenir un état pour une expérience utilisateur réactive, typiquement en appelant les Server Actions et en mettant à jour son état local en fonction des résultats.
-
-### État Global (par exemple avec Zustand)
-
-Un store client peut encapsuler les appels aux Server Actions :
-
-\`\`\`typescript
-// Exemple simplifié d'intégration avec Zustand et Server Actions
-import { create } from "zustand";
-import { getCart, addItemToCart /_ ... autres actions _/ } from "@/actions/cartActions";
-import { CartData, CartActionResult } from "@/actions/cartActions";
-
-interface ClientCartState {
-cart: CartData | null;
-isLoading: boolean;
-error: string | null;
-fetchCart: () => Promise<void>;
-addProduct: (productId: string, quantity: number) => Promise<CartActionResult<CartData | null>>;
-// ... autres fonctions d'interaction
-}
-
-// Implémentation du store...
-// setActionResult helper...
-\`\`\`
-(Le code détaillé du store Zustand peut être repris de l'ancienne version et adapté pour appeler les Server Actions.)
-
-### Composants React
-
-Les composants React (`CartDisplay.tsx`, etc.) interagiraient avec ce store client ou appelleraient directement les Server Actions.
-(La description du composant `CartDisplay.tsx` de l'ancienne version peut être adaptée ici.)
-
-## Schéma de la Base de Données (Résumé)
-
-Les tables principales sont `carts` et `cart_items`.
-
-\`\`\`sql
+```sql
 -- Table des paniers
 CREATE TABLE public.carts (
-id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL, -- auth.uid() de l'utilisateur (authentifié ou anonyme)
-created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
-updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Table des articles du panier
 CREATE TABLE public.cart_items (
-id uuid DEFAULT uuid_generate_v4() PRIMARY KEY, -- cart_item_id
-cart_id uuid REFERENCES carts(id) ON DELETE CASCADE NOT NULL,
-product_id TEXT REFERENCES products(id) ON DELETE CASCADE NOT NULL, -- Référence à products.id (TEXT)
-quantity integer NOT NULL CHECK (quantity > 0), -- Suppression gérée si la quantité devient <= 0 par la logique RPC
-created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
-updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
-UNIQUE(cart_id, product_id)
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY, -- cart_item_id
+  cart_id uuid REFERENCES carts(id) ON DELETE CASCADE NOT NULL,
+  product_id TEXT NOT NULL, -- Référence à l'ID du produit (pas une FK directe pour flexibilité)
+  quantity integer NOT NULL CHECK (quantity > 0),
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE(cart_id, product_id) -- Assure qu'un produit n'apparaît qu'une fois par panier; la quantité est gérée.
 );
-\`\`\`
-Pour plus de détails, voir [doc/DATABASE.md](cci:7://file:///C:/inherbis/doc/DATABASE.md:0:0-0:0).
+```
 
-## Politiques RLS (Résumé)
-
-- **`carts`**: Les utilisateurs ne peuvent accéder/modifier que leur propre panier (`user_id = public.current_user_id()`).
-- **`cart_items`**: L'accès est contrôlé via la propriété du panier parent (le `cart_id` appartenant à l'utilisateur).
-  Pour plus de détails, voir [doc/DATABASE.md](cci:7://file:///C:/inherbis/doc/DATABASE.md:0:0-0:0).
+(Note: La contrainte `UNIQUE(cart_id, product_id)` et la référence `REFERENCES products(id)` dans `cart_items` peuvent varier selon l'implémentation exacte en BDD. La description ci-dessus reflète une approche commune.)
 
 ## Tests
 
-- La page `src/app/test-cart-actions/page.tsx` sert de page de test manuelle pour invoquer directement les Server Actions.
-- Des tests unitaires (par exemple avec Vitest/Jest) pour les Server Actions et la logique de validation Zod sont recommandés.
-- Des tests d'intégration (par exemple avec Playwright/Cypress) pour les flux utilisateurs complets.
-
-## Bonnes Pratiques
-
-(La section existante peut être conservée et complétée)
-
-- **Performance**: Utilisation judicieuse de `revalidateTag`, optimisation des requêtes RPC.
-- **Sécurité**: Validation Zod exhaustive côté serveur, politiques RLS strictes, échappement des sorties.
-- **Expérience Utilisateur**: Retours visuels clairs, gestion des états de chargement et d'erreur.
+- La page `src/app/test-cart-actions/page.tsx` peut être utilisée pour des tests manuels des Server Actions.
+- Des tests unitaires (Vitest/Jest) pour les fonctions utilitaires, la logique de transformation, et potentiellement les actions du store Zustand.
+- Des tests d'intégration (Playwright/Cypress) pour les flux utilisateurs complets sont cruciaux.
