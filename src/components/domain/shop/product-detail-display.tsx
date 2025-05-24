@@ -10,7 +10,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Removed T
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 // Import the data type from the modal file for now
 import { ProductDetailData } from "@/types/product-types"; // Import from centralized location
-import { addItemToCart, type CartActionResult, type CartData } from "@/actions/cartActions"; // Use refactored action
+import { addItemToCart } from "@/actions/cartActions";
+import type { CartActionResult } from "@/lib/cart-helpers";
+import type { CartData } from "@/types/cart";
 import { toast } from "sonner"; // Added toast import
 import { Button } from "@/components/ui/button"; // Ensure Button is imported
 import useCartStore from "@/stores/cartStore"; // Import cart store
@@ -68,7 +70,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   const initialState: CartActionResult<CartData | null> = {
     success: false,
     message: "",
-    data: null,
+    error: "Initial state", // Requis pour GeneralErrorResult
   };
   // useActionState hook to manage the action's state
   const [state, formAction] = useActionState(addItemToCart, initialState);
@@ -79,28 +81,26 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
       if (state.success) {
         toast.success(state.message);
 
-        // Add item to client-side cart store
-        if (product) {
+        // Accéder aux données seulement si c'est un succès
+        if (product && "data" in state) {
           const itemToAdd: Omit<CartItem, "quantity"> = {
-            productId: String(product.id), // Convert product.id to string
+            productId: String(product.id),
             name: product.name,
-            // Ensure price is a number. Product.price is a string 'XX.XX €'.
             price: parseFloat(product.price.replace(/[^0-9.,]/g, "").replace(",", ".")),
             image:
               product.images && product.images.length > 0
                 ? product.images[0].src
-                : "/placeholder.png", // Fallback image
-            // variantId, stockKeepingUnit, weight, dimensions are optional or not used here
+                : "/placeholder.png",
           };
           addItemToCartStore(itemToAdd, quantity);
-          // Optionally reset quantity displayed on the page
-          // setQuantity(1);
         }
+        // Optionally reset quantity displayed on the page
+        // setQuantity(1);
       } else {
         toast.error(state.message);
       }
     }
-  }, [state, product, quantity, addItemToCartStore]); // Depend on the state object itself, product, and quantity
+  }, [state, product, quantity, addItemToCartStore]);
 
   if (!product) {
     return <div>{t("productNotFound", { defaultMessage: "Produit non trouvé." })}</div>; // Add default message

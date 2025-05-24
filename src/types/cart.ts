@@ -107,7 +107,7 @@ export interface CartData {
   user_id: string | null;
   created_at: string;
   updated_at: string;
-  cart_items: ServerCartItem[];
+  items: CartItem[]; // Changed from cart_items: ServerCartItem[] to represent client-side structure
 }
 
 export type CartActionState = ActionState<CartData | null>;

@@ -33,10 +33,10 @@ Le système de panier d'achat HerbisVeritas combine des **Server Actions** Next.
     - `product_id: string`.
     - `quantity: number`.
     - `products: ProductDetails | null`: Détails du produit joints. `ProductDetails` contient `id`, `name`, `price`, `image_url`, etc.
-  - `CartData`: Représente l'ensemble du panier tel que stocké/retourné par le serveur (inclut `id` du panier, `user_id`, `cart_items: ServerCartItem[]`).
+  - `CartData`: Représente l'ensemble du panier tel que retourné par les Server Actions (ex: `getCart`) et utilisé côté client. Il inclut `id` du panier, `user_id`, et surtout `items: CartItem[]` (articles du panier déjà transformés pour le client).
   - `CartActionResult<T>`: Type de retour standard pour les Server Actions, indiquant succès/échec, message, et données (`T` étant typiquement `CartData | null` ou des erreurs de validation).
 - **Actions Serveur Principales :**
-  - `getCart(): Promise<CartActionResult<CartData | null>>`: Récupère le panier de l'utilisateur actif. Crée un panier (et gère la session anonyme si besoin) si aucun n'existe. Transforme les `cart_items` pour que `products` soit `ProductDetails | null`.
+  - `getCart(): Promise<CartActionResult<CartData | null>>`: Récupère le panier de l'utilisateur actif. Crée un panier (et gère la session anonyme si besoin) si aucun n'existe. Les données brutes du serveur (avec une structure `cart_items` contenant des `ServerCartItem`-like) sont transformées : chaque `ServerCartItem` (avec ses `products` imbriqués) est converti en `CartItem` (structure client aplatie), et le résultat est stocké dans la propriété `items` de l'objet `CartData` retourné.
   - `addItemToCart(formData: FormData): Promise<CartActionResult<CartData | null>>`: Ajoute un produit au panier en BDD ou met à jour sa quantité. Utilise la fonction RPC `add_or_update_cart_item`. Valide les entrées avec Zod.
   - `removeItemFromCart(formData: FormData): Promise<CartActionResult<CartData | null>>`: Supprime un article du panier en BDD. Valide les entrées.
   - `updateCartItemQuantity(formData: FormData): Promise<CartActionResult<CartData | null>>`: Met à jour la quantité d'un article en BDD. Valide les entrées.
@@ -72,9 +72,11 @@ Le système de panier d'achat HerbisVeritas combine des **Server Actions** Next.
 
 4.  **Transformation des Données entre Client et Serveur :**
 
-    - Exemple : `ServerCartItem.products` est `ProductDetails | null`, mais la donnée brute de Supabase pourrait être un tableau si la jointure retourne plusieurs produits (ce qui ne devrait pas arriver avec la structure actuelle mais nécessite une transformation défensive).
-    - Les prix peuvent nécessiter un parsing (`product.price` dans `ProductDetailDisplay` est une chaîne `XX.XX €`).
-    - **Complexité :** Assurer des transformations de types robustes et une gestion des cas où les données ne sont pas dans le format attendu.
+    - La transformation principale a lieu dans `getCart` : les `ServerCartItem` (avec des détails de produit imbriqués dans `products`) récupérés de la base de données sont convertis en une liste de `CartItem` (structure client plate avec `name`, `price`, `image` au premier niveau). Cette liste est ensuite assignée à la propriété `items` de l'objet `CartData`.
+    - La fonction utilitaire `transformServerCartToClientItems` (dans `src/lib/cart-helpers.ts`) effectue une transformation similaire et peut être utilisée si l'on dispose d'un tableau brut de `ServerCartItem[]` à convertir.
+    - Exemple de détail de transformation : `ServerCartItem.products.image_url` devient `CartItem.image`.
+    - Les prix peuvent nécessiter un parsing (ex: si stockés comme chaînes formatées en BDD, bien qu'actuellement des nombres soient attendus).
+    - **Complexité :** Assurer des transformations de types robustes et une gestion des cas où les données (par exemple, un produit lié supprimé) ne sont pas dans le format attendu.
 
 5.  **Gestion des Utilisateurs Anonymes et Authentifiés :**
 

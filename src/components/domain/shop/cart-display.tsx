@@ -4,8 +4,19 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Link as NextLink } from "@/i18n/navigation";
-import useCartStore from "@/stores/cartStore";
-import { selectCartItems, selectCartTotalItems, selectCartSubtotal } from "@/stores/cartStore";
+import useCartStore, {
+  selectCartItems,
+  selectCartTotalItems,
+  selectCartSubtotal,
+} from "@/stores/cartStore";
+import {
+  removeItemFromCart,
+  updateCartItemQuantity as updateCartItemQuantityAction,
+} from "@/actions/cartActions";
+import type { CartActionResult } from "@/lib/cart-helpers";
+import { isSuccessResult } from "@/lib/cart-helpers";
+import { toast } from "sonner";
+import type { CartData, CartItem } from "@/types/cart";
 import { Button } from "@/components/ui/button";
 import { MinusIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 
@@ -20,11 +31,72 @@ export function CartDisplay() {
   const totalItems = useCartStore(selectCartTotalItems);
   const subtotal = useCartStore(selectCartSubtotal);
 
-  const { removeItem, updateItemQuantity, clearCart } = useCartStore((state) => ({
-    removeItem: state.removeItem,
-    updateItemQuantity: state.updateItemQuantity,
-    clearCart: state.clearCart,
+  const { _removeItem, _updateItemQuantity, clearCart, _setItems } = useCartStore((state) => ({
+    _removeItem: state.removeItem, // Will be replaced by server action call
+    _updateItemQuantity: state.updateItemQuantity, // Will be replaced by server action call
+    clearCart: state.clearCart, // This likely calls a server action or should
+    _setItems: state._setItems, // To update store after server action
   }));
+
+  const handleRemoveItem = async (cartItemId: string) => {
+    if (!cartItemId) {
+      toast.error(tGlobal("genericError"));
+      return;
+    }
+
+    // Consider adding a loading state for the specific item or button
+    const result: CartActionResult<CartData | null> = await removeItemFromCart({ cartItemId });
+
+    if (isSuccessResult(result)) {
+      toast.success(result.message || t("itemRemovedSuccess"));
+      if (result.data && result.data.items) {
+        // The items from result.data.items should be CartItem[] as transformed by getCart
+        _setItems(result.data.items as CartItem[]);
+      } else {
+        // If result.data or result.data.items is null/undefined, it means the cart might be empty
+        _setItems([]);
+      }
+    } else {
+      toast.error(result.message || tGlobal("genericError"));
+    }
+    // Reset loading state if implemented
+  };
+
+  const handleUpdateItemQuantity = async (cartItemId: string, newQuantity: number) => {
+    if (!cartItemId) {
+      toast.error(tGlobal("genericError"));
+      return;
+    }
+
+    // The server action updateCartItemQuantity already handles newQuantity <= 0 by calling removeItemFromCart.
+    // So, we can directly call it.
+    // Consider adding a loading state for the specific item or quantity input
+
+    const result: CartActionResult<CartData | null> = await updateCartItemQuantityAction({
+      cartItemId,
+      quantity: newQuantity,
+    });
+
+    if (isSuccessResult(result)) {
+      toast.success(result.message || t("itemQuantityUpdatedSuccess"));
+      if (result.data && result.data.items) {
+        _setItems(result.data.items as CartItem[]);
+      } else if (result.data === null && newQuantity <= 0) {
+        // If quantity was set to 0 or less, and getCart returned null (empty cart)
+        _setItems([]);
+      } else if (result.data === null) {
+        // This case should ideally not happen if an item was updated (not removed) and cart wasn't empty before
+        // but if it does, reflect an empty cart or handle as an error from getCart within the action.
+        _setItems([]);
+        console.warn(
+          "Cart data is null after quantity update, but item was not meant to be removed."
+        );
+      }
+    } else {
+      toast.error(result.message || tGlobal("genericError"));
+    }
+    // Reset loading state if implemented
+  };
 
   if (items.length === 0) {
     return (
@@ -98,7 +170,7 @@ export function CartDisplay() {
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => item.id && updateItemQuantity(item.id, item.quantity - 1)}
+                    onClick={() => item.id && handleUpdateItemQuantity(item.id, item.quantity - 1)}
                     aria-label={t("decreaseQuantity", { itemName: item.name })}
                   >
                     <MinusIcon className="h-4 w-4" />
@@ -110,7 +182,7 @@ export function CartDisplay() {
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => item.id && updateItemQuantity(item.id, item.quantity + 1)}
+                    onClick={() => item.id && handleUpdateItemQuantity(item.id, item.quantity + 1)}
                     aria-label={t("increaseQuantity", { itemName: item.name })}
                   >
                     <PlusIcon className="h-4 w-4" />
@@ -121,7 +193,7 @@ export function CartDisplay() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => item.id && removeItem(item.id)}
+                    onClick={() => item.id && handleRemoveItem(item.id)}
                     className="hover:text-destructive/80 font-medium text-destructive"
                     aria-label={t("removeItem", { itemName: item.name })}
                   >
