@@ -80,7 +80,7 @@ Le système de panier d'achat HerbisVeritas combine des **Server Actions** Next.
 
 5.  **Gestion des Utilisateurs Anonymes et Authentifiés :**
 
-    - La logique `getActiveUserId` et la création transparente de sessions anonymes par Supabase simplifient cela, mais il faut s'assurer que les politiques RLS sont correctement appliquées pour les deux types d'utilisateurs.
+    - La fonction `getActiveUserId` utilise désormais `supabase.auth.getUser()` (au lieu de `supabase.auth.getSession()`) pour récupérer l'utilisateur actif, conformément aux recommandations de Supabase pour une sécurité accrue. Ceci, combiné à la création transparente de sessions anonymes par Supabase, simplifie la gestion des utilisateurs authentifiés et invités. Il est crucial de s'assurer que les politiques RLS sont correctement appliquées pour les deux types d'utilisateurs.
     - **Complexité :** Moins une complexité de code qu'une complexité de configuration et de test pour s'assurer que la sécurité et l'isolation des données sont maintenues.
 
 6.  **Flux d'Actions avec `useActionState` (pour les formulaires) :**

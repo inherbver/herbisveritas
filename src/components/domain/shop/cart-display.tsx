@@ -17,6 +17,7 @@ import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { toast } from "sonner";
 import type { CartData, CartItem } from "@/types/cart";
+import type { RemoveFromCartInput, UpdateCartItemQuantityInput } from "@/lib/schemas/cartSchemas";
 import { Button } from "@/components/ui/button";
 import { MinusIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 
@@ -45,7 +46,8 @@ export function CartDisplay() {
     }
 
     // Consider adding a loading state for the specific item or button
-    const result: CartActionResult<CartData | null> = await removeItemFromCart({ cartItemId });
+    const actionInput: RemoveFromCartInput = { cartItemId };
+    const result: CartActionResult<CartData | null> = await removeItemFromCart(actionInput);
 
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemRemovedSuccess"));
@@ -72,10 +74,9 @@ export function CartDisplay() {
     // So, we can directly call it.
     // Consider adding a loading state for the specific item or quantity input
 
-    const result: CartActionResult<CartData | null> = await updateCartItemQuantityAction({
-      cartItemId,
-      quantity: newQuantity,
-    });
+    const actionInput: UpdateCartItemQuantityInput = { cartItemId, quantity: newQuantity };
+    const result: CartActionResult<CartData | null> =
+      await updateCartItemQuantityAction(actionInput);
 
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemQuantityUpdatedSuccess"));
@@ -127,84 +128,99 @@ export function CartDisplay() {
       </div>
 
       <ul role="list" className="divide-y divide-border">
-        {items.map((item) => (
-          <li key={item.productId} className="flex py-6">
-            <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border sm:h-32 sm:w-32">
-              {item.image ? (
-                <Image
-                  src={item.image}
-                  alt={item.name} // TODO: Provide more descriptive alt text if available
-                  fill
-                  sizes="(max-width: 640px) 96px, 128px"
-                  className="object-cover object-center"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
-                  {tGlobal("noImage")}
-                </div>
-              )}
-            </div>
-
-            <div className="ml-4 flex flex-1 flex-col sm:ml-6">
-              <div>
-                <div className="flex justify-between text-base font-medium">
-                  <h3>
-                    {item.slug ? (
-                      <NextLink href={{ pathname: "/product/[slug]", params: { slug: item.slug } }}>
-                        {item.name}
-                      </NextLink>
-                    ) : (
-                      item.name
-                    )}
-                  </h3>
-                  <p className="ml-4">{(item.price * item.quantity).toFixed(2)} €</p>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {/* TODO: Afficher les variantes du produit si disponibles (couleur, taille, etc.) */}
-                  {t("unitPrice")}: {item.price.toFixed(2)} €
-                </p>
+        {items.map((item) => {
+          console.log("[CartDisplay] Rendering item in map. item.id:", item.id, "Full item:", item);
+          return (
+            <li key={item.productId} className="flex py-6">
+              <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border sm:h-32 sm:w-32">
+                {item.image ? (
+                  <Image
+                    src={item.image}
+                    alt={item.name} // TODO: Provide more descriptive alt text if available
+                    fill
+                    sizes="(max-width: 640px) 96px, 128px"
+                    className="object-cover object-center"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                    {tGlobal("noImage")}
+                  </div>
+                )}
               </div>
-              <div className="mt-auto flex flex-1 items-end justify-between text-sm">
-                <div className="flex items-center">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => item.id && handleUpdateItemQuantity(item.id, item.quantity - 1)}
-                    aria-label={t("decreaseQuantity", { itemName: item.name })}
-                  >
-                    <MinusIcon className="h-4 w-4" />
-                  </Button>
-                  <span className="mx-3 w-8 text-center" aria-live="polite">
-                    {item.quantity}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => item.id && handleUpdateItemQuantity(item.id, item.quantity + 1)}
-                    aria-label={t("increaseQuantity", { itemName: item.name })}
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                  </Button>
-                </div>
 
-                <div className="flex">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => item.id && handleRemoveItem(item.id)}
-                    className="hover:text-destructive/80 font-medium text-destructive"
-                    aria-label={t("removeItem", { itemName: item.name })}
-                  >
-                    <XIcon className="mr-1 h-4 w-4" />
-                    {t("remove")}
-                  </Button>
+              <div className="ml-4 flex flex-1 flex-col sm:ml-6">
+                <div>
+                  <div className="flex justify-between text-base font-medium">
+                    <h3>
+                      {item.slug ? (
+                        <NextLink
+                          href={{ pathname: "/product/[slug]", params: { slug: item.slug } }}
+                        >
+                          {item.name}
+                        </NextLink>
+                      ) : (
+                        item.name
+                      )}
+                    </h3>
+                    <p className="ml-4">{(item.price * item.quantity).toFixed(2)} €</p>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {/* TODO: Afficher les variantes du produit si disponibles (couleur, taille, etc.) */}
+                    {t("unitPrice")}: {item.price.toFixed(2)} €
+                  </p>
+                </div>
+                <div className="mt-auto flex flex-1 items-end justify-between text-sm">
+                  <div className="flex items-center">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        if (item.id) handleUpdateItemQuantity(item.id, item.quantity - 1);
+                      }}
+                      aria-label={t("decreaseQuantity", { itemName: item.name })}
+                    >
+                      <MinusIcon className="h-4 w-4" />
+                    </Button>
+                    <span className="mx-3 w-8 text-center" aria-live="polite">
+                      {item.quantity}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        if (item.id) handleUpdateItemQuantity(item.id, item.quantity + 1);
+                      }}
+                      aria-label={t("increaseQuantity", { itemName: item.name })}
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="flex">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (item.id) {
+                          handleRemoveItem(item.id);
+                        } else {
+                          toast.error("Impossible de supprimer l'article : ID manquant.");
+                        }
+                      }}
+                      className="hover:text-destructive/80 font-medium text-destructive"
+                      aria-label={t("removeItem", { itemName: item.name })}
+                    >
+                      <XIcon className="mr-1 h-4 w-4" />
+                      {t("remove")}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
       <div className="mt-8 border-t border-border pt-6">

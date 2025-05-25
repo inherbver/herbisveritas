@@ -3,6 +3,9 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { type Metadata } from "next";
 import { ShopClientContent } from "@/components/domain/shop/shop-client-content";
 import { getAllProducts, ProductForShopQuery } from "@/lib/supabase/queries/products";
+import { getCart } from "@/actions/cartActions";
+import { isSuccessResult } from "@/lib/cart-helpers";
+import type { CartData } from "@/types/cart";
 import { Locale } from "@/i18n-config";
 import { Hero } from "@/components/shared/hero";
 import { getActiveFeaturedHeroItem, type FeaturedHeroItem } from "@/lib/supabase/queries/hero";
@@ -75,9 +78,10 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
 
   // --- Fetch Data ---
   // Use Promise.all to fetch hero item and products in parallel for slight performance improvement
-  const [heroResult, productsResult] = await Promise.allSettled([
+  const [heroResult, productsResult, cartResult] = await Promise.allSettled([
     getActiveFeaturedHeroItem(),
     getAllProducts(locale),
+    getCart(),
   ]);
 
   let featuredHeroItem: FeaturedHeroItem | null = null;
@@ -89,6 +93,7 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
 
   let productsData: ProductForShopQuery[] = [];
   let fetchError: Error | null = null;
+  let initialCartData: CartData | null = null;
   if (productsResult.status === "fulfilled") {
     productsData = productsResult.value;
   } else {
@@ -98,6 +103,16 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
         : new Error("Unknown error fetching products");
     console.error("Error fetching products for ShopPage:", productsResult.reason);
     productsData = []; // Ensure productsData is an empty array on error
+  }
+
+  // --- Handle Cart Fetch --- (Non-critical for page load, but good to log)
+  if (cartResult.status === "fulfilled" && isSuccessResult(cartResult.value)) {
+    initialCartData = cartResult.value.data;
+  } else if (cartResult.status === "fulfilled" && !isSuccessResult(cartResult.value)) {
+    // Optionally, you might still want to log this as a warning if it's unexpected
+    // console.warn("[ShopPage] Fetching initial cart data returned an error result:", cartResult.value);
+  } else if (cartResult.status === "rejected") {
+    console.error("[ShopPage] Error fetching initial cart data:", cartResult.reason);
   }
 
   // --- Handle Product Fetch Error --- (Hero error is non-critical for page load)
@@ -187,7 +202,7 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
 
       <div className="container py-8">
         <h1 className="mb-6 text-3xl font-bold">{t("title")}</h1>
-        <ShopClientContent initialProducts={productListItems} />
+        <ShopClientContent initialProducts={productListItems} initialCart={initialCartData} />
       </div>
     </MainLayout>
   );

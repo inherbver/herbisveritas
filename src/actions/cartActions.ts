@@ -32,33 +32,37 @@ import type {
 async function getActiveUserId(): Promise<string | null> {
   const supabase = await createSupabaseServerClient();
 
+  // Utiliser supabase.auth.getUser() pour une meilleure sécurité
   const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: getUserError,
+  } = await supabase.auth.getUser();
 
-  if (sessionError) {
+  if (getUserError) {
+    // Une erreur s'est produite lors de la tentative de récupération de l'utilisateur.
+    // Cela est différent de "aucun utilisateur connecté" (où user serait null et getUserError serait null).
     console.error(
-      "Erreur lors de la récupération de la session dans getActiveUserId:",
-      sessionError.message
+      "Erreur lors de la tentative de récupération de l'utilisateur avec getUser() dans getActiveUserId:",
+      getUserError.message
     );
+    // `user` sera `null` si une erreur s'est produite, donc `userId` deviendra `undefined` ci-dessous,
+    // ce qui déclenchera la logique de connexion anonyme, maintenant le comportement de repli.
   }
 
-  let userId = session?.user?.id;
+  let userId = user?.id;
 
   if (!userId) {
-    console.log("Aucun utilisateur connecté, tentative de connexion anonyme.");
+    // Logique de connexion anonyme si aucun utilisateur n'est trouvé ou si une erreur s'est produite avec getUser()
     const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
 
     if (anonError) {
       console.error("Erreur lors de la connexion anonyme:", anonError.message);
-      return null;
+      return null; // Échec critique de la connexion anonyme
     }
     if (!anonAuthResponse?.user) {
-      console.error("Connexion anonyme n'a pas retourné d'utilisateur.");
-      return null;
+      console.error("La connexion anonyme n'a pas retourné d'utilisateur.");
+      return null; // Échec critique de la connexion anonyme
     }
-    console.log("Connexion anonyme réussie. ID utilisateur anonyme:", anonAuthResponse.user.id);
     userId = anonAuthResponse.user.id;
   }
   return userId;
@@ -301,6 +305,7 @@ export async function removeItemFromCart(
   input: RemoveFromCartInput
 ): Promise<CartActionResult<CartData | null>> {
   const validatedFields = RemoveFromCartInputSchema.safeParse(input);
+
   if (!validatedFields.success) {
     const firstError =
       Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
@@ -373,7 +378,6 @@ export async function removeItemFromCart(
       }
 
       const userMessage = `Article supprimé avec succès, mais la récupération de l'état du panier a échoué: ${cartStateAfterRemove.message || "Erreur inconnue lors de la récupération du panier."}`;
-      console.warn(`${userMessage} Détails techniques: ${technicalDetail}`);
       return createGeneralErrorResult(technicalDetail, userMessage);
     }
 
@@ -410,7 +414,6 @@ export async function updateCartItemQuantity(
 
   try {
     if (quantity <= 0) {
-      console.log(`La quantité pour l'article ${cartItemId} est <= 0, tentative de suppression.`);
       return await removeItemFromCart({ cartItemId });
     }
 
@@ -472,7 +475,6 @@ export async function updateCartItemQuantity(
       }
 
       const userMessage = `Quantité mise à jour avec succès, mais la récupération de l'état du panier a échoué: ${cartStateAfterUpdate.message || "Erreur inconnue lors de la récupération du panier."}`;
-      console.warn(`${userMessage} Détails techniques: ${technicalDetail}`);
       return createGeneralErrorResult(technicalDetail, userMessage);
     }
     return createSuccessResult(cartStateAfterUpdate.data, "Quantité de l'article mise à jour.");
