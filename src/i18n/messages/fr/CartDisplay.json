@@ -1,0 +1,23 @@
+{
+  "yourCart": "Votre Panier",
+  "emptyCart": "Votre panier est vide.",
+  "continueShopping": "Continuer vos achats",
+  "clearCart": "Vider le panier",
+  "clearCartButton": "Vider le panier",
+  "clearCartButtonLabel": "Vider tout le contenu du panier",
+  "cartClearedSuccess": "Panier vidé avec succès !",
+  "itemRemovedSuccess": "Article supprimé du panier.",
+  "itemQuantityUpdatedSuccess": "Quantité mise à jour.",
+  "unitPrice": "Prix unitaire",
+  "quantity": "Quantité",
+  "total": "Total",
+  "subtotal": "Sous-total",
+  "checkout": "Passer la commande",
+  "remove": "Supprimer",
+  "updateQuantityError": "Erreur lors de la mise à jour de la quantité.",
+  "decreaseQuantity": "Diminuer la quantité de {itemName}",
+  "increaseQuantity": "Augmenter la quantité de {itemName}",
+  "removeItem": "Supprimer {itemName} du panier",
+  "shippingTaxesCalculatedAtCheckout": "Frais de port et taxes calculés à la caisse.",
+  "or": "ou"
+}

@@ -16,7 +16,6 @@ import type { CartData } from "@/types/cart";
 import { toast } from "sonner"; // Added toast import
 import { Button } from "@/components/ui/button"; // Ensure Button is imported
 import useCartStore from "@/stores/cartStore"; // Import cart store
-import type { CartItem } from "@/types/cart"; // Import CartItem type
 
 // Define animation variants for the main container if needed, or apply directly
 const containerVariants = {
@@ -62,45 +61,64 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   // Use a relevant namespace, assuming "ProductDetail" exists or reusing "ProductDetailModal"
   const t = useTranslations("ProductDetailModal"); // Or "ProductDetail"
   const tDisplay = useTranslations("ProductDetailDisplay"); // For labels specific to this component
+  const tGlobal = useTranslations("Global"); // For generic error messages
   const [activeTab, setActiveTab] = useState("description");
   const [quantity, setQuantity] = useState(1);
-  const addItemToCartStore = useCartStore((state) => state.addItem); // Get addItem from store
+  const _setItems = useCartStore((state) => state._setItems); // Get _setItems for store updates
 
-  // Initial state for the form
-  const initialState: CartActionResult<CartData | null> = {
-    success: false,
-    message: "",
-    error: "Initial state", // Requis pour GeneralErrorResult
-  };
+  // Initial state for the form, memoized
+  const initialState: CartActionResult<CartData | null> = React.useMemo(
+    () => ({
+      success: false,
+      message: "",
+      error: "Initial state", // Requis pour GeneralErrorResult
+    }),
+    []
+  );
   // useActionState hook to manage the action's state
   const [state, formAction] = useActionState(addItemToCart, initialState);
 
   // Show toast notification based on form state and update cart store
   useEffect(() => {
-    if (state.message) {
+    // Only process if the state has changed from the initial 'pending' like state.
+    // Check if success is explicitly false (an error occurred) or true (a success occurred).
+    // The initial state has success: false, but we also check message/error to avoid reacting to it.
+    if (
+      state.success === true ||
+      (state.success === false &&
+        (state.message ||
+          ("error" in state && state.error !== initialState.error) ||
+          "errors" in state))
+    ) {
       if (state.success) {
-        toast.success(state.message);
-
-        // Accéder aux données seulement si c'est un succès
-        if (product && "data" in state) {
-          const itemToAdd: Omit<CartItem, "quantity"> = {
-            productId: String(product.id),
-            name: product.name,
-            price: parseFloat(product.price.replace(/[^0-9.,]/g, "").replace(",", ".")),
-            image:
-              product.images && product.images.length > 0
-                ? product.images[0].src
-                : "/placeholder.png",
-          };
-          addItemToCartStore(itemToAdd, quantity);
+        toast.success(state.message || t("itemAddedSuccess"));
+        if (state.data?.items) {
+          _setItems(state.data.items);
         }
         // Optionally reset quantity displayed on the page
         // setQuantity(1);
       } else {
-        toast.error(state.message);
+        // Handle errors
+        let errorMessage = state.message; // General message if present
+        if (!errorMessage && "error" in state && state.error) {
+          errorMessage = state.error; // Specific error string
+        }
+        if (
+          !errorMessage &&
+          "errors" in state &&
+          state.errors &&
+          Object.keys(state.errors).length > 0
+        ) {
+          // Take the first field error message
+          const firstFieldError = Object.values(state.errors).flat()[0];
+          if (firstFieldError) {
+            errorMessage = firstFieldError;
+          }
+        }
+        toast.error(errorMessage || tGlobal("genericError"));
       }
     }
-  }, [state, product, quantity, addItemToCartStore]);
+  }, [state, t, _setItems, initialState, tGlobal]); // Ensure all reactive dependencies used in the effect are listed
 
   if (!product) {
     return <div>{t("productNotFound", { defaultMessage: "Produit non trouvé." })}</div>; // Add default message

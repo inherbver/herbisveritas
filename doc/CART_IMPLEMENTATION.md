@@ -4,6 +4,13 @@
 
 Le système de panier d'achat HerbisVeritas combine des **Server Actions** Next.js pour la logique métier principale (communication avec la base de données) et un store d'état côté client **Zustand** (`src/stores/cartStore.ts`) pour une expérience utilisateur réactive et la gestion locale de l'état du panier. Supabase sert de backend pour la persistance des données et l'authentification (y compris pour les utilisateurs invités).
 
+## Prérequis et Dépendances Clés
+
+- **Configuration `next-intl` :** Le bon fonctionnement des composants d'interface utilisateur du panier (ex: `CartDisplay`, `ProductCard`) dépend d'une configuration correcte de `next-intl`. Il est crucial de s'assurer que :
+  - Tous les fichiers de messages (ex: `CartDisplay.json`, `ProductCard.json`) sont correctement chargés et fusionnés sous leurs namespaces respectifs dans `src/i18n.ts` (ou le fichier de configuration `next-intl` équivalent).
+  - Toutes les clés de traduction utilisées dans les composants sont définies dans les fichiers de messages correspondants pour chaque locale supportée.
+  - Le `NextIntlClientProvider` est correctement configuré dans le layout racine (`app/[locale]/layout.tsx` ou `components/layout/client-layout.tsx`) avec les messages agrégés.
+
 ## Architecture
 
 ### 1. État Côté Client (Zustand - `src/stores/cartStore.ts`)

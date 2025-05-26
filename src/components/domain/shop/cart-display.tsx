@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useActionState } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Link as NextLink } from "@/i18n/navigation";
@@ -12,6 +12,7 @@ import useCartStore, {
 import {
   removeItemFromCart,
   updateCartItemQuantity as updateCartItemQuantityAction,
+  clearCartAction,
 } from "@/actions/cartActions";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
@@ -32,12 +33,42 @@ export function CartDisplay() {
   const totalItems = useCartStore(selectCartTotalItems);
   const subtotal = useCartStore(selectCartSubtotal);
 
-  const { _removeItem, _updateItemQuantity, clearCart, _setItems } = useCartStore((state) => ({
+  const { _removeItem, _updateItemQuantity, _setItems } = useCartStore((state) => ({
     _removeItem: state.removeItem, // Will be replaced by server action call
     _updateItemQuantity: state.updateItemQuantity, // Will be replaced by server action call
-    clearCart: state.clearCart, // This likely calls a server action or should
+    // clearCart is now handled by a server action
     _setItems: state._setItems, // To update store after server action
   }));
+
+  const initialClearCartState: CartActionResult<CartData | null> = {
+    success: undefined,
+    message: "",
+    data: null,
+  };
+
+  const [clearCartState, clearCartFormAction, isClearCartPending] = useActionState(
+    clearCartAction,
+    initialClearCartState
+  );
+
+  useEffect(() => {
+    if (clearCartState.success === true) {
+      toast.success(clearCartState.message || t("cartClearedSuccess"));
+      _setItems([]); // Clear local cart state
+    } else if (clearCartState.success === false) {
+      toast.error(clearCartState.message || tGlobal("genericError"));
+    }
+    // Resetting state or other cleanup could be done here if needed,
+    // but useActionState typically handles state updates internally.
+  }, [clearCartState, _setItems, t, tGlobal]);
+
+  const handleClearCart = () => {
+    if (items.length > 0 && !isClearCartPending) {
+      // FormData is not strictly needed by clearCartAction as it doesn't read from it,
+      // but useActionState expects a form action signature.
+      clearCartFormAction(new FormData());
+    }
+  };
 
   const handleRemoveItem = async (cartItemId: string) => {
     if (!cartItemId) {
@@ -119,17 +150,10 @@ export function CartDisplay() {
         <h2 id="cart-heading" className="text-2xl font-semibold">
           {t("yourCart")} ({totalItems})
         </h2>
-        {items.length > 0 && (
-          <Button variant="outline" size="sm" onClick={clearCart} className="text-xs">
-            <Trash2Icon className="mr-1.5 h-3.5 w-3.5" />
-            {t("clearCart")}
-          </Button>
-        )}
       </div>
 
       <ul role="list" className="divide-y divide-border">
         {items.map((item) => {
-          console.log("[CartDisplay] Rendering item in map. item.id:", item.id, "Full item:", item);
           return (
             <li key={item.productId} className="flex py-6">
               <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border sm:h-32 sm:w-32">
@@ -222,6 +246,49 @@ export function CartDisplay() {
           );
         })}
       </ul>
+
+      {items.length > 0 && (
+        <div className="mt-6 flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClearCart}
+            disabled={isClearCartPending || items.length === 0}
+            aria-label={t("clearCartButtonLabel")}
+          >
+            {isClearCartPending ? (
+              <>
+                <svg
+                  className="mr-2 h-4 w-4 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                {tGlobal("loading")}
+              </>
+            ) : (
+              <>
+                <Trash2Icon className="mr-2 h-4 w-4" />
+                {t("clearCartButton")}
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
       <div className="mt-8 border-t border-border pt-6">
         <div className="flex justify-between text-base font-medium">

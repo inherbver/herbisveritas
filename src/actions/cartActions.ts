@@ -486,3 +486,70 @@ export async function updateCartItemQuantity(
     );
   }
 }
+
+export async function clearCartAction(
+  // prevState est inclus pour la compatibilité avec useActionState si utilisé,
+  // mais il n'est pas utilisé activement dans cette implémentation car l'action est simple.
+  _prevState: CartActionResult<CartData | null>
+): Promise<CartActionResult<CartData | null>> {
+  const activeUserId = await getActiveUserId();
+
+  if (!activeUserId) {
+    return createGeneralErrorResult(
+      "Impossible d'identifier l'utilisateur ou de créer une session invité pour vider le panier."
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  try {
+    // 1. Trouver l'ID du panier de l'utilisateur
+    const { data: cartData, error: cartError } = await supabase
+      .from("carts")
+      .select("id") // Seulement besoin de l'ID du panier
+      .eq("user_id", activeUserId)
+      .maybeSingle(); // Il ne devrait y avoir qu'un seul panier actif par utilisateur
+
+    if (cartError) {
+      console.error("Erreur lors de la recherche du panier pour le vider:", cartError.message);
+      return createGeneralErrorResult(
+        `Erreur Supabase lors de la recherche du panier: ${cartError.message}`
+      );
+    }
+
+    if (!cartData) {
+      // Aucun panier actif trouvé pour cet utilisateur, ce n'est pas une erreur.
+      // Le panier est effectivement vide.
+      return createSuccessResult(null, "Aucun panier actif à vider.");
+    }
+
+    // 2. Supprimer tous les cart_items associés à ce cart_id
+    const { error: deleteItemsError } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("cart_id", cartData.id); // Utiliser l'ID du panier trouvé
+
+    if (deleteItemsError) {
+      console.error(
+        "Erreur lors de la suppression des articles du panier:",
+        deleteItemsError.message
+      );
+      return createGeneralErrorResult(
+        `Erreur Supabase lors de la suppression des articles: ${deleteItemsError.message}`
+      );
+    }
+
+    revalidateTag("cart");
+
+    // Retourner un état de panier vide, car tous les articles ont été supprimés.
+    // Le panier lui-même (l'enregistrement dans la table 'carts') n'est pas supprimé,
+    // seulement son contenu.
+    return createSuccessResult(null, "Panier vidé avec succès.");
+  } catch (e: unknown) {
+    console.error("Error in clearCartAction:", (e as Error).message);
+    return createGeneralErrorResult(
+      (e as Error).message ||
+        "Une erreur inattendue est survenue lors de la tentative de vider le panier."
+    );
+  }
+}

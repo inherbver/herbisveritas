@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useActionState, useEffect } from "react";
+import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Link as NextLink } from "@/i18n/navigation";
 import type { AppPathname } from "@/i18n/navigation";
@@ -10,7 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import useCartStore from "@/stores/cartStore";
-import type { CartItem } from "@/types/cart";
+import type { CartActionResult, CartData } from "@/types/cart";
+import { addItemToCart as addItemToCartAction } from "@/actions/cartActions";
+
+import { toast } from "sonner";
 
 export interface ProductCardProps {
   /** Unique identifier for the product */
@@ -47,6 +51,30 @@ export interface ProductCardProps {
   unit?: string | null;
 }
 
+// Internal Submit Button component using useFormStatus
+function SubmitButtonForCard() {
+  const { pending } = useFormStatus();
+  const t = useTranslations("ProductCard");
+
+  return (
+    <Button
+      type="submit"
+      size="sm"
+      variant={pending ? "outline" : "default"} // Change variant when pending if desired
+      disabled={pending}
+      aria-disabled={pending}
+      className={cn(
+        "h-10 w-full max-w-xs px-4 text-sm shadow-sm transition-all duration-200 ease-in-out active:scale-95",
+        !pending &&
+          "hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        pending && "cursor-wait opacity-70"
+      )}
+    >
+      {pending ? t("addingToCart") : t("addToCart")}
+    </Button>
+  );
+}
+
 export function ProductCard({
   id,
   title,
@@ -67,7 +95,39 @@ export function ProductCard({
   unit,
 }: ProductCardProps) {
   const t = useTranslations("ProductCard");
-  const addItemToCart = useCartStore((state) => state.addItem);
+  const _setItems = useCartStore((state) => state._setItems);
+  const tGlobal = useTranslations("Global"); // For generic error messages
+
+  const initialAddItemState: CartActionResult<CartData | null> = {
+    success: undefined,
+    message: "",
+    data: null,
+  };
+
+  const [state, formAction, _isPending] = useActionState(addItemToCartAction, initialAddItemState);
+
+  useEffect(() => {
+    if (state.message || state.error) {
+      // Check if there's any message or error to display
+      if (state.success) {
+        toast.success(state.message || t("itemAddedSuccess"));
+        if (state.data?.items) {
+          _setItems(state.data.items);
+        }
+      } else {
+        // Prefer specific field errors if available, otherwise general error or message
+        let errorMessage = state.message || state.error || tGlobal("genericError");
+        if (state.errors && Object.keys(state.errors).length > 0) {
+          const firstFieldError = Object.values(state.errors).flat()[0];
+          if (firstFieldError) {
+            errorMessage = firstFieldError;
+          }
+        }
+        toast.error(errorMessage);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, t, tGlobal]); // _setItems is stable from Zustand
 
   if (isLoading) {
     return (
@@ -90,22 +150,6 @@ export function ProductCard({
       </div>
     );
   }
-
-  const handleAddToCartClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    if (!isOutOfStock) {
-      const itemToAdd: Omit<CartItem, "quantity"> = {
-        productId: String(id), // S'assurer que productId est une string pour CartItem
-        name: title,
-        price: price, // price est déjà un nombre
-        image: imageSrc, // Corrigé de imageUrl à image
-        slug: slug,
-        // Pas besoin de variantId, stockKeepingUnit, weight, dimensions pour l'instant
-        // ou les ajouter si CartItem les requiert et qu'ils sont disponibles
-      };
-      addItemToCart(itemToAdd);
-    }
-  };
 
   const linkHref = { pathname: "/products/[slug]" as AppPathname, params: { slug: slug } };
 
@@ -192,30 +236,18 @@ export function ProductCard({
             {price.toFixed(2)} €
           </p>
 
-          <Button
-            size="sm" // h-8 from button.tsx, use default (h-9) or lg (h-10) if more height is needed
-            variant={isOutOfStock ? "outline" : "default"}
-            disabled={isOutOfStock}
-            onClick={handleAddToCartClick}
-            aria-describedby={isOutOfStock ? undefined : `product-title-${id}`}
-            aria-label={
-              isOutOfStock ? `${title} - ${t("outOfStock")}` : `${t("addToCart")} ${title}`
-            }
-            className={cn(
-              "w-full max-w-xs px-4 text-sm shadow-sm", // Added w-full, max-w-xs for better centering control within card padding
-              // Kept h-10 for consistency with previous, but Button's size="sm" is h-8. Adjust if needed.
-              // Default variant provides rounded-md. Shadow-sm is kept.
-              "h-10", // Explicit height to override button's size prop if needed.
-              "transition-all duration-200 ease-in-out active:scale-95",
-              !isOutOfStock &&
-                "hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              // For isOutOfStock, 'outline' variant already handles styling.
-              // Add specific classes here if 'outline' is not sufficient for 'disabled' state visual
-              isOutOfStock && "cursor-not-allowed opacity-70" // Ensure good disabled visual
-            )}
+          <form
+            action={formAction}
+            className={cn("w-full max-w-xs", isOutOfStock && "cursor-not-allowed opacity-70")}
           >
-            {t("addToCart")}
-          </Button>
+            <input type="hidden" name="productId" value={String(id)} />
+            <input type="hidden" name="productName" value={title} />
+            <input type="hidden" name="productPrice" value={price} />
+            <input type="hidden" name="productImage" value={imageSrc} />
+            <input type="hidden" name="productSlug" value={slug} />
+            <input type="hidden" name="quantity" value={1} /> {/* Default quantity for card add */}
+            <SubmitButtonForCard />
+          </form>
         </div>
       </div>
     </>

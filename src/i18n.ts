@@ -45,6 +45,14 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load CartSheet.json for locale ${localeToUse}:`, _e);
   }
 
+  let cartDisplayNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    cartDisplayNamespaceContent = (await import(`./i18n/messages/${localeToUse}/CartDisplay.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load CartDisplay.json for locale ${localeToUse}:`, _e);
+  }
+
   let passwordPageNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     passwordPageNamespaceContent = (
@@ -93,6 +101,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeAccountPage = accountPageNamespaceContent || {};
   const safeProfileNav = profileNavNamespaceContent || {};
   const safeCartSheet = cartSheetNamespaceContent || {};
+  const safeCartDisplay = cartDisplayNamespaceContent || {};
   const safePasswordPage = passwordPageNamespaceContent || {};
   const safeProfileEditPage = profileEditPageNamespaceContent || {};
   const safeShopPage = shopPageNamespaceContent || {};
@@ -105,6 +114,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeAccountPage).length > 0 ? { AccountPage: safeAccountPage } : {}),
     ...(Object.keys(safeProfileNav).length > 0 ? { ProfileNav: safeProfileNav } : {}),
     ...(Object.keys(safeCartSheet).length > 0 ? { CartSheet: safeCartSheet } : {}),
+    ...(Object.keys(safeCartDisplay).length > 0 ? { CartDisplay: safeCartDisplay } : {}),
     ...(Object.keys(safePasswordPage).length > 0 ? { PasswordPage: safePasswordPage } : {}),
     ...(Object.keys(safeProfileEditPage).length > 0
       ? { ProfileEditPage: safeProfileEditPage }
@@ -120,6 +130,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     Object.keys(safeAccountPage).length === 0 &&
     Object.keys(safeProfileNav).length === 0 &&
     Object.keys(safeCartSheet).length === 0 &&
+    Object.keys(safeCartDisplay).length === 0 &&
     Object.keys(safePasswordPage).length === 0 &&
     Object.keys(safeProfileEditPage).length === 0 &&
     Object.keys(safeShopPage).length === 0 &&
