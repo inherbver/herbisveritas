@@ -1,0 +1,23 @@
+{
+  "yourCart": "Your Cart",
+  "emptyCart": "Your cart is empty.",
+  "continueShopping": "Continue Shopping",
+  "clearCart": "Clear Cart",
+  "clearCartButton": "Clear Cart",
+  "clearCartButtonLabel": "Clear all items from the cart",
+  "cartClearedSuccess": "Cart cleared successfully!",
+  "itemRemovedSuccess": "Item removed from cart.",
+  "itemQuantityUpdatedSuccess": "Quantity updated.",
+  "unitPrice": "Unit price",
+  "quantity": "Quantity",
+  "total": "Total",
+  "subtotal": "Subtotal",
+  "checkout": "Proceed to Checkout",
+  "remove": "Remove",
+  "updateQuantityError": "Error updating quantity.",
+  "decreaseQuantity": "Decrease quantity of {itemName}",
+  "increaseQuantity": "Increase quantity of {itemName}",
+  "removeItem": "Remove {itemName} from cart",
+  "shippingTaxesCalculatedAtCheckout": "Shipping and taxes calculated at checkout.",
+  "or": "or"
+}
