@@ -21,6 +21,7 @@
   },
   "ProductCard": {
     "addToCart": "Ajouter au panier",
+    "addingToCart": "Ajout au panier...",
     "outOfStock": "Rupture de stock",
     "newLabel": "Nouveau",
     "promoLabel": "Promo",
