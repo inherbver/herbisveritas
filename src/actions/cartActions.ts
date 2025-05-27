@@ -41,10 +41,21 @@ async function getActiveUserId(): Promise<string | null> {
   if (getUserError) {
     // Une erreur s'est produite lors de la tentative de récupération de l'utilisateur.
     // Cela est différent de "aucun utilisateur connecté" (où user serait null et getUserError serait null).
-    console.error(
-      "Erreur lors de la tentative de récupération de l'utilisateur avec getUser() dans getActiveUserId:",
-      getUserError.message
-    );
+    // Différencier les erreurs de session "normales" des erreurs inattendues
+    if (
+      getUserError.message.includes("Auth session missing") ||
+      getUserError.message.includes("Invalid session") ||
+      getUserError.message.includes("User not found")
+    ) {
+      console.info(
+        `Session utilisateur non trouvée ou invalide dans getActiveUserId (attendu après déconnexion ou pour nouvel utilisateur anonyme): ${getUserError.message}`
+      );
+    } else {
+      console.error(
+        "Erreur inattendue lors de la tentative de récupération de l'utilisateur avec getUser() dans getActiveUserId:",
+        getUserError.message
+      );
+    }
     // `user` sera `null` si une erreur s'est produite, donc `userId` deviendra `undefined` ci-dessous,
     // ce qui déclenchera la logique de connexion anonyme, maintenant le comportement de repli.
   }

@@ -58,5 +58,6 @@
   "success": "Succès",
   "error": "Erreur",
   "edit": "Modifier",
-  "manage": "Gérer"
+  "manage": "Gérer",
+  "genericError": "Une erreur est survenue. Veuillez réessayer."
 }
