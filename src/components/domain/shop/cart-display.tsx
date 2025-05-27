@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useActionState } from "react";
+import React, { useEffect, useActionState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Link as NextLink } from "@/i18n/navigation";
@@ -46,10 +46,18 @@ export function CartDisplay() {
     data: null,
   };
 
-  const [clearCartState, clearCartFormAction, isClearCartPending] = useActionState(
+  const [clearCartState, clearCartFormAction, isClearCartPendingFromActionState] = useActionState(
     clearCartAction,
     initialClearCartState
   );
+
+  // Utiliser useTransition pour la gestion de l'état pending de la transition elle-même
+  const [_isTransitionPending, startTransition] = useTransition();
+
+  // Vous pouvez combiner les états pending si nécessaire, ou utiliser celui de useActionState directement
+  // pour le disabled du bouton, car useActionState est spécifiquement pour cette action.
+  // Pour l'instant, nous allons utiliser isClearCartPendingFromActionState pour le disabled.
+  // Le principal est d'utiliser startTransition pour l'appel.
 
   useEffect(() => {
     if (clearCartState.success === true) {
@@ -63,10 +71,13 @@ export function CartDisplay() {
   }, [clearCartState, _setItems, t, tGlobal]);
 
   const handleClearCart = () => {
-    if (items.length > 0 && !isClearCartPending) {
-      // FormData is not strictly needed by clearCartAction as it doesn't read from it,
-      // but useActionState expects a form action signature.
-      clearCartFormAction(new FormData());
+    // Utiliser isClearCartPendingFromActionState pour vérifier si l'action est déjà en cours
+    if (items.length > 0 && !isClearCartPendingFromActionState) {
+      startTransition(() => {
+        // FormData is not strictly needed by clearCartAction as it doesn't read from it,
+        // but useActionState expects a form action signature.
+        clearCartFormAction(new FormData());
+      });
     }
   };
 
@@ -247,16 +258,19 @@ export function CartDisplay() {
         })}
       </ul>
 
+      {/* Log before clear cart button */}
+      {/* {console.log("[CartDisplay] Before clear cart button. items.length:", items.length)} */}
+      {/* Commenting out the log as it might be too verbose now */}
       {items.length > 0 && (
         <div className="mt-6 flex justify-end">
           <Button
             variant="outline"
             size="sm"
             onClick={handleClearCart}
-            disabled={isClearCartPending || items.length === 0}
+            disabled={isClearCartPendingFromActionState || items.length === 0}
             aria-label={t("clearCartButtonLabel")}
           >
-            {isClearCartPending ? (
+            {isClearCartPendingFromActionState ? (
               <>
                 <svg
                   className="mr-2 h-4 w-4 animate-spin"

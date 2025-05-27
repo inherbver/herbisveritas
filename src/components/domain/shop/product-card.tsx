@@ -11,7 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import useCartStore from "@/stores/cartStore";
-import type { CartActionResult, CartData } from "@/types/cart";
+// import type { CartActionState, CartData } from "@/types/cart"; // Remplacé
+import type {
+  CartActionResult,
+  GeneralErrorResult as CartHelpersGeneralErrorResult,
+} from "@/lib/cart-helpers";
+import type { CartData } from "@/types/cart";
 import { addItemToCart as addItemToCartAction } from "@/actions/cartActions";
 
 import { toast } from "sonner";
@@ -52,9 +57,12 @@ export interface ProductCardProps {
 }
 
 // Internal Submit Button component using useFormStatus
-function SubmitButtonForCard() {
+interface SubmitButtonForCardProps {
+  t: (key: "addingToCart" | "addToCart") => string;
+}
+
+function SubmitButtonForCard({ t }: SubmitButtonForCardProps) {
   const { pending } = useFormStatus();
-  const t = useTranslations("ProductCard");
 
   return (
     <Button
@@ -98,36 +106,63 @@ export function ProductCard({
   const _setItems = useCartStore((state) => state._setItems);
   const tGlobal = useTranslations("Global"); // For generic error messages
 
-  const initialAddItemState: CartActionResult<CartData | null> = {
-    success: undefined,
-    message: "",
-    data: null,
+  const INITIAL_ACTION_STATE_ID = "INITIAL_ACTION_STATE_DO_NOT_PROCESS";
+
+  const initialAddItemState: CartHelpersGeneralErrorResult = {
+    success: false,
+    error: INITIAL_ACTION_STATE_ID,
+    message: undefined,
+    // data: null, // GeneralErrorResult does not have a 'data' property
   };
 
-  const [state, formAction, _isPending] = useActionState(addItemToCartAction, initialAddItemState);
+  const [state, formAction, _isPending] = useActionState<
+    CartActionResult<CartData | null>,
+    FormData
+  >(addItemToCartAction, initialAddItemState);
 
   useEffect(() => {
-    if (state.message || state.error) {
-      // Check if there's any message or error to display
-      if (state.success) {
-        toast.success(state.message || t("itemAddedSuccess"));
-        if (state.data?.items) {
-          _setItems(state.data.items);
-        }
-      } else {
-        // Prefer specific field errors if available, otherwise general error or message
-        let errorMessage = state.message || state.error || tGlobal("genericError");
-        if (state.errors && Object.keys(state.errors).length > 0) {
+    // Ne pas traiter si c'est l'état initial (identifié par son champ 'error' spécifique)
+    if (state.success === false && "error" in state && state.error === INITIAL_ACTION_STATE_ID) {
+      return;
+    }
+
+    if (state.success === true) {
+      // state is SuccessResult<CartData | null>
+      toast.success(state.message || t("itemAddedSuccess"));
+      if (state.data?.items) {
+        _setItems(state.data.items);
+      }
+    } else if (state.success === false) {
+      // state is ValidationErrorResult | GeneralErrorResult
+      let uiMessage: string | undefined = state.message;
+
+      if (!uiMessage) {
+        // Si state est ValidationErrorResult (il aura la propriété 'errors')
+        if ("errors" in state && state.errors) {
           const firstFieldError = Object.values(state.errors).flat()[0];
           if (firstFieldError) {
-            errorMessage = firstFieldError;
+            uiMessage = firstFieldError;
+          }
+          // Si state est GeneralErrorResult (il aura la propriété 'error')
+        } else if ("error" in state && state.error) {
+          // S'assurer de ne pas afficher notre identifiant d'état initial comme un message d'erreur
+          if (state.error !== INITIAL_ACTION_STATE_ID) {
+            uiMessage = state.error;
           }
         }
-        toast.error(errorMessage);
+      }
+
+      // Afficher le toast d'erreur seulement si un message pertinent a été trouvé ou construit,
+      // ou si c'est un état d'échec sans message spécifique (fallback générique).
+      if (uiMessage) {
+        toast.error(uiMessage);
+      } else {
+        // Fallback pour les cas où state.success est false mais aucun message spécifique n'a été dérivé.
+        // Cela couvre les cas où state.message, state.errors, et state.error (pertinent) sont tous vides.
+        toast.error(tGlobal("genericError"));
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, t, tGlobal]); // _setItems is stable from Zustand
+  }, [state, _setItems, t, tGlobal]);
 
   if (isLoading) {
     return (
@@ -246,7 +281,7 @@ export function ProductCard({
             <input type="hidden" name="productImage" value={imageSrc} />
             <input type="hidden" name="productSlug" value={slug} />
             <input type="hidden" name="quantity" value={1} /> {/* Default quantity for card add */}
-            <SubmitButtonForCard />
+            <SubmitButtonForCard t={t} />
           </form>
         </div>
       </div>

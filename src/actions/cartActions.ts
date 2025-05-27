@@ -277,8 +277,6 @@ export async function addItemToCart(
       p_cart_id: cartId,
       p_product_id: validProductId,
       p_quantity_to_add: quantityToAdd,
-      p_user_id: activeUserId,
-      p_guest_id: null,
     });
 
     if (rpcError) {
