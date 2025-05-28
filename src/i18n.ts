@@ -112,6 +112,14 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load AddressForm.json for locale ${localeToUse}:`, _e);
   }
 
+  let adminLayoutNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    adminLayoutNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AdminLayout.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load AdminLayout.json for locale ${localeToUse}:`, _e);
+  }
+
   let productDetailModalNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     productDetailModalNamespaceContent = (
@@ -219,6 +227,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeProductGrid = productGridNamespaceContent || {};
   const safeLegal = legalNamespaceContent || {};
   const safeTestPage = testPageNamespaceContent || {};
+  const safeAdminLayout = adminLayoutNamespaceContent || {};
 
   const mergedMessages = {
     ...(Object.keys(safeGlobal).length > 0 ? { Global: safeGlobal } : {}),
@@ -247,6 +256,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeProductGrid).length > 0 ? { ProductGrid: safeProductGrid } : {}),
     ...(Object.keys(safeLegal).length > 0 ? { Legal: safeLegal } : {}),
     ...(Object.keys(safeTestPage).length > 0 ? { TestPage: safeTestPage } : {}),
+    ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
   };
 
   // Condition pour notFound si AUCUN message de namespace n'est chargé
