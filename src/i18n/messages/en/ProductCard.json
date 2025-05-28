@@ -4,5 +4,7 @@
   "itemAddedSuccess": "Item added to cart!",
   "newLabel": "New",
   "promoLabel": "Sale",
-  "outOfStock": "Out of Stock"
+  "outOfStock": "Out of Stock",
+  "discountBadge": "-{discountPercent}%",
+  "priceAccessibilityLabel": "Price: {price}"
 }

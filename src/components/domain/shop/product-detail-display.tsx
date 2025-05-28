@@ -58,9 +58,9 @@ function SubmitButton() {
 }
 
 export default function ProductDetailDisplay({ product }: ProductDetailDisplayProps) {
-  // Use a relevant namespace, assuming "ProductDetail" exists or reusing "ProductDetailModal"
-  const t = useTranslations("ProductDetailModal"); // Or "ProductDetail"
-  const tDisplay = useTranslations("ProductDetailDisplay"); // For labels specific to this component
+  const tModal = useTranslations("ProductDetailModal");
+  const tProdDetail = useTranslations("ProductDetail");
+  const tQuantity = useTranslations("QuantityInput");
   const tGlobal = useTranslations("Global"); // For generic error messages
   const [activeTab, setActiveTab] = useState("description");
   const [quantity, setQuantity] = useState(1);
@@ -91,7 +91,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
           "errors" in state))
     ) {
       if (state.success) {
-        toast.success(state.message || t("itemAddedSuccess"));
+        toast.success(state.message || tModal("itemAddedSuccess"));
         if (state.data?.items) {
           _setItems(state.data.items);
         }
@@ -118,10 +118,10 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
         toast.error(errorMessage || tGlobal("genericError"));
       }
     }
-  }, [state, t, _setItems, initialState, tGlobal]); // Ensure all reactive dependencies used in the effect are listed
+  }, [state, tModal, _setItems, initialState, tGlobal]); // Ensure all reactive dependencies used in the effect are listed
 
   if (!product) {
-    return <div>{t("productNotFound", { defaultMessage: "Produit non trouvé." })}</div>; // Add default message
+    return <div>{tProdDetail("productNotFound", { defaultMessage: "Produit non trouvé." })}</div>; // Add default message
   }
 
   return (
@@ -149,7 +149,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
           ) : (
             // Center the placeholder text within the AspectRatio
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-              {t("noImage")}
+              {tModal("noImage")}
             </div>
           )}
         </AspectRatio>
@@ -171,12 +171,12 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
         {/* Price */}
         <div className="mb-1 text-2xl font-bold text-primary">{product.price}</div>
         {/* Tax Label: Smaller, muted, under price */}
-        <div className="mb-6 text-xs text-muted-foreground">{tDisplay("taxInclusiveLabel")}</div>
+        <div className="mb-6 text-xs text-muted-foreground">{tProdDetail("taxInclusiveLabel")}</div>
 
         {/* Quantity Input */}
         <div className="mb-6 flex items-center space-x-3">
           <label htmlFor={`quantity-${product.id}`} className="text-sm font-medium">
-            {t("quantity")}
+            {tQuantity("quantity")}
           </label>
           <QuantityInput id={`quantity-${product.id}`} value={quantity} onChange={setQuantity} />
         </div>
@@ -200,7 +200,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
               value="description"
               className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              {t("descriptionTab")}
+              {tModal("descriptionTab")}
               {activeTab === "description" && (
                 <motion.div
                   layoutId="active-tab-underline"
@@ -213,7 +213,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
               value="properties"
               className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              {t("propertiesTab")}
+              {tModal("propertiesTab")}
               {activeTab === "properties" && (
                 <motion.div
                   layoutId="active-tab-underline"
@@ -226,7 +226,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
               value="composition"
               className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              {t("compositionTab")}
+              {tModal("compositionTab")}
               {activeTab === "composition" && (
                 <motion.div
                   layoutId="active-tab-underline"
@@ -239,7 +239,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
               value="usage"
               className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
-              {t("usageTab")}
+              {tModal("usageTab")}
               {activeTab === "usage" && (
                 <motion.div
                   layoutId="active-tab-underline"
@@ -262,7 +262,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                   transition={{ duration: 0.2 }}
                   className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground"
                 >
-                  <p>{product.description_long || t("noDescription")}</p>
+                  <p>{product.description_long || tModal("noDescription")}</p>
                 </motion.div>
               )}
 
@@ -292,7 +292,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                         ))}
                     </>
                   ) : (
-                    <p>{t("noProperties")}</p>
+                    <p>{tModal("noProperties")}</p>
                   )}
                 </motion.div>
               )}
@@ -314,7 +314,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                       </div>
                     </div>
                   )}
-                  <h4 className="mb-1 text-sm font-semibold">{t("inciList")}</h4>
+                  <h4 className="mb-1 text-sm font-semibold">{tModal("inciList")}</h4>
                   {product.inciList && product.inciList.length > 0 ? (
                     <div className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2">
                       {product.inciList.map((item, index) => (
@@ -322,11 +322,11 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs italic">{t("noInci")}</p>
+                    <p className="text-xs italic">{tModal("noInci")}</p>
                   )}
                   {!product.compositionText &&
                     (!product.inciList || product.inciList.length === 0) && (
-                      <p>{t("noCompositionText")}</p>
+                      <p>{tModal("noCompositionText")}</p>
                     )}
                 </motion.div>
               )}
@@ -341,7 +341,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                   transition={{ duration: 0.2 }}
                   className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground"
                 >
-                  <p>{product.usageInstructions || t("noUsage")}</p>
+                  <p>{product.usageInstructions || tModal("noUsage")}</p>
                 </motion.div>
               )}
             </AnimatePresence>

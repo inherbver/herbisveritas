@@ -1,0 +1,19 @@
+{
+  "noImage": "Image non disponible",
+  "quantity": "Quantité",
+  "addToCart": "Ajouter au panier",
+  "addingToCart": "Ajout au panier...",
+  "propertiesTab": "Propriétés",
+  "descriptionTab": "Description",
+  "compositionTab": "Composition",
+  "usageTab": "Conseils d'utilisation",
+  "inciList": "Liste INCI",
+  "noProperties": "Propriétés du produit non disponibles.",
+  "noDescription": "Description non disponible",
+  "noInci": "Liste INCI non disponible.",
+  "noUsage": "Instructions d'utilisation non disponibles.",
+  "noCompositionText": "Composition non disponible.",
+  "defaultDescription": "Découvrez ce produit plus en détail.",
+  "close": "Fermer",
+  "productDetailDescription": "Détails du produit {productName}"
+}

@@ -1,0 +1,9 @@
+{
+  "defaultImageAlt": "Image promotionnelle",
+  "ctaLabel": "Découvrir {productName}",
+  "defaultCtaLabel": "Découvrir nos produits",
+  "fallbackHeading": "Découvrez Notre Collection Exclusive",
+  "fallbackDescription": "Parcourez nos nouveautés et trouvez votre prochain coup de cœur.",
+  "fallbackImageAlt": "Image Hero pour notre collection",
+  "fallbackCtaLabel": "Acheter Maintenant"
+}

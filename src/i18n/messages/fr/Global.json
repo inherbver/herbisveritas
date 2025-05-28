@@ -59,5 +59,14 @@
   "error": "Erreur",
   "edit": "Modifier",
   "manage": "Gérer",
-  "genericError": "Une erreur est survenue. Veuillez réessayer."
+  "genericError": "Une erreur est survenue. Veuillez réessayer.",
+  "Error": {
+    "title": "Erreur",
+    "description": "Quelque chose s'est mal passé."
+  },
+  "Filters": {
+    "filterByCategory": "Filtrer par catégorie",
+    "close": "Fermer",
+    "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
+  }
 }

@@ -1,0 +1,19 @@
+{
+  "noImage": "Image not available",
+  "quantity": "Quantity",
+  "addToCart": "Add to cart",
+  "addingToCart": "Adding to cart...",
+  "propertiesTab": "Properties",
+  "descriptionTab": "Description",
+  "compositionTab": "Composition",
+  "usageTab": "Usage tips",
+  "inciList": "INCI List",
+  "noProperties": "Product properties not available.",
+  "noDescription": "Description not available",
+  "noInci": "INCI list not available.",
+  "noUsage": "Usage instructions not available.",
+  "noCompositionText": "Composition not available.",
+  "defaultDescription": "Discover this product in more detail.",
+  "close": "Close",
+  "productDetailDescription": "Details for product {productName}"
+}

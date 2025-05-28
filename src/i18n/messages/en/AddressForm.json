@@ -1,0 +1,42 @@
+{
+  "formTitleNewShipping": "Add a new shipping address",
+  "formTitleNewBilling": "Add a new billing address",
+  "formTitleEditShipping": "Edit shipping address",
+  "formTitleEditBilling": "Edit billing address",
+  "fieldLabels": {
+    "full_name": "Full Name",
+    "company_name": "Company Name (Optional)",
+    "address_line1": "Address Line 1",
+    "address_line2": "Address Line 2 (Optional)",
+    "postal_code": "Postal Code",
+    "city": "City",
+    "country_code": "Country Code (e.g., US)",
+    "state_province_region": "State/Province/Region (Optional)",
+    "phone_number": "Phone Number (Optional)",
+    "is_default": "Set as default address?"
+  },
+  "checkboxLabelIsDefault": "Set as default address",
+  "placeholders": {
+    "full_name": "Enter full name",
+    "company_name": "Enter company name",
+    "address_line1": "Street address, P.O. box, company name, c/o",
+    "address_line2": "Apartment, suite, unit, building, floor, etc.",
+    "postal_code": "Enter postal code",
+    "city": "Enter city",
+    "country_code": "US",
+    "state_province_region": "Enter state/province/region",
+    "phone_number": "Enter phone number"
+  },
+  "buttons": {
+    "save": "Save Address",
+    "saving": "Saving...",
+    "cancel": "Cancel"
+  },
+  "serverActions": {
+    "validationError": "Validation failed. Please check the form fields.",
+    "addSuccess": "Address added successfully.",
+    "addError": "Failed to add address. Please try again.",
+    "updateSuccess": "Address updated successfully.",
+    "updateError": "Failed to update address. Please try again."
+  }
+}
