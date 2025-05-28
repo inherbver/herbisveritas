@@ -3,9 +3,9 @@
     "switchLocale": "Switch to {locale, select, fr {French} en {English} other {Unknown}}"
   },
   "Header": {
-    "home": "Home",
-    "products": "Products",
-    "about": "About",
+    "home": "Shop",
+    "products": "Magazine",
+    "about": "Find Us",
     "logoAriaLabel": "In Herbis Veritas - Back to homepage",
     "cartAriaLabel": "Shopping Cart",
     "mobileMenuAriaLabel": "Open navigation menu",

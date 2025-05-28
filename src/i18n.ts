@@ -97,6 +97,23 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load ProductCard.json for locale ${localeToUse}:`, _e);
   }
 
+  let magazinePageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    magazinePageNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/MagazinePage.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load MagazinePage.json for locale ${localeToUse}:`, e);
+  }
+
+  let contactPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    contactPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ContactPage.json`))
+      .default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load ContactPage.json for locale ${localeToUse}:`, e);
+  }
+
   let authNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     authNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Auth.json`)).default;
@@ -215,6 +232,8 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeShopPage = shopPageNamespaceContent || {};
   const safeAddressesPage = addressesPageNamespaceContent || {};
   const safeProductCard = productCardNamespaceContent || {};
+  const safeMagazinePage = magazinePageNamespaceContent || {};
+  const safeContactPage = contactPageNamespaceContent || {};
   const safeAuth = authNamespaceContent || {};
   const safeAddressForm = addressFormNamespaceContent || {};
   const safeProductDetailModal = productDetailModalNamespaceContent || {};
@@ -242,6 +261,8 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeShopPage).length > 0 ? { ShopPage: safeShopPage } : {}),
     ...(Object.keys(safeAddressesPage).length > 0 ? { AddressesPage: safeAddressesPage } : {}),
     ...(Object.keys(safeProductCard).length > 0 ? { ProductCard: safeProductCard } : {}),
+    ...(Object.keys(safeMagazinePage).length > 0 ? { MagazinePage: safeMagazinePage } : {}),
+    ...(Object.keys(safeContactPage).length > 0 ? { ContactPage: safeContactPage } : {}),
     ...(Object.keys(safeAuth).length > 0 ? { Auth: safeAuth } : {}),
     ...(Object.keys(safeAddressForm).length > 0 ? { AddressForm: safeAddressForm } : {}),
     ...(Object.keys(safeProductDetailModal).length > 0
@@ -271,6 +292,8 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     Object.keys(safeShopPage).length === 0 &&
     Object.keys(safeAddressesPage).length === 0 &&
     Object.keys(safeProductCard).length === 0 &&
+    Object.keys(safeMagazinePage).length === 0 &&
+    Object.keys(safeContactPage).length === 0 &&
     Object.keys(safeAuth).length === 0 &&
     Object.keys(safeAddressForm).length === 0 &&
     Object.keys(safeProductDetailModal).length === 0 &&

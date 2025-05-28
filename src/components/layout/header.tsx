@@ -71,21 +71,21 @@ export function Header() {
             <NavigationMenuList className="gap-6">
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/" className={navigationMenuTriggerStyle()}>
+                  <Link href="/shop" className={navigationMenuTriggerStyle()}>
                     {tGlobal("Header.home")} {/* Traduction */}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/shop" className={navigationMenuTriggerStyle()}>
+                  <Link href="/magazine" className={navigationMenuTriggerStyle()}>
                     {tGlobal("Header.products")} {/* Traduction */}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/about" className={navigationMenuTriggerStyle()}>
+                  <Link href="/contact" className={navigationMenuTriggerStyle()}>
                     {tGlobal("Header.about")} {/* Traduction */}
                   </Link>
                 </NavigationMenuLink>
@@ -98,7 +98,9 @@ export function Header() {
         <div className="flex items-center justify-end gap-2 md:gap-3">
           {/* Icons */}
           <LocaleSwitcher />
-          <Button variant="ghost" size="icon" aria-label={tGlobal("Header.accountAriaLabel")}> {/* Traduction */}
+          <Button variant="ghost" size="icon" aria-label={tGlobal("Header.accountAriaLabel")}>
+            {" "}
+            {/* Traduction */}
             <User className="h-5 w-5" />
           </Button>
           <CartSheet /> {/* Remplacement du bouton Panier */}
@@ -125,7 +127,8 @@ export function Header() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-6 w-6" />
-                <span className="sr-only">{tGlobal("Header.mobileMenuAriaLabel")}</span> {/* Traduction et clé mise à jour */}
+                <span className="sr-only">{tGlobal("Header.mobileMenuAriaLabel")}</span>{" "}
+                {/* Traduction et clé mise à jour */}
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] pt-10 sm:w-[350px]">
@@ -134,13 +137,17 @@ export function Header() {
                 <div className="mx-auto mb-4 w-fit">
                   <Logo />
                 </div>
-                <SheetTitle className="text-2xl font-bold">{tGlobal("Header.mobileSheetTitle")}</SheetTitle> {/* Traduction et clé mise à jour */}
-                <SheetDescription>{tGlobal("Header.mobileSheetDescription")}</SheetDescription> {/* Traduction et clé mise à jour */}
+                <SheetTitle className="text-2xl font-bold">
+                  {tGlobal("Header.mobileSheetTitle")}
+                </SheetTitle>{" "}
+                {/* Traduction et clé mise à jour */}
+                <SheetDescription>{tGlobal("Header.mobileSheetDescription")}</SheetDescription>{" "}
+                {/* Traduction et clé mise à jour */}
               </SheetHeader>
               <nav className="flex flex-col gap-4 px-4">
                 <SheetClose asChild>
                   <Link
-                    href="/"
+                    href="/shop"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     {tGlobal("Header.home")} {/* Traduction */}
@@ -148,7 +155,7 @@ export function Header() {
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
-                    href="/shop"
+                    href="/magazine"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     {tGlobal("Header.products")} {/* Traduction */}
@@ -156,7 +163,7 @@ export function Header() {
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
-                    href="/about"
+                    href="/contact"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     {tGlobal("Header.about")} {/* Traduction */}
