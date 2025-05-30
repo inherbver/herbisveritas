@@ -5,6 +5,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import React, { useEffect } from "react"; // Import useEffect
+import { useParams } from "next/navigation"; // AJOUT: Pour récupérer la locale
 import { toast } from "sonner"; // Import toast from sonner
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,8 @@ function SubmitButton() {
 
 export function RegisterForm() {
   const t = useTranslations("Auth.RegisterForm");
+  const params = useParams(); // AJOUT
+  const locale = params.locale as string; // AJOUT: Récupérer la locale (ex: 'fr', 'en')
   const initialState: AuthActionResult = {
     success: false,
     error: undefined,
@@ -61,6 +64,8 @@ export function RegisterForm() {
       </CardHeader>
       {/* Utiliser la vraie formAction */}
       <form action={formAction}>
+        <input type="hidden" name="locale" value={locale} />{" "}
+        {/* AJOUT: Champ caché pour la locale */}
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">{t("emailLabel")}</Label>

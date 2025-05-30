@@ -86,9 +86,31 @@ export async function middleware(request: NextRequest) {
       } else {
         // Pour d'autres erreurs, log plus détaillé et potentiellement nettoyer les cookies
         console.error("Supabase auth error in middleware (not session missing):", error);
-        // Optionnel : Nettoyer les cookies d'authentification si une erreur inattendue survient
-        // response.cookies.delete('sb-access-token'); // Adaptez les noms de cookies si nécessaire
-        // response.cookies.delete('sb-refresh-token');
+        // Si l'erreur spécifique est 'user_not_found', supprimer les cookies d'authentification
+        // @ts-expect-error // Ignorer l'erreur TypeScript pour accéder à 'code' sur 'error'
+        if (error.code === "user_not_found") {
+          console.log("Middleware: Detected 'user_not_found' error. Clearing auth cookies.");
+          // Utiliser la méthode 'remove' définie dans la configuration du client Supabase
+          // pour s'assurer que les options de suppression sont correctement appliquées.
+          // Nous devons trouver les noms exacts des cookies. Supabase SSR les nomme souvent
+          // avec un hash. Pour l'instant, nous ciblons les noms communs.
+          // Une meilleure approche serait de lister les cookies et supprimer ceux qui matchent un pattern.
+          const cookieOptions = {
+            path: "/",
+            maxAge: 0,
+            expires: new Date(0),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax" as const,
+          };
+          request.cookies.getAll().forEach((cookie) => {
+            if (cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token")) {
+              // Pattern plus générique pour les cookies d'auth Supabase
+              response.cookies.set({ name: cookie.name, value: "", ...cookieOptions });
+              request.cookies.delete(cookie.name); // Garder request.cookies synchronisé
+            }
+          });
+        }
       }
     } else {
       user = data.user;

@@ -248,6 +248,17 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeTestPage = testPageNamespaceContent || {};
   const safeAdminLayout = adminLayoutNamespaceContent || {};
 
+  let authCallbackNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    authCallbackNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/AuthCallback.json`)
+    ).default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load AuthCallback.json for locale ${localeToUse}:`, _e);
+  }
+
+  const safeAuthCallback = authCallbackNamespaceContent || {};
+
   const mergedMessages = {
     ...(Object.keys(safeGlobal).length > 0 ? { Global: safeGlobal } : {}),
     ...(Object.keys(safeAccountPage).length > 0 ? { AccountPage: safeAccountPage } : {}),
@@ -278,6 +289,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeLegal).length > 0 ? { Legal: safeLegal } : {}),
     ...(Object.keys(safeTestPage).length > 0 ? { TestPage: safeTestPage } : {}),
     ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
+    ...(Object.keys(safeAuthCallback).length > 0 ? { AuthCallback: safeAuthCallback } : {}),
   };
 
   // Condition pour notFound si AUCUN message de namespace n'est chargé

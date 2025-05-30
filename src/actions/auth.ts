@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe le client Supabase côté serveur
+import { headers } from "next/headers"; // AJOUT: Importer headers
 
 // --- Schéma Login ---
 const loginSchema = z.object({
@@ -85,6 +86,9 @@ export async function signUpAction(
 ): Promise<AuthActionResult> {
   const supabase = await createSupabaseServerClient();
 
+  // Récupérer la locale du formData
+  const locale = (formData.get("locale") as string) || "en"; // Valeur par défaut 'en' si non fournie
+
   // 1. Valider les données du formulaire avec Zod (incluant la confirmation de mdp)
   const validatedFields = signUpSchema.safeParse({
     email: formData.get("email"),
@@ -108,14 +112,25 @@ export async function signUpAction(
 
   const { email, password } = validatedFields.data;
 
+  // Construire l'URL de redirection pour la confirmation par email
+  const headersList = await headers(); // Utiliser await ici
+  const host = headersList.get("host");
+  const protocol =
+    headersList.get("x-forwarded-proto") ||
+    (process.env.NODE_ENV === "production" ? "https" : "http");
+  const origin = `${protocol}://${host}`;
+  const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/profile/account`;
+
+  // Log pour débogage de l'URL construite
+  console.log("Constructed emailRedirectTo for signUp:", redirectUrl);
+
   // 2. Essayer d'inscrire l'utilisateur avec Supabase
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    // Options (ex: redirection après confirmation email, données utilisateur supplémentaires)
-    // options: {
-    //   emailRedirectTo: `${location.origin}/auth/callback`,
-    // }
+    options: {
+      emailRedirectTo: redirectUrl, // Utiliser la variable définie
+    },
   });
 
   // Si Supabase renvoie une erreur (ex: utilisateur existe déjà)

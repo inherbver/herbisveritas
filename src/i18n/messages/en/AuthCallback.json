@@ -1,0 +1,12 @@
+{
+  "loading": "Validation in progress...",
+  "redirecting": "You are being redirected...",
+  "accountConfirmedSuccess": "Welcome! Your account is confirmed and you are now logged in.",
+  "passwordResetSuccess": "Your password has been successfully changed. You can now log in.",
+  "emailVerifiedSuccess": "Your email address has been verified.",
+  "errorGeneric": "An error occurred: {details}",
+  "errorTokenVerification": "Token verification failed: {details}",
+  "errorInvalidAccess": "Invalid access to this page.",
+  "errorTimeout": "Validation took too long. Please check the link or contact support.",
+  "goToLogin": "Go to login page"
+}

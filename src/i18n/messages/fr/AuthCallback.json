@@ -1,0 +1,12 @@
+{
+  "loading": "Validation en cours...",
+  "redirecting": "Vous allez être redirigé(e)...",
+  "accountConfirmedSuccess": "Bienvenue ! Votre compte est confirmé et vous êtes maintenant connecté(e).",
+  "passwordResetSuccess": "Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.",
+  "emailVerifiedSuccess": "Votre adresse email a été vérifiée.",
+  "errorGeneric": "Une erreur est survenue : {details}",
+  "errorTokenVerification": "La vérification du token a échoué : {details}",
+  "errorInvalidAccess": "Accès invalide à cette page.",
+  "errorTimeout": "La validation a pris trop de temps. Veuillez vérifier le lien ou contacter le support.",
+  "goToLogin": "Aller à la page de connexion"
+}
