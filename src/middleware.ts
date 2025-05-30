@@ -3,41 +3,40 @@ import {
   locales,
   defaultLocale,
   localePrefix,
-  pathnames,
+  pathnames, // Assurez-vous que cet objet est correctement défini et exporté depuis i18n-config
   localeDetection,
   type Locale,
-} from "./i18n-config"; // Import centralisé + Locale type
-import { createServerClient, type CookieOptions } from "@supabase/ssr"; // <-- Importer Supabase
-import { type NextRequest, NextResponse } from "next/server"; // <-- Importer types Next & NextResponse
+} from "./i18n-config";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { type NextRequest, NextResponse } from "next/server";
 
-// Créer d'abord le gestionnaire i18n
 const handleI18n = createMiddleware({
   locales: locales,
   defaultLocale,
   localePrefix,
-  pathnames,
+  pathnames, // Passé ici pour la gestion des URLs localisées par next-intl
   localeDetection,
 });
 
-// Exporter une fonction middleware asynchrone
 export async function middleware(request: NextRequest) {
-  let response; // Déclarer la variable response
+  let response;
 
+  // Gérer d'abord les chemins spécifiques qui ne nécessitent pas i18n ou Supabase auth
   if (request.nextUrl.pathname.startsWith("/test-cart-actions")) {
-    // Pour /test-cart-actions, créer une réponse de passage sans traitement i18n.
-    // Les en-têtes de la requête originale sont conservés pour que Supabase puisse y accéder si besoin.
     response = NextResponse.next({
       request: {
-        // Important pour que Supabase (et d'autres middlewares potentiels) aient les bons headers
         headers: request.headers,
       },
     });
+    // Pour ces chemins, nous pourrions vouloir retourner directement
+    // si aucune autre logique de middleware (comme Supabase) ne doit s'appliquer.
+    // Cependant, si Supabase doit toujours s'exécuter, on continue.
   } else {
-    // Pour tous les autres chemins, exécuter le middleware i18n.
+    // Pour tous les autres chemins, appliquer le middleware i18n
     response = handleI18n(request);
   }
 
-  // 2. Créer un client Supabase pour gérer les cookies sur la requête/réponse
+  // Créer le client Supabase avec la gestion des cookies améliorée
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -47,54 +46,80 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          // Si `set` est appelé, nous devons muter la requête ET la réponse
-          request.cookies.set({ name, value, ...options });
-          response.cookies.set({ name, value, ...options });
+          // S'assurer que les options par défaut sont bien appliquées si non fournies
+          const cookieOptions = {
+            ...options,
+            httpOnly: options.httpOnly ?? true,
+            secure: options.secure ?? process.env.NODE_ENV === "production",
+            sameSite: options.sameSite ?? "lax",
+          };
+          request.cookies.set({ name, value, ...cookieOptions });
+          // La réponse doit aussi avoir les cookies mis à jour
+          response.cookies.set({ name, value, ...cookieOptions });
         },
         remove(name: string, options: CookieOptions) {
-          // Si `remove` est appelé, nous devons muter la requête ET la réponse
-          request.cookies.set({ name, value: "", ...options });
-          response.cookies.set({ name, value: "", ...options });
+          const removeOptions = {
+            ...options,
+            maxAge: 0, // Forcer l'expiration immédiate
+            expires: new Date(0), // Alternative pour l'expiration
+            httpOnly: options.httpOnly ?? true,
+            secure: options.secure ?? process.env.NODE_ENV === "production",
+            sameSite: options.sameSite ?? "lax",
+          };
+          request.cookies.set({ name, value: "", ...removeOptions });
+          response.cookies.set({ name, value: "", ...removeOptions });
         },
       },
     }
   );
 
-  // 3. Rafraîchir la session (important pour garder l'utilisateur connecté)
-  // Cela lira/écrira les cookies si nécessaire via les fonctions `get`, `set`, `remove` ci-dessus
-  // 3. Rafraîchir la session (important pour garder l'utilisateur connecté) et récupérer l'utilisateur
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  // Gestion plus robuste de la récupération de l'utilisateur
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
 
-  if (authError) {
-    console.error("Supabase auth error in middleware:", authError);
-    // Vous pourriez vouloir gérer cette erreur différemment,
-    // par exemple, rediriger vers une page d'erreur ou invalider la session.
+    if (error) {
+      console.warn("Supabase auth warning in middleware:", error.message);
+      if (error.message.includes("Auth session missing")) {
+        // C'est normal si l'utilisateur n'est pas connecté.
+        user = null;
+      } else {
+        // Pour d'autres erreurs, log plus détaillé et potentiellement nettoyer les cookies
+        console.error("Supabase auth error in middleware (not session missing):", error);
+        // Optionnel : Nettoyer les cookies d'authentification si une erreur inattendue survient
+        // response.cookies.delete('sb-access-token'); // Adaptez les noms de cookies si nécessaire
+        // response.cookies.delete('sb-refresh-token');
+      }
+    } else {
+      user = data.user;
+    }
+  } catch (e) {
+    // Gérer les erreurs inattendues lors de l'appel à getUser
+    console.error("Unexpected error during supabase.auth.getUser() in middleware:", e);
+    user = null;
   }
 
-  // 4. Logique de protection des routes Admin
+  // Logique de protection des routes Admin et extraction de la locale
   const pathname = request.nextUrl.pathname;
-  let currentLocale = defaultLocale;
+  let currentLocale: Locale = defaultLocale;
   let pathToCheck = pathname;
 
-  // Extraire la locale du chemin si présente
   const firstPathSegment = pathname.split("/")[1];
-  const isValidLocale = locales.find((loc) => loc === firstPathSegment);
+  const isValidLocale = locales.includes(firstPathSegment as Locale);
 
   if (isValidLocale) {
-    currentLocale = firstPathSegment as Locale; // Correction du type
-    // Obtenir le chemin sans le préfixe de locale (ex: /fr/admin -> /admin)
-    // Puisque localePrefix est 'always', le chemin commencera toujours par la locale.
-    pathToCheck = pathname.substring(`/${currentLocale}`.length);
-    // S'assurer que pathToCheck commence par / s'il n'est pas vide (ex: /fr -> /)
-    if (pathToCheck === "" || !pathToCheck.startsWith("/")) {
-      pathToCheck = "/" + pathToCheck;
-    }
+    currentLocale = firstPathSegment as Locale;
+    pathToCheck = pathname.substring(`/${currentLocale}`.length) || "/"; // Assurer que pathToCheck est au moins "/"
   } else {
-    // Si la première partie du chemin n'est pas une locale reconnue (ex: /admin sans /fr/admin)
-    // et que localePrefix est 'always', cela pourrait être une route invalide ou une route sans locale (comme /favicon.ico)
+    // Si la locale n'est pas dans le chemin, pathToCheck est le pathname complet
+    // et currentLocale reste defaultLocale (ou ce que next-intl détermine)
+    // Pour la redirection, il est plus sûr d'utiliser la locale détectée par next-intl si possible,
+    // ou defaultLocale si on n'a pas d'autre info.
+    // Note: handleI18n(request) a déjà enrichi `request.headers` avec la locale détectée.
+    const detectedLocale = request.headers.get("x-next-intl-locale");
+    if (detectedLocale && locales.includes(detectedLocale as Locale)) {
+      currentLocale = detectedLocale as Locale;
+    }
     // Pour les routes admin, nous nous attendons à ce qu'elles soient préfixées par la locale.
     // Si pathToCheck (qui est le pathname complet ici) commence par /admin, c'est un accès non préfixé.
     // On pourrait le rediriger vers la version avec la locale par défaut, ou simplement le bloquer si l'utilisateur n'est pas admin.

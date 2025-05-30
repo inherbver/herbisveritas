@@ -12,7 +12,7 @@ export const localePrefix = "always"; // Options: 'as-needed', 'always', 'never'
 
 // Optionnel: Définir des pathnames spécifiques par locale si nécessaire
 export const pathnames = {
-  "/": "/",
+  "/shop": "/", // The shop content (canonical /shop) is served at the root URL (/)
   // Exemple:
   // '/about': {
   //   en: '/about',

@@ -50,19 +50,19 @@ export const pathnames = {
   // --- START: Profile Pages ---
   "/profile/account": {
     en: "/profile/account",
-    fr: "/profil/mon-compte",
+    fr: "/profile/account",
   },
   "/profile/addresses": {
     en: "/profile/addresses",
-    fr: "/profil/mes-adresses",
+    fr: "/profile/addresses",
   },
   "/profile/orders": {
     en: "/profile/orders",
-    fr: "/profil/mes-commandes",
+    fr: "/profile/orders",
   },
   "/profile/password": {
     en: "/profile/password",
-    fr: "/profil/mon-mot-de-passe",
+    fr: "/profile/password",
   },
   // --- END: Profile Pages ---
   // Ajoutez d'autres chemins ici...
