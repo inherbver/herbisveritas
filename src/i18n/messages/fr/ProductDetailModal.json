@@ -15,5 +15,6 @@
   "noCompositionText": "Composition non disponible.",
   "defaultDescription": "Découvrez ce produit plus en détail.",
   "close": "Fermer",
-  "productDetailDescription": "Détails du produit {productName}"
+  "productDetailDescription": "Détails du produit {productName}",
+  "productNotFound": "Produit non trouvé."
 }

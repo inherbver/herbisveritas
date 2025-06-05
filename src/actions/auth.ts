@@ -174,9 +174,45 @@ export async function signUpAction(
 
 // --- Logout Action ---
 export async function logoutAction() {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
-  // Redirect to homepage after logout
-  // Note: We use the Link component's type knowledge implicitly here
-  redirect("/");
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    // Log pour traçabilité
+    console.log("Server: Initiating logout process");
+
+    // Déconnexion avec gestion d'erreur
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Server: Logout error:", error.message);
+      // En cas d'erreur de déconnexion Supabase, on redirige quand même mais avec un indicateur d'erreur
+      // pour éviter que l'utilisateur reste bloqué sur une page nécessitant une session.
+      redirect("/?logout_error=true&message=" + encodeURIComponent(error.message));
+    } else {
+      console.log("Server: Logout successful");
+      // Redirection avec paramètre pour signaler la déconnexion réussie
+      redirect("/?logged_out=true");
+    }
+  } catch (error: unknown) {
+    let errorMessage = "Unknown error during logout";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
+    // Si l'erreur est une redirection Next.js, la relancer pour que Next.js la gère
+    // Vérification de type pour error.digest (spécifique aux erreurs Next.js)
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "digest" in error &&
+      typeof (error as { digest: unknown }).digest === "string" &&
+      (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
+    }
+
+    // Pour toutes les autres erreurs, loguer et rediriger vers une page d'erreur
+    console.error("Server: Exception during logout:", error);
+    redirect("/?logout_error=true&message=" + encodeURIComponent(errorMessage));
+  }
 }

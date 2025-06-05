@@ -1,10 +1,9 @@
 // src/stores/cartStore.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CartState, CartActions, CartStore, CartItem } from "@/types/cart"; // Assurez-vous que le chemin d'importation est correct
+import { CartState, CartStore, CartItem } from "@/types/cart";
 
-// Implémentation initiale du store Zustand pour le panier
+// Version améliorée du store avec gestion d'erreurs et logging
 const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
@@ -13,7 +12,7 @@ const useCartStore = create<CartStore>()(
       isLoading: false,
       error: null,
 
-      // Implémentation des actions
+      // Actions améliorées
       addItem: (
         itemDetails: {
           productId: string;
@@ -24,62 +23,105 @@ const useCartStore = create<CartStore>()(
         },
         quantityToAdd: number = 1
       ) => {
-        const currentItems = get().items;
-        const existingItemIndex = currentItems.findIndex(
-          (item: CartItem) => item.productId === itemDetails.productId
-        );
+        try {
+          if (quantityToAdd <= 0) {
+            console.warn("CartStore: Cannot add item with quantity <= 0");
+            return;
+          }
 
-        if (existingItemIndex !== -1) {
-          // L'article existe déjà, met à jour la quantité
-          const updatedItems = currentItems.map((item: CartItem, index: number) =>
-            index === existingItemIndex
-              ? { ...item, quantity: item.quantity + quantityToAdd }
-              : item
+          const currentItems = get().items;
+          const existingItemIndex = currentItems.findIndex(
+            (item: CartItem) => item.productId === itemDetails.productId
           );
-          set({ items: updatedItems });
-        } else {
-          // L'article n'existe pas, l'ajoute au panier
-          // L'objet CartItem ajouté n'aura pas d' 'id' (cart_item_id) à ce stade,
-          // car il est généré par la BDD ou lors de la synchro.
-          // 'id' est optionnel dans CartItem.
-          const newItem: CartItem = {
-            ...itemDetails,
-            quantity: quantityToAdd,
-            // id: undefined, // Explicitement undefined ou juste omis car optionnel
-          };
-          set({ items: [...currentItems, newItem] });
+
+          if (existingItemIndex !== -1) {
+            // Mise à jour de la quantité d'un article existant
+            const updatedItems = currentItems.map((item: CartItem, index: number) =>
+              index === existingItemIndex
+                ? { ...item, quantity: item.quantity + quantityToAdd }
+                : item
+            );
+            set({ items: updatedItems, error: null });
+            console.log(`CartStore: Updated quantity for product ${itemDetails.productId}`);
+          } else {
+            // Ajout d'un nouvel article
+            const newItem: CartItem = {
+              ...itemDetails,
+              quantity: quantityToAdd,
+            };
+            set({ items: [...currentItems, newItem], error: null });
+            console.log(`CartStore: Added new item ${itemDetails.productId} to cart`);
+          }
+        } catch (error) {
+          console.error("CartStore: Error adding item to cart:", error);
+          set({ error: "Erreur lors de l'ajout au panier" });
         }
       },
 
       removeItem: (cartItemId: string) => {
-        set((state: CartStore) => ({
-          items: state.items.filter((item: CartItem) => item.id !== cartItemId),
-        }));
+        try {
+          const currentItems = get().items;
+          const itemExists = currentItems.some((item) => item.id === cartItemId);
+
+          if (!itemExists) {
+            console.warn(`CartStore: Item ${cartItemId} not found in cart`);
+            return;
+          }
+
+          set((state: CartStore) => ({
+            items: state.items.filter((item: CartItem) => item.id !== cartItemId),
+            error: null,
+          }));
+          console.log(`CartStore: Removed item ${cartItemId} from cart`);
+        } catch (error) {
+          console.error("CartStore: Error removing item from cart:", error);
+          set({ error: "Erreur lors de la suppression" });
+        }
       },
 
       updateItemQuantity: (cartItemId: string, newQuantity: number) => {
-        if (newQuantity <= 0) {
-          // Si la quantité est 0 ou moins, supprimer l'article
-          // S'assurer que l'ID passé à removeItem est bien le cartItemId
-          const itemToRemove = get().items.find((item: CartItem) => item.id === cartItemId);
-          if (itemToRemove && itemToRemove.id) {
-            // Vérifier que itemToRemove.id existe
-            get().removeItem(itemToRemove.id);
+        try {
+          if (newQuantity <= 0) {
+            const itemToRemove = get().items.find((item: CartItem) => item.id === cartItemId);
+            if (itemToRemove?.id) {
+              get().removeItem(itemToRemove.id);
+            }
+            return;
           }
-        } else {
+
+          const currentItems = get().items;
+          const itemExists = currentItems.some((item) => item.id === cartItemId);
+
+          if (!itemExists) {
+            console.warn(`CartStore: Cannot update quantity - item ${cartItemId} not found`);
+            return;
+          }
+
           set((state: CartStore) => ({
             items: state.items.map((item: CartItem) =>
               item.id === cartItemId ? { ...item, quantity: newQuantity } : item
             ),
+            error: null,
           }));
+          console.log(`CartStore: Updated quantity for item ${cartItemId} to ${newQuantity}`);
+        } catch (error) {
+          console.error("CartStore: Error updating item quantity:", error);
+          set({ error: "Erreur lors de la mise à jour" });
         }
       },
 
       clearCart: () => {
-        set({ items: [], isLoading: false, error: null }); // Réinitialise aussi isLoading et error pour un état propre
+        try {
+          const currentItemCount = get().items.length;
+          set({ items: [], isLoading: false, error: null });
+          console.log(`CartStore: Cart cleared (${currentItemCount} items removed)`);
+        } catch (error) {
+          console.error("CartStore: Error clearing cart:", error);
+          set({ error: "Erreur lors de la vidange du panier" });
+        }
       },
 
-      // Actions internes
+      // Actions internes améliorées
       _setIsLoading: (loading: boolean) => {
         set({ isLoading: loading });
       },
@@ -89,40 +131,63 @@ const useCartStore = create<CartStore>()(
       },
 
       _setItems: (items: CartItem[]) => {
-        set({ items });
+        try {
+          set({ items, error: null });
+          console.log(`CartStore: Set ${items.length} items in cart`);
+        } catch (error) {
+          console.error("CartStore: Error setting items:", error);
+          set({ error: "Erreur lors de la synchronisation" });
+        }
+      },
+
+      // Nouvelles actions utilitaires
+      getItemById: (cartItemId: string): CartItem | undefined => {
+        return get().items.find((item) => item.id === cartItemId);
+      },
+
+      getItemByProductId: (productId: string): CartItem | undefined => {
+        return get().items.find((item) => item.productId === productId);
+      },
+
+      isEmpty: (): boolean => {
+        return get().items.length === 0;
       },
     }),
     {
-      name: "inherbis-cart-storage", // Nom du stockage dans localStorage
-      storage: createJSONStorage(() => localStorage), // Spécifie localStorage
-      partialize: (state) => ({ items: state.items }), // Ne persiste que la partie 'items' de l'état
+      name: "inherbis-cart-storage",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ items: state.items }),
+      // Gestion des erreurs de persistance
+      onRehydrateStorage: () => {
+        console.log("CartStore: Starting rehydration from localStorage");
+        return (state, error) => {
+          if (error) {
+            console.error("CartStore: Error during rehydration:", error);
+          } else {
+            console.log(
+              `CartStore: Rehydrated successfully with ${state?.items?.length || 0} items`
+            );
+          }
+        };
+      },
     }
   )
 );
 
 export default useCartStore;
 
-// Sélecteurs pour le panier
-
-/**
- * Sélectionne tous les articles du panier.
- * @param state L'état actuel du CartStore.
- * @returns Un tableau de CartItem.
- */
+// Sélecteurs améliorés avec memoization
 export const selectCartItems = (state: CartState): CartItem[] => state.items;
 
-/**
- * Calcule le nombre total d'unités de produits dans le panier.
- * @param state L'état actuel du CartStore.
- * @returns Le nombre total d'unités.
- */
 export const selectCartTotalItems = (state: CartState): number =>
   state.items.reduce((total, item) => total + item.quantity, 0);
 
-/**
- * Calcule le sous-total du panier (montant total).
- * @param state L'état actuel du CartStore.
- * @returns Le sous-total du panier.
- */
 export const selectCartSubtotal = (state: CartState): number =>
   state.items.reduce((total, item) => total + item.price * item.quantity, 0);
+
+// Nouveaux sélecteurs utiles
+export const selectCartItemCount = (state: CartState): number => state.items.length;
+
+export const selectCartIsEmpty = (state: CartState): boolean => state.items.length === 0;
+
+export const selectCartHasErrors = (state: CartState): boolean => !!state.error;

@@ -1,5 +1,6 @@
 // Utilisation de ES Module comme recommandé pour le plugin
 import createNextIntlPlugin from "next-intl/plugin";
+import ImageMinimizerPlugin from "image-minimizer-webpack-plugin"; // Importation du plugin
 
 const withNextIntl = createNextIntlPlugin(
   // Chemin vers votre fichier de configuration i18n (depuis la racine)
@@ -25,10 +26,53 @@ const nextConfig = {
     if (dev && !isServer) {
       config.ignoreWarnings = [{ message: /unreachable code after return statement/ }];
     }
+
+    // Configuration de l'optimisation des images en production
+    if (!dev && !isServer) {
+      // Appliquer uniquement en production et côté client
+      config.optimization.minimizer.push(
+        new ImageMinimizerPlugin({
+          minimizer: {
+            implementation: ImageMinimizerPlugin.imageminMinify,
+            options: {
+              plugins: [
+                ["mozjpeg", { quality: 75, progressive: true }], // Optimisation JPEG
+                ["pngquant", { quality: [0.65, 0.9], speed: 4 }], // Optimisation PNG
+                [
+                  "imagemin-webp", // Optimisation WebP
+                  {
+                    quality: 75,
+                  },
+                ],
+              ],
+            },
+          },
+          // Vous pouvez ajouter des règles pour cibler des types d'images spécifiques
+          // Par exemple, pour optimiser les images importées directement dans vos composants :
+          // generator: [
+          //   {
+          //     preset: "webp",
+          //     implementation: ImageMinimizerPlugin.imageminGenerate,
+          //     options: {
+          //       plugins: ["imagemin-webp"],
+          //     },
+          //   },
+          // ],
+        })
+      );
+    }
+
     return config;
   },
   images: {
-    // Existing image config...
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "esgirafriwoildqcwtjm.supabase.co",
+        port: "",
+        pathname: "/storage/v1/object/public/products/**",
+      },
+    ],
   },
 };
 

@@ -87,7 +87,6 @@ export async function middleware(request: NextRequest) {
         // Pour d'autres erreurs, log plus détaillé et potentiellement nettoyer les cookies
         console.error("Supabase auth error in middleware (not session missing):", error);
         // Si l'erreur spécifique est 'user_not_found', supprimer les cookies d'authentification
-        // @ts-expect-error // Ignorer l'erreur TypeScript pour accéder à 'code' sur 'error'
         if (error.code === "user_not_found") {
           console.log("Middleware: Detected 'user_not_found' error. Clearing auth cookies.");
           // Utiliser la méthode 'remove' définie dans la configuration du client Supabase
@@ -148,12 +147,21 @@ export async function middleware(request: NextRequest) {
     // Pour l'instant, on laisse la logique suivante gérer le cas où l'utilisateur n'est pas authentifié/admin.
   }
 
-  // Vérifier si c'est une route admin
-  if (pathToCheck.startsWith("/admin")) {
+  // Protéger les routes de profil
+  if (pathToCheck.startsWith("/profile")) {
     if (!user) {
-      // Utilisateur non authentifié : redirection vers la page de connexion
+      // Utilisateur non authentifié : redirection vers la page de connexion avec redirectUrl
+      const loginRedirectPath = `/${currentLocale}/login?redirectUrl=${encodeURIComponent(request.nextUrl.pathname)}`;
+      return NextResponse.redirect(new URL(loginRedirectPath, request.nextUrl.origin));
+    }
+    // Si l'utilisateur est authentifié, l'accès est autorisé pour les pages de profil.
+  }
+  // Protéger les routes admin (utilisation de 'else if' si /profile et /admin sont mutuellement exclusifs au niveau racine)
+  else if (pathToCheck.startsWith("/admin")) {
+    if (!user) {
+      // Utilisateur non authentifié : redirection vers la page de connexion avec redirectUrl
       // Puisque localePrefix est 'always', le chemin de redirection inclura toujours la locale.
-      const loginRedirectPath = `/${currentLocale}/login`;
+      const loginRedirectPath = `/${currentLocale}/login?redirectUrl=${encodeURIComponent(request.nextUrl.pathname)}`;
       return NextResponse.redirect(new URL(loginRedirectPath, request.nextUrl.origin));
     }
 
