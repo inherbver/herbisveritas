@@ -108,7 +108,6 @@ export function Header() {
         <Info className="mr-1 inline h-3 w-3 md:mr-2 md:h-4 md:w-4" />
         Livraison offerte dès 50€ d'achat !
       </div>
-
       {/* 2. Barre Principale */}
       <div className="container flex h-16 items-center justify-between">
         {/* 3. Logo */}
@@ -122,21 +121,21 @@ export function Header() {
             <NavigationMenuList className="gap-6">
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/shop" className={navigationMenuTriggerStyle()}>
+                  <Link href="/shop" className={navigationMenuTriggerStyle()} legacyBehavior>
                     {tGlobal("Header.home")}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/magazine" className={navigationMenuTriggerStyle()}>
+                  <Link href="/magazine" className={navigationMenuTriggerStyle()} legacyBehavior>
                     {tGlobal("Header.products")}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/contact" className={navigationMenuTriggerStyle()}>
+                  <Link href="/contact" className={navigationMenuTriggerStyle()} legacyBehavior>
                     {tGlobal("Header.about")}
                   </Link>
                 </NavigationMenuLink>
@@ -161,19 +160,19 @@ export function Header() {
               // Placeholder pendant le chargement pour éviter le flash de contenu
               <div className="h-9 w-24 animate-pulse rounded-md bg-gray-200"></div>
             ) : isLoggedIn ? (
-              <Link href="/profile/account" passHref>
+              <Link href="/profile/account" passHref legacyBehavior>
                 <Button variant="outline" size="sm">
                   {tGlobal("Header.accountAriaLabel")}
                 </Button>
               </Link>
             ) : (
               <>
-                <Link href="/login" passHref>
+                <Link href="/login" passHref legacyBehavior>
                   <Button variant="ghost" size="sm">
                     {tGlobal("Header.login")}
                   </Button>
                 </Link>
-                <Link href="/register" passHref>
+                <Link href="/register" passHref legacyBehavior>
                   <Button variant="default" size="sm">
                     {tGlobal("Header.register")}
                   </Button>
@@ -205,6 +204,7 @@ export function Header() {
                   <Link
                     href="/shop"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    legacyBehavior
                   >
                     {tGlobal("Header.home")}
                   </Link>
@@ -213,6 +213,7 @@ export function Header() {
                   <Link
                     href="/magazine"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    legacyBehavior
                   >
                     {tGlobal("Header.products")}
                   </Link>
@@ -221,6 +222,7 @@ export function Header() {
                   <Link
                     href="/contact"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                    legacyBehavior
                   >
                     {tGlobal("Header.about")}
                   </Link>
@@ -235,6 +237,7 @@ export function Header() {
                     <Link
                       href="/profile/account"
                       className="text-foreground/80 -mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 transition-colors hover:bg-accent hover:text-accent-foreground"
+                      legacyBehavior
                     >
                       {tGlobal("Header.accountAriaLabel")}
                     </Link>
@@ -245,6 +248,7 @@ export function Header() {
                       <Link
                         href="/login"
                         className="text-foreground/80 -mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 transition-colors hover:bg-accent hover:text-accent-foreground"
+                        legacyBehavior
                       >
                         {tGlobal("Header.login")}
                       </Link>
@@ -253,6 +257,7 @@ export function Header() {
                       <Link
                         href="/register"
                         className="text-foreground/80 -mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 transition-colors hover:bg-accent hover:text-accent-foreground"
+                        legacyBehavior
                       >
                         {tGlobal("Header.register")}
                       </Link>

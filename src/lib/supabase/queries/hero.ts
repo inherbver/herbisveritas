@@ -10,7 +10,7 @@ export interface FeaturedHeroItem {
 }
 
 export async function getActiveFeaturedHeroItem(): Promise<FeaturedHeroItem | null> {
-// locale: string // Décommenter si le slug doit être dépendant de la locale et géré ici
+  // locale: string // Décommenter si le slug doit être dépendant de la locale et géré ici
   try {
     const supabase = await createSupabaseServerClient(); // Instantiate the server client
     const { data: featuredItem, error: featuredItemError } = await supabase

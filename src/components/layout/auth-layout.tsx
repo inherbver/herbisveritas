@@ -14,6 +14,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           <Link
             href="/"
             className="inline-flex items-center gap-2 font-serif text-xl font-bold text-primary"
+            legacyBehavior
           >
             <Logo className="h-12 w-auto" />
           </Link>

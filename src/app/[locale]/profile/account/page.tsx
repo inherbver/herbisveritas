@@ -254,7 +254,6 @@ export default async function AccountPage(props: AccountPageProps) {
       <header>
         <h1 className="mb-8 text-3xl font-bold text-foreground">{t("title")}</h1>
       </header>
-
       {/* Section Informations Personnelles */}
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
@@ -263,6 +262,7 @@ export default async function AccountPage(props: AccountPageProps) {
             <Link
               href={`/${currentLocale}/profile/account/edit`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              legacyBehavior
             >
               {tGlobal("edit")}
             </Link>
@@ -317,7 +317,6 @@ export default async function AccountPage(props: AccountPageProps) {
           </dl>
         </div>
       </article>
-
       {/* Section Adresses */}
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
@@ -327,6 +326,7 @@ export default async function AccountPage(props: AccountPageProps) {
             <Link
               href={`/${currentLocale}/profile/addresses`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              legacyBehavior
             >
               {tGlobal("manage")}
             </Link>
@@ -355,7 +355,6 @@ export default async function AccountPage(props: AccountPageProps) {
           </>
         )}
       </article>
-
       {/* Section Mon Mot de Passe */}
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
@@ -365,6 +364,7 @@ export default async function AccountPage(props: AccountPageProps) {
             <Link
               href={`/${currentLocale}/profile/password`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              legacyBehavior
             >
               {tGlobal("edit")}
             </Link>
@@ -373,7 +373,6 @@ export default async function AccountPage(props: AccountPageProps) {
           {/* Clef à ajouter: "Modifiez votre mot de passe ici." */}
         </div>
       </article>
-
       {/* Section Mes Commandes */}
       <article
         id="my-orders"
@@ -385,13 +384,13 @@ export default async function AccountPage(props: AccountPageProps) {
             <Link
               href={`/${currentLocale}/profile/orders`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              legacyBehavior
             >
               {t("orders.viewLink")}
             </Link>
           </div>
         </div>
       </article>
-
       {/* Section Déconnexion */}
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
