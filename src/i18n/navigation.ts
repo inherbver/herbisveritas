@@ -65,6 +65,10 @@ export const pathnames = {
     fr: "/profile/password",
   },
   // --- END: Profile Pages ---
+  "/mission": {
+    en: "/mission",
+    fr: "/mission",
+  },
   // Ajoutez d'autres chemins ici...
 } as const;
 

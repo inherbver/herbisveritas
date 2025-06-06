@@ -248,6 +248,15 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeTestPage = testPageNamespaceContent || {};
   const safeAdminLayout = adminLayoutNamespaceContent || {};
 
+  let missionPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    missionPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/MissionPage.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load MissionPage.json for locale ${localeToUse}:`, _e);
+  }
+  const safeMissionPage = missionPageNamespaceContent || {};
+
   let authCallbackNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     authCallbackNamespaceContent = (
@@ -290,6 +299,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeTestPage).length > 0 ? { TestPage: safeTestPage } : {}),
     ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
     ...(Object.keys(safeAuthCallback).length > 0 ? { AuthCallback: safeAuthCallback } : {}),
+    ...(Object.keys(safeMissionPage).length > 0 ? { MissionPage: safeMissionPage } : {}),
   };
 
   // Condition pour notFound si AUCUN message de namespace n'est chargé
@@ -317,7 +327,8 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     Object.keys(safeHomePage).length === 0 &&
     Object.keys(safeProductGrid).length === 0 &&
     Object.keys(safeLegal).length === 0 &&
-    Object.keys(safeTestPage).length === 0
+    Object.keys(safeTestPage).length === 0 &&
+    Object.keys(safeMissionPage).length === 0
   ) {
     notFound();
   }

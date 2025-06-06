@@ -3,13 +3,13 @@
 
 import { useState, useEffect, useActionState, startTransition } from "react";
 import { useFormStatus } from "react-dom";
-import { updatePasswordAction } from "@/app/[locale]/profile/actions"; // Assurez-vous que ce chemin est correct
+import { updatePasswordAction, type UpdatePasswordResult } from "@/app/[locale]/profile/actions"; // Assurez-vous que ce chemin est correct
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import useCartStore from "@/stores/cartStore"; // <--- AJOUTÉ
+import useCartStore from "@/stores/cartStore";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -24,7 +24,7 @@ function SubmitButton() {
 export default function ChangePasswordForm() {
   const t = useTranslations("ChangePasswordForm");
 
-  const initialState = { success: false, message: "" };
+  const initialState: UpdatePasswordResult = { success: false, message: "", error: null };
   // Le type de state est inféré de UpdatePasswordResult | null, mais pour être explicite :
   // const [state, formAction] = useActionState<UpdatePasswordResult | null, FormData>(
   //   updatePasswordAction,
@@ -76,16 +76,16 @@ export default function ChangePasswordForm() {
         //   // router.push(`/${currentLocale}/login`); // Assurez-vous d'avoir accès au router et locale
         // }, 2000);
       } else {
-        // Gérer les différents types d'erreurs venant du serveur
-        let errorMessage = state.message || t("notifications.errorUnknown");
-        if (state.error?.type === "validation" && state.error.details) {
-          // Pourrait formater les erreurs de validation spécifiques si nécessaire
-          const fieldErrors = Object.values(state.error.details).flat().join(", ");
-          errorMessage = `${t("notifications.validationErrorPrefix")}: ${fieldErrors}`;
-        } else if (state.error?.type === "supabase") {
-          errorMessage = `${t("notifications.supabaseErrorPrefix")}: ${state.error.details}`;
+        // Gérer les erreurs venant du serveur en utilisant la structure de UpdatePasswordResult
+        let serverErrorMessage = t("notifications.errorUnknown"); // Fallback générique
+        if (state.error && typeof state.error.message === "string") {
+          // Utiliser le message d'erreur spécifique de l'objet error
+          serverErrorMessage = state.error.message;
+        } else if (typeof state.message === "string") {
+          // Sinon, utiliser le message général de l'état s'il existe
+          serverErrorMessage = state.message;
         }
-        toast.error(errorMessage);
+        toast.error(serverErrorMessage);
       }
       setPrevServerMessage(state.message);
     } else if (state && state.success && state.message === prevServerMessage) {

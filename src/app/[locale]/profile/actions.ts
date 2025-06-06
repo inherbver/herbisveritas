@@ -20,7 +20,7 @@ const UpdatePasswordSchema = z
     path: ["confirmPassword"],
   });
 
-interface UpdatePasswordResult {
+export interface UpdatePasswordResult {
   success: boolean;
   message: string;
   error?: {
