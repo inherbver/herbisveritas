@@ -30,6 +30,14 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load AccountPage.json for locale ${localeToUse}:`, _e);
   }
 
+  let aboutPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    aboutPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AboutPage.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load AboutPage.json for locale ${localeToUse}:`, _e);
+  }
+
   let profileNavNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     profileNavNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ProfileNav.json`))
@@ -137,6 +145,8 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load AdminLayout.json for locale ${localeToUse}:`, _e);
   }
 
+  // aboutPageNamespaceContent est déjà déclaré et chargé plus haut (lignes 32-38)
+
   let productDetailModalNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     productDetailModalNamespaceContent = (
@@ -222,8 +232,27 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load TestPage.json for locale ${localeToUse}:`, _e);
   }
 
+  let missionPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    missionPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/MissionPage.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load MissionPage.json for locale ${localeToUse}:`, _e);
+  }
+
+  let authCallbackNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    authCallbackNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/AuthCallback.json`)
+    ).default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load AuthCallback.json for locale ${localeToUse}:`, _e);
+  }
+
+  // Cette partie doit venir APRÈS TOUTES les importations de namespaces
   const safeGlobal = globalNamespaceContent || {};
   const safeAccountPage = accountPageNamespaceContent || {};
+  const safeAboutPage = aboutPageNamespaceContent || {};
   const safeProfileNav = profileNavNamespaceContent || {};
   const safeCartSheet = cartSheetNamespaceContent || {};
   const safeCartDisplay = cartDisplayNamespaceContent || {};
@@ -247,30 +276,13 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeLegal = legalNamespaceContent || {};
   const safeTestPage = testPageNamespaceContent || {};
   const safeAdminLayout = adminLayoutNamespaceContent || {};
-
-  let missionPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    missionPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/MissionPage.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load MissionPage.json for locale ${localeToUse}:`, _e);
-  }
   const safeMissionPage = missionPageNamespaceContent || {};
-
-  let authCallbackNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    authCallbackNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/AuthCallback.json`)
-    ).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load AuthCallback.json for locale ${localeToUse}:`, _e);
-  }
-
   const safeAuthCallback = authCallbackNamespaceContent || {};
 
   const mergedMessages = {
     ...(Object.keys(safeGlobal).length > 0 ? { Global: safeGlobal } : {}),
     ...(Object.keys(safeAccountPage).length > 0 ? { AccountPage: safeAccountPage } : {}),
+    ...(Object.keys(safeAboutPage).length > 0 ? { AboutPage: safeAboutPage } : {}),
     ...(Object.keys(safeProfileNav).length > 0 ? { ProfileNav: safeProfileNav } : {}),
     ...(Object.keys(safeCartSheet).length > 0 ? { CartSheet: safeCartSheet } : {}),
     ...(Object.keys(safeCartDisplay).length > 0 ? { CartDisplay: safeCartDisplay } : {}),
@@ -298,14 +310,15 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeLegal).length > 0 ? { Legal: safeLegal } : {}),
     ...(Object.keys(safeTestPage).length > 0 ? { TestPage: safeTestPage } : {}),
     ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
-    ...(Object.keys(safeAuthCallback).length > 0 ? { AuthCallback: safeAuthCallback } : {}),
     ...(Object.keys(safeMissionPage).length > 0 ? { MissionPage: safeMissionPage } : {}),
+    ...(Object.keys(safeAuthCallback).length > 0 ? { AuthCallback: safeAuthCallback } : {}),
   };
 
   // Condition pour notFound si AUCUN message de namespace n'est chargé
   if (
     Object.keys(safeGlobal).length === 0 &&
     Object.keys(safeAccountPage).length === 0 &&
+    Object.keys(safeAboutPage).length === 0 &&
     Object.keys(safeProfileNav).length === 0 &&
     Object.keys(safeCartSheet).length === 0 &&
     Object.keys(safeCartDisplay).length === 0 &&
@@ -328,7 +341,9 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     Object.keys(safeProductGrid).length === 0 &&
     Object.keys(safeLegal).length === 0 &&
     Object.keys(safeTestPage).length === 0 &&
-    Object.keys(safeMissionPage).length === 0
+    Object.keys(safeAdminLayout).length === 0 &&
+    Object.keys(safeMissionPage).length === 0 &&
+    Object.keys(safeAuthCallback).length === 0
   ) {
     notFound();
   }

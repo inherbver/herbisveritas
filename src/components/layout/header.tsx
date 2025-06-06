@@ -135,15 +135,15 @@ export function Header() {
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link href="/mission" className={navigationMenuTriggerStyle()}>
-                    {tGlobal("Header.mission")}
+                  <Link href="/about" className={navigationMenuTriggerStyle()}>
+                    {tGlobal("Header.aboutLink")}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link href="/contact" className={navigationMenuTriggerStyle()}>
-                    {tGlobal("Header.about")}
+                    {tGlobal("Header.contactLink")}
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>

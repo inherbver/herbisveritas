@@ -1,0 +1,40 @@
+{
+  "title": "About Herbis Veritas",
+  "hero": {
+    "heading": "About Herbis Veritas",
+    "description": "Discover our story, our values, and our commitment to natural and authentic products.",
+    "imageAlt": "Hero section background for the About Us page, showing a soothing natural landscape",
+    "ctaLabel": "Discover our products"
+  },
+  "navigation": {
+    "title": "About Us"
+  },
+  "sections": {
+    "values": {
+      "title": "Our Values"
+    },
+    "bestsellers": {
+      "title": "Our Best-Sellers"
+    },
+    "story": {
+      "title": "Our Story"
+    },
+    "commitments": {
+      "title": "Our Commitments"
+    },
+    "items": {
+      "authenticity": {
+        "title": "Pure Authenticity",
+        "description": "Each plant is hand-picked, each preparation a secret of nature passed down with love. We believe in the raw strength of the plant, without artifice."
+      },
+      "quality": {
+        "title": "Exacting Quality",
+        "description": "From seed to herbal tea, we watch over every detail. Our ancestral methods guarantee living products, rich with the earth's benefits."
+      },
+      "respect": {
+        "title": "Respect for Life",
+        "description": "Nature is our ally; we cherish it. Our cultivation respects the cycles, our harvests are gentle, for a sustainable balance between humans and plants."
+      }
+    }
+  }
+}

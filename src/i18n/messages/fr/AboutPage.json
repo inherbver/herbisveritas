@@ -1,0 +1,40 @@
+{
+  "title": "À Propos de In Herbis Veritas",
+  "hero": {
+    "title": "Nos Racines",
+    "subtitle": "Cultiver le bien-être, une plante à la fois.",
+    "imageAlt": "Arrière-plan de la section hero de la page À Propos, montrant un paysage naturel apaisant",
+    "ctaLabel": "Découvrir nos engagements"
+  },
+  "navigation": {
+    "title": "À Propos"
+  },
+  "sections": {
+    "values": {
+      "title": "Nos Valeurs"
+    },
+    "bestsellers": {
+      "title": "Nos Best-Sellers"
+    },
+    "story": {
+      "title": "Notre Histoire"
+    },
+    "commitments": {
+      "title": "Nos Engagements"
+    },
+    "items": {
+      "authenticity": {
+        "title": "Authenticité Pure",
+        "description": "Chaque plante est cueillie à la main, chaque préparation est un secret de nature transmis avec amour. Nous croyons à la force brute du végétal, sans artifice."
+      },
+      "quality": {
+        "title": "Qualité Exigeante",
+        "description": "De la graine à la tisane, nous veillons au grain. Nos méthodes ancestrales garantissent des produits vivants, riches des bienfaits de la terre."
+      },
+      "respect": {
+        "title": "Respect du Vivant",
+        "description": "La nature est notre alliée, nous la chérissons. Nos cultures respectent les cycles, nos récoltes sont douces, pour un équilibre durable entre l'homme et la plante."
+      }
+    }
+  }
+}
