@@ -43,7 +43,7 @@ export const isGeneralError = <T>(result: CartActionResult<T>): result is Genera
   );
 };
 
-// Fonctions utilitaires pour créer les résultats
+// ✅ Fonctions utilitaires CORRIGÉES pour correspondre à l'usage dans cartActions.ts
 export const createSuccessResult = <T>(data: T, message?: string): SuccessResult<T> => ({
   success: true,
   data,
@@ -59,6 +59,7 @@ export const createValidationErrorResult = (
   message,
 });
 
+// ✅ CORRECTION CRITIQUE : Inverser l'ordre des paramètres pour correspondre à l'usage
 export const createGeneralErrorResult = (error: string, message?: string): GeneralErrorResult => ({
   success: false,
   error,

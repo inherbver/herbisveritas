@@ -1,9 +1,12 @@
 "use server";
 
-// src/actions/cartActions.ts
-
+import crypto from "crypto";
 import { revalidateTag } from "next/cache";
+import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import {
   AddToCartInputSchema,
   RemoveFromCartInputSchema,
@@ -12,7 +15,6 @@ import {
   type UpdateCartItemQuantityInput,
 } from "@/lib/schemas/cartSchemas";
 
-// Importer les helper functions depuis le fichier séparé
 import {
   type CartActionResult,
   isSuccessResult,
@@ -21,58 +23,30 @@ import {
   createGeneralErrorResult,
 } from "@/lib/cart-helpers";
 
-import type {
-  CartData,
-  CartItem,
-  // ServerCartItem, // Supprimé car inutilisé après refactorisation de la transformation
-  ProductDetails,
-} from "@/types/cart";
+import type { CartData, CartItem, ProductDetails } from "@/types/cart";
 
-// Fonction utilitaire pour obtenir l'ID utilisateur (réel ou anonyme)
-async function getActiveUserId(): Promise<string | null> {
-  const supabase = await createSupabaseServerClient();
-
-  // Utiliser supabase.auth.getUser() pour une meilleure sécurité
+// ✅ Refactorisé pour accepter une instance existante
+async function getActiveUserId(supabase: SupabaseClient): Promise<string | null> {
   const {
     data: { user },
     error: getUserError,
   } = await supabase.auth.getUser();
 
   if (getUserError) {
-    // Une erreur s'est produite lors de la tentative de récupération de l'utilisateur.
-    // Cela est différent de "aucun utilisateur connecté" (où user serait null et getUserError serait null).
-    // Différencier les erreurs de session "normales" des erreurs inattendues
-    if (
-      getUserError.message.includes("Auth session missing") ||
-      getUserError.message.includes("Invalid session") ||
-      getUserError.message.includes("User not found")
-    ) {
-      console.info(
-        `Session utilisateur non trouvée ou invalide dans getActiveUserId (attendu après déconnexion ou pour nouvel utilisateur anonyme): ${getUserError.message}`
-      );
-    } else {
-      console.error(
-        "Erreur inattendue lors de la tentative de récupération de l'utilisateur avec getUser() dans getActiveUserId:",
-        getUserError.message
-      );
-    }
-    // `user` sera `null` si une erreur s'est produite, donc `userId` deviendra `undefined` ci-dessous,
-    // ce qui déclenchera la logique de connexion anonyme, maintenant le comportement de repli.
+    console.error("Erreur lors de la récupération de l'utilisateur:", getUserError.message);
   }
 
   let userId = user?.id;
 
   if (!userId) {
-    // Logique de connexion anonyme si aucun utilisateur n'est trouvé ou si une erreur s'est produite avec getUser()
     const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
-
     if (anonError) {
       console.error("Erreur lors de la connexion anonyme:", anonError.message);
-      return null; // Échec critique de la connexion anonyme
+      return null;
     }
     if (!anonAuthResponse?.user) {
       console.error("La connexion anonyme n'a pas retourné d'utilisateur.");
-      return null; // Échec critique de la connexion anonyme
+      return null;
     }
     userId = anonAuthResponse.user.id;
   }
@@ -80,28 +54,17 @@ async function getActiveUserId(): Promise<string | null> {
 }
 
 export async function getCart(): Promise<CartActionResult<CartData | null>> {
-  const activeUserId = await getActiveUserId();
+  const supabase = await createSupabaseServerClient();
+  const activeUserId = await getActiveUserId(supabase);
 
   if (!activeUserId) {
     return createGeneralErrorResult(
-      "Impossible d'identifier l'utilisateur ou de créer une session invité."
+      "User identification failed",
+      "Impossible d'identifier l'utilisateur."
     );
   }
 
-  const supabase = await createSupabaseServerClient();
-
-  const selectQuery = `
-    id,
-    user_id,
-    created_at,
-    updated_at,
-    cart_items (
-      id,
-      product_id,
-      quantity,
-      products (id, name, price, image_url, slug)
-    )
-  `;
+  const selectQuery = `id, user_id, created_at, updated_at, cart_items (id, product_id, quantity, products (id, name, price, image_url, slug))`;
 
   try {
     const { data: cart, error: queryError } = await supabase
@@ -112,18 +75,11 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
       .maybeSingle();
 
     if (queryError) {
-      console.error("Erreur lors de la récupération du panier:", queryError.message);
-      return createGeneralErrorResult(`Erreur Supabase: ${queryError.message}`);
+      return createGeneralErrorResult(queryError.message, `Erreur Supabase: ${queryError.message}`);
     }
-
     if (!cart) {
       return createSuccessResult(null, "Aucun panier actif trouvé.");
     }
-
-    const currentCart = cart!;
-    // currentCart here is the raw data from Supabase which has cart_items: ServerCartItem[]
-    // The CartData type in types/cart.ts defines the *output* structure of this function.
-    const itemsToTransform: RawSupabaseCartItem[] = currentCart.cart_items || [];
 
     interface RawSupabaseCartItem {
       id: string;
@@ -132,8 +88,9 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
       products: ProductDetails | ProductDetails[] | null;
     }
 
+    const itemsToTransform: RawSupabaseCartItem[] = cart.cart_items || [];
     const transformedCartItems: CartItem[] = itemsToTransform
-      .map((item: RawSupabaseCartItem): CartItem => {
+      .map((item): CartItem | null => {
         const productData =
           Array.isArray(item.products) && item.products.length > 0
             ? item.products[0]
@@ -141,116 +98,70 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
               ? item.products
               : null;
 
-        // Handle cases where productData might be null (e.g., product deleted but still in cart_items)
         if (!productData) {
-          // This case should ideally be cleaned up by a batch job or handled more gracefully.
-          // For now, we'll filter it out or return a minimal representation.
-          // Let's log an error and return a structure that can be filtered or identified.
-          console.error(
-            `Product data missing for cart item ID: ${item.id}, product ID: ${item.product_id}`
-          );
-          // Returning an object that can be filtered out later if needed, or fill with placeholders.
-          // For this example, let's assume we want to create a valid CartItem with placeholder/error values.
-          return {
-            id: item.id, // Corrected: This is the cart_items.id
-            productId: item.product_id,
-            name: "Produit indisponible",
-            quantity: item.quantity,
-            price: 0, // Or some other indicator
-            image: undefined, // Corrected to 'image'
-            slug: undefined,
-          };
+          console.error(`Données produit manquantes pour l'article ID: ${item.id}`);
+          return null;
         }
 
         return {
-          id: item.id, // Corrected: This is the cart_items.id
+          id: item.id,
           productId: item.product_id,
           quantity: item.quantity,
           name: productData.name,
           price: productData.price,
-          image: productData.image_url, // Corrected to 'image'
+          image: productData.image_url,
           slug: productData.slug,
         };
       })
-      .filter(Boolean); // Add filter(Boolean) in case map returns null/undefined for some items, though current logic doesn't.
+      .filter((item): item is CartItem => item !== null);
 
-    const finalCartData: CartData = {
-      id: currentCart.id,
-      user_id: currentCart.user_id,
-      created_at: currentCart.created_at,
-      updated_at: currentCart.updated_at,
-      items: transformedCartItems,
-    };
-
-    return createSuccessResult(finalCartData, "Panier récupéré avec succès.");
+    const finalCartData: CartData = { ...cart, items: transformedCartItems };
+    return createSuccessResult(finalCartData, "Panier récupéré.");
   } catch (e: unknown) {
-    console.error("Erreur inattendue dans getCart:", (e as Error).message);
-    return createGeneralErrorResult(
-      (e as Error).message || "Une erreur serveur inattendue est survenue."
-    );
+    const errorMessage = (e as Error).message || "Unknown server error";
+    return createGeneralErrorResult(errorMessage, "Une erreur serveur inattendue est survenue.");
   }
 }
 
 export async function addItemToCart(
-  prevState: CartActionResult<CartData | null>,
+  prevState: CartActionResult<CartData | null> | unknown,
   formData: FormData
 ): Promise<CartActionResult<CartData | null>> {
-  const productId = formData.get("productId") as string;
-  const quantityStr = formData.get("quantity") as string;
-
-  if (!productId || !quantityStr) {
-    return createGeneralErrorResult(
-      "Product ID and quantity are required in form data.",
-      "Données du formulaire invalides."
-    );
-  }
-
-  const quantity = parseInt(quantityStr, 10);
-  if (isNaN(quantity)) {
-    return createGeneralErrorResult(
-      "Invalid quantity format in form data.",
-      "Format de quantité invalide."
-    );
-  }
-
-  const validatedFields = AddToCartInputSchema.safeParse({ productId, quantity });
-  if (!validatedFields.success) {
-    const firstError =
-      Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
-      "Erreur de validation.";
-    return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
-  }
-
-  const { productId: validProductId, quantity: quantityToAdd } = validatedFields.data;
-
-  const activeUserId = await getActiveUserId();
-  if (!activeUserId) {
-    return createGeneralErrorResult(
-      "Impossible d'identifier l'utilisateur ou de créer une session invité pour ajouter au panier."
-    );
-  }
-
-  const supabase = await createSupabaseServerClient();
-
   try {
-    let cartId: string;
-    const { data: existingCart, error: cartError } = await supabase
+    // 1. Validation
+    const validatedFields = AddToCartInputSchema.safeParse({
+      productId: formData.get("productId"),
+      quantity: formData.get("quantity"),
+    });
+
+    if (!validatedFields.success) {
+      const firstError =
+        Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
+        "Erreur de validation.";
+      return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
+    }
+    const { productId: validProductId, quantity: quantityToAdd } = validatedFields.data;
+
+    // 2. Auth & Setup
+    const supabase = await createSupabaseServerClient();
+    const activeUserId = await getActiveUserId(supabase);
+    if (!activeUserId) {
+      return createGeneralErrorResult(
+        "User identification failed",
+        "Impossible d'identifier l'utilisateur."
+      );
+    }
+
+    // 3. Database Logic: Find or create cart
+    const { data: existingCart, error: findCartError } = await supabase
       .from("carts")
       .select("id")
       .eq("user_id", activeUserId)
       .maybeSingle();
 
-    if (cartError) {
-      console.error(
-        "Erreur lors de la recherche du panier existant pour l'utilisateur:",
-        activeUserId,
-        cartError.message
-      );
-      return createGeneralErrorResult(
-        `Erreur lors de la recherche du panier: ${cartError.message}`
-      );
-    }
+    if (findCartError) throw findCartError;
 
+    let cartId: string;
     if (existingCart) {
       cartId = existingCart.id;
     } else {
@@ -260,52 +171,36 @@ export async function addItemToCart(
         .select("id")
         .single();
 
-      if (newCartError) {
-        console.error(
-          "Erreur lors de la création du nouveau panier pour l'utilisateur:",
-          activeUserId,
-          newCartError.message
-        );
-        return createGeneralErrorResult(
-          `Erreur lors de la création du panier: ${newCartError.message}`
-        );
+      if (newCartError || !newCart) {
+        throw newCartError || new Error("Cart creation failed.");
       }
       cartId = newCart.id;
     }
 
+    // 4. Call RPC
     const { error: rpcError } = await supabase.rpc("add_or_update_cart_item", {
       p_cart_id: cartId,
       p_product_id: validProductId,
       p_quantity_to_add: quantityToAdd,
     });
 
-    if (rpcError) {
-      console.error("Error calling add_or_update_cart_item RPC:", rpcError);
-      return createGeneralErrorResult(`Erreur lors de l'ajout de l'article: ${rpcError.message}`);
-    }
+    if (rpcError) throw rpcError;
 
+    // 5. Revalidate and Refetch
     revalidateTag("cart");
 
     const cartStateAfterRpc = await getCart();
-
     if (!isSuccessResult(cartStateAfterRpc)) {
-      let technicalDetail = "Détail de l'erreur de getCart non disponible.";
-      if (cartStateAfterRpc.success === false && "error" in cartStateAfterRpc) {
-        technicalDetail = cartStateAfterRpc.error;
-      } else if (cartStateAfterRpc.success === false && "errors" in cartStateAfterRpc) {
-        technicalDetail = `Erreurs de validation du panier: ${JSON.stringify(cartStateAfterRpc.errors)}`;
-      }
-
-      const userMessage = `Article ajouté/mis à jour avec succès, mais la récupération de l'état du panier a échoué: ${cartStateAfterRpc.message || "Erreur inconnue lors de la récupération du panier."}`;
-      console.warn(`${userMessage} Détails techniques: ${technicalDetail}`);
-      return createGeneralErrorResult(technicalDetail, userMessage);
+      return cartStateAfterRpc;
     }
 
     return createSuccessResult(cartStateAfterRpc.data, "Article ajouté/mis à jour dans le panier.");
   } catch (error: unknown) {
-    console.error("Error in addItemToCart:", (error as Error).message);
+    const e = error as Error;
+    console.error(`addItemToCart - Erreur inattendue: ${e.message}`);
     return createGeneralErrorResult(
-      (error as Error).message || "Une erreur inattendue est survenue lors de l'ajout au panier."
+      e.message,
+      "Une erreur inattendue est survenue lors de l'ajout au panier."
     );
   }
 }
@@ -314,21 +209,19 @@ export async function removeItemFromCart(
   input: RemoveFromCartInput
 ): Promise<CartActionResult<CartData | null>> {
   const validatedFields = RemoveFromCartInputSchema.safeParse(input);
-
   if (!validatedFields.success) {
     const firstError =
       Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
       "Erreur de validation.";
     return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
   }
-  const { cartItemId } = validatedFields.data;
 
+  const { cartItemId } = validatedFields.data;
   const supabase = await createSupabaseServerClient();
-  const activeUserId = await getActiveUserId();
+  const activeUserId = await getActiveUserId(supabase);
+
   if (!activeUserId) {
-    return createGeneralErrorResult(
-      "Impossible d'identifier l'utilisateur ou de créer une session invité pour supprimer l'article."
-    );
+    return createGeneralErrorResult("Impossible d'identifier l'utilisateur.");
   }
 
   try {
@@ -339,24 +232,15 @@ export async function removeItemFromCart(
       .maybeSingle();
 
     if (fetchItemError) {
-      console.error(
-        "Erreur lors de la récupération de l'article pour suppression:",
-        fetchItemError.message
-      );
       return createGeneralErrorResult(`Erreur interne: ${fetchItemError.message}`);
     }
 
     if (!itemData) {
-      return createGeneralErrorResult("Article du panier non trouvé pour la suppression.");
+      return createGeneralErrorResult("Article du panier non trouvé.");
     }
 
-    // @ts-expect-error itemData.carts is expected to be an object if found. Verifying ownership.
+    // @ts-expect-error itemData.carts is expected to be an object if found
     if (!itemData.carts || itemData.carts.user_id !== activeUserId) {
-      console.warn(
-        "Tentative de suppression d'un article n'appartenant pas à l'utilisateur:",
-        cartItemId,
-        activeUserId
-      );
       return createGeneralErrorResult(
         "Action non autorisée: cet article n'appartient pas à votre panier."
       );
@@ -368,35 +252,21 @@ export async function removeItemFromCart(
       .eq("id", cartItemId);
 
     if (deleteItemError) {
-      console.error("Erreur lors de la suppression de l'article:", deleteItemError.message);
-      return createGeneralErrorResult(
-        `Erreur lors de la suppression de l'article: ${deleteItemError.message}`
-      );
+      return createGeneralErrorResult(`Erreur lors de la suppression: ${deleteItemError.message}`);
     }
 
     revalidateTag("cart");
 
     const cartStateAfterRemove = await getCart();
-
     if (!isSuccessResult(cartStateAfterRemove)) {
-      let technicalDetail = "Détail de l'erreur de getCart non disponible.";
-      if (cartStateAfterRemove.success === false && "error" in cartStateAfterRemove) {
-        technicalDetail = cartStateAfterRemove.error;
-      } else if (cartStateAfterRemove.success === false && "errors" in cartStateAfterRemove) {
-        technicalDetail = `Erreurs de validation du panier: ${JSON.stringify(cartStateAfterRemove.errors)}`;
-      }
-
-      const userMessage = `Article supprimé avec succès, mais la récupération de l'état du panier a échoué: ${cartStateAfterRemove.message || "Erreur inconnue lors de la récupération du panier."}`;
-      return createGeneralErrorResult(technicalDetail, userMessage);
+      return createGeneralErrorResult(
+        "Erreur lors de la récupération du panier après suppression."
+      );
     }
 
     return createSuccessResult(cartStateAfterRemove.data, "Article supprimé du panier.");
-  } catch (e: unknown) {
-    console.error("Error in removeItemFromCart:", (e as Error).message);
-    return createGeneralErrorResult(
-      (e as Error).message ||
-        "Une erreur inattendue est survenue lors de la suppression de l'article."
-    );
+  } catch (_e: unknown) {
+    return createGeneralErrorResult("Une erreur inattendue est survenue lors de la suppression.");
   }
 }
 
@@ -410,22 +280,21 @@ export async function updateCartItemQuantity(
       "Erreur de validation.";
     return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
   }
+
   const { cartItemId, quantity } = validatedFields.data;
 
-  const activeUserId = await getActiveUserId();
-  if (!activeUserId) {
-    return createGeneralErrorResult(
-      "Impossible d'identifier l'utilisateur ou de créer une session invité pour mettre à jour la quantité."
-    );
+  if (quantity <= 0) {
+    return await removeItemFromCart({ cartItemId });
   }
 
   const supabase = await createSupabaseServerClient();
+  const activeUserId = await getActiveUserId(supabase);
+
+  if (!activeUserId) {
+    return createGeneralErrorResult("Impossible d'identifier l'utilisateur.");
+  }
 
   try {
-    if (quantity <= 0) {
-      return await removeItemFromCart({ cartItemId });
-    }
-
     const { data: itemData, error: fetchItemError } = await supabase
       .from("cart_items")
       .select("id, quantity, carts (user_id)")
@@ -433,24 +302,15 @@ export async function updateCartItemQuantity(
       .maybeSingle();
 
     if (fetchItemError) {
-      console.error(
-        "Erreur lors de la récupération de l'article pour mise à jour de quantité:",
-        fetchItemError.message
-      );
       return createGeneralErrorResult(`Erreur interne: ${fetchItemError.message}`);
     }
 
     if (!itemData) {
-      return createGeneralErrorResult("Article du panier non trouvé pour la mise à jour.");
+      return createGeneralErrorResult("Article du panier non trouvé.");
     }
 
-    // @ts-expect-error itemData.carts is expected to be an object if found, and activeUserId should be defined. Verifying ownership.
+    // @ts-expect-error itemData.carts is expected to be an object if found
     if (!itemData.carts || itemData.carts.user_id !== activeUserId) {
-      console.warn(
-        "Tentative de mise à jour de quantité d'un article n'appartenant pas à l'utilisateur:",
-        cartItemId,
-        activeUserId
-      );
       return createGeneralErrorResult(
         "Action non autorisée: cet article n'appartient pas à votre panier."
       );
@@ -462,103 +322,151 @@ export async function updateCartItemQuantity(
       .eq("id", cartItemId);
 
     if (updateItemError) {
-      console.error(
-        "Erreur lors de la mise à jour de la quantité de l'article:",
-        updateItemError.message
-      );
-      return createGeneralErrorResult(
-        `Erreur lors de la mise à jour de la quantité: ${updateItemError.message}`
-      );
+      return createGeneralErrorResult(`Erreur lors de la mise à jour: ${updateItemError.message}`);
     }
 
     revalidateTag("cart");
 
     const cartStateAfterUpdate = await getCart();
-
     if (!isSuccessResult(cartStateAfterUpdate)) {
-      let technicalDetail = "Détail de l'erreur de getCart non disponible.";
-      if (cartStateAfterUpdate.success === false && "error" in cartStateAfterUpdate) {
-        technicalDetail = cartStateAfterUpdate.error;
-      } else if (cartStateAfterUpdate.success === false && "errors" in cartStateAfterUpdate) {
-        technicalDetail = `Erreurs de validation du panier: ${JSON.stringify(cartStateAfterUpdate.errors)}`;
-      }
-
-      const userMessage = `Quantité mise à jour avec succès, mais la récupération de l'état du panier a échoué: ${cartStateAfterUpdate.message || "Erreur inconnue lors de la récupération du panier."}`;
-      return createGeneralErrorResult(technicalDetail, userMessage);
+      return createGeneralErrorResult(
+        "Erreur lors de la récupération du panier après mise à jour."
+      );
     }
+
     return createSuccessResult(cartStateAfterUpdate.data, "Quantité de l'article mise à jour.");
-  } catch (e: unknown) {
-    console.error("Error in updateCartItemQuantity:", (e as Error).message);
-    return createGeneralErrorResult(
-      (e as Error).message ||
-        "Une erreur inattendue est survenue lors de la mise à jour de la quantité."
-    );
+  } catch (_e: unknown) {
+    return createGeneralErrorResult("Une erreur inattendue est survenue lors de la mise à jour.");
+  }
+}
+
+const MigrateCartInputSchema = z.object({
+  guestUserId: z.string().uuid("L'ID de l'invité doit être un UUID valide."),
+});
+
+export async function migrateAndGetCart(
+  input: z.infer<typeof MigrateCartInputSchema>
+): Promise<CartActionResult<CartData | null>> {
+  const migrationId = crypto.randomUUID();
+  console.log(`[Migration ${migrationId}] Début: ${input.guestUserId}`);
+
+  const validatedFields = MigrateCartInputSchema.safeParse(input);
+  if (!validatedFields.success) {
+    return createValidationErrorResult(validatedFields.error.flatten().fieldErrors);
+  }
+
+  const { guestUserId } = validatedFields.data;
+  let migrationSuccessful = false;
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    if (!authUser) {
+      return createGeneralErrorResult("Migration impossible : utilisateur non authentifié.");
+    }
+
+    const authenticatedUserId = authUser.id;
+    if (guestUserId === authenticatedUserId) {
+      return getCart();
+    }
+
+    const { data: guestUserData, error: adminError } =
+      await supabaseAdmin.auth.admin.getUserById(guestUserId);
+    if (adminError || !guestUserData?.user?.is_anonymous) {
+      return createGeneralErrorResult("ID invité invalide.");
+    }
+
+    const { data: guestCart } = await supabase
+      .from("carts")
+      .select("id")
+      .eq("user_id", guestUserId)
+      .single();
+    if (!guestCart) {
+      migrationSuccessful = true;
+      return getCart();
+    }
+
+    const { data: authCart } = await supabase
+      .from("carts")
+      .select("id")
+      .eq("user_id", authenticatedUserId)
+      .single();
+
+    if (!authCart) {
+      const { error } = await supabase
+        .from("carts")
+        .update({ user_id: authenticatedUserId })
+        .eq("id", guestCart.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.rpc("merge_carts", {
+        p_guest_cart_id: guestCart.id,
+        p_auth_cart_id: authCart.id,
+      });
+      if (error) throw error;
+    }
+
+    migrationSuccessful = true;
+    revalidateTag("cart");
+    return getCart();
+  } catch (error: unknown) {
+    return createGeneralErrorResult((error as Error).message || "Erreur de migration.");
+  } finally {
+    if (migrationSuccessful) {
+      try {
+        const supabaseAdmin = createSupabaseAdminClient();
+        await supabaseAdmin.auth.admin.deleteUser(guestUserId);
+        console.log(`[Migration ${migrationId}] Nettoyage réussi.`);
+      } catch (cleanupError) {
+        console.warn(`[Migration ${migrationId}] Échec du nettoyage.`, cleanupError);
+      }
+    }
   }
 }
 
 export async function clearCartAction(
-  // prevState est inclus pour la compatibilité avec useActionState si utilisé,
-  // mais il n'est pas utilisé activement dans cette implémentation car l'action est simple.
   _prevState: CartActionResult<CartData | null>
 ): Promise<CartActionResult<CartData | null>> {
-  const activeUserId = await getActiveUserId();
+  const supabase = await createSupabaseServerClient();
+  const activeUserId = await getActiveUserId(supabase);
 
   if (!activeUserId) {
-    return createGeneralErrorResult(
-      "Impossible d'identifier l'utilisateur ou de créer une session invité pour vider le panier."
-    );
+    return createGeneralErrorResult("Impossible d'identifier l'utilisateur.");
   }
 
-  const supabase = await createSupabaseServerClient();
-
   try {
-    // 1. Trouver l'ID du panier de l'utilisateur
     const { data: cartData, error: cartError } = await supabase
       .from("carts")
-      .select("id") // Seulement besoin de l'ID du panier
+      .select("id")
       .eq("user_id", activeUserId)
-      .maybeSingle(); // Il ne devrait y avoir qu'un seul panier actif par utilisateur
+      .maybeSingle();
 
     if (cartError) {
-      console.error("Erreur lors de la recherche du panier pour le vider:", cartError.message);
       return createGeneralErrorResult(
-        `Erreur Supabase lors de la recherche du panier: ${cartError.message}`
+        `Erreur lors de la recherche du panier: ${cartError.message}`
       );
     }
 
     if (!cartData) {
-      // Aucun panier actif trouvé pour cet utilisateur, ce n'est pas une erreur.
-      // Le panier est effectivement vide.
       return createSuccessResult(null, "Aucun panier actif à vider.");
     }
 
-    // 2. Supprimer tous les cart_items associés à ce cart_id
     const { error: deleteItemsError } = await supabase
       .from("cart_items")
       .delete()
-      .eq("cart_id", cartData.id); // Utiliser l'ID du panier trouvé
+      .eq("cart_id", cartData.id);
 
     if (deleteItemsError) {
-      console.error(
-        "Erreur lors de la suppression des articles du panier:",
-        deleteItemsError.message
-      );
-      return createGeneralErrorResult(
-        `Erreur Supabase lors de la suppression des articles: ${deleteItemsError.message}`
-      );
+      return createGeneralErrorResult(`Erreur lors de la suppression: ${deleteItemsError.message}`);
     }
 
     revalidateTag("cart");
-
-    // Retourner un état de panier vide, car tous les articles ont été supprimés.
-    // Le panier lui-même (l'enregistrement dans la table 'carts') n'est pas supprimé,
-    // seulement son contenu.
     return createSuccessResult(null, "Panier vidé avec succès.");
-  } catch (e: unknown) {
-    console.error("Error in clearCartAction:", (e as Error).message);
-    return createGeneralErrorResult(
-      (e as Error).message ||
-        "Une erreur inattendue est survenue lors de la tentative de vider le panier."
-    );
+  } catch (_e: unknown) {
+    return createGeneralErrorResult("Une erreur inattendue est survenue.");
   }
 }
