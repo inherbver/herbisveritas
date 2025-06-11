@@ -5,6 +5,8 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe le client Supabase côté serveur
 import { headers } from "next/headers"; // AJOUT: Importer headers
+import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
+import { isGeneralError, isValidationError } from "@/lib/cart-helpers"; // AJOUT: Importer les gardiens de type
 
 // --- Schéma Login ---
 const loginSchema = z.object({
@@ -64,7 +66,17 @@ export async function loginAction(
 
   const { email, password } = validatedFields.data;
 
-  // 2. Essayer de connecter
+  // 2. Récupérer l'utilisateur actuel (potentiellement anonyme) AVANT la connexion
+  let guestUserId: string | undefined;
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+  if (currentUser && currentUser.is_anonymous) {
+    guestUserId = currentUser.id;
+    console.log(`loginAction: Utilisateur invité détecté avec ID: ${guestUserId}`);
+  }
+
+  // 3. Essayer de connecter
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
@@ -75,7 +87,29 @@ export async function loginAction(
     };
   }
 
-  // 3. Rediriger si succès
+  // 4. Si la connexion est réussie et qu'un utilisateur invité a été détecté, tenter la migration du panier
+  if (guestUserId) {
+    console.log(
+      `loginAction: Tentative de migration du panier pour l'ancien invité ID: ${guestUserId}`
+    );
+    const migrationResult = await migrateAndGetCart({ guestUserId });
+    if (!migrationResult.success) {
+      let errorDetails = "Détails de l'erreur de migration non disponibles.";
+      if (isGeneralError(migrationResult)) {
+        errorDetails = `Erreur générale: ${migrationResult.error}`;
+      } else if (isValidationError(migrationResult)) {
+        errorDetails = `Erreurs de validation: ${JSON.stringify(migrationResult.errors)}`;
+      }
+      console.warn(
+        `loginAction: La migration du panier pour l'invité ${guestUserId} a échoué. ${errorDetails}. Message: ${migrationResult.message}`
+      );
+      // Ne pas bloquer la redirection, la connexion a réussi.
+    } else {
+      console.log(`loginAction: Migration du panier pour l'invité ${guestUserId} réussie.`);
+    }
+  }
+
+  // 5. Rediriger si succès
   redirect("/");
 }
 

@@ -5,16 +5,8 @@ import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-import {
-  AddToCartInputSchema,
-  RemoveFromCartInputSchema,
-  type RemoveFromCartInput,
-  UpdateCartItemQuantityInputSchema,
-  type UpdateCartItemQuantityInput,
-} from "@/lib/schemas/cartSchemas";
-
+import { getActiveUserId } from "@/lib/authUtils";
+import { getCart } from "@/lib/cartReader";
 import {
   type CartActionResult,
   isSuccessResult,
@@ -22,106 +14,14 @@ import {
   createValidationErrorResult,
   createGeneralErrorResult,
 } from "@/lib/cart-helpers";
-
-import type { CartData, CartItem, ProductDetails } from "@/types/cart";
-
-// ✅ Refactorisé pour accepter une instance existante
-async function getActiveUserId(supabase: SupabaseClient): Promise<string | null> {
-  const {
-    data: { user },
-    error: getUserError,
-  } = await supabase.auth.getUser();
-
-  if (getUserError) {
-    console.error("Erreur lors de la récupération de l'utilisateur:", getUserError.message);
-  }
-
-  let userId = user?.id;
-
-  if (!userId) {
-    const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
-    if (anonError) {
-      console.error("Erreur lors de la connexion anonyme:", anonError.message);
-      return null;
-    }
-    if (!anonAuthResponse?.user) {
-      console.error("La connexion anonyme n'a pas retourné d'utilisateur.");
-      return null;
-    }
-    userId = anonAuthResponse.user.id;
-  }
-  return userId;
-}
-
-export async function getCart(): Promise<CartActionResult<CartData | null>> {
-  const supabase = await createSupabaseServerClient();
-  const activeUserId = await getActiveUserId(supabase);
-
-  if (!activeUserId) {
-    return createGeneralErrorResult(
-      "User identification failed",
-      "Impossible d'identifier l'utilisateur."
-    );
-  }
-
-  const selectQuery = `id, user_id, created_at, updated_at, cart_items (id, product_id, quantity, products (id, name, price, image_url, slug))`;
-
-  try {
-    const { data: cart, error: queryError } = await supabase
-      .from("carts")
-      .select(selectQuery)
-      .eq("user_id", activeUserId)
-      .order("id", { foreignTable: "cart_items", ascending: true })
-      .maybeSingle();
-
-    if (queryError) {
-      return createGeneralErrorResult(queryError.message, `Erreur Supabase: ${queryError.message}`);
-    }
-    if (!cart) {
-      return createSuccessResult(null, "Aucun panier actif trouvé.");
-    }
-
-    interface RawSupabaseCartItem {
-      id: string;
-      product_id: string;
-      quantity: number;
-      products: ProductDetails | ProductDetails[] | null;
-    }
-
-    const itemsToTransform: RawSupabaseCartItem[] = cart.cart_items || [];
-    const transformedCartItems: CartItem[] = itemsToTransform
-      .map((item): CartItem | null => {
-        const productData =
-          Array.isArray(item.products) && item.products.length > 0
-            ? item.products[0]
-            : !Array.isArray(item.products) && item.products
-              ? item.products
-              : null;
-
-        if (!productData) {
-          console.error(`Données produit manquantes pour l'article ID: ${item.id}`);
-          return null;
-        }
-
-        return {
-          id: item.id,
-          productId: item.product_id,
-          quantity: item.quantity,
-          name: productData.name,
-          price: productData.price,
-          image: productData.image_url,
-          slug: productData.slug,
-        };
-      })
-      .filter((item): item is CartItem => item !== null);
-
-    const finalCartData: CartData = { ...cart, items: transformedCartItems };
-    return createSuccessResult(finalCartData, "Panier récupéré.");
-  } catch (e: unknown) {
-    const errorMessage = (e as Error).message || "Unknown server error";
-    return createGeneralErrorResult(errorMessage, "Une erreur serveur inattendue est survenue.");
-  }
-}
+import {
+  AddToCartInputSchema,
+  RemoveFromCartInputSchema,
+  type RemoveFromCartInput,
+  UpdateCartItemQuantityInputSchema,
+  type UpdateCartItemQuantityInput,
+} from "@/lib/schemas/cartSchemas";
+import type { CartData } from "@/types/cart";
 
 export async function addItemToCart(
   prevState: CartActionResult<CartData | null> | unknown,
@@ -352,6 +252,7 @@ export async function migrateAndGetCart(
 
   const validatedFields = MigrateCartInputSchema.safeParse(input);
   if (!validatedFields.success) {
+    console.log(`[Migration ${migrationId}] ÉCHEC - Validation input`);
     return createValidationErrorResult(validatedFields.error.flatten().fieldErrors);
   }
 
@@ -361,60 +262,110 @@ export async function migrateAndGetCart(
   try {
     const supabase = await createSupabaseServerClient();
     const supabaseAdmin = createSupabaseAdminClient();
+    console.log(`[Migration ${migrationId}] Clients créés`);
 
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();
+
     if (!authUser) {
+      console.log(`[Migration ${migrationId}] ÉCHEC - Pas d'utilisateur authentifié`);
       return createGeneralErrorResult("Migration impossible : utilisateur non authentifié.");
     }
 
     const authenticatedUserId = authUser.id;
+    console.log(`[Migration ${migrationId}] Auth user ID: ${authenticatedUserId}`);
+
     if (guestUserId === authenticatedUserId) {
+      console.log(`[Migration ${migrationId}] IDs identiques - retour getCart simple`);
       return getCart();
     }
 
+    console.log(`[Migration ${migrationId}] Vérification utilisateur invité...`);
     const { data: guestUserData, error: adminError } =
       await supabaseAdmin.auth.admin.getUserById(guestUserId);
-    if (adminError || !guestUserData?.user?.is_anonymous) {
-      return createGeneralErrorResult("ID invité invalide.");
+
+    if (adminError || !guestUserData?.user) {
+      console.log(`[Migration ${migrationId}] ÉCHEC - Admin error:`, adminError);
+      console.log(`[Migration ${migrationId}] ÉCHEC - Guest user data:`, guestUserData);
+      return createGeneralErrorResult("Utilisateur invité invalide ou non trouvé.");
     }
 
-    const { data: guestCart } = await supabase
+    if (!guestUserData.user.is_anonymous) {
+      console.log(`[Migration ${migrationId}] ÉCHEC - User not anonymous:`, guestUserData.user);
+      return createGeneralErrorResult("L'ID invité ne correspond pas à un utilisateur anonyme.");
+    }
+
+    console.log(`[Migration ${migrationId}] Recherche panier invité...`);
+    const { data: guestCart, error: guestCartError } = await supabase
       .from("carts")
       .select("id")
       .eq("user_id", guestUserId)
-      .single();
+      .maybeSingle();
+
+    if (guestCartError) {
+      console.log(`[Migration ${migrationId}] ÉCHEC - Guest cart error:`, guestCartError);
+      throw guestCartError;
+    }
+
     if (!guestCart) {
+      console.log(`[Migration ${migrationId}] Pas de panier invité - retour getCart`);
       migrationSuccessful = true;
       return getCart();
     }
 
-    const { data: authCart } = await supabase
+    console.log(`[Migration ${migrationId}] Panier invité trouvé: ${guestCart.id}`);
+
+    console.log(`[Migration ${migrationId}] Recherche panier auth user...`);
+    const { data: authCart, error: authCartError } = await supabase
       .from("carts")
       .select("id")
       .eq("user_id", authenticatedUserId)
-      .single();
+      .maybeSingle();
+
+    if (authCartError) {
+      console.log(`[Migration ${migrationId}] ÉCHEC - Auth cart error:`, authCartError);
+      throw authCartError;
+    }
 
     if (!authCart) {
-      const { error } = await supabase
+      console.log(`[Migration ${migrationId}] Pas de panier auth - mise à jour ownership...`);
+      const { error: updateError } = await supabase
         .from("carts")
         .update({ user_id: authenticatedUserId })
         .eq("id", guestCart.id);
-      if (error) throw error;
+
+      if (updateError) {
+        console.log(`[Migration ${migrationId}] ÉCHEC - Update error:`, updateError);
+        throw updateError;
+      }
+      console.log(`[Migration ${migrationId}] Update réussie`);
     } else {
-      const { error } = await supabase.rpc("merge_carts", {
+      console.log(`[Migration ${migrationId}] Fusion des paniers via RPC...`);
+      const { error: rpcError } = await supabase.rpc("merge_carts", {
         p_guest_cart_id: guestCart.id,
         p_auth_cart_id: authCart.id,
       });
-      if (error) throw error;
+
+      if (rpcError) {
+        console.log(`[Migration ${migrationId}] ÉCHEC - RPC error:`, rpcError);
+        throw rpcError;
+      }
+      console.log(`[Migration ${migrationId}] RPC réussie`);
     }
 
     migrationSuccessful = true;
     revalidateTag("cart");
-    return getCart();
+
+    console.log(`[Migration ${migrationId}] Récupération panier final...`);
+    const finalResult = await getCart();
+    console.log(`[Migration ${migrationId}] Résultat final:`, finalResult.success);
+
+    return finalResult;
   } catch (error: unknown) {
-    return createGeneralErrorResult((error as Error).message || "Erreur de migration.");
+    console.error(`[Migration ${migrationId}] EXCEPTION:`, error);
+    const errorMessage = (error as Error).message || "Erreur de migration.";
+    return createGeneralErrorResult(errorMessage);
   } finally {
     if (migrationSuccessful) {
       try {
