@@ -109,8 +109,7 @@ export async function loginAction(
     }
   }
 
-  // 5. Rediriger si succès
-  redirect("/");
+  redirect("/fr/profile/account");
 }
 
 // --- Action d'Inscription ---
