@@ -3,7 +3,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { type Metadata } from "next";
 import { ShopClientContent } from "@/components/domain/shop/shop-client-content";
 import { getAllProducts, ProductForShopQuery } from "@/lib/supabase/queries/products";
-import { getCart } from "@/actions/cartActions";
+import { getCart } from "@/lib/cartReader";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import type { CartData } from "@/types/cart";
 import { Locale } from "@/i18n-config";

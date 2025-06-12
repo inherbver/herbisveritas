@@ -7,7 +7,11 @@ export async function getActiveUserId(supabase: SupabaseClient): Promise<string 
   } = await supabase.auth.getUser();
 
   if (getUserError) {
-    console.error("Erreur lors de la récupération de l'utilisateur:", getUserError.message);
+    // Ne pas logger d'erreur si c'est simplement une session manquante (cas invité normal)
+    // La logique de fallback vers signInAnonymously gère ce cas.
+    if (getUserError.message !== "Auth session missing!") {
+      console.error("Erreur lors de la récupération de l'utilisateur:", getUserError.message);
+    }
   }
 
   let userId = user?.id;

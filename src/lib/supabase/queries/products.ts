@@ -69,7 +69,9 @@ export async function getAllProducts(locale: Locale): Promise<ProductForShopQuer
       )
     `
     )
-    .eq("product_translations.locale", locale);
+    .or(`locale.eq.${locale},locale.is.null`, {
+      foreignTable: "product_translations",
+    });
 
   if (error) {
     console.error("Error fetching all products with translations:", error.message);
