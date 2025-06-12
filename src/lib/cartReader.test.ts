@@ -89,7 +89,7 @@ describe("getCart", () => {
     expect(result.success).toBe(false);
     expect(isGeneralError(result)).toBe(true);
     if (isGeneralError(result)) {
-      expect(result.error).toBe("Impossible d'identifier l'utilisateur.");
+      expect(result.message).toBe("Impossible d'identifier l'utilisateur.");
     }
   });
 

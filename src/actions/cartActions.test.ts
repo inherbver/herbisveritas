@@ -259,7 +259,7 @@ describe("addItemToCart - Simplified", () => {
 
   it("should return a validation error for invalid form data", async () => {
     const formData = new FormData();
-    formData.append("productId", "not-a-valid-uuid");
+    formData.append("productId", ""); // Test min(1) validation
     formData.append("quantity", "abc");
 
     const result = await addItemToCart({}, formData);
