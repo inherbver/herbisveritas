@@ -326,6 +326,7 @@ export default async function AccountPage(props: AccountPageProps) {
             <Link
               href={`/${currentLocale}/profile/addresses`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              legacyBehavior
             >
               {tGlobal("manage")}
             </Link>
@@ -363,6 +364,7 @@ export default async function AccountPage(props: AccountPageProps) {
             <Link
               href={`/${currentLocale}/profile/password`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              legacyBehavior
             >
               {tGlobal("edit")}
             </Link>
@@ -382,6 +384,7 @@ export default async function AccountPage(props: AccountPageProps) {
             <Link
               href={`/${currentLocale}/profile/orders`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              legacyBehavior
             >
               {t("orders.viewLink")}
             </Link>
