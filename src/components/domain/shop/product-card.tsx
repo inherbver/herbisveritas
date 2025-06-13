@@ -190,50 +190,52 @@ export function ProductCard({
 
   const cardContent = (
     <>
-      <NextLink href={linkHref} passHref={false} className="group contents">
-        <div
-          className={cn(
-            "relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90"
+      {/* Image Area - V2 */}
+      <figure className="relative">
+        <NextLink href={linkHref} passHref={false} className="group/image block overflow-hidden">
+          <div
+            className={cn(
+              "relative aspect-square w-full overflow-hidden transition-opacity duration-300 group-hover:opacity-90"
+            )}
+          >
+            <Image
+              src={imageSrc}
+              alt={imageAlt}
+              fill
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
+        </NextLink>
+        <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+          {is_new && (
+            <Badge className="border-transparent bg-sky-100 text-xs text-sky-800 shadow-md dark:bg-sky-900 dark:text-sky-200">
+              {t("newLabel")}
+            </Badge>
           )}
-        >
-          <Image
-            src={imageSrc}
-            alt={imageAlt}
-            fill
-            sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-          {/* Badges and overlay remain inside the image div but outside the link for image */}
+          {is_on_promotion && (
+            <Badge className="border-transparent bg-green-600 text-xs text-white shadow-md dark:bg-green-700">
+              {t("promoLabel")}
+            </Badge>
+          )}
+          {discountPercent && !isOutOfStock && (
+            <Badge variant="destructive" className="text-xs shadow-md">
+              -{discountPercent}%
+            </Badge>
+          )}
+          {isOutOfStock && (
+            <Badge variant="secondary" className="text-xs uppercase shadow-md">
+              {t("outOfStock")}
+            </Badge>
+          )}
         </div>
-      </NextLink>
-      <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
-        {is_new && (
-          <Badge className="border-transparent bg-sky-100 text-xs text-sky-800 shadow-md dark:bg-sky-900 dark:text-sky-200">
-            {t("newLabel")}
-          </Badge>
-        )}
-        {is_on_promotion && (
-          <Badge className="border-transparent bg-green-600 text-xs text-white shadow-md dark:bg-green-700">
-            {t("promoLabel")}
-          </Badge>
-        )}
-        {discountPercent && !isOutOfStock && (
-          <Badge variant="destructive" className="text-xs shadow-md">
-            -{discountPercent}%
-          </Badge>
-        )}
         {isOutOfStock && (
-          <Badge variant="secondary" className="text-xs uppercase shadow-md">
-            {t("outOfStock")}
-          </Badge>
+          <div
+            className="absolute inset-0 bg-white/60 backdrop-blur-[1px] dark:bg-black/50"
+            aria-hidden="true"
+          />
         )}
-      </div>
-      {isOutOfStock && (
-        <div
-          className="absolute inset-0 bg-white/60 backdrop-blur-[1px] dark:bg-black/50"
-          aria-hidden="true"
-        />
-      )}
+      </figure>
 
       {/* Content Area - V2: Standard padding, flex-grow, WHITE BACKGROUND */}
       <div className="flex flex-grow flex-col bg-background p-4">

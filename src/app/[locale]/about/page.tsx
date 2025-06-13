@@ -56,7 +56,12 @@ export default function AboutPage() {
           <ValuesSection />
         </section>
 
-        <PhotoGallerySection />
+        <section id="gallery" className="py-12 md:py-16">
+          <h2 className="mb-10 text-center text-3xl font-bold tracking-tight sm:text-4xl md:mb-12">
+            {t("sections.gallery.title")}
+          </h2>
+          <PhotoGallerySection />
+        </section>
 
         <section id="bestsellers" className="py-12 md:py-16">
           <h2 className="mb-10 text-center text-3xl font-bold tracking-tight sm:text-4xl md:mb-12">

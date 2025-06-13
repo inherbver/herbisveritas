@@ -76,13 +76,15 @@ export const PhotoGallerySection = () => {
                     <CardContent
                       className={`flex ${image.aspectRatio || "aspect-square"} items-center justify-center p-0`}
                     >
-                      <Image
-                        src={image.src}
-                        alt={image.alt}
-                        width={800} // Largeur indicative pour next/image, sera ajustée
-                        height={800} // Hauteur indicative, ajustée par l'aspect ratio
-                        className="h-full w-full object-cover" // Remplir la CardContent
-                      />
+                      <figure>
+                        <Image
+                          src={image.src}
+                          alt={image.alt}
+                          width={800} // Largeur indicative pour next/image, sera ajustée
+                          height={800} // Hauteur indicative, ajustée par l'aspect ratio
+                          className="h-full w-full object-cover" // Remplir la CardContent
+                        />
+                      </figure>
                     </CardContent>
                   </Card>
                 </div>

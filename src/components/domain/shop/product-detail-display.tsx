@@ -274,23 +274,23 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="max-w-none space-y-2 overflow-y-auto pr-2"
+                  className="max-w-none overflow-y-auto pr-2"
                 >
                   {product.properties ? (
-                    <>
+                    <ul className="space-y-2">
                       {product.properties
                         .split(/\n|\\n/)
                         .map((line) => line.trim())
                         .filter((line) => line.length > 0)
                         .map((line, index) => (
-                          <div
+                          <li
                             key={index}
                             className="bg-muted/50 rounded-md p-3 text-sm text-foreground"
                           >
                             {line.replace(/^\*\s*/, "")}
-                          </div>
+                          </li>
                         ))}
-                    </>
+                    </ul>
                   ) : (
                     <p>{tModal("noProperties")}</p>
                   )}
@@ -316,11 +316,11 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                   )}
                   <h4 className="mb-1 text-sm font-semibold">{tModal("inciList")}</h4>
                   {product.inciList && product.inciList.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2">
+                    <ul className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2">
                       {product.inciList.map((item, index) => (
-                        <span key={index}>{item}</span>
+                        <li key={index}>{item}</li>
                       ))}
-                    </div>
+                    </ul>
                   ) : (
                     <p className="text-xs italic">{tModal("noInci")}</p>
                   )}

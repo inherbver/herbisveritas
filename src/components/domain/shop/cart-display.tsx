@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useActionState, useTransition } from "react";
+import React from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Link as NextLink } from "@/i18n/navigation";
@@ -12,15 +12,14 @@ import useCartStore, {
 import {
   removeItemFromCart,
   updateCartItemQuantity as updateCartItemQuantityAction,
-  clearCartAction,
 } from "@/actions/cartActions";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { toast } from "sonner";
-import type { CartData, CartItem } from "@/types/cart";
+import type { CartData } from "@/types/cart";
 import type { RemoveFromCartInput, UpdateCartItemQuantityInput } from "@/lib/schemas/cartSchemas";
 import { Button } from "@/components/ui/button";
-import { MinusIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { MinusIcon, PlusIcon, XIcon } from "lucide-react";
 
 /**
  * Affiche le contenu du panier et permet les interactions de base.
@@ -33,53 +32,9 @@ export function CartDisplay() {
   const totalItems = useCartStore(selectCartTotalItems);
   const subtotal = useCartStore(selectCartSubtotal);
 
-  const { _removeItem, _updateItemQuantity, _setItems } = useCartStore((state) => ({
-    _removeItem: state.removeItem, // Will be replaced by server action call
-    _updateItemQuantity: state.updateItemQuantity, // Will be replaced by server action call
-    // clearCart is now handled by a server action
+  const { _setItems } = useCartStore((state) => ({
     _setItems: state._setItems, // To update store after server action
   }));
-
-  const initialClearCartState: CartActionResult<CartData | null> = {
-    success: undefined,
-    message: "",
-    data: null,
-  };
-
-  const [clearCartState, clearCartFormAction, isClearCartPendingFromActionState] = useActionState(
-    clearCartAction,
-    initialClearCartState
-  );
-
-  // Utiliser useTransition pour la gestion de l'état pending de la transition elle-même
-  const [_isTransitionPending, startTransition] = useTransition();
-
-  // Vous pouvez combiner les états pending si nécessaire, ou utiliser celui de useActionState directement
-  // pour le disabled du bouton, car useActionState est spécifiquement pour cette action.
-  // Pour l'instant, nous allons utiliser isClearCartPendingFromActionState pour le disabled.
-  // Le principal est d'utiliser startTransition pour l'appel.
-
-  useEffect(() => {
-    if (clearCartState.success === true) {
-      toast.success(clearCartState.message || t("cartClearedSuccess"));
-      _setItems([]); // Clear local cart state
-    } else if (clearCartState.success === false) {
-      toast.error(clearCartState.message || tGlobal("genericError"));
-    }
-    // Resetting state or other cleanup could be done here if needed,
-    // but useActionState typically handles state updates internally.
-  }, [clearCartState, _setItems, t, tGlobal]);
-
-  const handleClearCart = () => {
-    // Utiliser isClearCartPendingFromActionState pour vérifier si l'action est déjà en cours
-    if (items.length > 0 && !isClearCartPendingFromActionState) {
-      startTransition(() => {
-        // FormData is not strictly needed by clearCartAction as it doesn't read from it,
-        // but useActionState expects a form action signature.
-        clearCartFormAction(new FormData());
-      });
-    }
-  };
 
   const handleRemoveItem = async (cartItemId: string) => {
     if (!cartItemId) {
@@ -87,18 +42,13 @@ export function CartDisplay() {
       return;
     }
 
-    // Consider adding a loading state for the specific item or button
     const actionInput: RemoveFromCartInput = { cartItemId };
     const result: CartActionResult<CartData | null> = await removeItemFromCart(actionInput);
 
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemRemovedSuccess"));
-      if (result.data && result.data.items) {
-        // The items from result.data.items should be CartItem[] as transformed by getCart
-        _setItems(result.data.items as CartItem[]);
-      } else {
-        // If result.data or result.data.items is null/undefined, it means the cart might be empty
-        _setItems([]);
+      if (result.data?.items) {
+        _setItems(result.data.items);
       }
     } else {
       toast.error(result.message || tGlobal("genericError"));
@@ -122,18 +72,8 @@ export function CartDisplay() {
 
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemQuantityUpdatedSuccess"));
-      if (result.data && result.data.items) {
-        _setItems(result.data.items as CartItem[]);
-      } else if (result.data === null && newQuantity <= 0) {
-        // If quantity was set to 0 or less, and getCart returned null (empty cart)
-        _setItems([]);
-      } else if (result.data === null) {
-        // This case should ideally not happen if an item was updated (not removed) and cart wasn't empty before
-        // but if it does, reflect an empty cart or handle as an error from getCart within the action.
-        _setItems([]);
-        console.warn(
-          "Cart data is null after quantity update, but item was not meant to be removed."
-        );
+      if (result.data?.items) {
+        _setItems(result.data.items);
       }
     } else {
       toast.error(result.message || tGlobal("genericError"));
@@ -156,12 +96,12 @@ export function CartDisplay() {
   }
 
   return (
-    <section aria-labelledby="cart-heading" className="p-4">
-      <div className="mb-6 flex items-center justify-between">
+    <section aria-labelledby="cart-heading" className="flex h-full flex-col">
+      <header className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6">
         <h2 id="cart-heading" className="text-2xl font-semibold">
           {t("yourCart")} ({totalItems})
         </h2>
-      </div>
+      </header>
 
       <ul role="list" className="divide-y divide-border">
         {items.map((item) => {
@@ -258,53 +198,7 @@ export function CartDisplay() {
         })}
       </ul>
 
-      {/* Log before clear cart button */}
-      {/* {console.log("[CartDisplay] Before clear cart button. items.length:", items.length)} */}
-      {/* Commenting out the log as it might be too verbose now */}
-      {items.length > 0 && (
-        <div className="mt-6 flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleClearCart}
-            disabled={isClearCartPendingFromActionState || items.length === 0}
-            aria-label={t("clearCartButtonLabel")}
-          >
-            {isClearCartPendingFromActionState ? (
-              <>
-                <svg
-                  className="mr-2 h-4 w-4 animate-spin"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                {tGlobal("loading")}
-              </>
-            ) : (
-              <>
-                <Trash2Icon className="mr-2 h-4 w-4" />
-                {t("clearCartButton")}
-              </>
-            )}
-          </Button>
-        </div>
-      )}
-
-      <div className="mt-8 border-t border-border pt-6">
+      <footer className="mt-8 border-t border-border px-4 py-6 sm:px-6">
         <div className="flex justify-between text-base font-medium">
           <p>{t("subtotal")}</p>
           <p>{subtotal.toFixed(2)} €</p>
@@ -326,7 +220,7 @@ export function CartDisplay() {
             </NextLink>
           </p>
         </div>
-      </div>
+      </footer>
     </section>
   );
 }

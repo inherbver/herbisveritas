@@ -189,28 +189,28 @@ function AuthCallbackContent() {
 
   if (status === "loading") {
     return (
-      <div>
+      <main>
         <p>{message}</p>
         {/* TODO: Ajouter un vrai Spinner */}
-      </div>
+      </main>
     );
   }
 
   if (status === "error") {
     return (
-      <div>
+      <main>
         <p>{message}</p>
         <button onClick={() => router.push(`/${locale}/login`)}>{t("goToLogin")}</button>
-      </div>
+      </main>
     );
   }
 
   if (status === "success") {
     return (
-      <div>
+      <main>
         <p>{message}</p>
         <p>{t("redirecting")}</p>
-      </div>
+      </main>
     );
   }
 
@@ -222,7 +222,7 @@ export default function AuthCallbackPage() {
   // Mais comme AuthCallbackContent est un client component, c'est ok.
   // On passe la locale ici si AuthCallbackContent en a besoin via props
   return (
-    <Suspense fallback={<div>Loading translations and parameters...</div>}>
+    <Suspense fallback={<main>Loading translations and parameters...</main>}>
       <AuthCallbackContent />
     </Suspense>
   );

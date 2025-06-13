@@ -56,7 +56,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
         )}
 
         {/* Content Wrapper: controls max-width, centering, and vertical positioning */}
-        <div
+        <header
           className={cn(
             "container relative z-10 mx-auto flex w-full flex-col items-center text-center",
             "px-4 sm:px-6 lg:px-8",
@@ -95,7 +95,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               </Link>
             </div>
           )}
-        </div>
+        </header>
       </section>
     );
   }

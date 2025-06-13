@@ -26,20 +26,18 @@ export const StorySection = () => {
               {/* Classe 'lead' pour l'intro si définie dans votre prose config */}
               {t("intro")}
             </p>
-            <div className="space-y-4">
-              <p>
-                <strong className="font-semibold">{t("paragraph1_lead")}</strong>{" "}
-                {t("paragraph1_text")}
-              </p>
-              <p>
-                <strong className="font-semibold">{t("paragraph2_lead")}</strong>{" "}
-                {t("paragraph2_text")}
-              </p>
-              <p>
-                <strong className="font-semibold">{t("paragraph3_lead")}</strong>{" "}
-                {t("paragraph3_text")}
-              </p>
-            </div>
+            <p>
+              <strong className="font-semibold">{t("paragraph1_lead")}</strong>{" "}
+              {t("paragraph1_text")}
+            </p>
+            <p>
+              <strong className="font-semibold">{t("paragraph2_lead")}</strong>{" "}
+              {t("paragraph2_text")}
+            </p>
+            <p>
+              <strong className="font-semibold">{t("paragraph3_lead")}</strong>{" "}
+              {t("paragraph3_text")}
+            </p>
           </article>
 
           {/* Colonne Image */}

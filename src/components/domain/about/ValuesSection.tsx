@@ -40,11 +40,11 @@ export default function ValuesSection() {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3 xl:gap-12">
+    <ul className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3 xl:gap-12">
       {valuesData.map((value) => {
         const IconComponent = value.icon;
         return (
-          <div
+          <li
             key={value.id}
             className="flex flex-col items-center space-y-3 rounded-xl bg-gray-100 p-6 text-center dark:bg-gray-800"
           >
@@ -56,9 +56,9 @@ export default function ValuesSection() {
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-300">{t(value.descriptionKey)}</p>
             {/* Lien 'read more' omis pour l'instant */}
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

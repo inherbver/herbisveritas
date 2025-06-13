@@ -143,18 +143,36 @@ export function ProductDetailModal({ product, isOpen, onOpenChange }: ProductDet
                     value="properties"
                     className="max-h-40 overflow-y-auto pr-2 text-sm text-muted-foreground"
                   >
-                    <p>{product.properties || t("noProperties")}</p>
+                    {product.properties && product.properties.trim().length > 0 ? (
+                      <ul className="space-y-1">
+                        {product.properties
+                          .split(/\n|\\n/) // Sépare par newline ou \n littéral
+                          .map((line) => line.trim())
+                          .filter((line) => line.length > 0)
+                          .map((line, index) => (
+                            <li key={index} className="text-xs">
+                              {line.replace(/^\*\s*/, "")}
+                            </li>
+                          ))}
+                      </ul>
+                    ) : (
+                      <p>{t("noProperties")}</p>
+                    )}
                   </TabsContent>
                   <TabsContent
                     value="composition"
                     className="max-h-40 overflow-y-auto pr-2 text-sm text-muted-foreground"
                   >
                     <h4 className="mb-2 font-semibold">{t("inciList")}</h4>
-                    <p className="break-words text-xs">
-                      {product.inciList && product.inciList.length > 0
-                        ? product.inciList.join(", ")
-                        : t("noInci")}
-                    </p>
+                    {product.inciList && product.inciList.length > 0 ? (
+                      <ul className="space-y-1 break-words text-xs">
+                        {product.inciList.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs italic">{t("noInci")}</p>
+                    )}
                   </TabsContent>
                   <TabsContent
                     value="usage"
