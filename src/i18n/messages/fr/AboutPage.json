@@ -9,6 +9,17 @@
   "navigation": {
     "title": "À Propos"
   },
+  "Story": {
+    "title": "L'histoire d'In Herbis Veritas",
+    "intro": "Plongez au cœur de notre aventure, là où la passion pour les plantes médicinales a pris racine pour devenir une quête de bien-être authentique et partagé.",
+    "paragraph1_lead": "L'étincelle Originelle.",
+    "paragraph1_text": "Tout a commencé par une fascination profonde pour le pouvoir guérisseur de la nature, une curiosité insatiable pour les savoirs ancestraux des herboristes et une volonté de retrouver un lien plus simple et plus vrai avec notre environnement.",
+    "paragraph2_lead": "De la Terre à la Tasse.",
+    "paragraph2_text": "Nous avons parcouru des sentiers oubliés, rencontré des producteurs passionnés et appris à cultiver nos propres jardins dans le respect des cycles naturels. Chaque plante est choisie pour sa vitalité, chaque mélange est pensé pour harmoniser le corps et l'esprit.",
+    "paragraph3_lead": "Une Communauté Florissante.",
+    "paragraph3_text": "In Herbis Veritas, c'est plus qu'une marque, c'est une communauté de passionnés, d'explorateurs du végétal, unis par la conviction que la nature détient les clés d'une vie plus saine et plus épanouie. Rejoignez-nous dans ce voyage sensoriel et curatif.",
+    "imageAlt": "Une image inspirante représentant l'esprit d'In Herbis Veritas, peut-être un jardin luxuriant ou une collection de plantes séchées."
+  },
   "sections": {
     "values": {
       "title": "Nos Valeurs"
@@ -36,5 +47,8 @@
         "description": "La nature est notre alliée, nous la chérissons. Nos cultures respectent les cycles, nos récoltes sont douces, pour un équilibre durable entre l'homme et la plante."
       }
     }
+  },
+  "PhotoGallery": {
+    "title": "Notre Univers en Images"
   }
 }

@@ -6,6 +6,17 @@
     "imageAlt": "Hero section background for the About Us page, showing a soothing natural landscape",
     "ctaLabel": "Discover our products"
   },
+  "Story": {
+    "title": "The Story of In Herbis Veritas",
+    "intro": "Dive into the heart of our adventure, where the passion for medicinal plants took root to become a quest for authentic and shared well-being.",
+    "paragraph1_lead": "The Original Spark.",
+    "paragraph1_text": "It all began with a deep fascination for the healing power of nature, an insatiable curiosity for the ancestral knowledge of herbalists, and a desire to reconnect with our environment in a simpler, truer way.",
+    "paragraph2_lead": "From Earth to Cup.",
+    "paragraph2_text": "We've walked forgotten paths, met passionate growers, and learned to cultivate our own gardens in harmony with natural cycles. Each plant is chosen for its vitality, each blend designed to harmonize body and mind.",
+    "paragraph3_lead": "A Flourishing Community.",
+    "paragraph3_text": "In Herbis Veritas is more than a brand; it's a community of enthusiasts, plant explorers, united by the belief that nature holds the keys to a healthier, more fulfilling life. Join us on this sensory and healing journey.",
+    "imageAlt": "An inspiring image representing the spirit of In Herbis Veritas, perhaps a lush garden or a collection of dried plants."
+  },
   "navigation": {
     "title": "About Us"
   },
@@ -36,5 +47,8 @@
         "description": "Nature is our ally; we cherish it. Our cultivation respects the cycles, our harvests are gentle, for a sustainable balance between humans and plants."
       }
     }
+  },
+  "PhotoGallery": {
+    "title": "Our Universe in Pictures"
   }
 }

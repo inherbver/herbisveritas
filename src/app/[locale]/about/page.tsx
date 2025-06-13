@@ -2,6 +2,8 @@ import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import ValuesSection from "@/components/domain/about/ValuesSection";
 import { Hero } from "@/components/shared/hero"; // Utiliser le Hero partagé avec une importation nommée
+import { StorySection } from "@/components/domain/about/story-section"; // Import de la nouvelle section
+import { PhotoGallerySection } from "@/components/domain/about/photo-gallery-section"; // Import de la nouvelle section
 
 export async function generateMetadata({ params }: { params: { locale: string } }) {
   const { locale } = await params;
@@ -41,6 +43,9 @@ export default function AboutPage() {
       />
       {/* Le titre principal de la page est maintenant géré par le composant Hero partagé */}
 
+      {/* Section L'histoire d'In Herbis Veritas */}
+      <StorySection />
+
       {/* Conteneur principal pour les sections sous le Hero */}
       <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Section Nos Valeurs */}
@@ -50,6 +55,8 @@ export default function AboutPage() {
           </h2>
           <ValuesSection />
         </section>
+
+        <PhotoGallerySection />
 
         <section id="bestsellers" className="py-12 md:py-16">
           <h2 className="mb-10 text-center text-3xl font-bold tracking-tight sm:text-4xl md:mb-12">
