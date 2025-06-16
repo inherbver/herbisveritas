@@ -3,6 +3,10 @@ import recurringMarketsData from "@/data/markets.json";
 
 /**
  * Generates a list of single-date market instances from recurring market data.
+ * This function is not exported and is used internally to build the `allMarketInstances` constant.
+ * It iterates through the date range specified in each recurring market entry and creates
+ * an instance for each matching day of the week. All date calculations are done in UTC
+ * to ensure timezone consistency.
  * @returns An array of MarketInfo objects, each representing a specific market day.
  */
 function generateMarketInstances(): MarketInfo[] {
@@ -10,12 +14,13 @@ function generateMarketInstances(): MarketInfo[] {
   const allInstances: MarketInfo[] = [];
 
   recurringMarkets.forEach((recurringMarket) => {
+    // Dates from JSON are strings like 'YYYY-MM-DD'. new Date('YYYY-MM-DD') creates a date at UTC midnight.
     const startDate = new Date(recurringMarket.startDate);
     const endDate = new Date(recurringMarket.endDate);
     const dayOfWeek = recurringMarket.dayOfWeek;
 
     const currentDate = new Date(startDate);
-    currentDate.setUTCHours(0, 0, 0, 0); // Use UTC to avoid timezone issues
+    // No need to set hours, it's already at midnight UTC.
 
     while (currentDate <= endDate) {
       if (currentDate.getUTCDay() === dayOfWeek) {
@@ -23,7 +28,7 @@ function generateMarketInstances(): MarketInfo[] {
         allInstances.push({
           id: `${recurringMarket.id}-${isoDate}`,
           name: recurringMarket.name,
-          date: isoDate,
+          date: isoDate, // YYYY-MM-DD string
           startTime: recurringMarket.startTime,
           endTime: recurringMarket.endTime,
           city: recurringMarket.city,
@@ -59,32 +64,30 @@ export function formatDate(dateString: string, locale: string = "fr-FR"): string
 
 /**
  * Retrieves the next upcoming market from the generated list.
+ * All date comparisons are done in UTC to ensure consistency.
  */
 export async function getNextUpcomingMarket(): Promise<MarketInfo | null> {
-  const now = new Date(); // Current date and time
+  const now = new Date();
 
   const upcomingMarkets = allMarketInstances
     .filter((market) => {
-      let marketEndDateTime;
       const marketDateString = market.date;
+      let marketEndDateTime;
 
       if (market.endTime === "00:00") {
-        // Market ends at midnight of market.date, meaning it's effectively the start of the next day.
-        // So, we take the market.date, set time to 00:00, then add 1 day.
-        const tempDate = new Date(`${marketDateString}T00:00:00`); // Interpreted in server's local timezone
-        tempDate.setDate(tempDate.getDate() + 1);
+        // Market ends at midnight, which is the start of the next day.
+        const tempDate = new Date(marketDateString + "T00:00:00Z"); // Midnight UTC on market day
+        tempDate.setUTCDate(tempDate.getUTCDate() + 1); // Advance to next day in UTC
         marketEndDateTime = tempDate;
       } else {
-        marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00`); // Interpreted in server's local timezone
+        marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00Z`); // Create as UTC
       }
       return marketEndDateTime > now;
     })
     .sort((a, b) => {
-      const aStartDateTimeString = `${a.date}T${a.startTime}:00`;
-      const bStartDateTimeString = `${b.date}T${b.startTime}:00`;
-      const aStartDateTime = new Date(aStartDateTimeString);
-      const bStartDateTime = new Date(bStartDateTimeString);
-      return aStartDateTime.getTime() - bStartDateTime.getTime(); // Sort by full start datetime
+      const aStartDateTime = new Date(`${a.date}T${a.startTime}:00Z`);
+      const bStartDateTime = new Date(`${b.date}T${b.startTime}:00Z`);
+      return aStartDateTime.getTime() - bStartDateTime.getTime();
     });
 
   return upcomingMarkets.length > 0 ? upcomingMarkets[0] : null;
@@ -92,32 +95,30 @@ export async function getNextUpcomingMarket(): Promise<MarketInfo | null> {
 
 /**
  * Retrieves all upcoming markets from the generated list, sorted by date.
+ * All date comparisons are done in UTC to ensure consistency.
  */
 export async function getAllUpcomingMarkets(): Promise<MarketInfo[]> {
-  const now = new Date(); // Current date and time
+  const now = new Date();
 
   return allMarketInstances
     .filter((market) => {
-      let marketEndDateTime;
       const marketDateString = market.date;
+      let marketEndDateTime;
 
       if (market.endTime === "00:00") {
-        // Market ends at midnight of market.date, meaning it's effectively the start of the next day.
-        // So, we take the market.date, set time to 00:00, then add 1 day.
-        const tempDate = new Date(`${marketDateString}T00:00:00`); // Interpreted in server's local timezone
-        tempDate.setDate(tempDate.getDate() + 1);
+        // Market ends at midnight, which is the start of the next day.
+        const tempDate = new Date(marketDateString + "T00:00:00Z"); // Midnight UTC on market day
+        tempDate.setUTCDate(tempDate.getUTCDate() + 1); // Advance to next day in UTC
         marketEndDateTime = tempDate;
       } else {
-        marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00`); // Interpreted in server's local timezone
+        marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00Z`); // Create as UTC
       }
       return marketEndDateTime > now;
     })
     .sort((a, b) => {
-      const aStartDateTimeString = `${a.date}T${a.startTime}:00`;
-      const bStartDateTimeString = `${b.date}T${b.startTime}:00`;
-      const aStartDateTime = new Date(aStartDateTimeString);
-      const bStartDateTime = new Date(bStartDateTimeString);
-      return aStartDateTime.getTime() - bStartDateTime.getTime(); // Sort by full start datetime
+      const aStartDateTime = new Date(`${a.date}T${a.startTime}:00Z`);
+      const bStartDateTime = new Date(`${b.date}T${b.startTime}:00Z`);
+      return aStartDateTime.getTime() - bStartDateTime.getTime();
     });
 }
 
