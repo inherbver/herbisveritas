@@ -217,6 +217,13 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load ProductGrid.json for locale ${localeToUse}:`, _e);
   }
 
+  let heroNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    heroNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Hero.json`)).default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load Hero.json for locale ${localeToUse}:`, _e);
+  }
+
   let legalNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     legalNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Legal.json`)).default;
@@ -273,6 +280,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeHeroComponent = heroComponentNamespaceContent || {};
   const safeHomePage = homePageNamespaceContent || {};
   const safeProductGrid = productGridNamespaceContent || {};
+  const safeHero = heroNamespaceContent || {};
   const safeLegal = legalNamespaceContent || {};
   const safeTestPage = testPageNamespaceContent || {};
   const safeAdminLayout = adminLayoutNamespaceContent || {};
@@ -307,6 +315,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeHeroComponent).length > 0 ? { HeroComponent: safeHeroComponent } : {}),
     ...(Object.keys(safeHomePage).length > 0 ? { HomePage: safeHomePage } : {}),
     ...(Object.keys(safeProductGrid).length > 0 ? { ProductGrid: safeProductGrid } : {}),
+    ...(Object.keys(safeHero).length > 0 ? { Hero: safeHero } : {}),
     ...(Object.keys(safeLegal).length > 0 ? { Legal: safeLegal } : {}),
     ...(Object.keys(safeTestPage).length > 0 ? { TestPage: safeTestPage } : {}),
     ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
@@ -339,6 +348,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     Object.keys(safeHeroComponent).length === 0 &&
     Object.keys(safeHomePage).length === 0 &&
     Object.keys(safeProductGrid).length === 0 &&
+    Object.keys(safeHero).length === 0 &&
     Object.keys(safeLegal).length === 0 &&
     Object.keys(safeTestPage).length === 0 &&
     Object.keys(safeAdminLayout).length === 0 &&

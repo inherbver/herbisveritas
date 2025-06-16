@@ -1,3 +1,25 @@
 {
-  "title": "Nous retrouver"
+  "title": "Nous retrouver",
+  "defaultHeroHeading": "Contactez-nous",
+  "defaultHeroSubheading": "Nous sommes là pour répondre à vos questions.",
+  "defaultHeroImageAlt": "Image de fond pour la section contact",
+  "nextMarketHeroHeading": "Retrouvez-nous à {marketName}",
+  "nextMarketHeroSubheading": "Le {date} à {city} de {startTime} à {endTime}",
+  "nextMarketHeroImageAlt": "Image pour le marché : {marketName}",
+  "seeAllMarketsButton": "Voir tous les marchés",
+  "coordinatesTitle": "Nos coordonnées",
+  "emailTitle": "Email",
+  "phoneTitle": "Téléphone",
+  "headquartersTitle": "Siège Social / Atelier",
+  "socialMediaTitle": "Suivez notre aventure",
+  "socialMediaSubtitle": "Restez connectés pour découvrir nos dernières créations et actualités.",
+  "marketsAgendaTitle": "Agenda des Marchés",
+  "dateLabel": "Date",
+  "cityLabel": "Ville",
+  "hoursLabel": "Horaires",
+  "addressLabel": "Adresse",
+  "seeOnMapButton": "Voir sur la carte",
+  "noUpcomingMarkets": "Aucun marché à venir pour le moment. Consultez cette page bientôt !",
+  "partnerShopsTitle": "Nos Points de Vente Partenaires",
+  "partnerShopsComingSoon": "Découvrez bientôt où retrouver nos créations près de chez vous."
 }

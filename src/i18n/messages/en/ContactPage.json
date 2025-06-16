@@ -1,3 +1,25 @@
 {
-  "title": "Find Us"
+  "title": "Find Us",
+  "defaultHeroHeading": "Get in Touch",
+  "defaultHeroSubheading": "We're here to answer your questions.",
+  "defaultHeroImageAlt": "Background image for contact section",
+  "nextMarketHeroHeading": "Find us at {marketName}",
+  "nextMarketHeroSubheading": "On {date} in {city} from {startTime} to {endTime}",
+  "nextMarketHeroImageAlt": "Image for the market: {marketName}",
+  "seeAllMarketsButton": "See all markets",
+  "coordinatesTitle": "Our Contact Information",
+  "emailTitle": "Email",
+  "phoneTitle": "Phone",
+  "headquartersTitle": "Headquarters / Workshop",
+  "socialMediaTitle": "Follow Our Journey",
+  "socialMediaSubtitle": "Stay connected to discover our latest creations and news.",
+  "marketsAgendaTitle": "Markets Agenda",
+  "dateLabel": "Date",
+  "cityLabel": "City",
+  "hoursLabel": "Hours",
+  "addressLabel": "Address",
+  "seeOnMapButton": "See on map",
+  "noUpcomingMarkets": "No upcoming markets for now. Check back soon!",
+  "partnerShopsTitle": "Our Partner Stores",
+  "partnerShopsComingSoon": "Soon discover where to find our creations near you."
 }
