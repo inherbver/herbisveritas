@@ -29,7 +29,7 @@
   },
   {
     "id": "marche-serignan",
-    "name": "Le marché nocturne des Arts de Sérignan",
+    "name": "Marché nocturne des Arts de Sérignan",
     "startDate": "2025-07-08",
     "endDate": "2025-08-26",
     "dayOfWeek": 2,
@@ -43,7 +43,7 @@
   },
   {
     "id": "marche-cap-d-agde",
-    "name": "Le marché nocturne du Cap d'Agde",
+    "name": "Marché nocturne du Cap d'Agde",
     "startDate": "2025-06-25",
     "endDate": "2025-09-03",
     "dayOfWeek": 3,

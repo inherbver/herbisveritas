@@ -19,7 +19,8 @@
   "hoursLabel": "Hours",
   "addressLabel": "Address",
   "seeOnMapButton": "See on map",
-  "noUpcomingMarkets": "No upcoming markets for now. Check back soon!",
-  "partnerShopsTitle": "Our Partner Stores",
+  "noUpcomingMarkets": "No upcoming markets at the moment.",
+  "noUpcomingMarketsForFilter": "No upcoming markets match your filters.",
+  "partnerShopsTitle": "Our Partner Shops",
   "partnerShopsComingSoon": "Soon discover where to find our creations near you."
 }

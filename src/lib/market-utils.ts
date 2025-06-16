@@ -61,12 +61,31 @@ export function formatDate(dateString: string, locale: string = "fr-FR"): string
  * Retrieves the next upcoming market from the generated list.
  */
 export async function getNextUpcomingMarket(): Promise<MarketInfo | null> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date(); // Current date and time
 
   const upcomingMarkets = allMarketInstances
-    .filter((market) => new Date(market.date) >= today)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .filter((market) => {
+      let marketEndDateTime;
+      const marketDateString = market.date;
+
+      if (market.endTime === "00:00") {
+        // Market ends at midnight of market.date, meaning it's effectively the start of the next day.
+        // So, we take the market.date, set time to 00:00, then add 1 day.
+        const tempDate = new Date(`${marketDateString}T00:00:00`); // Interpreted in server's local timezone
+        tempDate.setDate(tempDate.getDate() + 1);
+        marketEndDateTime = tempDate;
+      } else {
+        marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00`); // Interpreted in server's local timezone
+      }
+      return marketEndDateTime > now;
+    })
+    .sort((a, b) => {
+      const aStartDateTimeString = `${a.date}T${a.startTime}:00`;
+      const bStartDateTimeString = `${b.date}T${b.startTime}:00`;
+      const aStartDateTime = new Date(aStartDateTimeString);
+      const bStartDateTime = new Date(bStartDateTimeString);
+      return aStartDateTime.getTime() - bStartDateTime.getTime(); // Sort by full start datetime
+    });
 
   return upcomingMarkets.length > 0 ? upcomingMarkets[0] : null;
 }
@@ -75,12 +94,31 @@ export async function getNextUpcomingMarket(): Promise<MarketInfo | null> {
  * Retrieves all upcoming markets from the generated list, sorted by date.
  */
 export async function getAllUpcomingMarkets(): Promise<MarketInfo[]> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date(); // Current date and time
 
   return allMarketInstances
-    .filter((market) => new Date(market.date) >= today)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .filter((market) => {
+      let marketEndDateTime;
+      const marketDateString = market.date;
+
+      if (market.endTime === "00:00") {
+        // Market ends at midnight of market.date, meaning it's effectively the start of the next day.
+        // So, we take the market.date, set time to 00:00, then add 1 day.
+        const tempDate = new Date(`${marketDateString}T00:00:00`); // Interpreted in server's local timezone
+        tempDate.setDate(tempDate.getDate() + 1);
+        marketEndDateTime = tempDate;
+      } else {
+        marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00`); // Interpreted in server's local timezone
+      }
+      return marketEndDateTime > now;
+    })
+    .sort((a, b) => {
+      const aStartDateTimeString = `${a.date}T${a.startTime}:00`;
+      const bStartDateTimeString = `${b.date}T${b.startTime}:00`;
+      const aStartDateTime = new Date(aStartDateTimeString);
+      const bStartDateTime = new Date(bStartDateTimeString);
+      return aStartDateTime.getTime() - bStartDateTime.getTime(); // Sort by full start datetime
+    });
 }
 
 /**

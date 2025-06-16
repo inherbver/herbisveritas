@@ -1,38 +1,44 @@
 // src/app/[locale]/contact/page.tsx
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hero } from "@/components/shared/hero";
-import { getNextUpcomingMarket, getAllUpcomingMarkets, formatDate } from "@/lib/market-utils";
-import { MarketInfo } from "@/types/market";
+import { getNextUpcomingMarket, getAllUpcomingMarkets } from "@/lib/market-utils"; // formatDate sera utilisé dans MarketAgenda
+// import { MarketInfo } from "@/types/market"; // MarketInfo sera utilisé dans MarketAgenda
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin } from "lucide-react"; // Icônes pour les coordonnées
+import { MarketAgenda } from "@/components/domain/contact/MarketAgenda"; // Import du nouveau composant
 
 type Props = {
   params: { locale: string };
 };
 
 export default async function ContactPage({ params }: Props) {
-  // Attendre les paramètres comme recommandé par Next.js pour les composants asynchrones
-  const { locale } = await params;
+  const { locale } = await params; // Pas besoin d'attendre ici, Next.js gère cela pour les props de page
   setRequestLocale(locale);
   const t = await getTranslations("ContactPage");
 
   const nextMarket = await getNextUpcomingMarket();
-  const allUpcomingMarkets = await getAllUpcomingMarkets();
+  const allUpcomingMarkets = await getAllUpcomingMarkets(); // Récupération des données serveur
 
   const heroProps = {
     heading: t("defaultHeroHeading"),
-    description: t("defaultHeroSubheading"), // Utilisera la prop 'description' de Hero
-    imageUrl: "/images/hero/contact-default.jpg", // Prévoyez une image par défaut
+    description: t("defaultHeroSubheading"),
+    imageUrl: "/images/hero/contact-default.jpg",
     imageAlt: t("defaultHeroImageAlt"),
   };
 
   let nextMarketCtaButton = null;
 
   if (nextMarket) {
+    // La fonction formatDate sera appelée dans le composant Hero ou ici si besoin spécifique
+    // Pour l'instant, on suppose que Hero gère le formatage ou que les traductions l'incluent.
+    // Si formatDate est spécifique à la construction de la description ici, il faut l'importer.
+    // Pour simplifier, on assume que les traductions peuvent gérer le formatage ou que Hero le fait.
+    const { formatDate: formatDateForHero } = await import("@/lib/market-utils"); // Import local si besoin
+    const formattedDate = formatDateForHero(nextMarket.date, locale);
+
     heroProps.heading = t("nextMarketHeroHeading", { marketName: nextMarket.name });
-    const formattedDate = formatDate(nextMarket.date, locale);
     heroProps.description = t("nextMarketHeroSubheading", {
-      date: formattedDate,
+      date: formattedDate, // Date formatée passée à la traduction
       city: nextMarket.city,
       startTime: nextMarket.startTime,
       endTime: nextMarket.endTime,
@@ -55,15 +61,13 @@ export default async function ContactPage({ params }: Props) {
     <>
       <Hero
         heading={heroProps.heading}
-        description={heroProps.description} // Passez le contenu à la prop 'description'
+        description={heroProps.description}
         imageUrl={heroProps.imageUrl}
         imageAlt={heroProps.imageAlt}
-        // Pas de 'children' passés ici pour le subheading ou le CTA d'ancrage
       />
 
       <main className="container mx-auto px-4 py-12 sm:py-16 md:py-20">
-        {nextMarketCtaButton} {/* Affiche le bouton CTA ici s'il existe */}
-        {/* Section 2: Nos coordonnées */}
+        {nextMarketCtaButton}
         <section id="coordinates" className="mb-12 md:mb-16">
           <h2 className="mb-6 text-center text-3xl font-semibold tracking-tight">
             {t("coordinatesTitle")}
@@ -88,55 +92,20 @@ export default async function ContactPage({ params }: Props) {
             </div>
           </div>
         </section>
-        {/* Section 3: Réseaux sociaux - Placeholder */}
         <section id="social-media" className="mb-12 bg-muted py-12 text-center md:mb-16 md:py-16">
           <h2 className="mb-6 text-3xl font-semibold tracking-tight">{t("socialMediaTitle")}</h2>
           <p className="mb-6 text-lg text-muted-foreground">{t("socialMediaSubtitle")}</p>
-          {/* Icônes réseaux sociaux à ajouter ici */}
-          <div className="flex justify-center space-x-4">
-            {/* Exemple: <a href="#" aria-label="Facebook"><FacebookIcon /></a> */}
-          </div>
+          <div className="flex justify-center space-x-4">{/* Social media icons */}</div>
         </section>
-        {/* Section 4: Agenda des marchés */}
+
+        {/* Section 4: Agenda des marchés - Utilisation du nouveau composant client */}
         <section id="marches" className="mb-12 md:mb-16">
           <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight">
             {t("marketsAgendaTitle")}
           </h2>
-          {allUpcomingMarkets.length > 0 ? (
-            <div className="space-y-8">
-              {allUpcomingMarkets.map((market: MarketInfo) => (
-                <article key={market.id} className="rounded-lg border bg-card p-6 shadow-sm">
-                  <h3 className="mb-2 text-2xl font-semibold text-primary">{market.name}</h3>
-                  <p className="mb-1 text-lg">
-                    <strong>{t("dateLabel")}:</strong> {formatDate(market.date, locale)}
-                  </p>
-                  <p className="mb-1 text-lg">
-                    <strong>{t("cityLabel")}:</strong> {market.city}
-                  </p>
-                  <p className="mb-1 text-lg">
-                    <strong>{t("hoursLabel")}:</strong> {market.startTime} - {market.endTime}
-                  </p>
-                  {market.address && (
-                    <p className="mb-1 text-lg">
-                      <strong>{t("addressLabel")}:</strong> {market.address}
-                    </p>
-                  )}
-                  {market.description && (
-                    <p className="mt-3 text-muted-foreground">{market.description}</p>
-                  )}
-                  <Button asChild variant="outline" className="mt-4">
-                    <a href={market.gpsLink} target="_blank" rel="noopener noreferrer">
-                      {t("seeOnMapButton")}
-                    </a>
-                  </Button>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-lg text-muted-foreground">{t("noUpcomingMarkets")}</p>
-          )}
+          <MarketAgenda initialMarkets={allUpcomingMarkets} locale={locale} />
         </section>
-        {/* Section 5: Points de vente partenaires - Placeholder */}
+
         <section id="partner-shops" className="bg-muted py-12 md:py-16">
           <div className="container mx-auto px-4">
             <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight">
@@ -145,7 +114,6 @@ export default async function ContactPage({ params }: Props) {
             <p className="text-center text-lg text-muted-foreground">
               {t("partnerShopsComingSoon")}
             </p>
-            {/* Cartes des boutiques partenaires à ajouter ici */}
           </div>
         </section>
       </main>

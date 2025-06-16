@@ -256,6 +256,13 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load AuthCallback.json for locale ${localeToUse}:`, _e);
   }
 
+  let filtersNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    filtersNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Filters.json`)).default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load Filters.json for locale ${localeToUse}:`, _e);
+  }
+
   // Cette partie doit venir APRÈS TOUTES les importations de namespaces
   const safeGlobal = globalNamespaceContent || {};
   const safeAccountPage = accountPageNamespaceContent || {};
@@ -286,6 +293,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeAdminLayout = adminLayoutNamespaceContent || {};
   const safeMissionPage = missionPageNamespaceContent || {};
   const safeAuthCallback = authCallbackNamespaceContent || {};
+  const safeFilters = filtersNamespaceContent || {};
 
   const mergedMessages = {
     ...(Object.keys(safeGlobal).length > 0 ? { Global: safeGlobal } : {}),
@@ -321,6 +329,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
     ...(Object.keys(safeMissionPage).length > 0 ? { MissionPage: safeMissionPage } : {}),
     ...(Object.keys(safeAuthCallback).length > 0 ? { AuthCallback: safeAuthCallback } : {}),
+    ...(Object.keys(safeFilters).length > 0 ? { Filters: safeFilters } : {}),
   };
 
   // Condition pour notFound si AUCUN message de namespace n'est chargé
@@ -353,7 +362,8 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     Object.keys(safeTestPage).length === 0 &&
     Object.keys(safeAdminLayout).length === 0 &&
     Object.keys(safeMissionPage).length === 0 &&
-    Object.keys(safeAuthCallback).length === 0
+    Object.keys(safeAuthCallback).length === 0 &&
+    Object.keys(safeFilters).length === 0
   ) {
     notFound();
   }
