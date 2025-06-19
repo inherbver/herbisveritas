@@ -10,7 +10,6 @@ import {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
-  NavigationMenuLink,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import {
@@ -120,32 +119,19 @@ export function Header() {
           <NavigationMenu>
             <NavigationMenuList className="gap-6">
               <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link href="/shop" className={navigationMenuTriggerStyle()}>
-                    {tGlobal("Header.home")}
-                  </Link>
-                </NavigationMenuLink>
+                <Link href="/shop" className={navigationMenuTriggerStyle()}>
+                  {tGlobal("Header.home")}
+                </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link href="/magazine" className={navigationMenuTriggerStyle()}>
-                    {tGlobal("Header.products")}
-                  </Link>
-                </NavigationMenuLink>
+                <Link href="/contact" className={navigationMenuTriggerStyle()}>
+                  {tGlobal("Header.contactLink")}
+                </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link href="/about" className={navigationMenuTriggerStyle()}>
-                    {tGlobal("Header.aboutLink")}
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link href="/contact" className={navigationMenuTriggerStyle()}>
-                    {tGlobal("Header.contactLink")}
-                  </Link>
-                </NavigationMenuLink>
+                <Link href="/about" className={navigationMenuTriggerStyle()}>
+                  {tGlobal("Header.aboutLink")}
+                </Link>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
@@ -217,26 +203,18 @@ export function Header() {
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
-                    href="/magazine"
-                    className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {tGlobal("Header.products")}
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    href="/mission"
-                    className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {tGlobal("Header.mission")}
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
                     href="/contact"
                     className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
-                    {tGlobal("Header.about")}
+                    {tGlobal("Header.contactLink")}
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/about"
+                    className="text-foreground/80 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {tGlobal("Header.aboutLink")}
                   </Link>
                 </SheetClose>
 

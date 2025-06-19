@@ -1,6 +1,7 @@
 // Représente une instance unique d'un marché, avec une date spécifique.
 // Sera généré à partir de RecurringMarketInfo.
 export interface MarketInfo {
+  image?: string;
   id: string;
   name: string;
   date: string; // Format ISO YYYY-MM-DD

@@ -1,11 +1,12 @@
 // src/app/[locale]/contact/page.tsx
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hero } from "@/components/shared/hero";
-import { getNextUpcomingMarket, getAllUpcomingMarkets } from "@/lib/market-utils"; // formatDate sera utilisé dans MarketAgenda
+import { getNextUpcomingMarket, getAllMarketsSorted } from "@/lib/market-utils";
 // import { MarketInfo } from "@/types/market"; // MarketInfo sera utilisé dans MarketAgenda
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin } from "lucide-react"; // Icônes pour les coordonnées
-import { MarketAgenda } from "@/components/domain/contact/MarketAgenda"; // Import du nouveau composant
+import { MarketCalendarView } from "@/components/domain/market/MarketCalendarView"; // Import du nouveau composant calendrier
+import { SocialFollow } from "@/components/domain/social/SocialFollow"; // Import du composant pour les réseaux sociaux
 
 type Props = {
   params: { locale: string };
@@ -17,7 +18,7 @@ export default async function ContactPage({ params }: Props) {
   const t = await getTranslations("ContactPage");
 
   const nextMarket = await getNextUpcomingMarket();
-  const allUpcomingMarkets = await getAllUpcomingMarkets(); // Récupération des données serveur
+  const allSortedMarkets = await getAllMarketsSorted(); // Récupération de tous les marchés triés
 
   const heroProps = {
     heading: t("defaultHeroHeading"),
@@ -92,21 +93,21 @@ export default async function ContactPage({ params }: Props) {
             </div>
           </div>
         </section>
-        <section id="social-media" className="mb-12 bg-muted py-12 text-center md:mb-16 md:py-16">
+        <section id="social-media" className="mb-12 py-12 text-center md:mb-16">
           <h2 className="mb-6 text-3xl font-semibold tracking-tight">{t("socialMediaTitle")}</h2>
           <p className="mb-6 text-lg text-muted-foreground">{t("socialMediaSubtitle")}</p>
-          <div className="flex justify-center space-x-4">{/* Social media icons */}</div>
+          <SocialFollow />
         </section>
 
         {/* Section 4: Agenda des marchés - Utilisation du nouveau composant client */}
-        <section id="marches" className="mb-12 md:mb-16">
+        <section id="marches" className="mb-12 flex flex-col items-center md:mb-16">
           <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight">
             {t("marketsAgendaTitle")}
           </h2>
-          <MarketAgenda initialMarkets={allUpcomingMarkets} locale={locale} />
+          <MarketCalendarView initialMarkets={allSortedMarkets} locale={locale} />
         </section>
 
-        <section id="partner-shops" className="bg-muted py-12 md:py-16">
+        <section id="partner-shops" className="py-12 md:py-16">
           <div className="container mx-auto px-4">
             <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight">
               {t("partnerShopsTitle")}

@@ -3,8 +3,8 @@
     "switchLocale": "Passer en {locale, select, fr {français} en {anglais} other {inconnu}}"
   },
   "Header": {
-    "aboutLink": "À Propos",
-    "contactLink": "Contact",
+    "aboutLink": "Nos Racines",
+    "contactLink": "Retrouvez moi",
     "home": "Boutique",
     "products": "Magazine",
     "mission": "Notre mission",
