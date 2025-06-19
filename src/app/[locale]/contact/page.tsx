@@ -3,60 +3,57 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hero } from "@/components/shared/hero";
 import { getNextUpcomingMarket, getAllMarketsSorted } from "@/lib/market-utils";
 // import { MarketInfo } from "@/types/market"; // MarketInfo sera utilisé dans MarketAgenda
-import { Button } from "@/components/ui/button";
+
 import { Mail, Phone, MapPin } from "lucide-react"; // Icônes pour les coordonnées
 import { MarketCalendarView } from "@/components/domain/market/MarketCalendarView"; // Import du nouveau composant calendrier
 import { SocialFollow } from "@/components/domain/social/SocialFollow"; // Import du composant pour les réseaux sociaux
+import { PartnerShopCard, PartnerShop } from "@/components/domain/partner/PartnerShopCard";
+import partnersData from "@/data/partners.json"; // Import du composant pour les réseaux sociaux
 
 type Props = {
-  params: { locale: string };
+  params: Promise<{ locale: string }>; // Changement ici : Promise
 };
 
 export default async function ContactPage({ params }: Props) {
-  const { locale } = await params; // Pas besoin d'attendre ici, Next.js gère cela pour les props de page
+  const { locale } = await params; // Ajout d'await ici
   setRequestLocale(locale);
   const t = await getTranslations("ContactPage");
 
   const nextMarket = await getNextUpcomingMarket();
   const allSortedMarkets = await getAllMarketsSorted(); // Récupération de tous les marchés triés
 
-  const heroProps = {
+  const heroProps: {
+    heading: string;
+    description: string;
+    imageUrl: string;
+    imageAlt: string;
+    ctaLabel?: string;
+    ctaLink?: string;
+  } = {
     heading: t("defaultHeroHeading"),
     description: t("defaultHeroSubheading"),
     imageUrl: "/images/hero/contact-default.jpg",
     imageAlt: t("defaultHeroImageAlt"),
   };
 
-  let nextMarketCtaButton = null;
-
   if (nextMarket) {
-    // La fonction formatDate sera appelée dans le composant Hero ou ici si besoin spécifique
-    // Pour l'instant, on suppose que Hero gère le formatage ou que les traductions l'incluent.
-    // Si formatDate est spécifique à la construction de la description ici, il faut l'importer.
-    // Pour simplifier, on assume que les traductions peuvent gérer le formatage ou que Hero le fait.
-    const { formatDate: formatDateForHero } = await import("@/lib/market-utils"); // Import local si besoin
+    const { formatDate: formatDateForHero } = await import("@/lib/market-utils");
     const formattedDate = formatDateForHero(nextMarket.date, locale);
 
     heroProps.heading = t("nextMarketHeroHeading", { marketName: nextMarket.name });
     heroProps.description = t("nextMarketHeroSubheading", {
-      date: formattedDate, // Date formatée passée à la traduction
+      date: formattedDate,
       city: nextMarket.city,
       startTime: nextMarket.startTime,
       endTime: nextMarket.endTime,
     });
     heroProps.imageUrl = nextMarket.heroImage || "/images/hero/default-market-night.jpg";
     heroProps.imageAlt = t("nextMarketHeroImageAlt", { marketName: nextMarket.name });
-
-    nextMarketCtaButton = (
-      <div className="my-8 text-center">
-        <a href="#marches">
-          <Button size="lg" variant="default">
-            {t("seeAllMarketsButton")}
-          </Button>
-        </a>
-      </div>
-    );
+    heroProps.ctaLabel = t("seeAllMarketsButton");
+    heroProps.ctaLink = "#marches";
   }
+
+  const partners: PartnerShop[] = partnersData;
 
   return (
     <>
@@ -65,10 +62,11 @@ export default async function ContactPage({ params }: Props) {
         description={heroProps.description}
         imageUrl={heroProps.imageUrl}
         imageAlt={heroProps.imageAlt}
+        ctaLabel={heroProps.ctaLabel}
+        ctaLink={heroProps.ctaLink}
       />
 
       <main className="container mx-auto px-4 py-12 sm:py-16 md:py-20">
-        {nextMarketCtaButton}
         <section id="coordinates" className="mb-12 md:mb-16">
           <h2 className="mb-6 text-center text-3xl font-semibold tracking-tight">
             {t("coordinatesTitle")}
@@ -93,13 +91,8 @@ export default async function ContactPage({ params }: Props) {
             </div>
           </div>
         </section>
-        <section id="social-media" className="mb-12 py-12 text-center md:mb-16">
-          <h2 className="mb-6 text-3xl font-semibold tracking-tight">{t("socialMediaTitle")}</h2>
-          <p className="mb-6 text-lg text-muted-foreground">{t("socialMediaSubtitle")}</p>
-          <SocialFollow />
-        </section>
 
-        {/* Section 4: Agenda des marchés - Utilisation du nouveau composant client */}
+        {/* Section 2: Agenda des marchés */}
         <section id="marches" className="mb-12 flex flex-col items-center md:mb-16">
           <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight">
             {t("marketsAgendaTitle")}
@@ -107,15 +100,27 @@ export default async function ContactPage({ params }: Props) {
           <MarketCalendarView initialMarkets={allSortedMarkets} locale={locale} />
         </section>
 
-        <section id="partner-shops" className="py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight">
-              {t("partnerShopsTitle")}
-            </h2>
-            <p className="text-center text-lg text-muted-foreground">
-              {t("partnerShopsComingSoon")}
-            </p>
+        {/* Section 3: Partner Shops */}
+        <section id="partner-shops" className="mb-12 md:mb-16">
+          <h2 className="mb-6 text-center text-3xl font-semibold tracking-tight">
+            Nos points de vente partenaires
+          </h2>
+          <p className="mx-auto mb-8 max-w-2xl text-center text-lg text-muted-foreground">
+            Retrouvez nos créations chez nos partenaires en boutiques, des lieux que nous avons
+            sélectionnés pour leur authenticité et leur engagement.
+          </p>
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {partners.map((partner) => (
+              <PartnerShopCard key={partner.name} partner={partner} />
+            ))}
           </div>
+        </section>
+
+        {/* Section 4: Social Media */}
+        <section id="social-media" className="py-12 text-center">
+          <h2 className="mb-6 text-3xl font-semibold tracking-tight">{t("socialMediaTitle")}</h2>
+          <p className="mb-6 text-lg text-muted-foreground">{t("socialMediaSubtitle")}</p>
+          <SocialFollow />
         </section>
       </main>
     </>
