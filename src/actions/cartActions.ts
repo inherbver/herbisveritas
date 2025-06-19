@@ -227,6 +227,9 @@ export async function updateCartItemQuantity(
 
     revalidateTag("cart");
 
+    // ADD SMALL DELAY TO ENSURE CACHE INVALIDATION PROPAGATES
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const cartStateAfterUpdate = await getCart();
     if (!isSuccessResult(cartStateAfterUpdate)) {
       return createGeneralErrorResult(

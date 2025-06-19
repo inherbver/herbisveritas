@@ -23,6 +23,14 @@ export function MarketCalendarView({
   const [selectedMarket, setSelectedMarket] = useState<MarketInfo | null>(null);
   const [dateFnsLocale, setDateFnsLocale] = useState<Locale | undefined>(undefined);
 
+  const handleDateSelect = (newDate: Date | undefined) => {
+    // Prevent unselecting a date by clicking it again.
+    // Only update if a new date is actually selected.
+    if (newDate) {
+      setDate(newDate);
+    }
+  };
+
   // Load date-fns locale dynamically
   useEffect(() => {
     const loadLocale = async () => {
@@ -90,7 +98,7 @@ export function MarketCalendarView({
           <Calendar
             mode="single"
             selected={date}
-            onSelect={setDate}
+            onSelect={handleDateSelect}
             locale={dateFnsLocale}
             className="w-full rounded-md border"
             modifiers={{ marketDay: marketDays }}
