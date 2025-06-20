@@ -8,7 +8,7 @@ const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       // État initial
-      items: [],
+      items: [] as CartItem[],
       isLoading: false,
       error: null,
 
@@ -131,11 +131,31 @@ const useCartStore = create<CartStore>()(
       },
 
       _setItems: (items: CartItem[]) => {
+        const logPrefix = `[CartStore _setItems ${new Date().toISOString()}]`;
         try {
+          // Log before setting, showing what's about to be set
+          console.log(
+            `${logPrefix} Attempting to set items. Count: ${items.length}. Items (first 3):`,
+            JSON.stringify(items.slice(0, 3), null, 2)
+          );
+
+          const currentItems = get().items;
+          if (JSON.stringify(currentItems) === JSON.stringify(items)) {
+            console.log(`${logPrefix} New items are identical to current items. Skipping update.`);
+            // Optionally, still call set to ensure error is reset if it was previously set.
+            // set({ error: null });
+            return;
+          }
+
           set({ items, error: null });
-          console.log(`CartStore: Set ${items.length} items in cart`);
+          console.log(`${logPrefix} Successfully set ${items.length} items in cart.`);
         } catch (error) {
-          console.error("CartStore: Error setting items:", error);
+          console.error(`${logPrefix} Error setting items:`, error);
+          // Log the items that caused the error for better debugging
+          console.error(
+            `${logPrefix} Items that caused error:`,
+            JSON.stringify(items.slice(0, 5), null, 2)
+          );
           set({ error: "Erreur lors de la synchronisation" });
         }
       },

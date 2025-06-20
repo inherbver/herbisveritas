@@ -56,36 +56,106 @@ export function CartDisplay() {
     // Reset loading state if implemented
   };
 
+  // Dans cart-display.tsx - Version améliorée de handleUpdateItemQuantity
+
   const handleUpdateItemQuantity = async (cartItemId: string, newQuantity: number) => {
+    const logPrefix = `[CartDisplay handleUpdateItemQuantity ${new Date().toISOString()}]`;
+    console.log(`${logPrefix} CALLED with cartItemId: ${cartItemId}, newQuantity: ${newQuantity}`);
+
     if (!cartItemId) {
+      console.error(`${logPrefix} cartItemId is MISSING.`);
       toast.error(tGlobal("genericError"));
       return;
     }
 
-    // The server action updateCartItemQuantity already handles newQuantity <= 0 by calling removeItemFromCart.
-    // So, we can directly call it.
-    // Consider adding a loading state for the specific item or quantity input
-
-    const actionInput: UpdateCartItemQuantityInput = { cartItemId, quantity: newQuantity };
-    const result: CartActionResult<CartData | null> =
-      await updateCartItemQuantityAction(actionInput);
-
-    if (isSuccessResult(result)) {
-      toast.success(result.message || t("itemQuantityUpdatedSuccess"));
-      if (result.data?.items) {
-        _setItems(result.data.items);
-      }
-    } else {
-      toast.error(result.message || tGlobal("genericError"));
+    // Validation côté client
+    if (newQuantity < 0) {
+      console.warn(`${logPrefix} Invalid quantity: ${newQuantity}. Must be >= 0.`);
+      toast.error("La quantité doit être positive ou nulle.");
+      return;
     }
-    // Reset loading state if implemented
+
+    // 1. SAUVEGARDER L'ÉTAT ACTUEL pour rollback
+    const currentItems = useCartStore.getState().items;
+    const previousState = [...currentItems]; // Deep copy pour éviter les mutations
+
+    console.log(`${logPrefix} Current state saved (${previousState.length} items)`);
+
+    // 2. OPTIMISTIC UPDATE - Mettre à jour l'UI immédiatement
+    const optimisticItems = currentItems
+      .map((item) => (item.id === cartItemId ? { ...item, quantity: newQuantity } : item))
+      .filter((item) => item.quantity > 0); // Retirer si quantity <= 0
+
+    _setItems(optimisticItems);
+    console.log(
+      `${logPrefix} Applied optimistic update (${optimisticItems.length} items after update)`
+    );
+
+    // 3. APPELER L'ACTION SERVEUR
+    const actionInput: UpdateCartItemQuantityInput = { cartItemId, quantity: newQuantity };
+    console.log(
+      `${logPrefix} Calling server action with input:`,
+      JSON.stringify(actionInput, null, 2)
+    );
+
+    try {
+      const result: CartActionResult<CartData | null> =
+        await updateCartItemQuantityAction(actionInput);
+      console.log(`${logPrefix} Received response from server action. Success: ${result.success}`);
+
+      if (isSuccessResult(result)) {
+        // 3a. SUCCÈS - Synchroniser avec les données serveur
+        if (result.data?.items) {
+          console.log(
+            `${logPrefix} Server action SUCCESS. Syncing with server data (${result.data.items.length} items)`
+          );
+          _setItems(result.data.items);
+        } else {
+          console.log(`${logPrefix} Server action SUCCESS but no data - keeping optimistic update`);
+        }
+        toast.success(result.message || t("itemQuantityUpdatedSuccess"));
+      } else {
+        // 3b. ERREUR SERVEUR - Rollback à l'état précédent
+        console.error(
+          `${logPrefix} Server action FAILED. Error: ${result.message}. Rolling back to previous state.`
+        );
+        _setItems(previousState);
+
+        // Log des détails d'erreur pour debugging
+        if ("fieldErrors" in result && result.fieldErrors) {
+          console.error(`${logPrefix} Field validation errors:`, result.fieldErrors);
+        } else if ("internalError" in result && result.internalError) {
+          console.error(`${logPrefix} Internal server error:`, result.internalError);
+        }
+
+        toast.error(result.message || tGlobal("genericError"));
+      }
+    } catch (error: unknown) {
+      // 3c. ERREUR RÉSEAU/INATTENDUE - Rollback
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+      console.error(
+        `${logPrefix} Network/unexpected error during server action. Error: ${errorMessage}. Rolling back to previous state.`
+      );
+      console.error(
+        `${logPrefix} Previous state being restored (first 3 items):`,
+        JSON.stringify(previousState.slice(0, 3), null, 2)
+      );
+
+      // Log séparé pour l'objet error complet (pour debugging)
+      if (!(error instanceof Error)) {
+        console.error(`${logPrefix} Additional error details (non-Error object):`, error);
+      }
+
+      _setItems(previousState);
+      toast.error(tGlobal("genericError"));
+    }
   };
 
   if (items.length === 0) {
     return (
       <section aria-labelledby="cart-heading" className="p-4 text-center">
         <h2 id="cart-heading" className="mb-2 text-xl font-semibold">
-          {t("yourCart")}
+          {t("yourCart") as string}
         </h2>
         <p>{t("emptyCart")}</p>
         <NextLink href="/products" className="mt-4 inline-block">

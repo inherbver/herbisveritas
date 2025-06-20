@@ -14,6 +14,7 @@ import {
   createValidationErrorResult,
   createGeneralErrorResult,
 } from "@/lib/cart-helpers";
+import type { CartData } from "@/types/cart";
 import {
   AddToCartInputSchema,
   RemoveFromCartInputSchema,
@@ -21,7 +22,6 @@ import {
   UpdateCartItemQuantityInputSchema,
   type UpdateCartItemQuantityInput,
 } from "@/lib/schemas/cartSchemas";
-import type { CartData } from "@/types/cart";
 
 export async function addItemToCart(
   prevState: CartActionResult<CartData | null> | unknown,
@@ -170,20 +170,30 @@ export async function removeItemFromCart(
   }
 }
 
+// Dans cartActions.ts - Version simplifiée de updateCartItemQuantity
+
 export async function updateCartItemQuantity(
   input: UpdateCartItemQuantityInput
 ): Promise<CartActionResult<CartData | null>> {
+  const logPrefix = `[updateCartItemQuantity ${new Date().toISOString()}]`;
+  console.log(`${logPrefix} CALLED with input:`, JSON.stringify(input, null, 2));
+
   const validatedFields = UpdateCartItemQuantityInputSchema.safeParse(input);
   if (!validatedFields.success) {
     const firstError =
       Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
       "Erreur de validation.";
+    console.error(`${logPrefix} Validation FAILED:`, validatedFields.error.flatten().fieldErrors);
     return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
   }
 
   const { cartItemId, quantity } = validatedFields.data;
+  console.log(`${logPrefix} Validated data - cartItemId: ${cartItemId}, quantity: ${quantity}`);
 
   if (quantity <= 0) {
+    console.log(
+      `${logPrefix} Quantity <= 0, redirecting to removeItemFromCart for cartItemId: ${cartItemId}`
+    );
     return await removeItemFromCart({ cartItemId });
   }
 
@@ -191,55 +201,58 @@ export async function updateCartItemQuantity(
   const activeUserId = await getActiveUserId(supabase);
 
   if (!activeUserId) {
+    console.error(`${logPrefix} FAILED to identify active user.`);
     return createGeneralErrorResult("Impossible d'identifier l'utilisateur.");
   }
+  console.log(`${logPrefix} Active user identified: ${activeUserId}`);
 
   try {
-    const { data: itemData, error: fetchItemError } = await supabase
+    // Vérification de propriété et mise à jour en une seule transaction
+    console.log(`${logPrefix} Updating cart item with ownership verification`);
+    const { data: updateResult, error: updateError } = await supabase
       .from("cart_items")
-      .select("id, quantity, carts (user_id)")
+      .update({
+        quantity: quantity,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", cartItemId)
-      .maybeSingle();
+      .eq("carts.user_id", activeUserId) // Vérification de propriété dans la requête
+      .select("id, quantity") // Retourner les données mises à jour
+      .single();
 
-    if (fetchItemError) {
-      return createGeneralErrorResult(`Erreur interne: ${fetchItemError.message}`);
+    if (updateError) {
+      console.error(`${logPrefix} FAILED to update cart_items:`, updateError);
+
+      // Vérifier si c'est un problème de propriété ou d'existence
+      if (updateError.code === "PGRST116") {
+        // No rows updated
+        return createGeneralErrorResult("Article du panier non trouvé ou action non autorisée.");
+      }
+
+      return createGeneralErrorResult(`Erreur lors de la mise à jour: ${updateError.message}`);
     }
 
-    if (!itemData) {
-      return createGeneralErrorResult("Article du panier non trouvé.");
+    if (!updateResult) {
+      console.warn(`${logPrefix} No rows updated - item not found or unauthorized`);
+      return createGeneralErrorResult("Article du panier non trouvé ou action non autorisée.");
     }
 
-    // @ts-expect-error itemData.carts is expected to be an object if found
-    if (!itemData.carts || itemData.carts.user_id !== activeUserId) {
-      return createGeneralErrorResult(
-        "Action non autorisée: cet article n'appartient pas à votre panier."
-      );
-    }
+    console.log(
+      `${logPrefix} Successfully updated cart_items. New quantity: ${updateResult.quantity}`
+    );
 
-    const { error: updateItemError } = await supabase
-      .from("cart_items")
-      .update({ quantity: quantity, updated_at: new Date().toISOString() })
-      .eq("id", cartItemId);
-
-    if (updateItemError) {
-      return createGeneralErrorResult(`Erreur lors de la mise à jour: ${updateItemError.message}`);
-    }
-
+    // Revalidation pour les futures requêtes (sans attendre)
     revalidateTag("cart");
 
-    // ADD SMALL DELAY TO ENSURE CACHE INVALIDATION PROPAGATES
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const cartStateAfterUpdate = await getCart();
-    if (!isSuccessResult(cartStateAfterUpdate)) {
-      return createGeneralErrorResult(
-        "Erreur lors de la récupération du panier après mise à jour."
-      );
-    }
-
-    return createSuccessResult(cartStateAfterUpdate.data, "Quantité de l'article mise à jour.");
+    // Retourner uniquement le succès sans récupérer tout le panier
+    // Le client gère l'état avec l'optimistic update
+    return createSuccessResult(null, "Quantité de l'article mise à jour.");
   } catch (_e: unknown) {
-    return createGeneralErrorResult("Une erreur inattendue est survenue lors de la mise à jour.");
+    const e = _e as Error;
+    console.error(`${logPrefix} UNEXPECTED ERROR:`, e);
+    return createGeneralErrorResult(
+      `Une erreur inattendue est survenue lors de la mise à jour: ${e.message}`
+    );
   }
 }
 
