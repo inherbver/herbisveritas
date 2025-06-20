@@ -207,8 +207,29 @@ export async function updateCartItemQuantity(
   console.log(`${logPrefix} Active user identified: ${activeUserId}`);
 
   try {
-    // Vérification de propriété et mise à jour en une seule transaction
-    console.log(`${logPrefix} Updating cart item with ownership verification`);
+    // ÉTAPE 1: Vérifier que l'item appartient bien à l'utilisateur
+    console.log(`${logPrefix} Verifying item ownership`);
+    const { data: itemData, error: fetchError } = await supabase
+      .from("cart_items")
+      .select("id, quantity, carts!inner(user_id)") // !inner pour faire un JOIN obligatoire
+      .eq("id", cartItemId)
+      .eq("carts.user_id", activeUserId) // Maintenant carts est inclus dans le select
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error(`${logPrefix} FAILED to fetch item for ownership verification:`, fetchError);
+      return createGeneralErrorResult(`Erreur lors de la vérification: ${fetchError.message}`);
+    }
+
+    if (!itemData) {
+      console.warn(`${logPrefix} Item not found or unauthorized access`);
+      return createGeneralErrorResult("Article du panier non trouvé ou action non autorisée.");
+    }
+
+    console.log(`${logPrefix} Ownership verified. Current quantity: ${itemData.quantity}`);
+
+    // ÉTAPE 2: Mettre à jour la quantité
+    console.log(`${logPrefix} Updating cart item quantity`);
     const { data: updateResult, error: updateError } = await supabase
       .from("cart_items")
       .update({
@@ -216,36 +237,27 @@ export async function updateCartItemQuantity(
         updated_at: new Date().toISOString(),
       })
       .eq("id", cartItemId)
-      .eq("carts.user_id", activeUserId) // Vérification de propriété dans la requête
-      .select("id, quantity") // Retourner les données mises à jour
+      .select("id, quantity") // Simple select sans relation
       .single();
 
     if (updateError) {
       console.error(`${logPrefix} FAILED to update cart_items:`, updateError);
-
-      // Vérifier si c'est un problème de propriété ou d'existence
-      if (updateError.code === "PGRST116") {
-        // No rows updated
-        return createGeneralErrorResult("Article du panier non trouvé ou action non autorisée.");
-      }
-
       return createGeneralErrorResult(`Erreur lors de la mise à jour: ${updateError.message}`);
     }
 
     if (!updateResult) {
-      console.warn(`${logPrefix} No rows updated - item not found or unauthorized`);
-      return createGeneralErrorResult("Article du panier non trouvé ou action non autorisée.");
+      console.warn(`${logPrefix} No rows updated`);
+      return createGeneralErrorResult("Erreur lors de la mise à jour.");
     }
 
     console.log(
       `${logPrefix} Successfully updated cart_items. New quantity: ${updateResult.quantity}`
     );
 
-    // Revalidation pour les futures requêtes (sans attendre)
+    // Revalidation pour les futures requêtes
     revalidateTag("cart");
 
-    // Retourner uniquement le succès sans récupérer tout le panier
-    // Le client gère l'état avec l'optimistic update
+    // Retourner uniquement le succès
     return createSuccessResult(null, "Quantité de l'article mise à jour.");
   } catch (_e: unknown) {
     const e = _e as Error;
