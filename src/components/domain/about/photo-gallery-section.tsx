@@ -25,28 +25,23 @@ export const PhotoGallerySection = () => {
   // Vous remplacerez ces images par les vôtres
   const images: GalleryImage[] = [
     {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/products/herbis-veritas-tisane-bio-detox.webp",
-      alt: "Placeholder Image 1 - Product Example",
-      aspectRatio: "aspect-square", // ou aspect-[1/1]
-    },
-    {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/products/herbis-veritas-tisane-bio-sommeil.webp",
-      alt: "Placeholder Image 2 - Product Example",
+      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//album_01.webp",
+      alt: "Image de la galerie 1",
       aspectRatio: "aspect-square",
     },
     {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/products/herbis-veritas-tisane-bio-energie.webp",
-      alt: "Placeholder Image 3 - Product Example",
+      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//album_02.webp",
+      alt: "Image de la galerie 2",
       aspectRatio: "aspect-square",
     },
     {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/products/herbis-veritas-tisane-bio-anti-stress.webp",
-      alt: "Placeholder Image 4 - Product Example",
+      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//album_03.webp",
+      alt: "Image de la galerie 3",
       aspectRatio: "aspect-square",
     },
     {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/products/herbis-veritas-tisane-bio-circulation.webp",
-      alt: "Placeholder Image 5 - Product Example",
+      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//album_04.webp",
+      alt: "Image de la galerie 4",
       aspectRatio: "aspect-square",
     },
   ];

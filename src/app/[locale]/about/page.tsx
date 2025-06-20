@@ -35,11 +35,10 @@ export default function AboutPage() {
       <Hero
         heading={tHero("title")}
         description={tHero("subtitle")}
-        imageUrl="https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//hero_contact.webp"
+        imageUrl="https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//hero_about.webp"
         imageAlt={tHero("imageAlt")}
         // ctaLabel={tHero("ctaLabel")} // Décommenter si un CTA est souhaité
         // ctaLink="/products" // Adapter le lien du CTA si besoin
-        className="min-h-[50vh] md:min-h-[60vh]" // Ajuster la hauteur minimale pour bien voir l'image
       />
       {/* Le titre principal de la page est maintenant géré par le composant Hero partagé */}
 
@@ -57,20 +56,7 @@ export default function AboutPage() {
         </section>
 
         <section id="gallery" className="py-12 md:py-16">
-          <h2 className="mb-10 text-center text-3xl font-bold tracking-tight sm:text-4xl md:mb-12">
-            {t("sections.gallery.title")}
-          </h2>
           <PhotoGallerySection />
-        </section>
-
-        <section id="bestsellers" className="py-12 md:py-16">
-          <h2 className="mb-10 text-center text-3xl font-bold tracking-tight sm:text-4xl md:mb-12">
-            {t("sections.bestsellers.title")}
-          </h2>
-          {/* <BestSellersSection /> */}
-          <p className="text-center text-muted-foreground">
-            Contenu pour la section Nos Best-Sellers à venir.
-          </p>
         </section>
 
         {/* Ajoutez d'autres sections ici au fur et à mesure de leur développement */}

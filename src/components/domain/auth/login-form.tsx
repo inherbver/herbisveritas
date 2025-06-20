@@ -24,7 +24,13 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   const t = useTranslations("Auth.LoginForm");
   return (
-    <Button type="submit" size="sm" className="w-full" disabled={pending}>
+    <Button
+      type="submit"
+      size="lg"
+      variant="secondary"
+      className="w-full shadow-md transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95"
+      disabled={pending}
+    >
       {pending ? t("loading") : t("submitButton")}
     </Button>
   );
@@ -49,9 +55,9 @@ export function LoginForm() {
   }, [state.error, state.message, state.success]);
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="border-border/50 w-full max-w-sm rounded-xl shadow-xl">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-lg font-semibold">{t("title")}</CardTitle>
+        <CardTitle className="text-2xl font-bold tracking-tight">{t("title")}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
           {t("description")}
         </CardDescription>
@@ -84,7 +90,10 @@ export function LoginForm() {
       </form>
       <p className="mt-4 px-6 pb-6 text-center text-sm">
         {t("registerPrompt")}{" "}
-        <a href="/register" className="underline">
+        <a
+          href="/register"
+          className="hover:text-primary/90 font-semibold text-primary underline-offset-4 transition-colors hover:underline"
+        >
           {t("registerLink")}
         </a>
       </p>

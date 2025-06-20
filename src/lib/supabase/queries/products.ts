@@ -105,6 +105,7 @@ export const getProductBySlug = cache(
       inci_list,
       unit,
       product_translations!inner(
+        locale,
         name,
         short_description,
         description_long,
@@ -127,6 +128,15 @@ export const getProductBySlug = cache(
     }
 
     if (!data) {
+      return null;
+    }
+
+    // Defensive check: If the inner join somehow returns a product with no translations,
+    // treat it as if the product was not found for this locale.
+    if (!data.product_translations || data.product_translations.length === 0) {
+      console.warn(
+        `Product with slug '${slug}' found, but no matching translation for locale '${locale}'.`
+      );
       return null;
     }
 

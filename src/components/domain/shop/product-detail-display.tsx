@@ -194,7 +194,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
         {/* defaultValue sets initial, onValueChange updates state */}
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Update grid columns to 4 */}
-          <TabsList className="mb-4 grid w-full grid-cols-4">
+          <TabsList className="mb-4 flex w-full justify-start overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {/* Apply active/inactive styles */}
             <TabsTrigger
               value="description"

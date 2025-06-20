@@ -37,37 +37,37 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
       <section
         ref={ref}
         className={cn(
-          "bg-muted/30 relative flex flex-col justify-start overflow-hidden md:justify-center", // Changed to flex-col, justify-start for more control, md:justify-center to attempt original centering for larger adjustments
-          "min-h-[450px] py-16 sm:min-h-[500px] sm:py-20 md:min-h-[600px] md:py-24", // Increased min-height and padding
-          imageUrl && "bg-cover bg-center bg-no-repeat text-primary-foreground",
+          "bg-muted/30 relative flex flex-col justify-start overflow-hidden md:items-start md:pt-24", // Point 3: Desktop top space, Point 5: flex-col for mobile
+          "min-h-[450px] py-16 sm:min-h-[500px] sm:py-20 md:h-[60vh] md:max-h-[550px] md:py-0", // Point 3: Height limit
+          imageUrl && "bg-cover bg-center bg-no-repeat text-primary-foreground", // Keep existing image logic
+          "transition-transform duration-300 ease-in-out hover:scale-[1.02]", // Point 4: Subtle scale animation
           className
         )}
         style={backgroundStyle}
-        aria-label={imageUrl && imageAlt ? imageAlt : undefined}
+        aria-label={imageUrl && imageAlt ? imageAlt : undefined} // Point 5: Accessibility
         {...props}
       >
-        {/* V1 Overlay: Dark overlay + bottom gradient */}
-        {imageUrl && <div aria-hidden="true" className="absolute inset-0 bg-black/40" />}
+        {/* Overlay: Gradient from bottom to center */}
         {imageUrl && (
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50" // Gradient from top (transparent) to bottom (semi-opaque black)
+            className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent"
           />
         )}
 
-        {/* Content Wrapper: controls max-width, centering, and vertical positioning */}
+        {/* Content Wrapper */}
         <header
           className={cn(
             "container relative z-10 mx-auto flex w-full flex-col items-center text-center",
-            "px-4 sm:px-6 lg:px-8",
-            "mt-[20vh] sm:mt-[18vh] md:mt-0 md:max-w-[600px]" // Desktop: centered (mt-0 because section is justify-center), max-width 600px. Mobile: top margin based on viewport height, full width for text centering
+            "px-6 sm:px-8 md:px-10 lg:px-16",
+            "pt-[25vh] sm:pt-[20vh] md:max-w-[700px] md:pt-0" // Position text block at ~40% height
           )}
         >
           <Heading
             level={1}
             className={cn(
-              "text-4xl font-bold leading-tight sm:text-5xl md:text-6xl lg:text-7xl", // V1: Increased size, font-bold (700). Base: 2.5rem, SM: 3rem, MD: 3.75rem (for 4rem target), LG: 4.5rem
-              imageUrl ? "text-inherit" : "text-foreground" // Ensure text color is appropriate
+              "text-4xl font-bold leading-tight sm:text-5xl md:text-6xl lg:text-7xl",
+              imageUrl ? "text-primary-foreground" : "text-foreground"
             )}
           >
             {heading}
@@ -75,7 +75,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           {description && (
             <Text
               className={cn(
-                "mt-4 max-w-prose text-base font-medium sm:mt-5 sm:text-lg md:text-xl", // V1: font-medium (500), adjusted margin, responsive text size
+                "mt-4 max-w-prose text-base font-medium sm:mt-5 sm:text-xl md:text-2xl",
                 imageUrl ? "text-primary-foreground/90" : "text-muted-foreground"
               )}
             >
@@ -87,8 +87,11 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
               <Link
                 href={ctaLink}
                 className={cn(
-                  buttonVariants({ variant: "default", size: "lg" }),
-                  "px-8 py-3 text-base font-semibold md:px-10 md:py-4 md:text-lg" // Ensure button is substantial
+                  buttonVariants({ variant: "secondary" }),
+                  "rounded-lg shadow-md", // CTA rounding and shadow
+                  "px-12 py-3 text-base font-semibold",
+                  "md:px-14 md:py-3.5 md:text-lg",
+                  "hover:ring-secondary-foreground/50 transition-transform duration-200 ease-out hover:scale-105 hover:ring-2" // CTA hover effects
                 )}
               >
                 {ctaLabel}

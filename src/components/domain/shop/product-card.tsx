@@ -68,13 +68,13 @@ function SubmitButtonForCard({ t }: SubmitButtonForCardProps) {
     <Button
       type="submit"
       size="sm"
-      variant={pending ? "outline" : "default"} // Change variant when pending if desired
+      variant={pending ? "outline" : "secondary"} // Use secondary (olive) variant
       disabled={pending}
       aria-disabled={pending}
       className={cn(
-        "h-10 w-full max-w-xs px-4 text-sm shadow-sm transition-all duration-200 ease-in-out active:scale-95",
+        "h-10 w-full max-w-xs px-4 text-sm shadow-md transition-all duration-200 ease-in-out active:scale-95", // Adjusted shadow
         !pending &&
-          "hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "hover:scale-105 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", // Enhanced hover
         pending && "cursor-wait opacity-70"
       )}
     >
@@ -207,7 +207,7 @@ export function ProductCard({
             />
           </div>
         </NextLink>
-        <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+        <div className="absolute right-3 top-3 z-10 flex flex-col items-end gap-1.5">
           {is_new && (
             <Badge className="border-transparent bg-sky-100 text-xs text-sky-800 shadow-md dark:bg-sky-900 dark:text-sky-200">
               {t("newLabel")}
@@ -242,7 +242,7 @@ export function ProductCard({
         <NextLink href={linkHref} passHref={false} className="contents">
           <h2
             id={`product-title-${id}`}
-            className="mb-1 line-clamp-2 text-center text-xl font-semibold leading-tight hover:underline"
+            className="mb-1 line-clamp-2 text-center text-lg font-semibold leading-tight hover:underline"
             title={title}
           >
             {title}
@@ -291,7 +291,7 @@ export function ProductCard({
   );
 
   const commonCardClasses = cn(
-    "relative flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden h-full",
+    "relative flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden h-full min-h-[420px]",
     "transition-all duration-300 ease-in-out group",
     !isOutOfStock ? "hover:shadow-xl hover:border-primary/50 group-hover:-translate-y-1" : "",
     className

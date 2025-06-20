@@ -9,6 +9,7 @@ import { LanguagesIcon } from "lucide-react";
 import { startTransition } from "react";
 
 export default function LocaleSwitcher() {
+  return null; // Masquer le sélecteur de langue
   const t = useTranslations("Global.LocaleSwitcher");
   const currentLocale = useLocale() as Locale;
   const router = useRouter();

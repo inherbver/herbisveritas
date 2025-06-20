@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProductBySlug(slug, locale);
 
   // Use optional chaining and check for the first translation element
-  const translation = product?.product_translations?.[0];
+  const translation = product?.product_translations?.find((t) => t.locale === locale);
   if (!product || !translation) {
     return {
       title: t("productNotFound"),
@@ -44,11 +44,10 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound();
   }
 
-  // Access the first translation (if it exists)
-  const translation = productData.product_translations?.[0];
+  // Find the translation for the current locale
+  const translation = productData.product_translations?.find((t) => t.locale === locale);
 
-  // Although getProductBySlug should return null if no product OR matching translation is found,
-  // double-check translation existence for robustness.
+  // If no specific translation is found for the locale (should ideally be handled by getProductBySlug)
   if (!translation) {
     console.error(`Missing translation data in response for product ${slug} in locale ${locale}`);
     notFound(); // Treat missing translation within the response as an error

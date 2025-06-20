@@ -1,9 +1,11 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 import React, { useState, useEffect } from "react";
 import { MarketInfo } from "@/types/market";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Image from "next/image";
 import { MapPin, Clock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -77,18 +79,14 @@ export function MarketCalendarView({
   }
 
   return (
-    <section
-      aria-labelledby="market-calendar-heading"
-      className="mx-auto w-full max-w-5xl space-y-6"
-    >
+    <section aria-labelledby="market-calendar-heading" className="mx-auto w-full max-w-6xl">
       <h2 id="market-calendar-heading" className="sr-only">
         Calendrier des marchés et détails
       </h2>
 
-      {/* Section supérieure : Calendrier à gauche, Image à droite */}
-      <header className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Calendrier */}
-        <section
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
+        {/* Colonne de gauche : Calendrier */}
+        <div
           aria-labelledby="calendar-section-heading"
           className="rounded-lg border bg-card p-1 shadow-sm print:hidden"
         >
@@ -100,85 +98,72 @@ export function MarketCalendarView({
             selected={date}
             onSelect={handleDateSelect}
             locale={dateFnsLocale}
-            className="w-full rounded-md border"
+            className="w-full rounded-md"
             modifiers={{ marketDay: marketDays }}
             modifiersClassNames={{
-              marketDay: "bg-primary/10 text-primary font-medium border border-primary/20",
+              marketDay:
+                "bg-primary/10 text-primary font-medium border border-primary/20 rounded-md transition-colors hover:border-2 hover:border-secondary",
             }}
             fixedWeeks={true}
           />
-        </section>
+        </div>
 
-        {/* Image du marché */}
-        <figure
-          aria-labelledby="market-image-heading"
-          className="overflow-hidden rounded-lg border bg-card shadow-sm lg:self-stretch"
+        {/* Colonne de droite : Carte de détail */}
+        <article
+          aria-live="polite"
+          className="flex flex-col overflow-hidden rounded-lg border bg-card shadow-lg"
         >
-          {selectedMarket?.image ? (
-            <>
-              <figcaption id="market-image-heading" className="sr-only">
-                Image du marché: {selectedMarket.name}
-              </figcaption>
-              <picture className="relative block h-full min-h-[350px] w-full">
-                <Image
-                  src={selectedMarket.image}
-                  alt={`Image du ${selectedMarket.name}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-              </picture>
-            </>
-          ) : (
-            <>
-              <figcaption id="market-image-heading" className="sr-only">
-                Image non disponible
-              </figcaption>
-              <aside className="flex h-full min-h-[350px] w-full items-center justify-center bg-muted">
-                <address className="text-center not-italic text-muted-foreground">
-                  <MapPin className="mx-auto mb-2 h-12 w-12" />
-                  <p>Sélectionnez une date avec un marché</p>
-                  <small className="text-sm">pour voir l'image</small>
-                </address>
-              </aside>
-            </>
-          )}
-        </figure>
-      </header>
+          {/* Zone Image (60%) */}
+          <figure className="relative block h-64 w-full">
+            <Image
+              src={
+                selectedMarket?.image ||
+                "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//hero_retrouvez_moi.webp"
+              }
+              alt={
+                selectedMarket ? `Image du ${selectedMarket.name}` : "Image d'ambiance d'un marché"
+              }
+              fill
+              className={cn("object-cover", !selectedMarket && "blur-sm")}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          </figure>
 
-      {/* Section détails du marché en dessous */}
-      {selectedMarket && (
-        <main>
-          <article
-            aria-labelledby={`market-details-heading-${selectedMarket.id}`}
-            className="w-full"
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle id={`market-details-heading-${selectedMarket.id}`} className="text-xl">
-                  {selectedMarket.name}
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  {selectedMarket.description ||
-                    "Découvrez ce marché authentique et ses produits locaux."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <address className="grid grid-cols-1 gap-3 not-italic md:grid-cols-2">
-                  <span className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 flex-shrink-0 text-primary" aria-hidden="true" />
-                    <span className="text-sm font-medium">{selectedMarket.city}</span>
-                  </span>
-                  <time className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 flex-shrink-0 text-primary" aria-hidden="true" />
-                    <span className="text-sm font-medium">
-                      {selectedMarket.startTime} - {selectedMarket.endTime}
+          {/* Zone Contenu (40%) - Scrollable */}
+          <div className="flex flex-col p-6">
+            {selectedMarket ? (
+              <>
+                <CardHeader className="p-0 pb-3">
+                  <CardTitle
+                    id={`market-details-heading-${selectedMarket.id}`}
+                    className="text-2xl"
+                  >
+                    {selectedMarket.name}
+                  </CardTitle>
+                  <CardDescription className="text-base">
+                    {selectedMarket.description ||
+                      "Découvrez ce marché authentique et ses produits locaux."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow p-0">
+                  <address className="flex flex-col gap-y-3 not-italic sm:flex-row sm:items-center sm:gap-x-6">
+                    <span className="flex items-center gap-3">
+                      <MapPin className="h-5 w-5 flex-shrink-0 text-primary" aria-hidden="true" />
+                      <span className="font-medium">
+                        {selectedMarket.address || selectedMarket.city}
+                      </span>
                     </span>
-                  </time>
-                </address>
-
+                    <time className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 flex-shrink-0 text-primary" aria-hidden="true" />
+                      <span className="font-medium">
+                        {selectedMarket.startTime} - {selectedMarket.endTime}
+                      </span>
+                    </time>
+                  </address>
+                </CardContent>
                 {selectedMarket.gpsLink && (
-                  <nav className="flex justify-start">
+                  <nav className="mt-auto flex justify-start pt-4">
                     <Button asChild variant="outline" size="sm">
                       <a
                         href={selectedMarket.gpsLink}
@@ -187,29 +172,22 @@ export function MarketCalendarView({
                         className="inline-flex items-center gap-2"
                       >
                         <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                        Voir sur la carte {/* TODO: i18n */}
+                        Voir sur la carte
                       </a>
                     </Button>
                   </nav>
                 )}
-              </CardContent>
-            </Card>
-          </article>
-        </main>
-      )}
-
-      {/* Message quand aucun marché n'est sélectionné */}
-      {!selectedMarket && (
-        <aside role="status" className="w-full">
-          <Card>
-            <CardContent className="flex h-24 items-center justify-center">
-              <p className="text-center text-muted-foreground">
-                Sélectionnez une date sur le calendrier pour voir les détails du marché.
-              </p>
-            </CardContent>
-          </Card>
-        </aside>
-      )}
+              </>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
+                <MapPin className="mb-2 h-10 w-10" />
+                <p className="font-semibold">Sélectionnez une date de marché</p>
+                <small className="text-sm">pour afficher les détails ici.</small>
+              </div>
+            )}
+          </div>
+        </article>
+      </div>
     </section>
   );
 }

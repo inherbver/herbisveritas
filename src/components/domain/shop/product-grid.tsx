@@ -34,7 +34,7 @@ export function ProductGrid({
   const t = useTranslations("ProductGrid");
 
   const gridClasses = cn(
-    "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6", // V2: Updated grid cols and gap
+    "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6",
     className
   );
 
