@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button"; // Importe aussi les va
 // Renomme 'title' en 'heading' pour éviter le conflit
 // Define a type for valid pathnames based on the navigation config
 
-interface HeroProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface HeroProps extends React.HTMLAttributes<HTMLDivElement> {
   heading: React.ReactNode; // Renommé depuis 'title'
   description?: React.ReactNode;
   imageUrl?: string; // Optionnel: URL pour une image de fond
@@ -66,7 +66,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           <Heading
             level={1}
             className={cn(
-              "text-4xl font-bold leading-tight sm:text-5xl md:text-6xl lg:text-7xl",
+              "text-4xl font-bold leading-tight drop-shadow-lg sm:text-5xl md:text-5xl lg:text-6xl",
               imageUrl ? "text-primary-foreground" : "text-foreground"
             )}
           >
@@ -75,7 +75,7 @@ const Hero = React.forwardRef<HTMLDivElement, HeroProps>(
           {description && (
             <Text
               className={cn(
-                "mt-4 max-w-prose text-base font-medium sm:mt-5 sm:text-xl md:text-2xl",
+                "mt-4 max-w-prose text-base font-medium sm:mt-5 sm:text-lg md:text-xl",
                 imageUrl ? "text-primary-foreground/90" : "text-muted-foreground"
               )}
             >

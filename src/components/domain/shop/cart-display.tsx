@@ -21,10 +21,15 @@ import type { RemoveFromCartInput, UpdateCartItemQuantityInput } from "@/lib/sch
 import { Button } from "@/components/ui/button";
 import { MinusIcon, PlusIcon, XIcon } from "lucide-react";
 
+interface CartDisplayProps {
+  onClose: () => void;
+}
+
 /**
  * Affiche le contenu du panier et permet les interactions de base.
+ * @param {CartDisplayProps} props - Les propriétés du composant, incluant la fonction onClose pour fermer le panier.
  */
-export function CartDisplay() {
+export function CartDisplay({ onClose }: CartDisplayProps) {
   const t = useTranslations("CartDisplay");
   const tGlobal = useTranslations("Global");
 
@@ -55,8 +60,6 @@ export function CartDisplay() {
     }
     // Reset loading state if implemented
   };
-
-  // Dans cart-display.tsx - Version améliorée de handleUpdateItemQuantity
 
   const handleUpdateItemQuantity = async (cartItemId: string, newQuantity: number) => {
     const logPrefix = `[CartDisplay handleUpdateItemQuantity ${new Date().toISOString()}]`;
@@ -154,13 +157,19 @@ export function CartDisplay() {
   if (items.length === 0) {
     return (
       <section aria-labelledby="cart-heading" className="p-4 text-center">
-        <h2 id="cart-heading" className="mb-2 text-xl font-semibold">
-          {t("yourCart") as string}
-        </h2>
-        <p>{t("emptyCart")}</p>
-        <NextLink href="/products" className="mt-4 inline-block">
-          <Button variant="outline">{t("continueShopping")}</Button>
-        </NextLink>
+        <header>
+          <h2 id="cart-heading" className="mb-2 text-xl font-semibold">
+            {t("yourCart") as string}
+          </h2>
+        </header>
+        <main>
+          <p>{t("emptyCart")}</p>
+          <nav className="mt-4">
+            <NextLink href="/" className="inline-block">
+              <Button variant="outline">{t("continueShopping")}</Button>
+            </NextLink>
+          </nav>
+        </main>
       </section>
     );
   }
@@ -173,123 +182,134 @@ export function CartDisplay() {
         </h2>
       </header>
 
-      <ul role="list" className="divide-y divide-border">
-        {items.map((item) => {
-          return (
-            <li key={item.productId} className="flex py-6">
-              <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border sm:h-32 sm:w-32">
-                {item.image ? (
-                  <Image
-                    src={item.image}
-                    alt={item.name} // TODO: Provide more descriptive alt text if available
-                    fill
-                    sizes="(max-width: 640px) 96px, 128px"
-                    className="object-cover object-center"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
-                    {tGlobal("noImage")}
-                  </div>
-                )}
-              </div>
+      <main className="flex-1 overflow-y-auto">
+        <ul role="list" className="divide-y divide-border">
+          {items.map((item) => {
+            return (
+              <li key={item.productId} className="flex py-6">
+                <figure className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border sm:h-32 sm:w-32">
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.name} // TODO: Provide more descriptive alt text if available
+                      fill
+                      sizes="(max-width: 640px) 96px, 128px"
+                      className="object-cover object-center"
+                    />
+                  ) : (
+                    <aside className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                      {tGlobal("noImage")}
+                    </aside>
+                  )}
+                </figure>
 
-              <div className="ml-4 flex flex-1 flex-col sm:ml-6">
-                <div>
-                  <div className="flex justify-between text-base font-medium">
-                    <h3>
-                      {item.slug ? (
-                        <NextLink
-                          href={{ pathname: "/product/[slug]", params: { slug: item.slug } }}
-                        >
-                          {item.name}
-                        </NextLink>
-                      ) : (
-                        item.name
-                      )}
-                    </h3>
-                    <p className="ml-4">{(item.price * item.quantity).toFixed(2)} €</p>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {/* TODO: Afficher les variantes du produit si disponibles (couleur, taille, etc.) */}
-                    {t("unitPrice")}: {item.price.toFixed(2)} €
-                  </p>
-                </div>
-                <div className="mt-auto flex flex-1 items-end justify-between text-sm">
-                  <div className="flex items-center">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        if (item.id) handleUpdateItemQuantity(item.id, item.quantity - 1);
-                      }}
-                      aria-label={t("decreaseQuantity", { itemName: item.name })}
-                    >
-                      <MinusIcon className="h-4 w-4" />
-                    </Button>
-                    <span className="mx-3 w-8 text-center" aria-live="polite">
-                      {item.quantity}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        if (item.id) handleUpdateItemQuantity(item.id, item.quantity + 1);
-                      }}
-                      aria-label={t("increaseQuantity", { itemName: item.name })}
-                    >
-                      <PlusIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <article className="ml-4 flex flex-1 flex-col sm:ml-6">
+                  <header>
+                    <section className="flex justify-between text-base font-medium">
+                      <h3>
+                        {item.slug ? (
+                          <NextLink
+                            href={{ pathname: "/product/[slug]", params: { slug: item.slug } }}
+                          >
+                            {item.name}
+                          </NextLink>
+                        ) : (
+                          item.name
+                        )}
+                      </h3>
+                      <p className="ml-4">{(item.price * item.quantity).toFixed(2)} €</p>
+                    </section>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {/* TODO: Afficher les variantes du produit si disponibles (couleur, taille, etc.) */}
+                      {t("unitPrice")}: {item.price.toFixed(2)} €
+                    </p>
+                  </header>
 
-                  <div className="flex">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        if (item.id) {
-                          handleRemoveItem(item.id);
-                        } else {
-                          toast.error("Impossible de supprimer l'article : ID manquant.");
-                        }
-                      }}
-                      className="hover:text-destructive/80 font-medium text-destructive"
-                      aria-label={t("removeItem", { itemName: item.name })}
+                  <footer className="mt-auto flex flex-1 items-end justify-between text-sm">
+                    <section
+                      className="flex items-center"
+                      role="group"
+                      aria-label={t("quantityControls", { itemName: item.name })}
                     >
-                      <XIcon className="mr-1 h-4 w-4" />
-                      {t("remove")}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          if (item.id) handleUpdateItemQuantity(item.id, item.quantity - 1);
+                        }}
+                        aria-label={t("decreaseQuantity", { itemName: item.name })}
+                      >
+                        <MinusIcon className="h-4 w-4" />
+                      </Button>
+                      <output className="mx-3 w-8 text-center" aria-live="polite">
+                        {item.quantity}
+                      </output>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          if (item.id) handleUpdateItemQuantity(item.id, item.quantity + 1);
+                        }}
+                        aria-label={t("increaseQuantity", { itemName: item.name })}
+                      >
+                        <PlusIcon className="h-4 w-4" />
+                      </Button>
+                    </section>
+
+                    <section className="flex">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (item.id) {
+                            handleRemoveItem(item.id);
+                          } else {
+                            toast.error("Impossible de supprimer l'article : ID manquant.");
+                          }
+                        }}
+                        className="hover:text-destructive/80 font-medium text-destructive"
+                        aria-label={t("removeItem", { itemName: item.name })}
+                      >
+                        <XIcon className="mr-1 h-4 w-4" />
+                        {t("remove")}
+                      </Button>
+                    </section>
+                  </footer>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      </main>
 
       <footer className="mt-8 border-t border-border px-4 py-6 sm:px-6">
-        <div className="flex justify-between text-base font-medium">
+        <section className="flex justify-between text-base font-medium">
           <p>{t("subtotal")}</p>
           <p>{subtotal.toFixed(2)} €</p>
-        </div>
+        </section>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {t("shippingTaxesCalculatedAtCheckout")}
         </p>
-        <div className="mt-6">
+        <nav className="mt-6">
           <Button size="lg" className="w-full">
             {t("checkout")}
           </Button>
-        </div>
-        <div className="mt-6 flex justify-center text-center text-sm text-muted-foreground">
+        </nav>
+        <nav className="mt-6 flex justify-center text-center text-sm text-muted-foreground">
           <p>
             {t("or")}{" "}
-            <NextLink href="/products" className="hover:text-primary/80 font-medium text-primary">
+            <NextLink
+              href="/"
+              className="hover:text-primary/80 font-medium text-primary"
+              onClick={onClose}
+            >
               {t("continueShopping")}
               <span aria-hidden="true"> &rarr;</span>
             </NextLink>
           </p>
-        </div>
+        </nav>
       </footer>
     </section>
   );

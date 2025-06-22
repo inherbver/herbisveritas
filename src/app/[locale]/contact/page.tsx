@@ -1,6 +1,6 @@
 // src/app/[locale]/contact/page.tsx
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Hero } from "@/components/shared/hero";
+import { Hero, type HeroProps } from "@/components/shared/hero";
 import { getNextUpcomingMarket, getAllMarketsSorted } from "@/lib/market-utils";
 import type { AppPathname } from "@/i18n/navigation";
 
@@ -11,12 +11,6 @@ import { MarketCalendarView } from "@/components/domain/market/MarketCalendarVie
 import { SocialFollow } from "@/components/domain/social/SocialFollow"; // Import du composant pour les réseaux sociaux
 import { PartnerShopCard, PartnerShop } from "@/components/domain/partner/PartnerShopCard";
 import partnersData from "@/data/partners.json"; // Import du composant pour les réseaux sociaux
-
-type CtaLink = {
-  pathname: AppPathname;
-  hash?: string;
-  query?: Record<string, string | string[]>;
-};
 
 type Props = {
   params: Promise<{ locale: string }>; // ✅ Changement pour Next.js 15
@@ -31,18 +25,11 @@ export default async function ContactPage({ params }: Props) {
   const nextMarket = await getNextUpcomingMarket();
   const allSortedMarkets = await getAllMarketsSorted(); // Récupération de tous les marchés triés
 
-  const heroProps: {
-    heading: string;
-    description: string;
-    imageUrl: string;
-    imageAlt: string;
-    ctaLabel?: string;
-    ctaLink?: CtaLink;
-  } = {
+  const heroProps: HeroProps = {
     heading: t("defaultHeroHeading"),
     description: t("defaultHeroSubheading"),
     imageUrl:
-      "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//hero_retrouvez_moi.webp",
+      "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//hero_next_market.webp",
     imageAlt: t("defaultHeroImageAlt"),
   };
 

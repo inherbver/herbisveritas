@@ -12,7 +12,7 @@
     "description": "In Herbis Veritas vous accueille sur le marché nocturne de Portiragnes-Plage, Place du Bicentenaire. Chaque dimanche de juillet et d’août, de 18 h à minuit, venez sentir, tester et craquer pour nos cosmétiques artisanaux 100 % Occitanie. Saisissez l’instant, repartez avec la garrigue dans vos flacons.",
     "gpsLink": "https://maps.app.goo.gl/TVSqTSwpjNFZjHsW6",
     "heroImage": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact/portiragnes.webp",
-    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//portiragnes_resized.webp"
+    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//portiragnes_1112x512.webp"
   },
   {
     "id": "marche-grau-d-agde",
@@ -27,7 +27,7 @@
     "description": "Lundi soir, laissez-vous porter par la brise marine ! Chaque lundi de juillet et d’août, de 18 h à minuit, In Herbis Veritas vous attend sur le front de mer du Grau d’Agde. Plongez vos sens dans nos soins naturels, cueillis et fabriqués en Occitanie, au cœur du marché nocturne féerique. Au milieu des bijoux, saveurs et lampions, trouvez le parfum de vos vacances. Repartez avec un éclat de Méditerranée dans vos flacons.",
     "gpsLink": "https://maps.app.goo.gl/fZJ1GJHsFW3DjK6E8",
     "heroImage": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact/grau_d_agde.webp",
-    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//grau_d_agde_resized.webp"
+    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//grau_d_agde_1112x512.webp"
   },
   {
     "id": "marche-serignan",
@@ -42,7 +42,7 @@
     "description": "Mardi, la Promenade de Sérignan s’embrase de couleurs ! Dès 18 h, In Herbis Veritas parfume les Allées de la République pendant les Mardis des Arts. Entre peintres, bijoutiers et une cinquantaine de créateurs, flânez et laissez-vous séduire par nos soins naturels.",
     "gpsLink": "https://maps.app.goo.gl/Uqqcv2F8NS1NbhTZ7",
     "heroImage": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact/serignan.webp",
-    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//serignan_resized.webp"
+    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//serignan_1112x512.webp"
   },
   {
     "id": "marche-cap-d-agde",
@@ -57,7 +57,7 @@
     "description": "Mercredi, la Rambla du Soleil s’illumine au Cap d’Agde ! De 18 h à minuit, In Herbis Veritas diffuse ses effluves naturels au cœur du marché nocturne, entre musique, ferris wheel et lampions.",
     "gpsLink": "https://maps.app.goo.gl/R7bpHjxeUxEUVUrn9",
     "heroImage": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact/cap_d_agde.webp",
-    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//cap_d_agde_resized.webp"
+    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//cap_d_agde_1112x512.webp"
   },
   {
     "id": "marche-valras-plage",
@@ -72,6 +72,6 @@
     "description": "Tous les jeudis soir, Valras-Plage déroule son tapis d’été ! De 18 h à minuit, le nouveau marché artisanal s’installe près du Casino (parking Indochine). Flânez entre les stands : bijoux façonnés à la main, douceurs du terroir, objets déco… tout le savoir-faire local en un seul lieu. Ambiance conviviale, embruns marins et entrée libre",
     "gpsLink": "https://maps.app.goo.gl/YZwcfdoL5ohR4q5N7",
     "heroImage": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact/valras_plage.webp",
-    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//valras_resized.webp"
+    "image": "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//valras_1112x512.webp"
   }
 ]

@@ -118,7 +118,7 @@ export function MarketCalendarView({
             <Image
               src={
                 selectedMarket?.image ||
-                "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//hero_retrouvez_moi.webp"
+                "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//hero_next_market.webp"
               }
               alt={
                 selectedMarket ? `Image du ${selectedMarket.name}` : "Image d'ambiance d'un marché"

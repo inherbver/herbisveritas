@@ -19,5 +19,6 @@
   "increaseQuantity": "Increase quantity of {itemName}",
   "removeItem": "Remove {itemName} from cart",
   "shippingTaxesCalculatedAtCheckout": "Shipping and taxes calculated at checkout.",
-  "or": "or"
+  "or": "or",
+  "quantityControls": "Quantity controls for {itemName}"
 }

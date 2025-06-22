@@ -22,9 +22,12 @@ export function CartSheet() {
   const t = useTranslations("CartSheet"); // Pour les textes comme le titre du sheet
   const tGlobal = useTranslations("Global"); // Pour les textes globaux comme "Panier"
   const totalItems = useCartStore(selectCartTotalItems);
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleClose = () => setIsOpen(false);
 
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" className="relative">
           <ShoppingBagIcon className="h-5 w-5" />
@@ -49,7 +52,7 @@ export function CartSheet() {
           <SheetDescription>{t("cartDescription")}</SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
-          <CartDisplay />
+          <CartDisplay onClose={handleClose} />
         </div>
         {/* Vous pourriez ajouter un SheetFooter ici avec un bouton de checkout plus proéminent si nécessaire */}
         {/* <SheetFooter className="p-6 pt-4 border-t">

@@ -25,5 +25,6 @@
   "shippingTaxesCalculatedAtCheckout": "Frais de port et taxes calculés au moment du paiement.",
   "or": "ou",
   "item_singular": "article",
-  "item_plural": "articles"
+  "item_plural": "articles",
+  "quantityControls": "Contrôles de quantité pour {itemName}"
 }
