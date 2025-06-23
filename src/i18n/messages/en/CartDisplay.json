@@ -13,6 +13,7 @@
   "total": "Total",
   "subtotal": "Subtotal",
   "checkout": "Proceed to Checkout",
+  "processing": "Processing...",
   "remove": "Remove",
   "updateQuantityError": "Error updating quantity.",
   "decreaseQuantity": "Decrease quantity of {itemName}",

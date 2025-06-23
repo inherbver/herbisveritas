@@ -39,6 +39,10 @@ export const pathnames = {
     en: "/shop",
     fr: "/boutique",
   },
+  "/cart": {
+    en: "/cart",
+    fr: "/panier",
+  },
   "/login": {
     en: "/login",
     fr: "/connexion",

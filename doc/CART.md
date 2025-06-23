@@ -1,10 +1,12 @@
-# Gestion du Panier d'Achat
+# Gest
+
+- **Utilisateurs Authentifiés :** Leur panier est persisté en base de données dans les tables `public.cartion du Panier d'Achat
 
 ## 1. Principes Fondamentaux
 
 Le système de panier est **hybride** pour offrir une expérience fluide aux invités et aux utilisateurs authentifiés.
+s`et`public.cart_items`. C'est la source de vérité.
 
-- **Utilisateurs Authentifiés :** Leur panier est persisté en base de données dans les tables `public.carts` et `public.cart_items`. C'est la source de vérité.
 - **Utilisateurs Invités (Anonymes) :** Leur panier est géré via une session anonyme créée par Supabase Auth. Les données sont également stockées en base de données, liées à cet `user_id` anonyme.
 - **Synchronisation :** Lors de la connexion, le panier de la session anonyme est automatiquement conservé et associé au nouvel `user_id` authentifié. Il n'y a pas de fusion complexe car le panier est déjà en base de données.
 - **État Client :** Un store **Zustand** (`src/stores/cartStore.ts`) sert de cache côté client pour une réactivité immédiate de l'interface. Il est synchronisé avec le backend via des **Server Actions**.

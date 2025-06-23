@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import type { CartData } from "@/types/cart";
 import type { RemoveFromCartInput, UpdateCartItemQuantityInput } from "@/lib/schemas/cartSchemas";
 import { Button } from "@/components/ui/button";
+import { CheckoutButton } from "./checkout-button";
 import { MinusIcon, PlusIcon, XIcon } from "lucide-react";
 
 interface CartDisplayProps {
@@ -293,9 +294,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
           {t("shippingTaxesCalculatedAtCheckout")}
         </p>
         <nav className="mt-6">
-          <Button size="lg" className="w-full">
-            {t("checkout")}
-          </Button>
+          <CheckoutButton />
         </nav>
         <nav className="mt-6 flex justify-center text-center text-sm text-muted-foreground">
           <p>

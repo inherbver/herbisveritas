@@ -1,0 +1,9 @@
+{
+  "CheckoutSuccessPage": {
+    "title": "Order Confirmed",
+    "header": "Thank you for your order!",
+    "message": "We've received your payment and your order is now being processed. You will receive an email confirmation shortly.",
+    "viewOrdersButton": "View My Orders",
+    "continueShoppingButton": "Continue Shopping"
+  }
+}

@@ -103,17 +103,35 @@ Détaille le contenu des paniers.
 
 ### Table: `public.orders`
 
-Enregistre les commandes passées.
+Stocke les informations sur les commandes passées par les utilisateurs.
+
+- **Colonnes Clés:**
+  - `id (UUID, PK)`: Identifiant unique de la commande.
+  - `user_id (UUID, FK -> auth.users)`: L'utilisateur qui a passé la commande.
+  - `status (order_status, DEFAULT 'pending')`: Le statut actuel de la commande (voir ENUMs).
+  - `total_amount (NUMERIC)`: Le montant total de la commande.
+  - `stripe_payment_intent_id (TEXT, UNIQUE)`: L'identifiant du Payment Intent Stripe, pour la réconciliation et la prévention des doublons.
+  - `shipping_address_id (UUID, FK -> public.addresses)`: L'adresse de livraison.
+  - `billing_address_id (UUID, FK -> public.addresses)`: L'adresse de facturation.
+- **RLS:**
+  - Les utilisateurs peuvent uniquement lire (`SELECT`) leurs propres commandes.
+  - Les admins/devs ont un accès complet.
+  - **Logique applicative :** La création des commandes est gérée exclusivement par le **webhook Stripe** (`/api/stripe-webhook/route.ts`). Ce webhook s'exécute avec des privilèges élevés (`service_role`) pour pouvoir insérer des données au nom de l'utilisateur après un paiement réussi. Voir [la documentation des actions](./ACTIONS.md#6-gestion-des-paiements-stripe) pour plus de détails.
+
+### Table: `public.order_items`
+
+Détaille les produits inclus dans chaque commande.
 
 - **Colonnes Clés:**
   - `id (UUID, PK)`.
-  - `user_id (UUID, FK -> auth.users)`.
-  - `status (order_status, DEFAULT 'pending')`.
-  - `total_amount (NUMERIC)`.
-  - `shipping_address`, `billing_address` (JSONB).
+  - `order_id (UUID, FK -> public.orders)`: La commande à laquelle cet article appartient.
+  - `product_id (TEXT, FK -> public.products)`: Le produit commandé.
+  - `quantity (INTEGER)`: La quantité commandée.
+  - `price_at_purchase (NUMERIC)`: Le prix du produit au moment de l'achat, pour garantir l'exactitude historique même si le prix du produit change plus tard.
 - **RLS:**
-  - Les utilisateurs peuvent lire leurs propres commandes.
-  - Accès complet pour les admins/devs.
+  - Les utilisateurs peuvent lire les articles des commandes qui leur appartiennent (via une jointure sur `orders`).
+  - Les admins/devs ont un accès complet.
+  - **Logique applicative :** La création est également gérée par le webhook Stripe en même temps que la commande.
 
 ### Table: `public.order_items`
 

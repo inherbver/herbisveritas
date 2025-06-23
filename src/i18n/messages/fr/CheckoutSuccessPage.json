@@ -1,0 +1,9 @@
+{
+  "CheckoutSuccessPage": {
+    "title": "Commande confirmée",
+    "header": "Merci pour votre commande !",
+    "message": "Nous avons bien reçu votre paiement et votre commande est en cours de traitement. Vous recevrez un e-mail de confirmation sous peu.",
+    "viewOrdersButton": "Voir mes commandes",
+    "continueShoppingButton": "Continuer mes achats"
+  }
+}

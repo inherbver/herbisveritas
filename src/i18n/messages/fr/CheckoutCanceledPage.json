@@ -1,0 +1,9 @@
+{
+  "CheckoutCanceledPage": {
+    "title": "Paiement annulé",
+    "header": "Votre paiement a été annulé.",
+    "message": "Votre commande n'a pas été traitée car le paiement a été annulé. Votre panier a été sauvegardé.",
+    "backToCartButton": "Retour au panier",
+    "continueShoppingButton": "Continuer mes achats"
+  }
+}

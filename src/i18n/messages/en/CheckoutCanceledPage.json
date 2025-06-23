@@ -1,0 +1,9 @@
+{
+  "CheckoutCanceledPage": {
+    "title": "Payment Canceled",
+    "header": "Your payment was canceled.",
+    "message": "Your order was not processed because the payment was canceled. Your cart has been saved.",
+    "backToCartButton": "Back to Cart",
+    "continueShoppingButton": "Continue Shopping"
+  }
+}
