@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HerbisVeritas - Plateforme E-commerce Moderne
 
-## Getting Started
+HerbisVeritas est une application e-commerce full-stack construite avec une architecture moderne, tirant parti de Next.js pour le frontend et de Supabase pour le backend. Le projet met l'accent sur la sécurité, la performance et une expérience de développement robuste.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Stack Technique Principale
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Framework :** [Next.js](https://nextjs.org/) 15+ (App Router, Server Actions, Middleware)
+- **Backend & Base de données :** [Supabase](https://supabase.com/) (Auth, PostgreSQL, Storage, RLS)
+- **Styling :** [Tailwind CSS](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
+- **Gestion d'état :** [Zustand](https://github.com/pmndrs/zustand)
+- **Validation :** [Zod](https://zod.dev/)
+- **Internationalisation (i18n) :** [next-intl](https://next-intl.dev/)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Démarrage Rapide (Getting Started)
 
-## Learn More
+Pour lancer le projet en local, suivez ces étapes :
 
-To learn more about Next.js, take a look at the following resources:
+1.  **Cloner le dépôt :**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    ```bash
+    git clone <URL_DU_REPO>
+    cd herbisveritas
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2.  **Installer les dépendances :**
 
-## Deploy on Vercel
+    ```bash
+    npm install
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3.  **Configurer les variables d'environnement :**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+    - Copiez le fichier d'exemple : `cp .env.example .env.local`
+    - Remplissez les variables dans `.env.local` avec vos clés Supabase (URL du projet et clé `anon`).
+
+4.  **Lancer le serveur de développement :**
+    ```bash
+    npm run dev
+    ```
+
+Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur pour voir le résultat.
+
+---
+
+## Documentation du Projet
+
+Ce projet est accompagné d'une documentation technique détaillée pour faciliter la compréhension de son architecture et de ses fonctionnalités. **Il est fortement recommandé de la consulter.**
+
+- **[ARCHITECTURE DE LA BASE DE DONNÉES](./doc/DATABASE.md)**
+  _Détaille le schéma, les tables, les fonctions SQL et les politiques de sécurité (RLS)._
+
+- **[FLUX D'AUTHENTIFICATION](./doc/AUTHFLOW.md)**
+  _Explique les processus d'inscription, de connexion, de gestion de session et le rôle du middleware._
+
+- **[SERVER ACTIONS (API)](./doc/ACTIONS.md)**
+  _Documente les points d'entrée de l'API backend construits avec les Server Actions de Next.js._
+
+- **[ARCHITECTURE DE SÉCURITÉ](./doc/SECURITY.md)**
+  _Décrit les différentes couches de sécurité, de la base de données au client._
+
+- **[GESTION DU PANIER](./doc/CART.md)**
+  _Présente la logique de gestion du panier pour les utilisateurs invités et authentifiés._
+
+- **[INTERNATIONALISATION (i18n)](./doc/i18n.md)**
+  _Guide pour ajouter et gérer les traductions dans l'application._
+
+---
+
+## Comment Contribuer
+
+- **[GUIDE DE CONTRIBUTION](./CONTRIBUTING.md)**
