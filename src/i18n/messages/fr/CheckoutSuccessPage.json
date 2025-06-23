@@ -1,9 +1,16 @@
 {
-  "CheckoutSuccessPage": {
-    "title": "Commande confirmée",
-    "header": "Merci pour votre commande !",
-    "message": "Nous avons bien reçu votre paiement et votre commande est en cours de traitement. Vous recevrez un e-mail de confirmation sous peu.",
-    "viewOrdersButton": "Voir mes commandes",
-    "continueShoppingButton": "Continuer mes achats"
-  }
+  "title": "Paiement Réussi - Herbis Veritas",
+  "description": "Confirmation de votre commande. Merci pour votre achat !",
+  "successIconLabel": "Icône de succès",
+  "header": "Merci pour votre commande !",
+  "message": "Votre paiement a été traité avec succès. Nous préparons votre commande pour l'expédition.",
+  "orderDetailsHeading": "Détails de la commande",
+  "orderReference": "Référence de commande",
+  "navigationLabel": "Navigation principale après commande",
+  "viewOrdersButton": "Voir mes commandes",
+  "continueShoppingButton": "Continuer mes achats",
+  "whatHappensNextSummary": "Que se passe-t-il ensuite ?",
+  "confirmationEmailInfo": "Vous recevrez un e-mail de confirmation sous peu avec les détails de votre commande.",
+  "processingTimeInfo": "Votre commande sera traitée et expédiée dans les 2-3 jours ouvrables.",
+  "trackingInfo": "Une fois expédiée, vous recevrez un autre e-mail avec les informations de suivi."
 }

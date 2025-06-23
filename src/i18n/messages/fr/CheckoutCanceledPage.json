@@ -1,9 +1,16 @@
 {
-  "CheckoutCanceledPage": {
-    "title": "Paiement annulé",
-    "header": "Votre paiement a été annulé.",
-    "message": "Votre commande n'a pas été traitée car le paiement a été annulé. Votre panier a été sauvegardé.",
-    "backToCartButton": "Retour au panier",
-    "continueShoppingButton": "Continuer mes achats"
-  }
+  "title": "Paiement Annulé - Herbis Veritas",
+  "description": "Votre processus de paiement a été annulé.",
+  "errorIconLabel": "Icône d'erreur",
+  "header": "Votre paiement a été annulé",
+  "message": "Aucun prélèvement n'a été effectué. Votre panier a été sauvegardé si vous souhaitez réessayer.",
+  "cancellationReasonHeading": "Raison de l'annulation",
+  "reason": "Raison",
+  "navigationLabel": "Navigation après annulation",
+  "backToCartButton": "Retourner au panier",
+  "continueShoppingButton": "Continuer mes achats",
+  "needHelpHeading": "Besoin d'aide ?",
+  "supportMessage": "Si vous rencontrez des difficultés, n'hésitez pas à contacter notre support.",
+  "supportEmailLabel": "Email",
+  "supportPhoneLabel": "Téléphone"
 }

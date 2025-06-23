@@ -3,7 +3,6 @@
 import React, { useActionState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Link as NextLink } from "@/i18n/navigation";
-import type { AppPathname } from "@/i18n/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +91,10 @@ export function ProductCard({
     }
   }, [state, t, tGlobal]);
 
-  const linkHref: AppPathname = `/shop/${slug}`;
+  const linkHref = {
+    pathname: "/products/[slug]",
+    params: { slug },
+  } as const;
 
   if (isLoading) {
     return <Skeleton className="h-[420px] w-full rounded-lg" />;
@@ -149,9 +151,14 @@ export function ProductCard({
       {/* Product Information */}
       <section className="flex flex-grow flex-col p-6">
         <header>
-          <h3 className="font-serif text-lg font-semibold text-foreground" itemProp="name">
-            {title}
-          </h3>
+          <NextLink href={linkHref} aria-label={`View details for ${title}`}>
+            <h3
+              className="font-serif text-lg font-semibold text-foreground transition-colors hover:text-primary"
+              itemProp="name"
+            >
+              {title}
+            </h3>
+          </NextLink>
           {short_description && (
             <p
               className="mt-1 line-clamp-2 font-sans text-sm text-muted-foreground"

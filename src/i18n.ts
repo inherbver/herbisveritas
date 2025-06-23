@@ -97,6 +97,24 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load AddressesPage.json for locale ${localeToUse}:`, e);
   }
 
+  let checkoutSuccessPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    checkoutSuccessPageNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/CheckoutSuccessPage.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load CheckoutSuccessPage.json for locale ${localeToUse}:`, e);
+  }
+
+  let checkoutCanceledPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    checkoutCanceledPageNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/CheckoutCanceledPage.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load CheckoutCanceledPage.json for locale ${localeToUse}:`, e);
+  }
+
   let productCardNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     productCardNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ProductCard.json`))
@@ -282,11 +300,14 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeProfileEditPage = profileEditPageNamespaceContent || {};
   const safeShopPage = shopPageNamespaceContent || {};
   const safeAddressesPage = addressesPageNamespaceContent || {};
+  const safeCheckoutSuccessPage = checkoutSuccessPageNamespaceContent || {};
+  const safeCheckoutCanceledPage = checkoutCanceledPageNamespaceContent || {};
   const safeProductCard = productCardNamespaceContent || {};
   const safeMagazinePage = magazinePageNamespaceContent || {};
   const safeContactPage = contactPageNamespaceContent || {};
   const safeAuth = authNamespaceContent || {};
   const safeAddressForm = addressFormNamespaceContent || {};
+  const safeAdminLayout = adminLayoutNamespaceContent || {};
   const safeProductDetailModal = productDetailModalNamespaceContent || {};
   const safeQuantityInput = quantityInputNamespaceContent || {};
   const safeProductDetail = productDetailNamespaceContent || {};
@@ -298,7 +319,6 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeHero = heroNamespaceContent || {};
   const safeLegal = legalNamespaceContent || {};
   const safeTestPage = testPageNamespaceContent || {};
-  const safeAdminLayout = adminLayoutNamespaceContent || {};
   const safeMissionPage = missionPageNamespaceContent || {};
   const safeAuthCallback = authCallbackNamespaceContent || {};
   const safeFilters = filtersNamespaceContent || {};
@@ -317,11 +337,18 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
       : {}),
     ...(Object.keys(safeShopPage).length > 0 ? { ShopPage: safeShopPage } : {}),
     ...(Object.keys(safeAddressesPage).length > 0 ? { AddressesPage: safeAddressesPage } : {}),
+    ...(Object.keys(safeCheckoutSuccessPage).length > 0
+      ? { CheckoutSuccessPage: safeCheckoutSuccessPage }
+      : {}),
+    ...(Object.keys(safeCheckoutCanceledPage).length > 0
+      ? { CheckoutCanceledPage: safeCheckoutCanceledPage }
+      : {}),
     ...(Object.keys(safeProductCard).length > 0 ? { ProductCard: safeProductCard } : {}),
     ...(Object.keys(safeMagazinePage).length > 0 ? { MagazinePage: safeMagazinePage } : {}),
     ...(Object.keys(safeContactPage).length > 0 ? { ContactPage: safeContactPage } : {}),
     ...(Object.keys(safeAuth).length > 0 ? { Auth: safeAuth } : {}),
     ...(Object.keys(safeAddressForm).length > 0 ? { AddressForm: safeAddressForm } : {}),
+    ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
     ...(Object.keys(safeProductDetailModal).length > 0
       ? { ProductDetailModal: safeProductDetailModal }
       : {}),
@@ -335,7 +362,6 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeHero).length > 0 ? { Hero: safeHero } : {}),
     ...(Object.keys(safeLegal).length > 0 ? { Legal: safeLegal } : {}),
     ...(Object.keys(safeTestPage).length > 0 ? { TestPage: safeTestPage } : {}),
-    ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
     ...(Object.keys(safeMissionPage).length > 0 ? { MissionPage: safeMissionPage } : {}),
     ...(Object.keys(safeAuthCallback).length > 0 ? { AuthCallback: safeAuthCallback } : {}),
     ...(Object.keys(safeFilters).length > 0 ? { Filters: safeFilters } : {}),
@@ -343,39 +369,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   };
 
   // Condition pour notFound si AUCUN message de namespace n'est chargé
-  if (
-    Object.keys(safeGlobal).length === 0 &&
-    Object.keys(safeAccountPage).length === 0 &&
-    Object.keys(safeAboutPage).length === 0 &&
-    Object.keys(safeProfileNav).length === 0 &&
-    Object.keys(safeCartSheet).length === 0 &&
-    Object.keys(safeCartDisplay).length === 0 &&
-    Object.keys(safePasswordPage).length === 0 &&
-    Object.keys(safeProfileEditPage).length === 0 &&
-    Object.keys(safeShopPage).length === 0 &&
-    Object.keys(safeAddressesPage).length === 0 &&
-    Object.keys(safeProductCard).length === 0 &&
-    Object.keys(safeMagazinePage).length === 0 &&
-    Object.keys(safeContactPage).length === 0 &&
-    Object.keys(safeAuth).length === 0 &&
-    Object.keys(safeAddressForm).length === 0 &&
-    Object.keys(safeProductDetailModal).length === 0 &&
-    Object.keys(safeQuantityInput).length === 0 &&
-    Object.keys(safeProductDetail).length === 0 &&
-    Object.keys(safeNotFoundPage).length === 0 &&
-    Object.keys(safeCategoryFilter).length === 0 &&
-    Object.keys(safeHeroComponent).length === 0 &&
-    Object.keys(safeHomePage).length === 0 &&
-    Object.keys(safeProductGrid).length === 0 &&
-    Object.keys(safeHero).length === 0 &&
-    Object.keys(safeLegal).length === 0 &&
-    Object.keys(safeTestPage).length === 0 &&
-    Object.keys(safeAdminLayout).length === 0 &&
-    Object.keys(safeMissionPage).length === 0 &&
-    Object.keys(safeAuthCallback).length === 0 &&
-    Object.keys(safeFilters).length === 0 &&
-    Object.keys(safeOrdersPage).length === 0
-  ) {
+  if (Object.keys(mergedMessages).length === 0) {
     notFound();
   }
 

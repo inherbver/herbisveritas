@@ -1,12 +1,6 @@
 import createMiddleware from "next-intl/middleware";
-import {
-  locales,
-  defaultLocale,
-  localePrefix,
-  pathnames, // Assurez-vous que cet objet est correctement défini et exporté depuis i18n-config
-  localeDetection,
-  type Locale,
-} from "./i18n-config";
+import { locales, defaultLocale, localePrefix, localeDetection, type Locale } from "./i18n-config";
+import { pathnames } from "./i18n/navigation"; // Importer depuis le bon fichier
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -88,7 +82,6 @@ export async function middleware(request: NextRequest) {
         console.error("Supabase auth error in middleware (not session missing):", error);
         // Si l'erreur spécifique est 'user_not_found', supprimer les cookies d'authentification
         if (error.code === "user_not_found") {
-          console.log("Middleware: Detected 'user_not_found' error. Clearing auth cookies.");
           // Utiliser la méthode 'remove' définie dans la configuration du client Supabase
           // pour s'assurer que les options de suppression sont correctement appliquées.
           // Nous devons trouver les noms exacts des cookies. Supabase SSR les nomme souvent
@@ -145,6 +138,13 @@ export async function middleware(request: NextRequest) {
     // Si pathToCheck (qui est le pathname complet ici) commence par /admin, c'est un accès non préfixé.
     // On pourrait le rediriger vers la version avec la locale par défaut, ou simplement le bloquer si l'utilisateur n'est pas admin.
     // Pour l'instant, on laisse la logique suivante gérer le cas où l'utilisateur n'est pas authentifié/admin.
+  }
+
+  // Redirect from root to the main shop page
+  if (pathToCheck === "/") {
+    const shopPath = pathnames["/shop"][currentLocale];
+    const redirectUrl = new URL(`/${currentLocale}${shopPath}`, request.url);
+    return NextResponse.redirect(redirectUrl);
   }
 
   // Protéger les routes de profil

@@ -10,9 +10,9 @@ export const pathnames = {
     fr: "/produits",
   },
   // --- START: Product detail page ---
-  "/product/[slug]": {
-    en: "/product/[slug]",
-    fr: "/produit/[slug]",
+  "/products/[slug]": {
+    en: "/products/[slug]",
+    fr: "/produits/[slug]",
   },
   // --- END: Product detail page ---
   "/about": {
@@ -54,19 +54,19 @@ export const pathnames = {
   // --- START: Profile Pages ---
   "/profile/account": {
     en: "/profile/account",
-    fr: "/profile/account",
+    fr: "/profil/compte",
   },
   "/profile/addresses": {
     en: "/profile/addresses",
-    fr: "/profile/addresses",
+    fr: "/profil/adresses",
   },
   "/profile/orders": {
     en: "/profile/orders",
-    fr: "/profile/orders",
+    fr: "/profil/commandes",
   },
   "/profile/password": {
     en: "/profile/password",
-    fr: "/profile/password",
+    fr: "/profil/mot-de-passe",
   },
   // --- END: Profile Pages ---
   // Ajoutez d'autres chemins ici...
