@@ -143,7 +143,7 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
             : tHero("fallbackDescription")}
         </>
       ),
-      imageUrl: featuredHeroItem.productImageUrl || undefined,
+      imageUrl: featuredHeroItem.heroImageUrl || featuredHeroItem.productImageUrl || undefined,
       imageAlt: featuredHeroItem.productName
         ? `Image de ${featuredHeroItem.productName}`
         : tHero("defaultImageAlt"),

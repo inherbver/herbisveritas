@@ -4,8 +4,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 // Définir le type de retour pour plus de clarté
 export interface FeaturedHeroItem {
   productName: string;
-  productSlug: string; // Ou AppPathname si vous voulez une validation plus stricte
-  productImageUrl: string | null; // Peut être null si l'image n'est pas définie
+  productSlug: string;
+  productImageUrl: string | null;
+  heroImageUrl: string | null; // Nouvelle image spécifique pour le Hero
   customSubtitle: string;
 }
 
@@ -18,6 +19,7 @@ export async function getActiveFeaturedHeroItem(): Promise<FeaturedHeroItem | nu
       .select(
         `
         custom_subtitle,
+        image_hero_url,
         products (
           name,
           slug,
@@ -65,6 +67,7 @@ export async function getActiveFeaturedHeroItem(): Promise<FeaturedHeroItem | nu
       productName: productData.name,
       productSlug: productData.slug,
       productImageUrl: productData.image_url,
+      heroImageUrl: featuredItem.image_hero_url, // Utiliser la nouvelle image
       customSubtitle: featuredItem.custom_subtitle,
     };
   } catch (error) {

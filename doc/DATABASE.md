@@ -154,6 +154,7 @@ Contenu pour le composant Hero de la page d'accueil.
   - `id (UUID, PK)`.
   - `title`, `description`, `cta_text`, `cta_link` (TEXT).
   - `image_url`, `image_alt` (TEXT).
+  - `image_hero_url` (TEXT, nullable): URL d'une image spécifique pour le Hero, prioritaire sur l'image du produit.
   - `roles (app_role[])`: Cible les rôles qui peuvent voir cet item.
 - **RLS:**
   - Les utilisateurs peuvent lire les items correspondant à leur rôle.
