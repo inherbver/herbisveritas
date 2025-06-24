@@ -1,4 +1,23 @@
 {
+  "metadata": {
+    "title": "Mes Commandes",
+    "description": "Consultez l'historique de vos commandes."
+  },
   "title": "Mes Commandes",
-  "underConstruction": "Cette page est en cours de construction. Bientôt, vous pourrez consulter l'historique de vos commandes ici."
+  "orderDate": "Date",
+  "total": "Total",
+  "orderId": "N° de commande",
+  "itemQuantity": "Quantité",
+  "noOrders": "Vous n'avez encore passé aucune commande.",
+  "ordersHistory": "Historique des commandes",
+  "orderItems": "Articles de cette commande",
+  "itemsList": "Liste des articles",
+  "status": "Statut",
+  "statusValues": {
+    "processing": "En cours de traitement",
+    "shipped": "Expédiée",
+    "delivered": "Livrée",
+    "cancelled": "Annulée",
+    "succeeded": "Réussie"
+  }
 }

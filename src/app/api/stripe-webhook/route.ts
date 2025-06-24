@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -40,7 +40,18 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const supabase = await createSupabaseServerClient();
+
+    // IMPORTANT: Utiliser le client service_role pour bypasser RLS
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!, // Clé service_role
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
 
     try {
       const { data: existingOrder } = await supabase
@@ -59,15 +70,24 @@ export async function POST(req: Request) {
         throw new Error("Cart ID not found in Stripe session.");
       }
 
+      console.log(`[STRIPE_WEBHOOK] Processing cart ID: ${cartId}`);
+
       const { data: cartData, error: cartError } = await supabase
         .from("carts")
         .select("id, user_id, items:cart_items(*, product:products(id, name, price, image_url))")
         .eq("id", cartId)
         .single();
 
-      if (cartError || !cartData || !cartData.items) {
-        throw new Error(`Could not retrieve cart with ID ${cartId} or cart is empty.`);
+      if (cartError || !cartData) {
+        console.error(`[STRIPE_WEBHOOK] Cart error:`, cartError);
+        throw new Error(`Could not retrieve cart with ID ${cartId}: ${cartError?.message}`);
       }
+
+      if (!cartData.items || cartData.items.length === 0) {
+        throw new Error(`Cart ${cartId} is empty.`);
+      }
+
+      console.log(`[STRIPE_WEBHOOK] Found cart with ${cartData.items.length} items`);
 
       const { data: newOrder, error: orderError } = await supabase
         .from("orders")
@@ -77,16 +97,36 @@ export async function POST(req: Request) {
           status: "processing",
           total_amount: (session.amount_total || 0) / 100,
           currency: session.currency?.toUpperCase() || "EUR",
-          payment_status: "paid",
+          payment_status: "succeeded",
           payment_intent_id:
             typeof session.payment_intent === "string" ? session.payment_intent : null,
         })
         .select("id")
         .single();
 
-      if (orderError || !newOrder) {
-        throw new Error(`Failed to create order: ${orderError?.message}`);
+      if (orderError) {
+        // Gérer l'erreur de clé dupliquée de manière idempotente
+        if (orderError.code === "23505") {
+          console.log(
+            `[STRIPE_WEBHOOK] Idempotency: Duplicate order for session ${session.id} detected. Skipping.`
+          );
+          return NextResponse.json({
+            received: true,
+            message: "Order already processed (idempotency).",
+          });
+        } else {
+          // Pour toutes les autres erreurs, lever une exception
+          console.error(`[STRIPE_WEBHOOK] Order creation error:`, orderError);
+          throw new Error(`Failed to create order: ${orderError.message}`);
+        }
       }
+
+      if (!newOrder) {
+        // Cas peu probable où il n'y a pas d'erreur mais pas de données
+        throw new Error(`Failed to create order: No data returned.`);
+      }
+
+      console.log(`[STRIPE_WEBHOOK] Created order: ${newOrder.id}`);
 
       const orderItems = cartData.items.map((item: CartItem) => ({
         order_id: newOrder.id,
@@ -100,16 +140,37 @@ export async function POST(req: Request) {
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
 
       if (itemsError) {
-        console.error(`Failed to create order items, rolling back order ${newOrder.id}`);
+        console.error(`[STRIPE_WEBHOOK] Order items creation error:`, itemsError);
+        // Rollback: supprimer la commande créée
         await supabase.from("orders").delete().eq("id", newOrder.id);
         throw new Error(`Failed to create order items: ${itemsError.message}`);
       }
 
-      await supabase.from("cart_items").delete().eq("cart_id", cartId);
+      console.log(`[STRIPE_WEBHOOK] Created ${orderItems.length} order items`);
+
+      // Vider le panier après succès
+      const { error: deleteCartError } = await supabase
+        .from("cart_items")
+        .delete()
+        .eq("cart_id", cartId);
+
+      if (deleteCartError) {
+        console.error(`[STRIPE_WEBHOOK] Error clearing cart:`, deleteCartError);
+        // Ne pas faire échouer la commande pour ça
+      }
+
+      // Marquer le cart comme processed
+      await supabase.from("carts").update({ status: "processed" }).eq("id", cartId);
 
       console.log(
-        `[STRIPE_WEBHOOK] Successfully created order ${newOrder.id} for session ${session.id}`
+        `[STRIPE_WEBHOOK] ✅ Successfully created order ${newOrder.id} for session ${session.id}`
       );
+
+      return NextResponse.json({
+        received: true,
+        orderId: newOrder.id,
+        message: "Order created successfully",
+      });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unknown processing error";
       console.error("[STRIPE_WEBHOOK_PROCESSING_ERROR]", error);

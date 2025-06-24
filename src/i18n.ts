@@ -378,17 +378,15 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     messages: mergedMessages,
     timeZone: "Europe/Paris",
     onError(error: IntlError) {
-      process.stdout.write(
+      console.log(
         `\n[[[!!! i18n DEBUG onError !!!]]] ERROR CODE: ${error.code}, MESSAGE: ${error.message}\n`
       );
       if (error.code === IntlErrorCode.MISSING_MESSAGE) {
-        process.stdout.write(
+        console.log(
           `\n[[[!!! i18n DEBUG onError !!!]]] Specific log for MISSING_MESSAGE: ${error.message}\n`
         );
       } else {
-        process.stdout.write(
-          `\n[[[!!! i18n DEBUG onError !!!]]] Other i18n error: ${error.message}\n`
-        );
+        console.log(`\n[[[!!! i18n DEBUG onError !!!]]] Other i18n error: ${error.message}\n`);
       }
     },
     getMessageFallback: ({
@@ -400,7 +398,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
       key: string;
       error: IntlError;
     }) => {
-      process.stdout.write(
+      console.log(
         `\n[[[!!! i18n DEBUG getMessageFallback !!!]]] NAMESPACE: ${namespace}, KEY: ${key}, ERROR_CODE: ${error.code}\n`
       );
       const path = [namespace, key].filter((part) => part != null).join(".");

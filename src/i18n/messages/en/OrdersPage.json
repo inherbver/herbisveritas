@@ -1,4 +1,23 @@
 {
+  "metadata": {
+    "title": "My Orders",
+    "description": "View your order history."
+  },
   "title": "My Orders",
-  "underConstruction": "This page is under construction. Soon, you will be able to view your order history here."
+  "orderDate": "Date",
+  "total": "Total",
+  "orderId": "Order ID",
+  "itemQuantity": "Quantity",
+  "noOrders": "You have not placed any orders yet.",
+  "ordersHistory": "Orders history",
+  "orderItems": "Items in this order",
+  "itemsList": "List of items",
+  "status": "Status",
+  "statusValues": {
+    "processing": "Processing",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled",
+    "succeeded": "Succeeded"
+  }
 }

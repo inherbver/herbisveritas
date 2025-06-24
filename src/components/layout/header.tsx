@@ -21,7 +21,7 @@ import {
   SheetDescription,
   SheetHeader,
 } from "@/components/ui/sheet";
-import { User, Menu, Info } from "lucide-react";
+import { Menu, Info } from "lucide-react";
 import { CartSheet } from "@/components/domain/shop/cart-sheet";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
@@ -141,10 +141,6 @@ export function Header() {
         <div className="flex items-center justify-end gap-2 md:gap-3">
           {/* Icons */}
           <LocaleSwitcher />
-          <Button variant="ghost" size="icon" aria-label={tGlobal("Header.accountAriaLabel")}>
-            {" "}
-            <User className="h-5 w-5" />
-          </Button>
           <CartSheet /> {/* Remplacement du bouton Panier */}
           {/* Auth Buttons (Desktop) */}
           <div className="hidden items-center gap-2 md:flex">
