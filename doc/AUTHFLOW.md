@@ -20,7 +20,7 @@ Ces flux sont principalement gérés dans `src/actions/auth.ts`. Pour une descri
 1.  **Initiation :** L'utilisateur remplit le formulaire d'inscription.
 2.  **Action :** La `signUpAction` est appelée.
 3.  **Processus :**
-    - Valide les entrées utilisateur avec Zod.
+    - Valide les entrées utilisateur avec un schéma Zod centralisé. Voir la section [Validation Centralisée des Mots de Passe](#24-validation-centralisée-des-mots-passe) pour plus de détails.
     - Appelle `supabase.auth.signUp()`.
     - L'option `emailRedirectTo` est utilisée pour spécifier l'URL de callback (`/auth/callback`) où l'utilisateur sera redirigé après avoir cliqué sur le lien de confirmation.
 4.  **Confirmation :** Supabase envoie un email de confirmation à l'utilisateur. L'utilisateur n'est pas connecté tant que son email n'est pas vérifié. À la création de l'utilisateur dans `auth.users`, un [trigger](./DATABASE.md#triggers) (`handle_new_user`) crée une entrée correspondante dans la table `public.profiles`.
@@ -40,6 +40,27 @@ Ces flux sont principalement gérés dans `src/actions/auth.ts`. Pour une descri
 2.  **Action :** La `logoutAction` est appelée.
 3.  **Processus :** Appelle `supabase.auth.signOut()`.
 4.  **Résultat :** La session est terminée. Le listener `onAuthStateChange` détecte l'événement `SIGNED_OUT`, ce qui déclenche le nettoyage de l'état local (ex: vidage du panier du store Zustand).
+
+### 2.4. Validation Centralisée des Mots de Passe
+
+Pour garantir la cohérence et la robustesse des mots de passe sur l'ensemble de l'application, la logique de validation a été centralisée.
+
+- **Fichier Schéma Principal :** `src/lib/validation/auth-schemas.ts`
+
+  - Ce fichier exporte des fonctions qui créent des schémas Zod pour différents contextes (inscription, changement de mot de passe, etc.).
+  - Il contient un schéma de base `createPasswordSchema` qui applique les règles communes : longueur minimale, présence de majuscules, de chiffres et de caractères spéciaux.
+  - Les messages d'erreur sont internationalisés via `next-intl`.
+
+- **Composants d'UI Partagés :** `src/components/domain/auth/password-strength.tsx`
+
+  - `PasswordRequirement` : Affiche une exigence de mot de passe (ex: "Au moins 8 caractères") et son état de validation (icône ✓ ou X).
+  - `PasswordStrengthBar` : Fournit un retour visuel en temps réel sur la force du mot de passe.
+
+- **Intégration :**
+  - Tous les formulaires concernés (`RegisterForm`, `PasswordChangeForm`, etc.) utilisent `react-hook-form` avec le `zodResolver` pour appliquer ces schémas.
+  - Ils intègrent également les composants d'UI pour guider l'utilisateur lors de la saisie de son mot de passe.
+
+Cette approche garantit que toute modification des règles de mot de passe est appliquée uniformément sur toute la plateforme en ne modifiant qu'un seul fichier.
 
 ---
 
@@ -83,6 +104,7 @@ Ce flux est sécurisé pour s'assurer que seul le propriétaire du compte peut c
 1.  **Initiation :** L'utilisateur est sur sa page de profil et remplit le formulaire de changement de mot de passe (ancien mot de passe, nouveau, confirmation).
 2.  **Action :** La `updatePasswordAction` est appelée.
 3.  **Processus en plusieurs étapes :**
+    a. **Validation des entrées :** Le formulaire utilise un schéma Zod centralisé pour valider le nouveau mot de passe et la confirmation. Voir la section [Validation Centralisée des Mots de Passe](#24-validation-centralisée-des-mots-passe).
     a. **Vérification de la session :** `supabase.auth.getUser()` confirme que l'utilisateur est bien connecté.
     b. **Validation de l'ancien mot de passe :** La fonction tente de se reconnecter avec l'email de l'utilisateur et l'ancien mot de passe fourni (`supabase.auth.signInWithPassword()`). C'est une étape de vérification cruciale. Si elle échoue, l'action s'arrête.
     c. **Mise à jour du mot de passe :** Si l'étape précédente réussit, `supabase.auth.updateUser({ password: newPassword })` est appelée pour définir le nouveau mot de passe.

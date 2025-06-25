@@ -5,13 +5,7 @@ import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation"; // useParams pour la locale
 import { useTranslations } from "next-intl";
 import { createClient } from "../../../../lib/supabase/client";
-import type { AuthError, AuthChangeEvent, Session, User } from "@supabase/supabase-js";
-
-// Définition des types OTP valides basés sur la documentation Supabase
-// type ValidOtpType = 'signup' | 'invite' | 'recovery' | 'email_change' | 'sms' | 'phone_change';
-// Types spécifiques pour token_hash (généralement liés à l'email)
-type TokenHashOtpType = "signup" | "invite" | "recovery" | "email_change";
-// Pour les autres types comme 'sms', 'phone_change', Supabase utilise 'phone' et 'token' au lieu de 'token_hash' et 'type'.
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 // Un composant wrapper pour utiliser useSearchParams car il doit être dans un Suspense
 function AuthCallbackContent() {
@@ -74,77 +68,17 @@ function AuthCallbackContent() {
       return;
     }
 
-    // 1. Gestion de verifyOtp si codeFromUrl est présent
-    // Vérifier si le type est compatible avec token_hash (qui est la valeur de codeFromUrl)
-    const isValidTokenHashOtpType =
-      typeFromParams === "signup" ||
-      typeFromParams === "invite" ||
-      typeFromParams === "recovery" ||
-      typeFromParams === "email_change";
+    // Le client Supabase côté client gère automatiquement l'échange du 'code'
+    // présent dans l'URL contre une session. Nous n'avons pas besoin d'appeler
+    // manuellement `verifyOtp`. Nous nous fions au listener `onAuthStateChange`.
 
-    if (codeFromUrl && typeFromParams && isValidTokenHashOtpType) {
-      console.log("[AuthCallback] Attempting verifyOtp with:", {
-        token_hash: codeFromUrl,
-        type: typeFromParams as TokenHashOtpType,
-      });
-      const otpTypeForVerification = typeFromParams as TokenHashOtpType;
-      supabase.auth
-        .verifyOtp({ token_hash: codeFromUrl, type: otpTypeForVerification }) // Passer codeFromUrl comme token_hash
-        .then(
-          ({
-            data,
-            error,
-          }: {
-            data: { user: User | null; session: Session | null };
-            error: AuthError | null;
-          }) => {
-            if (!isMounted) return;
-            console.log("[AuthCallback] verifyOtp responded. Error:", error, "Data:", data);
-            if (error) {
-              setStatus("error");
-              setMessage(t("errorTokenVerification", { details: error.message }));
-            } else if (data.session) {
-              // Session établie par verifyOtp, onAuthStateChange devrait aussi se déclencher
-              // mais on peut agir immédiatement.
-              setStatus("success");
-              let successMessage = t("accountConfirmedSuccess"); // Message par défaut
-              if (otpTypeForVerification === "signup")
-                successMessage = t("accountConfirmedSuccess");
-              else if (otpTypeForVerification === "email_change")
-                successMessage = t("emailVerifiedSuccess");
-              // autres types comme 'invite', 'recovery' pourraient avoir des messages spécifiques
-              setMessage(successMessage);
-              setTimeout(() => redirectToPath(determinedFinalRedirectPath), 3000);
-            } else {
-              // Cas où verifyOtp réussit mais ne renvoie pas de session (moins courant)
-              setStatus("error");
-              setMessage(
-                t("errorTokenVerification", {
-                  details: "Verification successful but no session established.",
-                })
-              );
-            }
-          }
-        )
-        .catch((e: Error) => {
-          console.error("[AuthCallback] verifyOtp caught an exception:", e);
-          if (!isMounted) return;
-          setStatus("error");
-          setMessage(
-            t("errorTokenVerification", {
-              details: e.message || "Unknown error during OTP verification.",
-            })
-          );
-        });
-      return; // Attend la résolution de verifyOtp
-    }
-
-    // 2. Listener onAuthStateChange
+    // 1. Listener onAuthStateChange
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, _session: Session | null) => {
         if (!isMounted) return;
 
         if (event === "SIGNED_IN") {
+          console.log("[AuthCallback] Received SIGNED_IN event.");
           setStatus("success");
           // Le message peut dépendre du 'type' si on n'est pas passé par verifyOtp (ex: Magic Link direct)
           // Si 'type' n'est pas dispo ici, on met un message générique ou on essaie de l'inférer.
@@ -152,6 +86,7 @@ function AuthCallbackContent() {
           setTimeout(() => redirectToPath(determinedFinalRedirectPath), 3000);
         } else if (event === "SIGNED_OUT") {
           // Normalement ne devrait pas arriver ici sauf si l'utilisateur se déconnecte pendant le callback
+          console.log("[AuthCallback] Received SIGNED_OUT event.");
           setStatus("error");
           setMessage(t("errorGeneric", { details: "User signed out during callback." }));
         }
@@ -159,33 +94,23 @@ function AuthCallbackContent() {
       }
     );
 
-    // 3. Gestion si aucun codeFromUrl et pas d'événement SIGNED_IN après un délai
-    // (uniquement si on n'est pas déjà en succès ou erreur)
-    // Si on arrive ici, c'est que verifyOtp n'a pas été appelé (pas de codeFromUrl)
-    // et on attend onAuthStateChange. Si rien ne se passe (ex: magic link invalide sans codeFromUrl),
-    // on met un timeout.
-    if (!codeFromUrl) {
-      // Utiliser codeFromUrl ici pour la condition du timeout
-      const timeoutId = setTimeout(() => {
-        if (isMounted && status === "loading") {
-          // Vérifier si on est toujours en chargement
-          setStatus("error");
-          setMessage(t("errorTimeout"));
-        }
-      }, 10000); // 10 secondes timeout
-
-      return () => {
-        isMounted = false;
-        clearTimeout(timeoutId);
-        authListener?.subscription.unsubscribe();
-      };
-    }
+    // 2. Gestion si pas d'événement SIGNED_IN après un délai
+    const timeoutId = setTimeout(() => {
+      if (isMounted && status === "loading") {
+        console.log("[AuthCallback] Timeout reached, no SIGNED_IN event.");
+        // Vérifier si on est toujours en chargement
+        setStatus("error");
+        setMessage(t("errorTimeout"));
+      }
+    }, 10000); // 10 secondes timeout
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       authListener?.subscription.unsubscribe();
     };
-  }, [searchParams, router, t, locale, redirectToPath, status]); // Ajout de status pour la logique du timeout
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, router, t, locale, redirectToPath]);
 
   if (status === "loading") {
     return (

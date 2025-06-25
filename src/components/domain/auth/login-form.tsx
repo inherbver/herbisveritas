@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginAction, type AuthActionResult } from "@/actions/auth"; // Import AuthActionResult
+import { loginAction, resendConfirmationEmailAction, type AuthActionResult } from "@/actions/auth"; // Import AuthActionResult
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -45,14 +45,25 @@ export function LoginForm() {
     fieldErrors: {},
   };
   const [state, formAction] = useActionState(loginAction, initialState);
+  const [email, setEmail] = React.useState("");
 
   useEffect(() => {
     if (state.error) {
       toast.error(state.error);
     }
-    // loginAction redirects on success, so a success toast here might not be seen
-    // or could be shown just before redirection.
-  }, [state.error, state.message, state.success]);
+    if (state.success && state.message) {
+      toast.success(state.message);
+    }
+  }, [state]);
+
+  const handleResendEmail = async () => {
+    const result = await resendConfirmationEmailAction(email);
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.error);
+    }
+  };
 
   return (
     <Card className="border-border/50 w-full max-w-sm rounded-xl shadow-xl">
@@ -66,7 +77,15 @@ export function LoginForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">{t("emailLabel")}</Label>
-            <Input id="email" name="email" type="email" placeholder="m@exemple.com" required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="m@exemple.com"
+              required
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
+            />
             {state.fieldErrors?.email && (
               <p className="text-sm font-medium text-destructive">
                 {state.fieldErrors.email.join(", ")}
@@ -84,7 +103,17 @@ export function LoginForm() {
           </div>
           {/* General form error message is now handled by toast */}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex-col">
+          {state.error?.includes("Email non confirmé") && (
+            <Button
+              variant="outline"
+              type="button"
+              onClick={handleResendEmail}
+              className="mb-4 w-full"
+            >
+              {t("resendConfirmationButton")}
+            </Button>
+          )}
           <SubmitButton />
         </CardFooter>
       </form>

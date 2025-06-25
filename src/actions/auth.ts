@@ -4,34 +4,17 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe le client Supabase côté serveur
-import { headers } from "next/headers"; // AJOUT: Importer headers
+
 import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
 import { isGeneralError, isValidationError } from "@/lib/cart-helpers"; // AJOUT: Importer les gardiens de type
+import { getTranslations } from "next-intl/server";
+import { createSignupSchema } from "@/lib/validation/auth-schemas";
 
 // --- Schéma Login ---
 const loginSchema = z.object({
   email: z.string().email({ message: "L'adresse email n'est pas valide." }),
   password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
 });
-
-// --- Schéma Inscription ---
-const signUpSchema = z
-  .object({
-    email: z.string().email({ message: "L'adresse email n'est pas valide." }),
-    password: z
-      .string()
-      .min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." })
-      .regex(/[A-Z]/, { message: "Le mot de passe doit contenir au moins une majuscule." })
-      .regex(/[0-9]/, { message: "Le mot de passe doit contenir au moins un chiffre." })
-      .regex(/[^A-Za-z0-9]/, {
-        message: "Le mot de passe doit contenir au moins un caractère spécial.",
-      }),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Les mots de passe ne correspondent pas.",
-    path: ["confirmPassword"],
-  });
 
 // --- Types d'Actions ---
 export interface AuthActionResult {
@@ -84,6 +67,14 @@ export async function loginAction(
 
   if (error) {
     console.error("Erreur Supabase Auth (Login):", error.message);
+    if (error.message === "Email not confirmed") {
+      return {
+        success: false,
+        error: "Email non confirmé. Veuillez vérifier votre boîte de réception.",
+        // On pourrait ajouter un champ pour permettre de renvoyer l'email
+        // par exemple: needsConfirmation: true
+      };
+    }
     return {
       success: false,
       error: "L'email ou le mot de passe est incorrect.",
@@ -121,12 +112,17 @@ export async function signUpAction(
   formData: FormData
 ): Promise<AuthActionResult> {
   const supabase = await createSupabaseServerClient();
+  const locale = (formData.get("locale") as string) || "fr"; // Récupérer la locale depuis le formulaire
 
-  // Récupérer la locale du formData
-  const locale = (formData.get("locale") as string) || "en"; // Valeur par défaut 'en' si non fournie
+  // Charger les traductions nécessaires pour la validation
+  const tPassword = await getTranslations({ locale, namespace: "PasswordPage.validation" });
+  const tAuth = await getTranslations({ locale, namespace: "Auth.validation" });
 
-  // 1. Valider les données du formulaire avec Zod (incluant la confirmation de mdp)
-  const validatedFields = signUpSchema.safeParse({
+  // Créer le schéma de validation avec les traductions
+  const finalSignUpSchema = createSignupSchema(tPassword, tAuth);
+
+  // 1. Valider les données
+  const validatedFields = finalSignUpSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
@@ -149,13 +145,15 @@ export async function signUpAction(
   const { email, password } = validatedFields.data;
 
   // Construire l'URL de redirection pour la confirmation par email
-  const headersList = await headers(); // Utiliser await ici
-  const host = headersList.get("host");
-  const protocol =
-    headersList.get("x-forwarded-proto") ||
-    (process.env.NODE_ENV === "production" ? "https" : "http");
-  const origin = `${protocol}://${host}`;
-  const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/profile/account`;
+  const origin = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!origin) {
+    console.error("FATAL: La variable d'environnement NEXT_PUBLIC_BASE_URL n'est pas définie.");
+    return {
+      success: false,
+      error: "Erreur de configuration du serveur. Impossible de traiter l'inscription.",
+    };
+  }
+  const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
 
   // Log pour débogage de l'URL construite
   console.log("Constructed emailRedirectTo for signUp:", redirectUrl);
@@ -205,6 +203,30 @@ export async function signUpAction(
   return {
     success: false,
     error: "Une erreur inattendue est survenue lors de l'inscription.",
+  };
+}
+
+// --- Action pour renvoyer l'email de confirmation ---
+export async function resendConfirmationEmailAction(email: string): Promise<AuthActionResult> {
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: email,
+  });
+
+  if (error) {
+    console.error("Erreur lors du renvoi de l'email de confirmation:", error.message);
+    return {
+      success: false,
+      error: "Une erreur est survenue lors du renvoi de l'email.",
+    };
+  }
+
+  return {
+    success: true,
+    message:
+      "Email de confirmation renvoyé avec succès. Veuillez vérifier votre boîte de réception.",
   };
 }
 

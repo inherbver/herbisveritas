@@ -1,143 +1,143 @@
 // src/components/domain/auth/change-password-form.tsx
 "use client";
 
-import { useState, useEffect, useActionState, startTransition } from "react";
-import { useFormStatus } from "react-dom";
-import { updatePasswordAction, type UpdatePasswordResult } from "@/app/[locale]/profile/actions"; // Assurez-vous que ce chemin est correct
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { PasswordInput } from "@/components/ui/password-input";
+import { updatePasswordAction } from "@/app/[locale]/profile/actions";
+import { createResetPasswordSchema } from "@/lib/validation/auth-schemas";
+import {
+  PasswordRequirement,
+  PasswordStrengthBar,
+} from "@/components/domain/auth/password-strength";
 import useCartStore from "@/stores/cartStore";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  const t = useTranslations("ChangePasswordForm.SubmitButton");
-  return (
-    <Button type="submit" aria-disabled={pending} disabled={pending}>
-      {pending ? t("pending") : t("idle")}
-    </Button>
-  );
-}
+const MIN_LENGTH = 8;
+const REGEX_UPPERCASE = /[A-Z]/;
+const REGEX_NUMBER = /[0-9]/;
+const REGEX_SPECIAL_CHAR = /[^A-Za-z0-9]/;
 
 export default function ChangePasswordForm() {
   const t = useTranslations("ChangePasswordForm");
+  const tPassword = useTranslations("PasswordPage.validation");
+  const tAuth = useTranslations("Auth.validation");
+  const tGlobal = useTranslations("Global");
+  const router = useRouter();
 
-  const initialState: UpdatePasswordResult = { success: false, message: "", error: null };
-  // Le type de state est inféré de UpdatePasswordResult | null, mais pour être explicite :
-  // const [state, formAction] = useActionState<UpdatePasswordResult | null, FormData>(
-  //   updatePasswordAction,
-  //   initialState
-  // );
-  // Simplifié si initialState correspond bien à la structure attendue par updatePasswordAction pour prevState
-  const [state, formAction] = useActionState(updatePasswordAction, initialState);
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [requirements, setRequirements] = useState({
+    length: false,
+    uppercase: false,
+    number: false,
+    specialChar: false,
+  });
 
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [clientError, setClientError] = useState<string | null>(null);
-  // Pour éviter les toasts répétés si le message d'état ne change pas
-  const [prevServerMessage, setPrevServerMessage] = useState<string | undefined>(undefined);
+  const formSchema = createResetPasswordSchema(tPassword, tAuth);
+  type FormValues = z.infer<typeof formSchema>;
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setClientError(null);
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { newPassword: "", confirmPassword: "" },
+  });
 
-    if (newPassword.length < 8) {
-      setClientError(t("validation.minLength"));
-      toast.error(t("validation.minLength")); // Ajout d'un toast pour l'erreur client aussi
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setClientError(t("validation.passwordsMustMatch"));
-      toast.error(t("validation.passwordsMustMatch")); // Ajout d'un toast
-      return;
-    }
-
-    const formData = new FormData(event.currentTarget);
-    startTransition(() => {
-      formAction(formData);
-    });
-  };
+  const passwordValue = useWatch({ control: form.control, name: "newPassword" });
 
   useEffect(() => {
-    // Vérifier si 'state' et 'state.message' existent et si le message a changé
-    if (state && typeof state.message === "string" && state.message !== prevServerMessage) {
-      if (state.success) {
-        toast.success(state.message || t("notifications.success")); // Utilise le message du serveur s'il existe
-        setNewPassword("");
-        setConfirmPassword("");
-        // L'utilisateur est déconnecté par la Server Action,
-        // donc on vide le panier côté client.
-        useCartStore.getState().clearCart(); // <--- VIDER LE PANIER ICI
-        // Idéalement, rediriger vers la page de connexion après un court délai
-        // pour que l'utilisateur voie le toast de succès.
-        // setTimeout(() => {
-        //   // router.push(`/${currentLocale}/login`); // Assurez-vous d'avoir accès au router et locale
-        // }, 2000);
-      } else {
-        // Gérer les erreurs venant du serveur en utilisant la structure de UpdatePasswordResult
-        let serverErrorMessage = t("notifications.errorUnknown"); // Fallback générique
-        if (state.error && typeof state.error.message === "string") {
-          // Utiliser le message d'erreur spécifique de l'objet error
-          serverErrorMessage = state.error.message;
-        } else if (typeof state.message === "string") {
-          // Sinon, utiliser le message général de l'état s'il existe
-          serverErrorMessage = state.message;
-        }
-        toast.error(serverErrorMessage);
-      }
-      setPrevServerMessage(state.message);
-    } else if (state && state.success && state.message === prevServerMessage) {
-      // Cas où l'action a réussi mais le message n'a pas changé (peut arriver si on resubmit sans changer de form)
-      // On s'assure que le panier est vidé si ce n'est pas déjà fait
+    const newRequirements = {
+      length: (passwordValue || "").length >= MIN_LENGTH,
+      uppercase: REGEX_UPPERCASE.test(passwordValue || ""),
+      number: REGEX_NUMBER.test(passwordValue || ""),
+      specialChar: REGEX_SPECIAL_CHAR.test(passwordValue || ""),
+    };
+    setRequirements(newRequirements);
+    const strength = Object.values(newRequirements).filter(Boolean).length;
+    setPasswordStrength(strength);
+  }, [passwordValue, MIN_LENGTH, REGEX_UPPERCASE, REGEX_NUMBER, REGEX_SPECIAL_CHAR]);
+
+  async function onSubmit(values: FormValues) {
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append("newPassword", values.newPassword);
+    formData.append("confirmPassword", values.confirmPassword);
+
+    const result = await updatePasswordAction(null, formData);
+
+    if (result.success) {
+      toast.success(result.message || t("notifications.success"));
       useCartStore.getState().clearCart();
+      form.reset();
+      // Rediriger vers la page de connexion après un court délai
+      setTimeout(() => router.push("/login"), 2000);
+    } else {
+      const errorMessage =
+        result.error?.message || result.message || t("notifications.errorUnknown");
+      toast.error(errorMessage);
     }
-  }, [state, t, prevServerMessage]);
+    setIsLoading(false);
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <Label htmlFor="newPassword">{t("newPasswordLabel")}</Label>
-        <Input
-          id="newPassword"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
           name="newPassword"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-          minLength={8}
-          className="mt-1"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("newPasswordLabel")}</FormLabel>
+              <FormControl>
+                <PasswordInput placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+              <div className="mt-2 space-y-1">
+                <PasswordRequirement
+                  label={tPassword("length", { min: MIN_LENGTH })}
+                  met={requirements.length}
+                />
+                <PasswordRequirement label={tPassword("uppercase")} met={requirements.uppercase} />
+                <PasswordRequirement label={tPassword("number")} met={requirements.number} />
+                <PasswordRequirement
+                  label={tPassword("specialChar")}
+                  met={requirements.specialChar}
+                />
+              </div>
+              <PasswordStrengthBar strength={passwordStrength} />
+            </FormItem>
+          )}
         />
-      </div>
-      <div>
-        <Label htmlFor="confirmPassword">{t("confirmPasswordLabel")}</Label>
-        <Input
-          id="confirmPassword"
+        <FormField
+          control={form.control}
           name="confirmPassword"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          minLength={8}
-          className="mt-1"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("confirmPasswordLabel")}</FormLabel>
+              <FormControl>
+                <PasswordInput placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-
-      {clientError && <p className="text-sm text-destructive">{clientError}</p>}
-
-      {/* Affichage amélioré des erreurs serveur */}
-      {state &&
-        !state.success &&
-        state.message &&
-        state.message !== prevServerMessage &&
-        !clientError && (
-          <p className="text-sm text-destructive">
-            {/* Affiche le message d'erreur brut du serveur s'il est pertinent, sinon un générique */}
-            {state.message || t("notifications.errorUnknown")}
-          </p>
-        )}
-      <SubmitButton />
-    </form>
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? tGlobal("loading") : t("submitButton")}
+        </Button>
+      </form>
+    </Form>
   );
 }

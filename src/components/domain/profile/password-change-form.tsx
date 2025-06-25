@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
-import { CheckCircle2, XCircle, type Circle as _Circle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,67 +18,17 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
-// import { useToast } from '@/components/ui/use-toast'; // Si vous utilisez shadcn/ui toast
 import { updatePasswordAction } from "@/app/[locale]/profile/actions";
+import { createProfilePasswordChangeSchema } from "@/lib/validation/auth-schemas";
+import {
+  PasswordRequirement,
+  PasswordStrengthBar,
+} from "@/components/domain/auth/password-strength";
 
-// Schéma de validation Zod
-const createPasswordSchema = (t: ReturnType<typeof useTranslations>) =>
-  z
-    .object({
-      currentPassword: z.string().min(1, t("currentPasswordRequired")),
-      newPassword: z.string().min(8, { message: t("newPasswordMinLength", { min: 8 }) }),
-      confirmPassword: z.string(),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: t("passwordsDoNotMatch"),
-      path: ["confirmPassword"], // Erreur attachée au champ de confirmation
-    });
-
-type PasswordFormValues = z.infer<ReturnType<typeof createPasswordSchema>>;
-
-const PasswordRequirement = ({ label, met }: { label: string; met: boolean }) => (
-  <div className="flex items-center text-sm">
-    {met ? (
-      <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-    ) : (
-      <XCircle className="mr-2 h-4 w-4 text-destructive" />
-    )}
-    <span>{label}</span>
-  </div>
-);
-
-const PasswordStrengthBar = ({ strength }: { strength: number }) => {
-  const tStrength = useTranslations("PasswordPage.strengthIndicator");
-  const strengthColors = [
-    "bg-destructive", // Corresponds to "veryWeak"
-    "bg-orange-400", // Corresponds to "weak"
-    "bg-yellow-400", // Corresponds to "medium"
-    "bg-green-400", // Corresponds to "strong"
-    "bg-green-500", // Corresponds to "veryStrong"
-  ];
-  const strengthLabelKeys = ["veryWeak", "weak", "medium", "strong", "veryStrong"];
-
-  const color = strengthColors[strength] || "bg-gray-200"; // strength is 0-4
-  // Ensure strength is within bounds for keys, defaulting to 'veryWeak'
-  const currentStrengthKey = strengthLabelKeys[strength] || strengthLabelKeys[0];
-  const translatedLabelText = tStrength(currentStrengthKey);
-
-  return (
-    <div className="mt-1">
-      <div className="h-2 w-full rounded-full bg-gray-200">
-        <div
-          className={`h-2 rounded-full ${color} transition-all duration-300 ease-in-out`}
-          style={{ width: `${((strength + 1) / 5) * 100}%` }}
-        />
-      </div>
-      {translatedLabelText && (
-        <p className="mt-1 text-xs text-muted-foreground">
-          {tStrength("label")} {translatedLabelText}
-        </p>
-      )}
-    </div>
-  );
-};
+const MIN_LENGTH = 8;
+const REGEX_UPPERCASE = /[A-Z]/;
+const REGEX_NUMBER = /[0-9]/;
+const REGEX_SPECIAL_CHAR = /[^A-Za-z0-9]/;
 
 export default function PasswordChangeForm() {
   const t = useTranslations("PasswordPage.form"); // Namespace pour ce formulaire
@@ -99,14 +48,10 @@ export default function PasswordChangeForm() {
   });
 
   const tValidation = useTranslations("PasswordPage.validation");
-  // Le schéma Zod pour la validation du formulaire est déjà défini par createPasswordSchema
-  // Nous allons utiliser les mêmes regex pour la validation en temps réel des exigences
-  const MIN_LENGTH = 8;
-  const REGEX_UPPERCASE = /[A-Z]/;
-  const REGEX_NUMBER = /[0-9]/;
-  const REGEX_SPECIAL_CHAR = /[^A-Za-z0-9]/;
+  const tProfile = useTranslations("PasswordPage.form");
 
-  const formSchema = createPasswordSchema(tValidation); // Utilise tValidation comme prévu
+  const formSchema = createProfilePasswordChangeSchema(tValidation, tProfile);
+  type PasswordFormValues = z.infer<typeof formSchema>;
 
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(formSchema),
@@ -138,7 +83,7 @@ export default function PasswordChangeForm() {
     if (newReqs.specialChar) strength++;
     if (newPasswordValue.length > 12) strength++; // Bonus for longer passwords
     setPasswordStrength(Math.min(strength, 4)); // Max strength 4 for the bar (0-4)
-  }, [newPasswordValue]);
+  }, [newPasswordValue, MIN_LENGTH, REGEX_UPPERCASE, REGEX_NUMBER, REGEX_SPECIAL_CHAR]);
 
   async function onSubmit(values: PasswordFormValues) {
     setIsLoading(true);
