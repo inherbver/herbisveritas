@@ -20,10 +20,13 @@ const signUpSchema = z
     email: z.string().email({ message: "L'adresse email n'est pas valide." }),
     password: z
       .string()
-      .min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
-    confirmPassword: z
-      .string()
-      .min(8, { message: "La confirmation du mot de passe doit contenir au moins 8 caractères." }),
+      .min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." })
+      .regex(/[A-Z]/, { message: "Le mot de passe doit contenir au moins une majuscule." })
+      .regex(/[0-9]/, { message: "Le mot de passe doit contenir au moins un chiffre." })
+      .regex(/[^A-Za-z0-9]/, {
+        message: "Le mot de passe doit contenir au moins un caractère spécial.",
+      }),
+    confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas.",

@@ -108,43 +108,31 @@ Stocke les informations sur les commandes passées par les utilisateurs.
 - **Colonnes Clés:**
   - `id (UUID, PK)`: Identifiant unique de la commande.
   - `user_id (UUID, FK -> auth.users)`: L'utilisateur qui a passé la commande.
-  - `status (order_status, DEFAULT 'pending')`: Le statut actuel de la commande (voir ENUMs).
+  - `status (order_status, DEFAULT 'pending')`: Le statut actuel de la commande.
   - `total_amount (NUMERIC)`: Le montant total de la commande.
-  - `stripe_payment_intent_id (TEXT, UNIQUE)`: L'identifiant du Payment Intent Stripe, pour la réconciliation et la prévention des doublons.
-  - `shipping_address_id (UUID, FK -> public.addresses)`: L'adresse de livraison.
-  - `billing_address_id (UUID, FK -> public.addresses)`: L'adresse de facturation.
+  - `stripe_checkout_session_id (TEXT, UNIQUE)`: L'identifiant de la session de checkout Stripe, pour la réconciliation.
+  - `created_at (TIMESTAMPTZ, DEFAULT now())`: La date de création de la commande.
 - **RLS:**
-  - Les utilisateurs peuvent uniquement lire (`SELECT`) leurs propres commandes.
-  - Les admins/devs ont un accès complet.
-  - **Logique applicative :** La création des commandes est gérée exclusivement par le **webhook Stripe** (`/api/stripe-webhook/route.ts`). Ce webhook s'exécute avec des privilèges élevés (`service_role`) pour pouvoir insérer des données au nom de l'utilisateur après un paiement réussi. Voir [la documentation des actions](./ACTIONS.md#6-gestion-des-paiements-stripe) pour plus de détails.
+  - `orders_user_access`: Permet aux utilisateurs de lire (`SELECT`) leurs propres commandes.
+    - `(auth.uid() = user_id)`
+  - `orders_service_role_access`: Donne un accès complet (`ALL`) au `service_role`.
+- **Logique applicative :** La création des commandes est gérée exclusivement par la fonction RPC `create_order_from_cart`, elle-même appelée par le webhook Stripe. Ce processus s'exécute avec les privilèges `service_role` pour garantir l'intégrité des données.
 
 ### Table: `public.order_items`
 
 Détaille les produits inclus dans chaque commande.
 
 - **Colonnes Clés:**
-  - `id (UUID, PK)`.
+  - `id (UUID, PK)`: Identifiant unique de l'article de commande.
   - `order_id (UUID, FK -> public.orders)`: La commande à laquelle cet article appartient.
   - `product_id (TEXT, FK -> public.products)`: Le produit commandé.
   - `quantity (INTEGER)`: La quantité commandée.
-  - `price_at_purchase (NUMERIC)`: Le prix du produit au moment de l'achat, pour garantir l'exactitude historique même si le prix du produit change plus tard.
+  - `price_at_purchase (NUMERIC)`: Le prix du produit au moment de l'achat, pour garantir l'exactitude historique.
 - **RLS:**
-  - Les utilisateurs peuvent lire les articles des commandes qui leur appartiennent (via une jointure sur `orders`).
-  - Les admins/devs ont un accès complet.
-  - **Logique applicative :** La création est également gérée par le webhook Stripe en même temps que la commande.
-
-### Table: `public.order_items`
-
-Détaille le contenu des commandes.
-
-- **Colonnes Clés:**
-  - `id (UUID, PK)`.
-  - `order_id (UUID, FK -> public.orders)`.
-  - `product_id (TEXT, FK -> public.products)`.
-  - `quantity (INTEGER)`, `price (NUMERIC)`.
-- **RLS:**
-  - Les utilisateurs peuvent lire les articles de leurs propres commandes.
-  - Accès complet pour les admins/devs.
+  - `order_items_user_access`: Permet aux utilisateurs de lire (`SELECT`) les articles des commandes qui leur appartiennent.
+    - `(EXISTS ( SELECT 1 FROM orders o WHERE ((o.id = order_items.order_id) AND (o.user_id = auth.uid()))))`
+  - `order_items_service_role_access`: Donne un accès complet (`ALL`) au `service_role`.
+- **Logique applicative :** La création est gérée par la fonction RPC `create_order_from_cart` en même temps que la commande.
 
 ### Table: `public.featured_hero_items`
 

@@ -76,82 +76,54 @@ Le rôle d'un utilisateur (`admin`, `dev`, `user`) est déterminé **uniquement*
 
 ---
 
-## 4. Mesures Spécifiques
+## 4. Flux de Paiement Sécurisé (Stripe Integration)
 
-- **Gestion des Secrets :** Toutes les clés d'API, secrets de JWT et autres informations sensibles sont gérés via des variables d'environnement (`.env.local`) et ne sont jamais exposés côté client.
-- **Politique de Mots de Passe :** Les exigences de complexité des mots de passe sont gérées par Supabase Auth. Le flux de changement de mot de passe est sécurisé par la vérification de l'ancien mot de passe. Voir le [flux de changement de mot de passe](./AUTHFLOW.md#41-changement-de-mot-de-passe).
+Le processus de paiement est une partie critique de l'application et a été conçu pour être aussi sécurisé que possible, en déléguant la gestion des informations de carte bancaire à Stripe et en protégeant chaque étape du flux.
 
-  - Toutes les fonctionnalités Guest
-  - Gestion du compte
-  - Historique des commandes
-  - Gestion des adresses
+### 4.1. Étape 1 : Création de la Session de Paiement (Côté Client -> Action Serveur)
 
-- **Admin**
+1.  **Initiation Client :** L'utilisateur clique sur "Payer" dans son panier.
+2.  **Appel à l'Action Serveur :** Le client appelle la `Server Action` **`createStripeCheckoutSession`**.
+3.  **Validation Côté Serveur :**
+    - L'action vérifie que l'utilisateur est bien **authentifié**.
+    - Elle récupère le panier de l'utilisateur depuis la base de données.
+    - **Crucial :** Pour éviter toute manipulation de prix côté client, l'action **ignore les prix venant du panier** et récupère les prix actuels des produits directement depuis la table `products` de la base de données.
+    - Elle construit les `line_items` pour Stripe avec ces prix validés.
+4.  **Création de la Session Stripe :** L'action communique avec l'API Stripe en utilisant la clé secrète (jamais exposée au client) pour créer une session de paiement.
+    - Le `cart.id` est passé dans le champ `client_reference_id` pour pouvoir réconcilier la commande plus tard.
+5.  **Redirection :** L'action retourne le `sessionId` au client, qui l'utilise pour rediriger l'utilisateur vers la page de paiement hébergée par Stripe. **Aucune donnée sensible ne transite par le client.**
 
-  - Accès complet à l'administration
-  - Gestion des produits
-  - Gestion des commandes
-  - Tableau de bord
+### 4.2. Étape 2 : Traitement du Paiement (Webhook Stripe -> Edge Function Supabase)
 
-- **Tech** (Futur)
-  - Accès technique limité
-  - Maintenance système
-  - Pas d'accès aux données critiques
+1.  **Paiement Réussi :** L'utilisateur complète son paiement sur la page Stripe.
+2.  **Notification Webhook :** Stripe envoie un événement `checkout.session.completed` à notre **Edge Function** Supabase (`/supabase/functions/stripe-webhook`).
+3.  **Vérification de la Signature :**
+    - La première étape de la fonction est de **vérifier la signature de l'événement** avec le secret du webhook (`STRIPE_WEBHOOK_SECRET`). Cela garantit que la requête provient bien de Stripe et n'a pas été falsifiée. Toute requête sans signature valide est immédiatement rejetée.
+4.  **Appel à la Fonction RPC :**
+    - Une fois l'événement validé, la fonction extrait le `client_reference_id` (qui est notre `cart_id`) et l'ID de l'utilisateur de la session Stripe.
+    - Elle appelle ensuite la fonction PostgreSQL **`create_order_from_cart(cart_id)`**.
 
-## Sécurité des Données
+### 4.3. Étape 3 : Création de la Commande (Base de Données PostgreSQL)
 
-### Authentification
+1.  **Exécution de la RPC :** La fonction `create_order_from_cart` s'exécute dans la base de données.
+2.  **Sécurité de la Fonction :**
+    - Elle est définie avec `SECURITY DEFINER` pour s'exécuter avec les privilèges du créateur (un rôle de confiance), mais avec un `SET search_path = ''` pour prévenir les attaques de type "hijacking".
+    - Le rôle `postgres` a reçu explicitement la permission `SELECT` sur `auth.users` pour pouvoir lier la commande à l'utilisateur, sans pour autant exposer d'autres permissions.
+3.  **Logique Transactionnelle :**
+    - La fonction lit les articles du panier spécifié.
+    - Elle crée une nouvelle entrée dans la table `orders`.
+    - Elle insère les articles correspondants dans la table `order_items`, en utilisant les prix actuels des produits pour une dernière validation.
+    - Elle supprime le panier (`cart`) une fois la commande créée.
+    - Toutes ces opérations sont implicitement transactionnelles au sein de la fonction.
+4.  **Contrôle d'Accès Final :** Les nouvelles lignes dans `orders` et `order_items` sont immédiatement protégées par les politiques **RLS**, garantissant que seul l'utilisateur propriétaire pourra les consulter par la suite.
 
-- Sessions sécurisées (cookies httpOnly, secure)
-- Hachage des mots de passe (via Supabase Auth)
-- Protection contre les attaques par force brute
+Ce flux garantit que les informations de paiement sont sécurisées par Stripe, que les prix ne peuvent pas être modifiés par l'utilisateur, que les notifications de paiement sont authentiques, et que la création de la commande est atomique et sécurisée au plus bas niveau.
 
-### Protection des Données
+---
 
-- Chiffrement des données sensibles
-- Sauvegardes régulières
-- Conformité RGPD
+## 5. Mesures Spécifiques
 
-## Bonnes Pratiques
-
-### Développement
-
-- Jamais de secrets dans le code
-- Validation stricte des entrées
-- Gestion sécurisée des erreurs
-- Mise à jour régulière des dépendances
-
-### Infrastructure
-
-- Sécurisation des accès SSH
-- Surveillance des logs
-- Mises à jour de sécurité
-
-## Réponse aux Incidents
-
-### Procédure en Cas de Brèche
-
-1. Identification de la faille
-2. Contrôle des dégâts
-3. Correction de la vulnérabilité
-4. Notification des utilisateurs si nécessaire
-5. Analyse post-mortem
-
-### Contacts de Sécurité
-
-- Responsable Sécurité: [email protégé]
-- Support Technique: [email protégé]
-
-## Audit et Conformité
-
-### Vérifications Régulières
-
-- Scans de vulnérabilités
-- Tests d'intrusion
-- Revue des logs d'accès
-
-### Conformité
-
-- RGPD
-- PCI DSS (pour les paiements)
-- Hébergement des données en Europe
+- **Gestion des Secrets :** Toutes les clés d'API, secrets de JWT et autres informations sensibles sont gérés via des variables d'environnement et les secrets de Supabase. Ils ne sont jamais exposés côté client.
+- **Politique de Mots de Passe :** Les exigences de complexité des mots de passe sont gérées par Supabase Auth.
+- **Dépendances :** Les dépendances sont régulièrement auditées et mises à jour pour corriger les vulnérabilités connues.
+- **Réponse aux Incidents :** Une procédure est en place pour identifier, contrôler, corriger et notifier en cas de brèche de sécurité.

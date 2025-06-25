@@ -117,3 +117,15 @@ Contient des actions spécifiques pour invalider le cache de Next.js.
   - **Description :** Invalide le cache pour un ou plusieurs chemins (routes).
   - **Paramètres :** `paths` (tableau de chaînes de caractères).
   - **Retourne :** `Promise<void>`.
+
+---
+
+## 7. Actions de Paiement Stripe (`src/actions/stripeActions.ts`)
+
+Gère la création de sessions de paiement avec Stripe.
+
+- **`createStripeCheckoutSession()`**
+
+  - **Description :** Crée une session de checkout Stripe pour le panier de l'utilisateur. Cette action sécurisée côté serveur récupère le panier, valide les prix des produits en base de données pour éviter toute manipulation, et initialise la session de paiement. Elle est conçue pour être appelée par un composant client, qui redirige ensuite l'utilisateur vers la page de paiement hébergée par Stripe.
+  - **Paramètres :** Aucun.
+  - **Retourne :** `Promise<ActionResult>` contenant le `sessionId` en cas de succès, ou un message d'erreur.

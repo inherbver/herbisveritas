@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion"; // Import motion
 import { QuantityInput } from "./quantity-input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Removed TabsContent
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+
 // Import the data type from the modal file for now
 import { ProductDetailData } from "@/types/product-types"; // Import from centralized location
 import { addItemToCart } from "@/actions/cartActions";
@@ -32,27 +32,16 @@ interface ProductDetailDisplayProps {
 // Internal Submit Button component using useFormStatus
 function SubmitButton() {
   const { pending } = useFormStatus();
-  const t = useTranslations("ProductDetailModal"); // Changed namespace
+  const t = useTranslations("ProductDetailModal");
 
   return (
-    // Use Button component with asChild
     <Button
       type="submit"
-      size="lg"
-      className="w-full" // Button handles sizing and base styles
       disabled={pending}
       aria-disabled={pending}
-      asChild // Pass the underlying component via children
+      className="inline-flex h-12 w-[200px] items-center justify-center rounded-2xl bg-secondary px-6 font-semibold text-secondary-foreground shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"
     >
-      {/* Apply motion to the underlying button element */}
-      <motion.button
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
-        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-      >
-        {/* Use correct keys from the JSON */}
-        {pending ? t("addingToCart") : t("addToCart")}
-      </motion.button>
+      {pending ? t("addingToCart") : t("addToCart")}
     </Button>
   );
 }
@@ -127,78 +116,86 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   return (
     // Use <section> for the main component block
     <motion.section
-      className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-12"
+      className="grid items-start gap-8 bg-card md:grid-cols-2 lg:gap-16"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
       {/* Left Column: Image wrapped in <figure> */}
       {/* Add shadow and overflow-hidden for rounded corners on figure */}
-      <figure className="overflow-hidden rounded-lg shadow-md">
-        {/* Enforce 1:1 ratio using AspectRatio */}
-        <AspectRatio ratio={1 / 1} className="bg-muted/30">
-          {product.images && product.images.length > 0 ? (
-            <Image
-              src={product.images[0].src}
-              alt={product.images[0].alt}
-              fill // Make image fill the AspectRatio container
-              sizes="(max-width: 768px) 100vw, 50vw" // Ajout de la propriété sizes
-              className="object-cover" // Cover the area, cropping if needed
-              priority // Prioritize loading the main product image
-            />
-          ) : (
-            // Center the placeholder text within the AspectRatio
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-              {tModal("noImage")}
-            </div>
-          )}
-        </AspectRatio>
-        {/* TODO: Consider adding an image gallery/carousel if multiple images exist */}
+      <figure className="relative h-full w-full overflow-hidden rounded-2xl shadow-lg">
+        {product.images && product.images.length > 0 ? (
+          <Image
+            src={product.images[0].src}
+            alt={product.images[0].alt}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover object-bottom"
+            priority
+          />
+        ) : (
+          <div className="bg-muted/30 flex h-full w-full items-center justify-center rounded-2xl">
+            {tModal("noImage")}
+          </div>
+        )}
       </figure>
       {/* Right Column: Details, Actions, Tabs */}
       {/* Use <article> for the main product information and actions */}
-      <article className="flex flex-col pt-6 md:pt-0">
+      <article className="flex h-full flex-col justify-center p-8">
         {/* Product Title */}
-        <h1 className="mb-1 font-serif text-3xl font-semibold text-foreground lg:text-4xl">
-          {product.name}
-        </h1>
+        <h1 className="mb-2 font-serif text-3xl font-semibold text-foreground">{product.name}</h1>
         {/* Unit: Smaller, muted, under title */}
-        {product.unit && <p className="mb-4 text-sm text-muted-foreground">({product.unit})</p>}
+        {product.unit && (
+          <p className="mb-4 font-sans text-sm italic text-muted-foreground">({product.unit})</p>
+        )}
         {/* Short Description */}
         {product.shortDescription && (
-          <p className="mb-4 text-base text-muted-foreground">{product.shortDescription}</p>
+          <p className="text-foreground/90 mb-6 font-sans text-base leading-relaxed">
+            {product.shortDescription}
+          </p>
         )}
-        {/* Price */}
-        <div className="mb-1 text-2xl font-bold text-primary">{product.price}</div>
-        {/* Tax Label: Smaller, muted, under price */}
-        <div className="mb-6 text-xs text-muted-foreground">{tProdDetail("taxInclusiveLabel")}</div>
+        <div className="my-8 rounded-2xl bg-primary-foreground p-8 shadow-lg">
+          <div className="grid grid-cols-2 items-center gap-4">
+            {/* Price */}
+            <div className="">
+              <div className="mb-1 text-3xl font-bold text-secondary">{product.price}</div>
+              <div className="text-xs text-muted-foreground">
+                {tProdDetail("taxInclusiveLabel")}
+              </div>
+            </div>
 
-        {/* Quantity Input */}
-        <div className="mb-6 flex items-center space-x-3">
-          <label htmlFor={`quantity-${product.id}`} className="text-sm font-medium">
-            {tQuantity("quantity")}
-          </label>
-          <QuantityInput id={`quantity-${product.id}`} value={quantity} onChange={setQuantity} />
+            {/* Quantity Input */}
+            <div className="flex items-center justify-end space-x-3">
+              <label htmlFor={`quantity-${product.id}`} className="text-sm font-medium">
+                {tQuantity("quantity")}
+              </label>
+              <QuantityInput
+                id={`quantity-${product.id}`}
+                value={quantity}
+                onChange={setQuantity}
+              />
+            </div>
+          </div>
+
+          {/* Form to handle adding to cart */}
+          <form action={formAction} className="mt-6 flex justify-center">
+            {/* Hidden inputs to pass data to the server action */}
+            <input type="hidden" name="productId" value={product.id} />
+            <input type="hidden" name="quantity" value={quantity} />
+            <SubmitButton />
+          </form>
         </div>
-
-        {/* Form to handle adding to cart */}
-        <form action={formAction} className="w-full">
-          {/* Hidden inputs to pass data to the server action */}
-          <input type="hidden" name="productId" value={product.id} />
-          <input type="hidden" name="quantity" value={quantity} />
-          <SubmitButton />
-        </form>
 
         {/* Information Tabs */}
         {/* We need to manage the active tab state for AnimatePresence */}
         {/* defaultValue sets initial, onValueChange updates state */}
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="mt-6 w-full">
           {/* Update grid columns to 4 */}
-          <TabsList className="mb-4 flex w-full justify-start overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <TabsList className="mb-4 flex flex-wrap justify-start gap-2">
             {/* Apply active/inactive styles */}
             <TabsTrigger
               value="description"
-              className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="relative font-serif data-[state=active]:text-foreground"
             >
               {tModal("descriptionTab")}
               {activeTab === "description" && (
@@ -211,7 +208,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             </TabsTrigger>
             <TabsTrigger
               value="properties"
-              className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="relative font-serif data-[state=active]:text-foreground"
             >
               {tModal("propertiesTab")}
               {activeTab === "properties" && (
@@ -224,7 +221,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             </TabsTrigger>
             <TabsTrigger
               value="composition"
-              className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="relative font-serif data-[state=active]:text-foreground"
             >
               {tModal("compositionTab")}
               {activeTab === "composition" && (
@@ -237,7 +234,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             </TabsTrigger>
             <TabsTrigger
               value="usage"
-              className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              className="relative font-serif data-[state=active]:text-foreground"
             >
               {tModal("usageTab")}
               {activeTab === "usage" && (
@@ -250,7 +247,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             </TabsTrigger>
           </TabsList>
           {/* Animation container - Use relative for absolute positioning of motion divs */}
-          <div className="relative overflow-hidden">
+          <div className="relative max-h-60 overflow-y-auto rounded-lg bg-primary-foreground p-8">
             <AnimatePresence initial={false} mode="wait">
               {/* Description Tab */}
               {activeTab === "description" && (

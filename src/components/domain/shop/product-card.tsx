@@ -199,7 +199,7 @@ export function ProductCard({
               disabled={isPending || isOutOfStock}
               aria-disabled={isPending || isOutOfStock}
               aria-describedby={isOutOfStock ? `${id}-out-of-stock` : undefined}
-              className="w-full rounded-md bg-primary py-2 font-sans text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary-foreground hover:text-primary"
+              className="w-full rounded-full bg-secondary px-6 py-3 font-semibold text-secondary-foreground transition-all duration-200 ease-out hover:scale-105 hover:bg-secondary-foreground hover:text-secondary"
             >
               {isPending ? t("addingToCart") : isOutOfStock ? t("outOfStock") : t("addToCart")}
             </Button>

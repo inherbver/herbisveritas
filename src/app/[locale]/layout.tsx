@@ -40,9 +40,11 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <ClientLayout locale={currentLocale} messages={messages} timeZone={timeZone}>
-      <Header />
+      <div className="mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8">
+        <Header />
+        {children}
+      </div>
       <Toaster richColors position="bottom-right" />
-      {children}
       {/* <Footer /> */}
     </ClientLayout>
   );
