@@ -95,6 +95,14 @@ export function LoginForm() {
           <div className="space-y-2">
             <Label htmlFor="password">{t("passwordLabel")}</Label>
             <Input id="password" name="password" type="password" required />
+            <div className="text-right">
+              <a
+                href="/forgot-password"
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                {t("forgotPasswordLink")}
+              </a>
+            </div>
             {state.fieldErrors?.password && (
               <p className="text-sm font-medium text-destructive">
                 {state.fieldErrors.password.join(", ")}
@@ -114,7 +122,9 @@ export function LoginForm() {
               {t("resendConfirmationButton")}
             </Button>
           )}
-          <SubmitButton />
+          <div className="mt-6 w-full">
+            <SubmitButton />
+          </div>
         </CardFooter>
       </form>
       <p className="mt-4 px-6 pb-6 text-center text-sm">

@@ -83,7 +83,7 @@ export function RegisterForm() {
 
     const strength = Object.values(newRequirements).filter(Boolean).length;
     setPasswordStrength(strength);
-  }, [passwordValue, MIN_LENGTH, REGEX_UPPERCASE, REGEX_NUMBER, REGEX_SPECIAL_CHAR]);
+  }, [passwordValue]);
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
@@ -189,7 +189,7 @@ export function RegisterForm() {
               type="submit"
               size="lg"
               variant="secondary"
-              className="w-full shadow-md transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95"
+              className="mt-6 w-full shadow-md transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95"
               disabled={isLoading}
             >
               {isLoading ? tGlobal("loading") : tAuth("submitButton")}

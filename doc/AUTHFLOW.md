@@ -64,15 +64,44 @@ Cette approche garantit que toute modification des règles de mot de passe est a
 
 ---
 
-## 3. Gestion des Sessions et des Utilisateurs Anonymes
+## 3. Flux de Réinitialisation de Mot de Passe (Password Reset)
 
-### 3.1. Protection des Routes (Middleware)
+Ce flux permet aux utilisateurs ayant oublié leur mot de passe de regagner l'accès à leur compte de manière sécurisée.
+
+### Phase 1: Demande de Lien de Réinitialisation
+
+1.  **Navigation Utilisateur** : L'utilisateur se rend sur la page `/forgot-password`.
+2.  **Soumission du Formulaire** : L'utilisateur saisit son adresse e-mail dans le [ForgotPasswordForm](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/components/domain/auth/forgot-password-form.tsx:10:0-64:1) et soumet le formulaire.
+3.  **Action Serveur** : L'action `forgotPasswordAction` (dans [src/actions/auth.ts](cci:7://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/actions/auth.ts:0:0-0:0)) est déclenchée.
+    - Elle valide le format de l'e-mail.
+    - Elle appelle `supabase.auth.resetPasswordForEmail()` avec l'e-mail de l'utilisateur.
+    - **Important** : Pour des raisons de sécurité (afin d'éviter l'énumération d'e-mails), cette fonction retourne un message de succès, que l'e-mail existe ou non dans la base de données.
+4.  **Envoi de l'E-mail** : Supabase envoie un e-mail à l'utilisateur contenant un lien unique et à durée de vie limitée. Ce lien dirige l'utilisateur vers la page `/update-password` et inclut un jeton de sécurité.
+
+### Phase 2: Mise à Jour du Mot de Passe
+
+1.  **Clic sur le Lien** : L'utilisateur clique sur le lien dans son e-mail et est redirigé vers la page `/update-password`. Supabase gère automatiquement la vérification du jeton depuis l'URL et établit une session authentifiée pour permettre la mise à jour du mot de passe.
+2.  **Affichage du Formulaire** : Le [UpdatePasswordForm](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/components/domain/auth/update-password-form.tsx:12:0-75:1) est affiché, invitant l'utilisateur à saisir un nouveau mot de passe et à le confirmer.
+3.  **Validation Côté Client** : Le formulaire fournit un retour en temps réel sur la force du mot de passe en utilisant les composants [PasswordStrengthBar](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/components/domain/auth/password-strength.tsx:16:0-46:2) et [PasswordRequirement](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/components/domain/auth/password-strength.tsx:5:0-14:2).
+4.  **Soumission du Formulaire** : L'utilisateur soumet le nouveau mot de passe.
+5.  **Action Serveur** : L'action [updatePasswordAction](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/actions/auth.ts:256:0-298:1) (dans [src/actions/auth.ts](cci:7://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/actions/auth.ts:0:0-0:0)) est déclenchée.
+    - Elle utilise le schéma centralisé `createPasswordSchema` pour valider que le nouveau mot de passe est suffisamment fort et que la confirmation correspond.
+    - Elle appelle `supabase.auth.updateUser()` avec le nouveau mot de passe. Comme l'utilisateur dispose d'une session valide grâce au jeton de réinitialisation, Supabase autorise cette opération.
+6.  **Retour d'Information** :
+    - En cas de succès, un message de confirmation est affiché, et un lien est fourni à l'utilisateur pour se connecter.
+    - En cas d'échec (par exemple, jeton expiré, erreur de validation), un message d'erreur approprié est affiché.
+
+---
+
+## 4. Gestion des Sessions et des Utilisateurs Anonymes
+
+### 4.1. Protection des Routes (Middleware)
 
 - Le fichier `src/middleware.ts` intercepte chaque requête vers une route protégée.
 - Il utilise `supabase.auth.getUser()` pour vérifier si une session valide existe.
 - Si l'utilisateur n'est pas authentifié, le middleware (via la logique de `next-intl`) le redirige vers la page de connexion.
 
-### 3.2. Utilisateurs Anonymes (Invités)
+### 4.2. Utilisateurs Anonymes (Invités)
 
 Pour des fonctionnalités comme le panier invité, l'application a besoin d'une session même pour les utilisateurs non connectés.
 
@@ -83,7 +112,7 @@ Pour des fonctionnalités comme le panier invité, l'application a besoin d'une 
   2. Si aucun utilisateur n'est trouvé (l'utilisateur est un invité), la fonction appelle `supabase.auth.signInAnonymously()` pour créer une session anonyme.
   3. Cette session anonyme est utilisée pour lier des données (comme un panier) à cet invité spécifique. Voir la définition de la [table `carts`](./DATABASE.md#table-publiccarts) qui autorise un `user_id` nullable.
 
-### 3.3. Synchronisation de l'État Côté Client
+### 4.3. Synchronisation de l'État Côté Client
 
 - **Fichier Clé :** `src/components/layout/client-layout.tsx`
 - **Processus :**
@@ -93,11 +122,11 @@ Pour des fonctionnalités comme le panier invité, l'application a besoin d'une 
 
 ---
 
-## 4. Gestion du Compte Utilisateur
+## 5. Gestion du Compte Utilisateur
 
 Ces flux sont principalement gérés dans `src/app/[locale]/profile/actions.ts`.
 
-### 4.1. Changement de Mot de Passe
+### 5.1. Changement de Mot de Passe
 
 Ce flux est sécurisé pour s'assurer que seul le propriétaire du compte peut changer son mot de passe.
 
@@ -111,14 +140,14 @@ Ce flux est sécurisé pour s'assurer que seul le propriétaire du compte peut c
     d. **Déconnexion Forcée :** Après une mise à jour réussie, `supabase.auth.signOut()` est appelée pour invalider toutes les sessions existantes et forcer l'utilisateur à se reconnecter avec son nouveau mot de passe.
 4.  **Résultat :** L'utilisateur est déconnecté et doit se reconnecter.
 
-### 4.2. Mise à jour des Informations du Profil
+### 5.2. Mise à jour des Informations du Profil
 
 - La mise à jour des informations de profil (nom, etc.) est gérée par la `updateUserProfile` action dans `src/actions/profileActions.ts`.
 - Elle récupère l'utilisateur actuel et met à jour la [table `profiles`](./DATABASE.md#table-publicprofiles) correspondante en base de données.
 
 ---
 
-## 5. Flux de Callback (`/auth/callback`)
+## 6 . Flux de Callback (`/auth/callback`)
 
 La page `src/app/[locale]/auth/callback/page.tsx` est un point d'entrée central pour les flux initiés par un email.
 

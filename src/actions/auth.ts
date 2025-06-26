@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe l
 import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
 import { isGeneralError, isValidationError } from "@/lib/cart-helpers"; // AJOUT: Importer les gardiens de type
 import { getTranslations } from "next-intl/server";
-import { createSignupSchema } from "@/lib/validation/auth-schemas";
+import { createPasswordSchema, createSignupSchema } from "@/lib/validation/auth-schemas";
 
 // --- Schéma Login ---
 const loginSchema = z.object({
@@ -112,7 +112,7 @@ export async function signUpAction(
   formData: FormData
 ): Promise<AuthActionResult> {
   const supabase = await createSupabaseServerClient();
-  const locale = (formData.get("locale") as string) || "fr"; // Récupérer la locale depuis le formulaire
+  const locale = (formData.get("locale") as string) || "fr";
 
   // Charger les traductions nécessaires pour la validation
   const tPassword = await getTranslations({ locale, namespace: "PasswordPage.validation" });
@@ -128,7 +128,6 @@ export async function signUpAction(
     confirmPassword: formData.get("confirmPassword"),
   });
 
-  // Si la validation échoue
   if (!validatedFields.success) {
     const fieldErrors = validatedFields.error.flatten().fieldErrors;
     const formErrors = validatedFields.error.flatten().formErrors;
@@ -144,7 +143,30 @@ export async function signUpAction(
 
   const { email, password } = validatedFields.data;
 
-  // Construire l'URL de redirection pour la confirmation par email
+  // 2. Vérifier si l'email existe déjà via la fonction RPC
+  try {
+    const { data: emailExists, error: rpcError } = await supabase.rpc("check_email_exists", {
+      email_to_check: email,
+    });
+
+    if (rpcError) {
+      console.warn("Erreur lors de la vérification RPC de l'email:", rpcError.message);
+      // Continuer sans vérification
+    } else if (emailExists) {
+      const t = await getTranslations({ locale, namespace: "Auth.validation" });
+      return {
+        success: false,
+        fieldErrors: {
+          email: [t("emailAlreadyExists")],
+        },
+      };
+    }
+  } catch (error) {
+    console.warn("Exception lors de la vérification de l'email existant:", error);
+    // Continuer sans vérification
+  }
+
+  // 3. Construire l'URL de redirection
   const origin = process.env.NEXT_PUBLIC_BASE_URL;
   if (!origin) {
     console.error("FATAL: La variable d'environnement NEXT_PUBLIC_BASE_URL n'est pas définie.");
@@ -155,54 +177,138 @@ export async function signUpAction(
   }
   const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
 
-  // Log pour débogage de l'URL construite
-  console.log("Constructed emailRedirectTo for signUp:", redirectUrl);
-
-  // 2. Essayer d'inscrire l'utilisateur avec Supabase
-  const { data, error } = await supabase.auth.signUp({
+  // 4. Essayer d'inscrire l'utilisateur
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: redirectUrl, // Utiliser la variable définie
+      emailRedirectTo: redirectUrl,
     },
   });
 
-  // Si Supabase renvoie une erreur (ex: utilisateur existe déjà)
   if (error) {
     console.error("Erreur Supabase Auth (Signup):", error.message);
-    let errorMessage = "Une erreur est survenue lors de l'inscription. Veuillez réessayer.";
-    if (error.message.includes("User already registered")) {
-      errorMessage = "Un compte existe déjà avec cette adresse email.";
-    }
-    // Vous pourriez ajouter d'autres vérifications d'erreurs spécifiques ici
     return {
       success: false,
-      error: errorMessage,
+      error: "Une erreur est survenue lors de l'inscription. Veuillez réessayer.",
     };
   }
 
-  // 3. Si succès (et la confirmation par email est activée par défaut)
-  // Supabase renvoie data.user non null si l'inscription a réussi,
-  // même si l'email n'est pas encore confirmé.
-  if (data.user) {
-    // Vérifier si la confirmation par email est requise (comportement par défaut)
-    // Si data.session est null et data.user n'est pas null, la confirmation est probablement requise.
-    if (!data.session) {
-      return {
-        success: true,
-        message:
-          "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.",
-      };
-    }
-    // Si la confirmation n'est pas activée (ou auto-confirmée), on peut rediriger
-    // Cependant, il est plus sûr d'attendre la confirmation.
-    // redirect('/'); // Optionnel: Rediriger directement si pas de confirmation
+  // 5. Succès
+  return {
+    success: true,
+    message:
+      "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.",
+  };
+}
+
+// --- Mot de passe oublié ---
+export async function requestPasswordResetAction(
+  prevState: AuthActionResult | undefined,
+  formData: FormData
+): Promise<AuthActionResult> {
+  const supabase = await createSupabaseServerClient();
+  const locale = (formData.get("locale") as string) || "fr";
+  const email = formData.get("email") as string;
+
+  // 1. Valider l'email
+  const t = await getTranslations({ locale, namespace: "Auth.validation" });
+  const emailSchema = z.string().email({ message: t("emailInvalid") });
+  const validatedEmail = emailSchema.safeParse(email);
+
+  if (!validatedEmail.success) {
+    return {
+      success: false,
+      fieldErrors: {
+        email: validatedEmail.error.flatten().formErrors,
+      },
+    };
   }
 
-  // Cas par défaut ou si quelque chose d'inattendu se produit
+  // 2. Construire l'URL de redirection
+  const origin = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!origin) {
+    console.error("FATAL: NEXT_PUBLIC_BASE_URL is not set.");
+    return {
+      success: false,
+      error: "Server configuration error.",
+    };
+  }
+  const redirectUrl = `${origin}/${locale}/update-password`;
+
+  // 3. Appeler Supabase pour envoyer l'email
+  const { error } = await supabase.auth.resetPasswordForEmail(validatedEmail.data, {
+    redirectTo: redirectUrl,
+  });
+
+  if (error) {
+    console.error("Error sending password reset email:", error.message);
+    // Ne pas révéler si l'email existe ou non
+    // On renvoie un succès générique pour des raisons de sécurité
+  }
+
+  // 4. Toujours renvoyer un message de succès pour éviter l'énumération d'utilisateurs
+  const tSuccess = await getTranslations({ locale, namespace: "Auth.ForgotPassword" });
   return {
-    success: false,
-    error: "Une erreur inattendue est survenue lors de l'inscription.",
+    success: true,
+    message: tSuccess("successMessage"),
+  };
+}
+
+export async function updatePasswordAction(
+  prevState: AuthActionResult | undefined,
+  formData: FormData
+): Promise<AuthActionResult> {
+  const supabase = await createSupabaseServerClient();
+  const locale = (formData.get("locale") as string) || "fr";
+
+  // 1. Valider les mots de passe
+  const tValidation = await getTranslations({ locale, namespace: "PasswordPage.validation" });
+  const tAuth = await getTranslations({ locale, namespace: "Auth" });
+
+  const updatePasswordSchema = z
+    .object({
+      password: createPasswordSchema(tValidation),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: tAuth("passwordsDoNotMatch"),
+      path: ["confirmPassword"],
+    });
+
+  const validatedFields = updatePasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      fieldErrors: validatedFields.error.flatten().fieldErrors as Record<string, string[]>,
+    };
+  }
+
+  const { password } = validatedFields.data;
+
+  // 2. Mettre à jour l'utilisateur dans Supabase
+  const { error } = await supabase.auth.updateUser({
+    password: password,
+  });
+
+  if (error) {
+    console.error("Error updating password:", error.message);
+    const tError = await getTranslations({ locale, namespace: "Auth.UpdatePassword" });
+    return {
+      success: false,
+      error: tError("errorMessage"),
+    };
+  }
+
+  // 3. Succès
+  const tSuccess = await getTranslations({ locale, namespace: "Auth.UpdatePassword" });
+  return {
+    success: true,
+    message: tSuccess("successMessage"),
   };
 }
 
