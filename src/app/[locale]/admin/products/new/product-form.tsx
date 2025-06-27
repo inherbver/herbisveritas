@@ -12,9 +12,14 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrashIcon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
+import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { createProduct } from '@/actions/productActions';
 
 export function ProductForm() {
   const t = useTranslations('AdminProducts');
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   // ✅ Solution 1: Type assertion pour forcer la compatibilité
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -50,11 +55,24 @@ export function ProductForm() {
     name: 'translations' as const,
   });
 
-  // ✅ Solution 3: Fonction onSubmit avec gestion d'erreur TypeScript
   const onSubmit = (data: ProductFormValues) => {
-    console.log(data);
-    toast.success(t('productSubmittedSuccess'));
-    // TODO: Call server action
+    startTransition(async () => {
+      try {
+        const result = await createProduct(data);
+        if (result.success) {
+          toast.success(result.message);
+          router.push('/admin/products');
+        } else {
+          toast.error(result.message || 'An unexpected error occurred.');
+          if (result.errors) {
+            console.error('Validation errors:', result.errors);
+          }
+        }
+      } catch (error) {
+        console.error('Submission error:', error);
+        toast.error('A critical error occurred while submitting the form.');
+      }
+    });
   };
 
   return (
@@ -378,7 +396,9 @@ export function ProductForm() {
           </Card>
         </section>
 
-        <Button type="submit">{t('saveProduct')}</Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? t('saving') : t('saveProduct')}
+        </Button>
       </form>
     </Form>
   );
