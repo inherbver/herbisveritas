@@ -111,24 +111,24 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
               <NavigationMenuItem>
-                <Link href="/shop" legacyBehavior passHref>
-                  <a className={navigationMenuTriggerStyle()}>{tGlobal("Header.home")}</a>
+                <Link href="/shop" className={navigationMenuTriggerStyle()}>
+                  {tGlobal("Header.home")}
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/contact" legacyBehavior passHref>
-                  <a className={navigationMenuTriggerStyle()}>{tGlobal("Header.contactLink")}</a>
+                <Link href="/contact" className={navigationMenuTriggerStyle()}>
+                  {tGlobal("Header.contactLink")}
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href="/about" legacyBehavior passHref>
-                  <a className={navigationMenuTriggerStyle()}>{tGlobal("Header.aboutLink")}</a>
+                <Link href="/about" className={navigationMenuTriggerStyle()}>
+                  {tGlobal("Header.aboutLink")}
                 </Link>
               </NavigationMenuItem>
               {isAdmin && (
                 <NavigationMenuItem>
-                  <Link href="/admin" legacyBehavior passHref>
-                    <a className={navigationMenuTriggerStyle()}>Admin</a>
+                  <Link href="/admin" className={navigationMenuTriggerStyle()}>
+                    Admin
                   </Link>
                 </NavigationMenuItem>
               )}
