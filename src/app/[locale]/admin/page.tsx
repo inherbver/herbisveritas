@@ -1,26 +1,38 @@
 // src/app/[locale]/admin/page.tsx
 import { Locale } from "@/i18n-config";
+import { DashboardShell } from "@/components/admin/dashboard-shell";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface AdminPageProps {
   params: Promise<{ locale: Locale }>;
 }
 
-export default async function AdminPage(_props: AdminPageProps) {
+export default async function AdminDashboardPage(_props: AdminPageProps) {
   // const { locale } = await props.params;
   // now you can safely use `locale`…
 
   // const t = await getTranslations({ locale, namespace: "AdminPage" });
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-semibold">
-        {/* {t('title')} */}
-        Admin Dashboard - Main Page
-      </h1>
-      <p>
-        {/* {t('welcomeMessage')} */}
-        Welcome to the admin area. More features will be added here soon.
-      </p>
-    </div>
+    <DashboardShell title="Vue d'ensemble">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenus Totaux</CardTitle>
+            <CardDescription>Ce mois-ci</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">€1,234.56</p>
+          </CardContent>
+        </Card>
+        {/* Add more KPI cards here */}
+      </div>
+    </DashboardShell>
   );
 }

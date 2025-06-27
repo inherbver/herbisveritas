@@ -144,6 +144,28 @@ export const getProductBySlug = cache(
   }
 );
 
+// --- NEW TYPE for Admin Panel ---
+export type ProductWithTranslations = Database["public"]["Tables"]["products"]["Row"] & {
+  product_translations: Database["public"]["Tables"]["product_translations"]["Row"][];
+};
+
+// --- NEW FUNCTION for Admin Panel ---
+export async function getProductsForAdmin(): Promise<ProductWithTranslations[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.from("products").select(`
+      *,
+      product_translations (*)
+    `);
+
+  if (error) {
+    console.error("Error fetching products for admin:", error.message);
+    return [];
+  }
+
+    return (data as ProductWithTranslations[]) || [];
+}
+
 // --- Important Next Steps ---
 // 1. Populate the `product_translations` table with data for each product and locale.
 // 2. Implement the actual add-to-cart logic in ProductDetailDisplay.tsx.

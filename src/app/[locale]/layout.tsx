@@ -9,7 +9,7 @@ import "@/app/globals.css";
 
 interface Props {
   children: ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
 export async function generateStaticParams() {
@@ -26,7 +26,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     notFound();
   }
 
-  await setRequestLocale(currentLocale);
+  setRequestLocale(currentLocale);
 
   let messages;
   try {

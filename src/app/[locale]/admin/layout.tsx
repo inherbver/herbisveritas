@@ -6,14 +6,19 @@ import { checkUserPermission } from "@/lib/auth/server-auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { DashboardShell } from "@/components/admin/dashboard-shell";
 
 interface AdminLayoutProps {
   children: ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
-export default async function AdminLayout({ children, params: { locale } }: AdminLayoutProps) {
+export default async function AdminLayout({ children, params }: AdminLayoutProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   const { isAuthorized, error, user, role } = await checkUserPermission("admin:access");
   const t = await getTranslations("Global");
 
@@ -38,16 +43,9 @@ export default async function AdminLayout({ children, params: { locale } }: Admi
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-        <h1 className="text-xl font-semibold">Dashboard Admin</h1>
-        <div className="ml-auto text-sm text-muted-foreground">
-          {user?.email} ({role})
-        </div>
-      </header>
-      <main className="flex-1 p-4 sm:px-6 sm:py-0">
-        {children}
-      </main>
+    <div className="flex min-h-screen w-full bg-background">
+      <AdminSidebar />
+      {children}
     </div>
   );
 }
