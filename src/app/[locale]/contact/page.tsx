@@ -121,11 +121,10 @@ export default async function ContactPage({ params }: Props) {
         <section id="partner-shops" className="mb-12 md:mb-16">
           <header className="mb-6">
             <h2 className="text-center text-3xl font-semibold tracking-tight">
-              Nos points de vente partenaires
+              {t("partnerShopsTitle")}
             </h2>
             <p className="mx-auto mb-8 max-w-2xl text-center text-lg text-muted-foreground">
-              Retrouvez nos créations chez nos partenaires en boutiques, des lieux que nous avons
-              sélectionnés pour leur authenticité et leur engagement.
+              {t("partnerShopsSubtitle")}
             </p>
           </header>
           <section className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2" role="list">

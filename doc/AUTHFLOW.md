@@ -157,3 +157,90 @@ La page `src/app/[locale]/auth/callback/page.tsx` est un point d'entrée central
   - Lorsqu'un utilisateur atterrit sur cette page après avoir cliqué sur un lien magique ou de confirmation, le client Supabase JS traite automatiquement le token dans l'URL.
   - Cela déclenche un événement `SIGNED_IN`, qui est capturé par le listener.
   - Le composant affiche un message de statut (chargement, succès, erreur) et redirige l'utilisateur vers la page appropriée (définie par le paramètre `next` dans l'URL ou une page par défaut).
+
+---
+
+## Annexe 2 : Gestion des Rôles et Permissions (RBAC)
+
+Cette section documente le système de contrôle d'accès basé sur les rôles (RBAC) utilisé pour sécuriser les différentes parties de l'application, notamment le tableau de bord d'administration.
+
+### 1. Vue d'ensemble
+
+Le système RBAC repose sur trois piliers :
+
+1.  **Les Rôles** : Des identifiants qui regroupent des utilisateurs (ex: `admin`, `editor`, `user`).
+2.  **Les Permissions** : Des actions granulaires qu'un utilisateur peut effectuer (ex: `products:create`, `orders:read:all`).
+3.  **La Logique de Contrôle** : Un ensemble de fonctions qui vérifient si un rôle possède une permission donnée.
+
+La source de vérité pour le rôle d'un utilisateur est la colonne `role` dans la table `public.profiles`.
+
+> **Note Importante sur la Source de Vérité**
+> L'implémentation actuelle utilise la table `public.profiles` pour déterminer le rôle d'un utilisateur. Cela diffère d'une stratégie précédente (ou future) où le rôle était stocké dans les `app_metadata` du JWT. Il est crucial de garder cette distinction à l'esprit lors de la maintenance ou de l'évolution du système.
+
+### 2. Flux de Vérification d'une Permission
+
+Le contrôle d'accès pour les routes sensibles, comme le tableau de bord `/admin`, est géré de manière centralisée.
+
+**Étape 1 : Protection de la Route (Layout)**
+
+-   Le fichier `src/app/[locale]/admin/layout.tsx` sert de point d'entrée pour toutes les routes sous `/admin`.
+-   Il appelle la fonction `checkUserPermission('admin:access')` pour vérifier si l'utilisateur a le droit d'accéder à cette section.
+
+**Étape 2 : Logique de Vérification Côté Serveur**
+
+-   La fonction `checkUserPermission` (dans `src/lib/auth/server-auth.ts`) orchestre la vérification :
+    1.  Elle récupère l'utilisateur authentifié via `supabase.auth.getUser()`.
+    2.  Elle interroge la table `public.profiles` pour obtenir le `role` associé à l'ID de l'utilisateur.
+    3.  Elle appelle la fonction utilitaire `hasPermission(userRole, permission)` pour valider l'accès.
+    4.  Elle retourne un objet `AuthResult` contenant le statut de l'autorisation (`isAuthorized`), l'utilisateur, son rôle et une éventuelle erreur.
+
+**Étape 3 : Configuration des Rôles et Permissions**
+
+-   Le fichier `src/config/permissions.ts` est la source de vérité de la logique RBAC.
+-   `AppRole`: Définit les types de rôles disponibles (`user`, `editor`, `admin`, `dev`).
+-   `AppPermission`: Définit toutes les permissions possibles (ex: `admin:access`, `products:update`).
+-   `permissionsByRole`: C'est la carte maîtresse qui associe à chaque rôle un tableau des permissions qu'il détient.
+
+```typescript
+// src/config/permissions.ts (exemple simplifié)
+
+export const permissionsByRole: Record<AppRole, AppPermission[]> = {
+  admin: [
+    "admin:access",
+    "products:read",
+    "products:create",
+    // ... autres permissions
+  ],
+  editor: [
+    "admin:access", // Peut accéder au dashboard
+    "products:read",
+    "content:create",
+    // ...
+  ],
+  user: [
+    "orders:read:own",
+    "profile:update:own",
+  ],
+};
+```
+
+**Étape 4 : Validation de la Permission**
+
+-   La fonction `hasPermission` (dans `src/lib/auth/utils.ts`) contient la logique finale :
+    -   Elle vérifie si le rôle de l'utilisateur (`admin`, `editor`...) possède directement la permission demandée (ex: `products:create`) en consultant la carte `permissionsByRole`.
+    -   Elle gère également les permissions génériques (wildcards). Par exemple, si un rôle a la permission `products:*`, la fonction lui accordera l'accès pour `products:create`, `products:update`, etc.
+
+### 3. Tests
+
+Actuellement, les tests d'intégration pour le système de permissions ne sont pas implémentés. Les fichiers de test existants (`auth.test.ts`, `authUtils.test.ts`) se concentrent sur les actions d'authentification (login, signup, logout) et non sur la logique RBAC.
+
+**Recommandations pour les tests :**
+
+-   Créer un fichier de test dédié `src/lib/auth/permissions.test.ts`.
+-   Tester la fonction `hasPermission` avec différents scénarios :
+    -   Un rôle ayant la permission directe.
+    -   Un rôle n'ayant pas la permission.
+    -   La gestion des wildcards (`*`).
+    -   Le comportement avec des rôles ou permissions inexistants.
+-   Simuler des appels à `checkUserPermission` pour tester la protection des routes de bout en bout.
+
