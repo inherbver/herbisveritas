@@ -150,10 +150,7 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
       ctaLabel:
         tHero("ctaLabel", { productName: featuredHeroItem.productName }) ||
         tHero("defaultCtaLabel"),
-      ctaLink: {
-        pathname: "/product/[slug]" as const,
-        params: { slug: featuredHeroItem.productSlug },
-      } satisfies React.ComponentProps<typeof Link>["href"],
+      ctaLink: `/product/${featuredHeroItem.productSlug}` as any,
     };
   } else {
     heroPropsForComponent = {

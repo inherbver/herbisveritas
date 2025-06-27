@@ -210,7 +210,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                       <h3>
                         {item.slug ? (
                           <NextLink
-                            href={{ pathname: "/product/[slug]", params: { slug: item.slug } }}
+                            href={{ pathname: "/products/[slug]", params: { slug: item.slug } }}
                           >
                             {item.name}
                           </NextLink>

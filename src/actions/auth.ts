@@ -143,30 +143,7 @@ export async function signUpAction(
 
   const { email, password } = validatedFields.data;
 
-  // 2. Vérifier si l'email existe déjà via la fonction RPC
-  try {
-    const { data: emailExists, error: rpcError } = await supabase.rpc("check_email_exists", {
-      email_to_check: email,
-    });
-
-    if (rpcError) {
-      console.warn("Erreur lors de la vérification RPC de l'email:", rpcError.message);
-      // Continuer sans vérification
-    } else if (emailExists) {
-      const t = await getTranslations({ locale, namespace: "Auth.validation" });
-      return {
-        success: false,
-        fieldErrors: {
-          email: [t("emailAlreadyExists")],
-        },
-      };
-    }
-  } catch (error) {
-    console.warn("Exception lors de la vérification de l'email existant:", error);
-    // Continuer sans vérification
-  }
-
-  // 3. Construire l'URL de redirection
+  // 2. Construire l'URL de redirection
   const origin = process.env.NEXT_PUBLIC_BASE_URL;
   if (!origin) {
     console.error("FATAL: La variable d'environnement NEXT_PUBLIC_BASE_URL n'est pas définie.");
@@ -177,7 +154,7 @@ export async function signUpAction(
   }
   const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
 
-  // 4. Essayer d'inscrire l'utilisateur
+  // 3. Essayer d'inscrire l'utilisateur
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -188,13 +165,24 @@ export async function signUpAction(
 
   if (error) {
     console.error("Erreur Supabase Auth (Signup):", error.message);
+    const t = await getTranslations({ locale, namespace: "Auth.validation" });
+
+    // Vérifier si l'erreur est due à un utilisateur déjà existant
+    if (error.message.includes("User already registered")) {
+      return {
+        success: false,
+        error: t("emailAlreadyExists"),
+      };
+    }
+
+    // Pour toutes les autres erreurs
     return {
       success: false,
-      error: "Une erreur est survenue lors de l'inscription. Veuillez réessayer.",
+      error: t("genericSignupError"),
     };
   }
 
-  // 5. Succès
+  // 4. Succès
   return {
     success: true,
     message:

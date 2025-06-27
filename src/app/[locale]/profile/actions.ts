@@ -1,7 +1,10 @@
 // src/app/[locale]/profile/actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { checkUserPermission } from "@/lib/auth/server-auth";
 import { z, type ZodIssue as _ZodIssue } from "zod";
 
 const UpdatePasswordSchema = z
@@ -27,6 +30,58 @@ export interface UpdatePasswordResult {
     field?: "currentPassword" | "newPassword" | "confirmPassword" | "general";
     message: string;
   } | null;
+}
+
+
+// Generic type for profile action results for consistent return shapes
+type ProfileActionResult<T> = {
+  success: boolean;
+  error?: string | null;
+  data?: T;
+};
+
+export async function updateProfile(
+  formData: FormData
+): Promise<ProfileActionResult<any>> {
+  // For profile actions, a manual check is often clearer,
+  // especially when the user ID is needed for the query.
+  const { isAuthorized, user, error: permError } = await checkUserPermission(
+    "profile:update:own"
+  );
+
+  if (!isAuthorized || !user) {
+    return {
+      success: false,
+      error: permError || "User not authorized to update this profile.",
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  // TODO: Add Zod validation for profile data
+  const updates = {
+    first_name: formData.get("firstName") as string,
+    last_name: formData.get("lastName") as string,
+    phone: formData.get("phone") as string,
+    // Ensure we don't allow updating arbitary fields
+  };
+
+  const { data, error: updateError } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("id", user.id) // ✅ Always scope updates to the authenticated user's ID
+    .select()
+    .single();
+
+  if (updateError) {
+    return {
+      success: false,
+      error: `Failed to update profile: ${updateError.message}`,
+    };
+  }
+
+  revalidatePath("/[locale]/profile", "layout");
+  return { success: true, data };
 }
 
 export async function updatePasswordAction(

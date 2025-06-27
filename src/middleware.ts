@@ -2,6 +2,8 @@ import createMiddleware from "next-intl/middleware";
 import { locales, defaultLocale, localePrefix, localeDetection, type Locale } from "./i18n-config";
 import { pathnames } from "./i18n/navigation"; // Importer depuis le bon fichier
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { type AppRole } from "@/config/permissions";
+import { hasPermission, clearSupabaseCookies } from "@/lib/auth/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 const handleI18n = createMiddleware({
@@ -80,28 +82,11 @@ export async function middleware(request: NextRequest) {
       } else {
         // Pour d'autres erreurs, log plus détaillé et potentiellement nettoyer les cookies
         console.error("Supabase auth error in middleware (not session missing):", error);
-        // Si l'erreur spécifique est 'user_not_found', supprimer les cookies d'authentification
+        // Si l'erreur spécifique est 'user_not_found', cela signifie que le token est invalide ou expiré.
+        // Nous nettoyons les cookies pour forcer une déconnexion propre.
         if (error.code === "user_not_found") {
-          // Utiliser la méthode 'remove' définie dans la configuration du client Supabase
-          // pour s'assurer que les options de suppression sont correctement appliquées.
-          // Nous devons trouver les noms exacts des cookies. Supabase SSR les nomme souvent
-          // avec un hash. Pour l'instant, nous ciblons les noms communs.
-          // Une meilleure approche serait de lister les cookies et supprimer ceux qui matchent un pattern.
-          const cookieOptions = {
-            path: "/",
-            maxAge: 0,
-            expires: new Date(0),
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax" as const,
-          };
-          request.cookies.getAll().forEach((cookie) => {
-            if (cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token")) {
-              // Pattern plus générique pour les cookies d'auth Supabase
-              response.cookies.set({ name: cookie.name, value: "", ...cookieOptions });
-              request.cookies.delete(cookie.name); // Garder request.cookies synchronisé
-            }
-          });
+          console.log("User not found with existing auth token. Clearing cookies.");
+          clearSupabaseCookies(request, response);
         }
       }
     } else {
@@ -172,7 +157,9 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile || profile.role !== "admin") {
+    const userRole = profile?.role as AppRole | undefined;
+
+    if (profileError || !userRole || !hasPermission(userRole, "admin:access")) {
       // Erreur de profil, ou utilisateur non admin : redirection vers la page d'accueil
       // Puisque localePrefix est 'always', le chemin de redirection inclura toujours la locale.
       const homeRedirectPath = `/${currentLocale}/`;

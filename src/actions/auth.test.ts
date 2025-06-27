@@ -11,6 +11,27 @@ import { createSuccessResult, createGeneralErrorResult } from "@/lib/cart-helper
 // Accès aux fonctions via le module
 const { loginAction, signUpAction, logoutAction } = authModule;
 
+// Mock des schémas de validation avec messages en français
+jest.mock('@/lib/validation/auth-schemas', () => {
+  const { z } = require('zod');
+  
+  return {
+    createPasswordSchema: jest.fn(() => 
+      z.string().min(8, { message: 'Le mot de passe doit contenir au moins 8 caractères.' })
+    ),
+    createSignupSchema: jest.fn(() => 
+      z.object({
+        email: z.string().email({ message: "L'adresse email n'est pas valide." }),
+        password: z.string().min(8, { message: 'Le mot de passe doit contenir au moins 8 caractères.' }),
+        confirmPassword: z.string(),
+      }).refine((data: { password: string; confirmPassword: string }) => data.password === data.confirmPassword, {
+        message: 'Les mots de passe ne correspondent pas.',
+        path: ['confirmPassword'],
+      })
+    ),
+  };
+});
+
 // Mock des dépendances
 jest.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: jest.fn(),
@@ -72,6 +93,9 @@ describe("Auth Actions", () => {
     const mockHeaderMap = new Map();
     mockHeaderMap.set("host", "localhost:3000");
     mockedHeaders.mockReturnValue(mockHeaderMap);
+
+    // AJOUT CRITIQUE
+    process.env.NEXT_PUBLIC_BASE_URL = "http://localhost:3000";
   });
 
   // --- Tests pour loginAction ---
