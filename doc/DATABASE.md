@@ -152,6 +152,46 @@ Contenu pour le composant Hero de la page d'accueil.
 
 Fonctions SQL exposées via l'API Supabase.
 
+### `create_product_with_translations`
+
+Crée un nouveau produit et ses traductions associées de manière atomique (transactionnelle).
+
+- **Objectif :** Garantir que si la création du produit ou d'une de ses traductions échoue, toute l'opération est annulée.
+- **Paramètres :**
+  - `product_data (JSONB)`: Un objet JSON contenant les données du produit principal (slug, prix, stock, etc.).
+  - `translations_data (JSONB)`: Un tableau d'objets JSON, où chaque objet représente une traduction complète du produit.
+- **Logique Clé :**
+  - Insère d'abord dans la table `products`.
+  - Utilise le nom (`name`) de la **première traduction** comme valeur pour la colonne `name` de la table `products` afin de respecter la contrainte `NOT NULL`.
+  - Boucle sur le tableau `translations_data` pour insérer chaque traduction dans la table `product_translations`.
+  - Gère la conversion de l'ID produit (`text`) en `uuid` pour la clé étrangère.
+- **Retourne :** L'ID (`text`) du produit nouvellement créé.
+
+```sql
+CREATE OR REPLACE FUNCTION public.create_product_with_translations(
+    product_data jsonb,
+    translations_data jsonb
+)
+RETURNS text AS $$ /* ... implémentation ... */ $$ LANGUAGE plpgsql;
+```
+
+### `safe_cast_to_jsonb`
+
+Fonction utilitaire pour convertir une chaîne de caractères en `JSONB` de manière sécurisée.
+
+- **Objectif :** Éviter les erreurs PostgreSQL (`invalid input syntax for type json`) si un champ texte destiné à être `JSONB` (comme les "propriétés" d'un produit) contient du texte non-valide ou est vide.
+- **Paramètres :**
+  - `p_text (TEXT)`: La chaîne de caractères à convertir.
+- **Logique Clé :**
+  - Tente de caster le texte en `JSONB`.
+  - En cas d'échec (syntaxe invalide) ou si le texte est `NULL` ou vide, la fonction retourne `NULL` au lieu de lever une erreur.
+- **Retourne :** Une valeur `JSONB` valide ou `NULL`.
+
+```sql
+CREATE OR REPLACE FUNCTION public.safe_cast_to_jsonb(p_text text)
+RETURNS jsonb AS $$ /* ... implémentation ... */ $$ LANGUAGE plpgsql IMMUTABLE;
+```
+
 - `get_my_custom_role()`: Retourne le rôle de l'utilisateur courant (base de la plupart des RLS).
 - `is_current_user_admin()`, `is_current_user_dev()`: Fonctions booléennes pour simplifier les vérifications de rôle.
 - `add_or_update_cart_item(p_cart_id, p_product_id, p_quantity_to_add)`: Ajoute un produit au panier ou met à jour sa quantité. Retourne l'article de panier mis à jour.
