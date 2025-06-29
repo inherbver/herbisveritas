@@ -298,6 +298,15 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load AdminProducts.json for locale ${localeToUse}:`, e);
   }
 
+  let unauthorizedNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    unauthorizedNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/Unauthorized.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load Unauthorized.json for locale ${localeToUse}:`, e);
+  }
+
   // Cette partie doit venir APRÈS TOUTES les importations de namespaces
   const safeGlobal = globalNamespaceContent || {};
   const safeAccountPage = accountPageNamespaceContent || {};
@@ -333,6 +342,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeFilters = filtersNamespaceContent || {};
   const safeOrdersPage = ordersPageNamespaceContent || {};
   const safeAdminProducts = adminProductsNamespaceContent || {};
+  const safeUnauthorized = unauthorizedNamespaceContent || {};
 
   const mergedMessages = {
     ...(Object.keys(safeGlobal).length > 0 ? { Global: safeGlobal } : {}),
@@ -376,9 +386,8 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeAuthCallback).length > 0 ? { AuthCallback: safeAuthCallback } : {}),
     ...(Object.keys(safeFilters).length > 0 ? { Filters: safeFilters } : {}),
     ...(Object.keys(safeOrdersPage).length > 0 ? { OrdersPage: safeOrdersPage } : {}),
-    ...(Object.keys(safeAdminProducts).length > 0
-      ? { AdminProducts: safeAdminProducts }
-      : {}),
+    ...(Object.keys(safeAdminProducts).length > 0 ? { AdminProducts: safeAdminProducts } : {}),
+    ...(Object.keys(safeUnauthorized).length > 0 ? { Unauthorized: safeUnauthorized } : {}),
   };
 
   // Condition pour notFound si AUCUN message de namespace n'est chargé

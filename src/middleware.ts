@@ -4,6 +4,8 @@ import { pathnames } from "./i18n/navigation"; // Importer depuis le bon fichier
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type AppRole } from "@/config/permissions";
 import { hasPermission, clearSupabaseCookies } from "@/lib/auth/utils";
+import { isAuthorizedAdmin } from "@/config/admin";
+import { logSecurityEvent } from "@/lib/admin/monitoring-service";
 import { type NextRequest, NextResponse } from "next/server";
 
 const handleI18n = createMiddleware({
@@ -160,10 +162,25 @@ export async function middleware(request: NextRequest) {
     const userRole = profile?.role as AppRole | undefined;
 
     if (profileError || !userRole || !hasPermission(userRole, "admin:access")) {
-      // Erreur de profil, ou utilisateur non admin : redirection vers la page d'accueil
-      // Puisque localePrefix est 'always', le chemin de redirection inclura toujours la locale.
-      const homeRedirectPath = `/${currentLocale}/`;
-      return NextResponse.redirect(new URL(homeRedirectPath, request.nextUrl.origin));
+      const unauthorizedUrl = new URL(`/${currentLocale}/unauthorized`, request.url);
+      return NextResponse.redirect(unauthorizedUrl);
+    }
+
+    // Vérification supplémentaire : l'ID de l'utilisateur est-il dans la liste blanche ?
+    if (!isAuthorizedAdmin(user.id)) {
+      // Logger l'événement de sécurité
+      await logSecurityEvent({
+        type: "unauthorized_access",
+        userId: user.id,
+        details: {
+          adminEmail: user.email || "N/A",
+          message: "Tentative d'accès à une route admin protégée.",
+          path: pathToCheck,
+        },
+      });
+
+      const unauthorizedUrl = new URL(`/${currentLocale}/unauthorized`, request.url);
+      return NextResponse.redirect(unauthorizedUrl);
     }
     // Utilisateur admin : accès autorisé, continuer avec la réponse de i18n
   }

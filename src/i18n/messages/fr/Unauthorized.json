@@ -1,0 +1,6 @@
+{
+  "title": "Accès non autorisé",
+  "message": "Vous n'avez pas les permissions nécessaires pour accéder à cette page.",
+  "contactAdmin": "Si vous pensez qu'il s'agit d'une erreur, veuillez contacter l'administrateur du site.",
+  "backToHome": "Retour à l'accueil"
+}
