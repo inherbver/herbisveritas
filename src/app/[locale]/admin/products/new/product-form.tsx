@@ -14,39 +14,76 @@ import { TrashIcon } from '@radix-ui/react-icons';
 import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { createProduct } from '@/actions/productActions';
+import { createProduct, updateProduct } from '@/actions/productActions'; // updateProduct sera créé plus tard
+import { type ProductWithTranslations } from '@/lib/supabase/queries/products';
 
-export function ProductForm() {
+interface ProductFormProps {
+  initialData?: ProductWithTranslations | null;
+}
+
+export function ProductForm({ initialData }: ProductFormProps) {
   const t = useTranslations('AdminProducts');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  // ✅ Solution 1: Type assertion pour forcer la compatibilité
+  const isEditMode = !!initialData;
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
-      id: '',
-      slug: '',
-      price: null,
-      stock: null,
-      unit: '',
-      image_url: null,
-      inci_list: [],
-      is_active: true,
-      is_new: false,
-      is_on_promotion: false,
-      labels: [],
-      translations: [
-        {
-          locale: 'fr',
-          name: '',
-          short_description: '',
-          description_long: '',
-          usage_instructions: '',
-          properties: '',
-          composition_text: '',
+    defaultValues: initialData
+      ? {
+          id: initialData.id,
+          slug: initialData.slug,
+          price: initialData.price ?? null,
+          stock: initialData.stock ?? null,
+          unit: initialData.unit ?? '',
+          image_url: initialData.image_url ?? null,
+          inci_list: initialData.inci_list ?? [],
+          is_active: initialData.is_active,
+          is_new: initialData.is_new,
+          is_on_promotion: initialData.is_on_promotion,
+          translations: initialData.product_translations.length > 0 
+            ? initialData.product_translations.map(t => ({
+                locale: t.locale,
+                name: t.name,
+                short_description: t.short_description ?? undefined,
+                description_long: t.description_long ?? undefined,
+                usage_instructions: t.usage_instructions ?? undefined,
+                properties: t.properties ?? undefined,
+                composition_text: t.composition_text ?? undefined,
+              }))
+            : [{
+                locale: 'fr',
+                name: '',
+                short_description: '',
+                description_long: '',
+                usage_instructions: '',
+                properties: '',
+                composition_text: '',
+              }],
+        }
+      : {
+          id: '',
+          slug: '',
+          price: null,
+          stock: null,
+          unit: '',
+          image_url: null,
+          inci_list: [],
+          is_active: true,
+          is_new: false,
+          is_on_promotion: false,
+          translations: [
+            {
+              locale: 'fr',
+              name: '',
+              short_description: '',
+              description_long: '',
+              usage_instructions: '',
+              properties: '',
+              composition_text: '',
+            },
+          ],
         },
-      ],
-    },
   });
 
   // ✅ Solution 2: useFieldArray sans types génériques pour éviter les conflits
@@ -58,7 +95,9 @@ export function ProductForm() {
   const onSubmit = (data: ProductFormValues) => {
     startTransition(async () => {
       try {
-        const result = await createProduct(data);
+        const action = isEditMode ? updateProduct : createProduct;
+        const result = await action(data);
+
         if (result.success) {
           toast.success(result.message);
           router.push('/admin/products');
@@ -81,7 +120,9 @@ export function ProductForm() {
         <section aria-labelledby="general-info-title">
           <Card>
             <CardHeader>
-              <CardTitle id="general-info-title">{t('generalInformation')}</CardTitle>
+              <CardTitle id="general-info-title">
+                {isEditMode ? t('editProductTitle') : t('newProductTitle')}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -397,7 +438,7 @@ export function ProductForm() {
         </section>
 
         <Button type="submit" disabled={isPending}>
-          {isPending ? t('saving') : t('saveProduct')}
+          {isPending ? t('saving') : (isEditMode ? t('updateButton') : t('createButton'))}
         </Button>
       </form>
     </Form>

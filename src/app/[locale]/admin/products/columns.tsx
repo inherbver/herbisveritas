@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { type ProductWithTranslations } from "@/lib/supabase/queries/products";
 import { DeleteProductDialog } from "./delete-product-dialog";
+import Link from "next/link";
+import { useLocale } from "next-intl";
 
 export const columns: ColumnDef<ProductWithTranslations>[] = [
   {
@@ -40,8 +42,10 @@ export const columns: ColumnDef<ProductWithTranslations>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+        cell: ({ row }) => {
       const product = row.original;
+      const locale = useLocale();
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -52,10 +56,19 @@ export const columns: ColumnDef<ProductWithTranslations>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>Modifier</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.id)}>Copier l'ID</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/${locale}/admin/products/${product.id}/edit`}>
+                Modifier
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.id)}>
+              Copier l'ID
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DeleteProductDialog productId={product.id} productName={product.name || 'ce produit'}>
+            <DeleteProductDialog
+              productId={product.id}
+              productName={product.name || 'ce produit'}
+            >
               <DropdownMenuItem
                 onSelect={(e) => e.preventDefault()} // Prevent dropdown from closing
                 className="text-red-600 focus:bg-red-50 focus:text-red-700"

@@ -94,3 +94,60 @@ export async function deleteProduct(productId: string) {
     message: 'Product deleted successfully.',
   };
 }
+
+export async function updateProduct(data: z.infer<typeof productSchema>) {
+  const { isAuthorized } = await checkUserPermission('products:update');
+  if (!isAuthorized) {
+    return {
+      success: false,
+      message: 'Unauthorized: You do not have permission to update products.',
+    };
+  }
+
+  const validation = productSchema.safeParse(data);
+
+  if (!validation.success) {
+    return {
+      success: false,
+      message: 'Invalid product data.',
+      errors: validation.error.flatten().fieldErrors,
+    };
+  }
+  
+  const { id, translations, ...product_data } = validation.data;
+
+  if (!id) {
+    return {
+      success: false,
+      message: 'Product ID is missing for update.',
+    };
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  // Assumption: an RPC function for transactional updates exists.
+  const { error } = await supabase.rpc('update_product_with_translations', {
+    p_product_id: id,
+    p_product_data: product_data,
+    p_translations_data: translations,
+  });
+
+  if (error) {
+    console.error('RPC update_product_with_translations error:', error);
+    return {
+      success: false,
+      message: `Database Error: Failed to update product. Reason: ${error.message}`,
+    };
+  }
+
+  revalidatePath('/admin/products');
+  revalidatePath(`/[locale]/admin/products/${id}/edit`, 'page');
+  if (product_data.slug) {
+    revalidatePath(`/[locale]/products/${product_data.slug}`, 'page');
+  }
+
+  return {
+    success: true,
+    message: 'Product updated successfully.',
+  };
+}

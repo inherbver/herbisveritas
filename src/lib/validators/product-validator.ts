@@ -14,7 +14,7 @@ export const productTranslationSchema = z.object({
 // ✅ Schéma simplifié pour éviter les conflits TypeScript
 export const productSchema = z.object({
   // Champs obligatoires
-  id: z.string().uuid({ message: 'Le SKU/ID doit être un UUID valide.' }),
+  id: z.string().min(1, { message: 'Le SKU/ID est requis.' }),
   slug: z.string()
     .min(3, { message: 'Le slug doit contenir au moins 3 caractères.' })
     .regex(/^[a-z0-9-]+$/, { message: 'Le slug ne peut contenir que des minuscules, chiffres et tirets.' }),

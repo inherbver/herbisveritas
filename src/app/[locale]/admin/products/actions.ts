@@ -2,51 +2,130 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { withPermission, withPermissionSafe } from "@/lib/auth/server-actions-auth";
+import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
+import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
 
-// To secure a server action, we wrap it with the 'withPermission' or 'withPermissionSafe' HOF.
+export const createProduct = withPermissionSafe("products:create", async (data: ProductFormValues) => {
+    const supabase = await createSupabaseServerClient();
 
-// This version throws an error on failure, which is simpler to implement.
-// The client will need a try/catch block to handle the error.
-export const createProduct = withPermission("products:create", async (formData: FormData) => {
-  const supabase = await createSupabaseServerClient();
+    const validationResult = productSchema.safeParse(data);
 
-  const productData = {
-    name: formData.get("name") as string,
-    description: formData.get("description") as string,
-    price: parseFloat(formData.get("price") as string),
-    // ... other fields would be extracted here
-  };
+    if (!validationResult.success) {
+        return {
+            success: false,
+            message: "Les données du formulaire sont invalides.",
+            errors: validationResult.error.flatten().fieldErrors,
+        };
+    }
 
-  // TODO: Add Zod validation for productData
+    const { translations, ...productData } = validationResult.data;
 
-  const { data, error } = await supabase
-    .from("products")
-    .insert(productData)
-    .select()
-    .single();
+    const { data: newProduct, error: productError } = await supabase
+        .from("products")
+        .insert(productData)
+        .select()
+        .single();
 
-  if (error) {
-    // The wrapper will catch this and return a standard error format if using withPermissionSafe
-    throw new Error(`Failed to create product: ${error.message}`);
-  }
+    if (productError) {
+        console.error("Error creating product:", productError);
+        return { success: false, message: `Erreur base de données: ${productError.message}` };
+    }
 
-  revalidatePath("/admin/products");
-  return data;
+    if (!newProduct) {
+        return { success: false, message: "La création du produit a échoué, aucune donnée retournée." };
+    }
+
+    const translationsWithProductId = translations.map(t => ({
+        ...t,
+        product_id: newProduct.id,
+    }));
+
+    const { error: translationsError } = await supabase
+        .from("product_translations")
+        .insert(translationsWithProductId);
+
+    if (translationsError) {
+        console.error("Error creating product translations:", translationsError);
+        // Dans un scénario réel, nous pourrions vouloir supprimer le produit qui vient d'être créé.
+        // Pour l'instant, nous retournons un message d'erreur.
+        return { success: false, message: `Produit créé, mais l'enregistrement des traductions a échoué: ${translationsError.message}` };
+    }
+
+    revalidatePath("/admin/products");
+
+    return {
+        success: true,
+        message: "Produit créé avec succès !",
+        data: newProduct,
+    };
 });
 
-// This version returns a typed result, which is more robust for UI handling.
+
 export const deleteProduct = withPermissionSafe("products:delete", async (productId: string) => {
   const supabase = await createSupabaseServerClient();
 
   const { error } = await supabase.from("products").delete().eq("id", productId);
 
   if (error) {
-    throw new Error(`Failed to delete product: ${error.message}`);
+    // Le HOF interceptera cette erreur et retournera un format d'erreur standard
+    throw new Error(`La suppression du produit a échoué: ${error.message}`);
   }
 
   revalidatePath("/admin/products");
-  return { productId };
+  // On retourne explicitement l'objet attendu par le client pour le toast
+  return { success: true, message: "Produit supprimé avec succès." };
+});
+
+export const updateProduct = withPermissionSafe("products:update", async (data: ProductFormValues) => {
+    const supabase = await createSupabaseServerClient();
+
+    // 1. Validate the incoming data
+    const validationResult = productSchema.safeParse(data);
+    if (!validationResult.success) {
+        return {
+            success: false,
+            message: "Les données du formulaire sont invalides.",
+            errors: validationResult.error.flatten().fieldErrors,
+        };
+    }
+
+    const { id, translations, ...productData } = validationResult.data;
+
+    // 2. Prepare parameters for the RPC call, ensuring they match the function signature
+    const params = {
+        p_id: id,
+        p_slug: productData.slug,
+        p_price: productData.price,
+        p_stock: productData.stock,
+        p_unit: productData.unit,
+        p_image_url: productData.image_url,
+        p_inci_list: productData.inci_list,
+        p_is_active: productData.is_active,
+        p_is_new: productData.is_new,
+        p_is_on_promotion: productData.is_on_promotion,
+        p_translations: translations,
+    };
+
+    // 3. Call the RPC function
+    const { error } = await supabase.rpc("update_product_with_translations", params);
+
+    if (error) {
+        console.error("RPC update_product_with_translations error:", error);
+        return {
+            success: false,
+            message: `La mise à jour du produit a échoué. Raison: ${error.message}`,
+        };
+    }
+
+    // 4. Revalidate paths to reflect changes
+    revalidatePath("/admin/products");
+    revalidatePath(`/products/${productData.slug}`);
+    revalidatePath(`/fr/admin/products/${id}/edit`);
+
+    return {
+        success: true,
+        message: "Produit mis à jour avec succès !",
+    };
 });
 
 // A more complex action with business logic validation

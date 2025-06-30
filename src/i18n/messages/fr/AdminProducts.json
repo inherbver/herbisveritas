@@ -28,5 +28,8 @@
   "productSubmittedSuccess": "Produit enregistré avec succès !",
   "addNewProductTitle": "Ajouter un nouveau produit",
   "productDetailsTitle": "Détails du produit",
-  "productDetailsDescription": "Remplissez les informations ci-dessous pour créer un nouveau produit."
+  "productDetailsDescription": "Remplissez les informations ci-dessous pour créer un nouveau produit.",
+  "editProductTitle": "Modifier le produit",
+  "editProductDetailsDescription": "Mettez à jour les informations du produit ci-dessous.",
+  "updateButton": "Mettre à jour"
 }
