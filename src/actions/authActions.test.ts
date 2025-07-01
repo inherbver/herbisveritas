@@ -1,6 +1,6 @@
 "use server";
 
-import * as authModule from "./auth";
+import * as authModule from "./authActions";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { migrateAndGetCart } from "@/actions/cartActions";
