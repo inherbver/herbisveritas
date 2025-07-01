@@ -3,7 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { ProductCard, ProductCardProps } from "./product-card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 // Define a type for the product data, excluding functions and generated IDs
 export type ProductData = Omit<ProductCardProps, "onAddToCart" | "className" | "isLoading"> & {

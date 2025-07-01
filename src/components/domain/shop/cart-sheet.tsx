@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBagIcon } from "lucide-react";
 import useCartStore, { selectCartTotalItems } from "@/stores/cartStore";
 import { CartDisplay } from "./cart-display"; // Assurez-vous que le chemin est correct
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 export function CartSheet() {
   const t = useTranslations("CartSheet"); // Pour les textes comme le titre du sheet

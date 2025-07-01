@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@/lib/utils"; // Assurez-vous que ce chemin est correct
+import { cn } from "@/utils/cn"; // Assurez-vous que ce chemin est correct
 
 // TODO: Affiner les styles et variantes si nécessaire (ex: tailles différentes)
 const headingVariants = {

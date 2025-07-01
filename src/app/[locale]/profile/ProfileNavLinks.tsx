@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 // Ajustez le chemin d'importation si votre configuration de navigation next-intl est différente
 import { Link, usePathname } from "@/i18n/navigation";
-import { cn } from "@/lib/utils"; // Supposant que vous avez cn pour classnames
+import { cn } from "@/utils/cn"; // Supposant que vous avez cn pour classnames
 
 // Définir un type plus spécifique pour les chemins du profil
 type ProfilePathname =

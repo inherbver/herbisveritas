@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area"; // Pour les longues listes
 import { Filter } from "lucide-react"; // Icône pour le bouton déclencheur
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 import { useTranslations } from "next-intl"; // Optionnel: pour l'internationalisation
 
 // Définit la structure d'une option de catégorie

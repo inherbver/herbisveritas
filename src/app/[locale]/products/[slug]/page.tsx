@@ -6,7 +6,7 @@ import { getProductBySlug } from "@/lib/supabase/queries/products";
 import ProductDetailDisplay from "@/components/domain/shop/product-detail-display";
 import { ProductDetailData } from "@/types/product-types";
 import { Locale } from "@/i18n-config";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/utils/formatters";
 
 // Define Props type with correct params structure
 // Props type for the page component

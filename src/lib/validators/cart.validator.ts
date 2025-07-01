@@ -1,4 +1,3 @@
-// src/lib/schemas/cartSchemas.ts
 import { z } from "zod";
 
 // ✅ Schéma pour AddToCartInputSchema

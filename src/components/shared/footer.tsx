@@ -1,6 +1,6 @@
 import React from "react";
 import { Logo, Link, Text } from "@/components/primitives"; // Import des primitifs
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 const Footer = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
   ({ className, ...props }, ref) => {

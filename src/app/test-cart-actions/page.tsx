@@ -13,7 +13,7 @@ import {
   type AddToCartInput,
   type RemoveFromCartInput,
   type UpdateCartItemQuantityInput,
-} from "@/lib/schemas/cartSchemas";
+} from "@/lib/validators/cart.validator";
 
 export default function TestCartActionsPage() {
   const [cart, setCart] = useState<CartData | null>(null);

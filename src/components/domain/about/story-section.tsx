@@ -1,7 +1,7 @@
 // src/components/domain/about/story-section.tsx
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { cn } from "@/lib/utils"; // Pour combiner les classes Tailwind
+import { cn } from "@/utils/cn"; // Pour combiner les classes Tailwind
 
 export const StorySection = () => {
   const t = useTranslations("AboutPage.Story");

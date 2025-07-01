@@ -17,7 +17,10 @@ import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { toast } from "sonner";
 import type { CartData } from "@/types/cart";
-import type { RemoveFromCartInput, UpdateCartItemQuantityInput } from "@/lib/schemas/cartSchemas";
+import type {
+  RemoveFromCartInput,
+  UpdateCartItemQuantityInput,
+} from "@/lib/validators/cart.validator";
 import { Button } from "@/components/ui/button";
 import { CheckoutButton } from "./checkout-button";
 import { MinusIcon, PlusIcon, XIcon } from "lucide-react";

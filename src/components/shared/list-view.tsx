@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 // Simplifié: retire la prop 'as' pour éviter les problèmes de type avec forwardRef
 

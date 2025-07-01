@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 import { useTranslations } from "next-intl"; // Pour le placeholder et l'aria-label
 import { useRouter } from "@/i18n/navigation"; // Pour rediriger vers la page de résultats
 
@@ -34,7 +34,7 @@ const SearchBar = React.forwardRef<HTMLFormElement, SearchBarProps>(
         onSearchSubmit(trimmedQuery);
       } else {
         // Comportement par défaut: rediriger vers une page de recherche
-        router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+        router.push(`/search?q=${query.trim()}`);
       }
     };
 

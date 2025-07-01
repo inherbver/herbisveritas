@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
 import { updatePasswordAction } from "@/app/[locale]/profile/actions";
-import { createResetPasswordSchema } from "@/lib/validation/auth-schemas";
+import { createResetPasswordSchema } from "@/lib/validators/auth.validator";
 import {
   PasswordRequirement,
   PasswordStrengthBar,
@@ -68,7 +68,7 @@ export default function ChangePasswordForm() {
     setRequirements(newRequirements);
     const strength = Object.values(newRequirements).filter(Boolean).length;
     setPasswordStrength(strength);
-  }, [passwordValue, MIN_LENGTH, REGEX_UPPERCASE, REGEX_NUMBER, REGEX_SPECIAL_CHAR]);
+  }, [passwordValue]);
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);

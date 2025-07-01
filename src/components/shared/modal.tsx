@@ -11,7 +11,7 @@ import {
   DialogTrigger,
   DialogClose, // Pour fermer depuis l'intérieur
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 interface ModalProps {
   trigger?: React.ReactNode; // Élément qui déclenche l'ouverture

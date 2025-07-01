@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe l
 import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
 import { isGeneralError, isValidationError } from "@/lib/cart-helpers"; // AJOUT: Importer les gardiens de type
 import { getTranslations } from "next-intl/server";
-import { createPasswordSchema, createSignupSchema } from "@/lib/validation/auth-schemas";
+import { createPasswordSchema, createSignupSchema } from "@/lib/validators/auth.validator";
 
 // --- Schéma Login ---
 const loginSchema = z.object({

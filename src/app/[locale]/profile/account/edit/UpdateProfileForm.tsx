@@ -3,7 +3,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-// import { profileSchema, ProfileFormValues } from "@/lib/schemas/profileSchema"; // Original import, potentially remove if not used elsewhere
 
 // Local schema for account information only, matching the one in profileActions.ts
 const localAccountInfoSchema = z.object({

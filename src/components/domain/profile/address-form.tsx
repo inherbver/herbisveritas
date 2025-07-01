@@ -3,7 +3,7 @@
 import React from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addressSchema, AddressFormData } from "@/lib/schemas/addressSchema";
+import { addressSchema, AddressFormData } from "@/lib/validators/address.validator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

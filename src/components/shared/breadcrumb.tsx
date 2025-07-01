@@ -3,7 +3,7 @@
 import React from "react";
 import { Link } from "@/components/primitives";
 import { ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 // Pourrait utiliser usePathname pour générer les items dynamiquement
 // import { usePathname } from '@/i18n/navigation';
 // import { useTranslations } from 'next-intl';

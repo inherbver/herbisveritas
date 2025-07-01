@@ -5,7 +5,7 @@ import { motion } from "framer-motion"; // Import motion
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 import { useTranslations } from "next-intl"; // Optional for aria-labels
 
 interface QuantityInputProps {

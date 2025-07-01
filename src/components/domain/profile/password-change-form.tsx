@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
 import { updatePasswordAction } from "@/app/[locale]/profile/actions";
-import { createProfilePasswordChangeSchema } from "@/lib/validation/auth-schemas";
+import { createProfilePasswordChangeSchema } from "@/lib/validators/auth.validator";
 import {
   PasswordRequirement,
   PasswordStrengthBar,
@@ -83,7 +83,7 @@ export default function PasswordChangeForm() {
     if (newReqs.specialChar) strength++;
     if (newPasswordValue.length > 12) strength++; // Bonus for longer passwords
     setPasswordStrength(Math.min(strength, 4)); // Max strength 4 for the bar (0-4)
-  }, [newPasswordValue, MIN_LENGTH, REGEX_UPPERCASE, REGEX_NUMBER, REGEX_SPECIAL_CHAR]);
+  }, [newPasswordValue]);
 
   async function onSubmit(values: PasswordFormValues) {
     setIsLoading(true);

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { addressSchema, AddressFormData } from "@/lib/schemas/addressSchema";
+import { addressSchema, AddressFormData } from "@/lib/validators/address.validator";
 import { getTranslations } from "next-intl/server";
 
 interface ActionResult {

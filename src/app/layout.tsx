@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { ReactNode } from "react";
 import { Raleway, Playfair_Display } from "next/font/google";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 // Ce layout racine est nécessaire pour l'App Router.
 // Il fournit la structure HTML de base.

@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 import { DEFAULT_CONTENT_ID } from "./skip-nav-link"; // Importe l'ID par défaut
 
 interface SkipNavTargetProps extends React.HTMLAttributes<HTMLDivElement> {

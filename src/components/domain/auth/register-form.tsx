@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { signUpAction } from "@/actions/auth";
-import { createSignupSchema } from "@/lib/validation/auth-schemas";
+import { createSignupSchema } from "@/lib/validators/auth.validator";
 import { Button } from "@/components/ui/button";
 import {
   Card,

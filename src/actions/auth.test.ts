@@ -1,6 +1,7 @@
 "use server";
 
 import * as authModule from "./auth";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { migrateAndGetCart } from "@/actions/cartActions";
 import { redirect } from "next/navigation";
@@ -12,22 +13,31 @@ import { createSuccessResult, createGeneralErrorResult } from "@/lib/cart-helper
 const { loginAction, signUpAction, logoutAction } = authModule;
 
 // Mock des schémas de validation avec messages en français
-jest.mock('@/lib/validation/auth-schemas', () => {
-  const { z } = require('zod');
-  
+jest.mock("@/lib/validators/auth.validator", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { z } = require("zod");
+
   return {
-    createPasswordSchema: jest.fn(() => 
-      z.string().min(8, { message: 'Le mot de passe doit contenir au moins 8 caractères.' })
+    createPasswordSchema: jest.fn(() =>
+      z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." })
     ),
-    createSignupSchema: jest.fn(() => 
-      z.object({
-        email: z.string().email({ message: "L'adresse email n'est pas valide." }),
-        password: z.string().min(8, { message: 'Le mot de passe doit contenir au moins 8 caractères.' }),
-        confirmPassword: z.string(),
-      }).refine((data: { password: string; confirmPassword: string }) => data.password === data.confirmPassword, {
-        message: 'Les mots de passe ne correspondent pas.',
-        path: ['confirmPassword'],
-      })
+    createSignupSchema: jest.fn(() =>
+      z
+        .object({
+          email: z.string().email({ message: "L'adresse email n'est pas valide." }),
+          password: z
+            .string()
+            .min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
+          confirmPassword: z.string(),
+        })
+        .refine(
+          (data: { password: string; confirmPassword: string }) =>
+            data.password === data.confirmPassword,
+          {
+            message: "Les mots de passe ne correspondent pas.",
+            path: ["confirmPassword"],
+          }
+        )
     ),
   };
 });

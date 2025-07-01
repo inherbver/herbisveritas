@@ -1,7 +1,7 @@
 import React from "react";
 import { Heading, Text } from "@/components/primitives";
 import { Link } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 import { ChevronDownIcon } from "lucide-react";
 
 export interface HeroProps extends React.HTMLAttributes<HTMLDivElement> {

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link as NavigationLink } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 interface LinkProps extends React.ComponentProps<typeof NavigationLink> {
   className?: string;

@@ -21,7 +21,7 @@ import {
   type RemoveFromCartInput,
   UpdateCartItemQuantityInputSchema,
   type UpdateCartItemQuantityInput,
-} from "@/lib/schemas/cartSchemas";
+} from "@/lib/validators/cart.validator";
 
 export async function addItemToCart(
   prevState: CartActionResult<CartData | null> | unknown,

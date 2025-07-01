@@ -1,6 +1,6 @@
 import React from "react";
 import { Slot } from "@radix-ui/react-slot"; // Pour la composition
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 // TODO: Ajouter des variantes si nécessaire (ex: size='sm', weight='bold')
 interface TextProps extends React.HTMLAttributes<HTMLParagraphElement> {

@@ -7,7 +7,7 @@ import { Locale } from "@/i18n-config";
 import { createClient } from "@/lib/supabase/client";
 import { redirect } from "next/navigation";
 import AddressForm from "@/components/domain/profile/address-form";
-import type { AddressFormData } from "@/lib/schemas/addressSchema";
+import type { AddressFormData } from "@/lib/validators/address.validator";
 import type { User } from "@supabase/supabase-js";
 import { revalidateProfilePaths } from "@/actions/revalidationActions"; // Import Server Action
 import { syncProfileAddressFlag } from "@/actions/profileActions";
