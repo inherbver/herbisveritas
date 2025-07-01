@@ -98,18 +98,28 @@ export function ProductForm({ initialData }: ProductFormProps) {
         const action = isEditMode ? updateProduct : createProduct;
         const result = await action(data);
 
+        // ✅ Fix: Gestion correcte de la structure de retour de withPermissionSafe
         if (result.success) {
-          toast.success(result.message);
-          router.push('/admin/products');
+            // result.data contient le vrai résultat de l'action
+            const actionResult = result.data;
+            
+            if (actionResult.success) {
+                toast.success(actionResult.message);
+                router.push('/admin/products');
+            } else {
+                toast.error(actionResult.message || 'Une erreur inattendue est survenue.');
+                // Gestion des erreurs de validation si elles existent
+                if (actionResult.errors) {
+                    console.error('Erreurs de validation:', actionResult.errors);
+                }
+            }
         } else {
-          toast.error(result.message || 'An unexpected error occurred.');
-          if (result.errors) {
-            console.error('Validation errors:', result.errors);
-          }
+            // Erreur de permission ou autre erreur de premier niveau
+            toast.error(result.error || 'Action non autorisée.');
         }
       } catch (error) {
         console.error('Submission error:', error);
-        toast.error('A critical error occurred while submitting the form.');
+        toast.error('Une erreur critique est survenue lors de la soumission du formulaire.');
       }
     });
   };

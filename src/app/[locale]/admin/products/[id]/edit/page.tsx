@@ -1,43 +1,35 @@
-import { DashboardShell } from '@/components/admin/dashboard-shell';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ProductForm } from '../../new/product-form';
 import { getTranslations } from 'next-intl/server';
+import { ProductForm } from '../../new/product-form';
 import { getProductByIdForAdmin } from '@/lib/supabase/queries/products';
-import { notFound } from 'next/navigation';
-import { type ProductWithTranslations } from '@/lib/supabase/queries/products';
 
 interface EditProductPageProps {
-  params: {
-    id: string;
-    locale: string;
-  };
+  params: Promise<{ locale: string; id: string }>; // ✅ Promisifié
 }
 
 export default async function EditProductPage({
   params,
 }: EditProductPageProps) {
-  const { id } = params;
+  // ✅ Await params avant utilisation
+  const { id } = await params;
   const t = await getTranslations('AdminProducts');
   const product = await getProductByIdForAdmin(id);
 
   if (!product) {
-    notFound();
+    return (
+      <div className="container mx-auto py-8">
+        <h1 className="text-2xl font-bold text-destructive">
+          {t('productNotFound')}
+        </h1>
+      </div>
+    );
   }
 
   return (
-    <DashboardShell title={t('editProductTitle')}>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('productDetailsTitle')}</CardTitle>
-          <CardDescription>
-            {t('editProductDetailsDescription', { productName: product.name || 'produit' })}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Le formulaire sera adapté à l'étape suivante pour accepter initialData */}
-          <ProductForm initialData={product as ProductWithTranslations} />
-        </CardContent>
-      </Card>
-    </DashboardShell>
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-8">
+        {t('editProductTitle')}
+      </h1>
+      <ProductForm initialData={product} />
+    </div>
   );
 }

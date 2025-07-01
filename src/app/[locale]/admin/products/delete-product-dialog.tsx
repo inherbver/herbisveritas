@@ -30,11 +30,20 @@ export function DeleteProductDialog({ productId, productName, children }: Delete
   const handleDelete = () => {
     startTransition(async () => {
       const result = await deleteProduct(productId);
+
+      // Vérifier le résultat du wrapper de permission
       if (result.success) {
-        toast.success(result.message);
-        setIsOpen(false); // Close the dialog on success
+        const actionResult = result.data;
+        // Vérifier le résultat de l'action elle-même
+        if (actionResult.success) {
+          toast.success(actionResult.message);
+          setIsOpen(false); // Fermer la boîte de dialogue en cas de succès
+        } else {
+          toast.error(actionResult.message || 'La suppression a échoué.');
+        }
       } else {
-        toast.error(result.message);
+        // Erreur de permission
+        toast.error(result.error || 'Action non autorisée.');
       }
     });
   };
