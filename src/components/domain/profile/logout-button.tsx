@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
-import { logoutAction } from "@/actions/auth";
+import { logoutAction } from "@/actions/authActions";
 import { Button } from "@/components/ui/button";
 
 function SubmitLogoutButton() {
