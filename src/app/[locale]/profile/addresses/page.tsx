@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import AddressForm from "@/components/domain/profile/address-form";
 import type { AddressFormData } from "@/lib/validators/address.validator";
 import type { User } from "@supabase/supabase-js";
-import { revalidateProfilePaths } from "@/actions/revalidationActions"; // Import Server Action
+
 import { syncProfileAddressFlag } from "@/actions/profileActions";
 
 interface Address {
@@ -137,11 +137,6 @@ export default function AddressesPage({ params }: Props) {
               null
           );
           // Call Server Action to revalidate paths
-          const revalResult = await revalidateProfilePaths(locale);
-          if (!revalResult.success) {
-            console.error("Failed to revalidate paths via Server Action:", revalResult.error);
-            // Optionally, inform the user of the revalidation failure
-          }
         }
       } catch (error: unknown) {
         let message = "An unknown error occurred while fetching addresses.";

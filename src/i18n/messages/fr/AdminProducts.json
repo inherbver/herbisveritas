@@ -31,5 +31,7 @@
   "productDetailsDescription": "Remplissez les informations ci-dessous pour créer un nouveau produit.",
   "editProductTitle": "Modifier le produit",
   "editProductDetailsDescription": "Mettez à jour les informations du produit ci-dessous.",
-  "updateButton": "Mettre à jour"
+  "updateButton": "Mettre à jour",
+  "newProductTitle": "Ajouter un nouveau produit",
+  "createButton": "Créer le produit"
 }
