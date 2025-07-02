@@ -98,45 +98,35 @@ export const getProductBySlug = cache(
       .from("products")
       .select(
         `
-      id,
-      slug,
-      price,
-      image_url,
-      inci_list,
-      unit,
-      product_translations!inner(
-        locale,
-        name,
-        short_description,
-        description_long,
-        usage_instructions,
-        properties,
-        composition_text
-      )
-    `
+        id,
+        slug,
+        price,
+        image_url,
+        inci_list,
+        unit,
+        product_translations!left(
+          locale,
+          name,
+          short_description,
+          description_long,
+          usage_instructions,
+          properties,
+          composition_text
+        )
+      `
       )
       .eq("slug", slug)
-      .eq("product_translations.locale", locale) // Re-enable locale filter
+      // The filter is now on the left join, not a hard requirement on the query
+      .or(`locale.eq.${locale},locale.is.null`, {
+        foreignTable: "product_translations",
+      })
       .single<ProductDataFromQuery>();
 
     if (error) {
+      // Do not log PGRST116 as an error, it's an expected 'not found' case
       if (error.code !== "PGRST116") {
-        // PGRST116: 'Searched for item with key "(...)" but not found'
         console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);
       }
-      return null;
-    }
-
-    if (!data) {
-      return null;
-    }
-
-    // Defensive check: If the inner join somehow returns a product with no translations,
-    // treat it as if the product was not found for this locale.
-    if (!data.product_translations || data.product_translations.length === 0) {
-      console.warn(
-        `Product with slug '${slug}' found, but no matching translation for locale '${locale}'.`
-      );
       return null;
     }
 
@@ -163,19 +153,23 @@ export async function getProductsForAdmin(): Promise<ProductWithTranslations[]> 
     return [];
   }
 
-    return (data as ProductWithTranslations[]) || [];
+  return (data as ProductWithTranslations[]) || [];
 }
 
-export async function getProductByIdForAdmin(productId: string): Promise<ProductWithTranslations | null> {
+export async function getProductByIdForAdmin(
+  productId: string
+): Promise<ProductWithTranslations | null> {
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("products")
-    .select(`
+    .select(
+      `
       *,
       product_translations (*)
-    `)
-    .eq('id', productId)
+    `
+    )
+    .eq("id", productId)
     .single();
 
   if (error) {

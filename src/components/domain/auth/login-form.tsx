@@ -18,7 +18,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginAction, resendConfirmationEmailAction, type AuthActionResult } from "@/actions/auth"; // Import AuthActionResult
+import {
+  loginAction,
+  resendConfirmationEmailAction,
+  type AuthActionResult,
+} from "@/actions/authActions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();

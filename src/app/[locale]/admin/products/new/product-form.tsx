@@ -23,6 +23,7 @@ import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createProduct, updateProduct } from "@/actions/productActions"; // updateProduct sera créé plus tard
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { type ProductWithTranslations } from "@/lib/supabase/queries/products";
 
 interface ProductFormProps {
@@ -147,20 +148,22 @@ export function ProductForm({ initialData }: ProductFormProps) {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("skuLabel")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="prod_cos_001" {...field} />
-                      </FormControl>
-                      <FormDescription>{t("skuDescription")}</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {isEditMode && (
+                  <FormField
+                    control={form.control}
+                    name="id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("productIdLabel")}</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled />
+                        </FormControl>
+                        <FormDescription>{t("productIdDescription")}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="slug"
@@ -188,7 +191,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                           type="number"
                           step="0.01"
                           placeholder="9.99"
-                          value={field.value?.toString() ?? ""}
+                          value={typeof field.value === "number" ? field.value.toFixed(2) : ""}
                           onChange={(e) => {
                             const value = e.target.value;
                             field.onChange(value === "" ? null : parseFloat(value));
@@ -234,23 +237,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="image_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("imageUrlLabel")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://.../image.png"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value || null)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <ImageUploadField control={form.control} name="image_url" />
               <div className="flex items-center space-x-4">
                 <FormField
                   control={form.control}

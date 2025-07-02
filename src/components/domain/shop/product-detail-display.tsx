@@ -280,11 +280,9 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                         .map((line) => line.trim())
                         .filter((line) => line.length > 0)
                         .map((line, index) => (
-                          <li
-                            key={index}
-                            className="bg-muted/50 rounded-md p-3 text-sm text-foreground"
-                          >
-                            {line.replace(/^\*\s*/, "")}
+                          <li key={index} className="flex items-start text-sm text-foreground">
+                            <span className="mr-2 mt-1 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                            <span>{line.replace(/^\*\s*/, "")}</span>
                           </li>
                         ))}
                     </ul>
@@ -336,9 +334,26 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground"
+                  className="max-w-none overflow-y-auto pr-2"
                 >
-                  <p>{product.usageInstructions || tModal("noUsage")}</p>
+                  {product.usageInstructions ? (
+                    <ul className="space-y-2">
+                      {product.usageInstructions
+                        .split(/\n|\\n/)
+                        .map((line) => line.trim())
+                        .filter((line) => line.length > 0)
+                        .map((line, index) => (
+                          <li key={index} className="flex items-start text-sm text-foreground">
+                            <span className="mr-2 mt-1 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                            <span>{line.replace(/^\*\s*/, "")}</span>
+                          </li>
+                        ))}
+                    </ul>
+                  ) : (
+                    <p className="prose prose-sm dark:prose-invert text-muted-foreground">
+                      {tModal("noUsage")}
+                    </p>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

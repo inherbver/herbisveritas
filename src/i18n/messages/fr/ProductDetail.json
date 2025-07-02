@@ -1,4 +1,9 @@
 {
+  "metadata": {
+    "title": "HerbisVeritas",
+    "description": "Découvrez plus de détails sur ce produit.",
+    "productNotFound": "Produit non trouvé"
+  },
   "categoryLabel": "Catégorie",
   "outOfStockLabel": "Actuellement indisponible",
   "productNotFound": "Produit non trouvé",

@@ -257,8 +257,13 @@ export async function updateCartItemQuantity(
     // Revalidation pour les futures requêtes
     revalidateTag("cart");
 
-    // Retourner uniquement le succès
-    return createSuccessResult(null, "Quantité de l'article mise à jour.");
+    // ✅ ÉTAPE 3: Renvoyer l'état complet du panier mis à jour
+    const cartStateAfterUpdate = await getCart();
+    if (!isSuccessResult(cartStateAfterUpdate)) {
+      return cartStateAfterUpdate; // Transférer l'erreur si la récupération échoue
+    }
+
+    return createSuccessResult(cartStateAfterUpdate.data, "Quantité de l'article mise à jour.");
   } catch (_e: unknown) {
     const e = _e as Error;
     console.error(`${logPrefix} UNEXPECTED ERROR:`, e);

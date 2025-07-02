@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // ✅ Schéma pour AddToCartInputSchema
 export const AddToCartInputSchema = z.object({
-  productId: z.string().min(1, "L'ID du produit est requis."),
+  productId: z.string().uuid("L'ID du produit doit être un UUID valide."),
   quantity: z.preprocess(
     (val) => {
       // Convertir string vers number si nécessaire

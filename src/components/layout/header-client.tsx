@@ -65,12 +65,14 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
 
   const refreshSession = useCallback(async () => {
     try {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setAuthState(prev => ({ ...prev, session: currentSession, isLoading: false }));
-    } catch (error) { 
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+      setAuthState((prev) => ({ ...prev, session: currentSession, isLoading: false }));
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       console.error("Error refreshing session:", errorMessage);
-      setAuthState(prev => ({ ...prev, session: null, isLoading: false, error: errorMessage }));
+      setAuthState((prev) => ({ ...prev, session: null, isLoading: false, error: errorMessage }));
     }
   }, [supabase]);
 
@@ -95,7 +97,10 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
   const isLoggedIn = !!session;
 
   return (
-    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
+    <header
+      suppressHydrationWarning
+      className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur"
+    >
       {/* 1. Barre d'annonce (Optionnelle) */}
       {/* Barre d'annonce - conditionnellement affichée si nécessaire à l'avenir */}
       <div className="bg-primary px-4 py-1.5 text-center text-xs font-medium text-primary-foreground md:text-sm">
