@@ -8,5 +8,11 @@
   "outOfStockLabel": "Actuellement indisponible",
   "productNotFound": "Produit non trouvé",
   "defaultDescription": "Découvrez plus de détails sur ce produit.",
-  "taxInclusiveLabel": "TTC"
+  "taxInclusiveLabel": "TTC",
+  "tabs": {
+    "description": "Description",
+    "properties": "Propriétés",
+    "composition": "Composition",
+    "usage": "Conseils d’utilisation"
+  }
 }

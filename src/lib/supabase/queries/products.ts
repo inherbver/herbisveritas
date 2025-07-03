@@ -120,7 +120,7 @@ export const getProductBySlug = cache(
       .or(`locale.eq.${locale},locale.is.null`, {
         foreignTable: "product_translations",
       })
-      .single<ProductDataFromQuery>();
+      .maybeSingle<ProductDataFromQuery>();
 
     if (error) {
       // Do not log PGRST116 as an error, it's an expected 'not found' case

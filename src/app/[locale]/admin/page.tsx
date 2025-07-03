@@ -9,7 +9,8 @@ interface AdminPageProps {
   params: { locale: Locale };
 }
 
-export default async function AdminDashboardPage({ params: { locale } }: AdminPageProps) {
+export default async function AdminDashboardPage({ params }: AdminPageProps) {
+  const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "AdminDashboard" });
   const recentActivity = await getRecentActivityLogs();
 

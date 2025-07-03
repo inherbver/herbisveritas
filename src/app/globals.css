@@ -9,7 +9,11 @@
   ::before,
   ::after {
     /* Override default outline potentially causing issues */
-    outline-color: color-mix(in oklab, var(--ring) 50%, transparent); /* Use the ring variable directly */
+    outline-color: color-mix(
+      in oklab,
+      var(--ring) 50%,
+      transparent
+    ); /* Use the ring variable directly */
     border-color: var(--border); /* Keep existing border color */
   }
 
@@ -207,6 +211,12 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Prevents layout shift when scrollbar appears/disappears */
+    overflow-y: scroll;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family-sans);

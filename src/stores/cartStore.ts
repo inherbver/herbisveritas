@@ -133,17 +133,10 @@ const useCartStore = create<CartStore>()(
       _setItems: (items: CartItem[]) => {
         const logPrefix = `[CartStore _setItems ${new Date().toISOString()}]`;
         try {
-          // Log before setting, showing what's about to be set
-          console.log(
-            `${logPrefix} Attempting to set items. Count: ${items.length}. Items (first 3):`,
-            JSON.stringify(items.slice(0, 3), null, 2)
-          );
-
           const currentItems = get().items;
+          // Data is already transformed by getCart, so we can directly compare.
           if (JSON.stringify(currentItems) === JSON.stringify(items)) {
             console.log(`${logPrefix} New items are identical to current items. Skipping update.`);
-            // Optionally, still call set to ensure error is reset if it was previously set.
-            // set({ error: null });
             return;
           }
 
@@ -151,12 +144,7 @@ const useCartStore = create<CartStore>()(
           console.log(`${logPrefix} Successfully set ${items.length} items in cart.`);
         } catch (error) {
           console.error(`${logPrefix} Error setting items:`, error);
-          // Log the items that caused the error for better debugging
-          console.error(
-            `${logPrefix} Items that caused error:`,
-            JSON.stringify(items.slice(0, 5), null, 2)
-          );
-          set({ error: "Erreur lors de la synchronisation" });
+          set({ error: "Erreur lors de la synchronisation des articles du panier." });
         }
       },
 
@@ -176,20 +164,59 @@ const useCartStore = create<CartStore>()(
     {
       name: "inherbis-cart-storage",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ items: state.items }),
-      // Gestion des erreurs de persistance
+      version: 1, // Solution 2: Add versioning
+      migrate: (persistedState: Partial<CartState>, version: number) => {
+        // Solution 2: Handle migration from older state versions
+        if (version === 0) {
+          console.log("CartStore: Migrating state from version 0 to 1. Old data will be cleared.");
+          // For this migration, we clear the incompatible old state.
+          return { items: [], isLoading: false, error: null };
+        }
+        return persistedState;
+      },
       onRehydrateStorage: () => {
-        console.log("CartStore: Starting rehydration from localStorage");
+        // Solution 1: Robust rehydration logic
         return (state, error) => {
           if (error) {
-            console.error("CartStore: Error during rehydration:", error);
-          } else {
-            console.log(
-              `CartStore: Rehydrated successfully with ${state?.items?.length || 0} items`
+            console.error(
+              "CartStore: Rehydration error, clearing localStorage to prevent further issues.",
+              error
             );
+            // Directly clear the corrupted storage
+            localStorage.removeItem("inherbis-cart-storage");
+            // Safely reset the state in the running application
+            if (state) {
+              state.items = [];
+              state.error = "Votre panier a été réinitialisé suite à un problème technique.";
+              state.isLoading = false;
+            }
+            return;
+          }
+
+          // Also validate the data that was rehydrated successfully
+          if (state?.items) {
+            const isValidCartItem = (item: unknown): item is CartItem => {
+              return (
+                item &&
+                typeof item.productId === "string" &&
+                typeof item.name === "string" &&
+                typeof item.price === "number" &&
+                typeof item.quantity === "number"
+              );
+            };
+            const validItems = state.items.filter(isValidCartItem);
+
+            if (validItems.length !== state.items.length) {
+              console.warn("CartStore: Filtered out invalid items during rehydration.");
+              state.items = validItems;
+            }
           }
         };
       },
+      partialize: (state) => ({
+        items: state.items,
+        // Do not persist transient state like isLoading or errors
+      }),
     }
   )
 );

@@ -64,12 +64,13 @@ export function QuantityInput({
         disabled={value <= min}
         aria-label={t("decreaseQuantity")}
       >
-        <motion.button whileTap={{ scale: 0.9 }}>
+        <motion.button type="button" whileTap={{ scale: 0.9 }}>
           <Minus className="h-4 w-4" />
         </motion.button>
       </Button>
       <Input
         id={id}
+        name="quantity" // Add name attribute for form submission
         type="number"
         min={min}
         max={max}
@@ -89,7 +90,7 @@ export function QuantityInput({
         disabled={value >= max}
         aria-label={t("increaseQuantity")}
       >
-        <motion.button whileTap={{ scale: 0.9 }}>
+        <motion.button type="button" whileTap={{ scale: 0.9 }}>
           <Plus className="h-4 w-4" />
         </motion.button>
       </Button>

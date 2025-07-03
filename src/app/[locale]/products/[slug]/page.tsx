@@ -6,7 +6,6 @@ import { getProductBySlug } from "@/lib/supabase/queries/products";
 import ProductDetailDisplay from "@/components/domain/shop/product-detail-display";
 import { ProductDetailData } from "@/types/product-types";
 import { Locale } from "@/i18n-config";
-import { formatPrice } from "@/utils/formatters";
 
 type Props = {
   params: Promise<{ slug: string; locale: Locale }>;
@@ -51,7 +50,7 @@ export default async function ProductDetailPage({ params }: Props) {
     name: translation?.name ?? productData.slug,
     shortDescription: translation?.short_description,
     description_long: translation?.description_long,
-    price: formatPrice(productData.price, locale),
+    price: productData.price,
     unit: productData.unit,
     images: productData.image_url
       ? [

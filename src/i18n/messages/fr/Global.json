@@ -43,6 +43,7 @@
   "removeFromCart": "Retirer du Panier",
   "updateCart": "Mettre à Jour le Panier",
   "proceedToCheckout": "Procéder au Paiement",
+  "TTC": "TTC",
   "itemCount": "{count, plural, =0 {aucun article} one {# article} other {# articles}}",
   "openCart": "Ouvrir le Panier",
   "checkout": "Paiement",
@@ -66,6 +67,9 @@
   "Error": {
     "title": "Erreur",
     "description": "Quelque chose s'est mal passé."
+  },
+  "errors": {
+    "generic": "Une erreur inattendue est survenue. Veuillez réessayer."
   },
   "Filters": {
     "filterByCategory": "Filtrer par catégorie",

@@ -24,12 +24,12 @@ export interface ProductListItem {
  * (in modals, full pages, etc.)
  */
 export interface ProductDetailData {
-  id: string | number;
+  id: string; // UUID
   name: string;
   shortDescription?: string | null;
   description_long?: string | null;
   unit?: string | null;
-  price: string; // Formatted price
+  price: number | null; // Raw numeric price
   images?: { src: string; alt: string }[];
   properties?: string | null; // Could be structured later (e.g., { key: string; value: string }[])
   compositionText?: string;

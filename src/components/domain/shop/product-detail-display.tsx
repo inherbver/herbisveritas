@@ -1,27 +1,25 @@
 "use client";
 
-import React, { useState, useEffect, useActionState } from "react";
+import React, { useState, useEffect, useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
-import { motion, AnimatePresence } from "framer-motion"; // Import motion
+import { useLocale, useTranslations } from "next-intl";
+import { type Locale } from "@/i18n-config";
 import { QuantityInput } from "./quantity-input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Removed TabsContent
-
-// Import the data type from the modal file for now
-import { ProductDetailData } from "@/types/product-types"; // Import from centralized location
+import { ProductDetailData } from "@/types/product-types";
 import { addItemToCart } from "@/actions/cartActions";
-import type { CartActionResult } from "@/lib/cart-helpers";
+import {
+  type CartActionResult,
+  isGeneralError,
+  isSuccessResult,
+  isValidationError,
+} from "@/lib/cart-helpers";
 import type { CartData } from "@/types/cart";
-import { toast } from "sonner"; // Added toast import
-import { Button } from "@/components/ui/button"; // Ensure Button is imported
-import useCartStore from "@/stores/cartStore"; // Import cart store
-
-// Define animation variants for the main container if needed, or apply directly
-const containerVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-};
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import useCartStore from "@/stores/cartStore";
+import { Price } from "@/components/ui/price";
+import clsx from "clsx";
 
 interface ProductDetailDisplayProps {
   product: ProductDetailData;
@@ -29,337 +27,267 @@ interface ProductDetailDisplayProps {
   // onAddToCart: (productId: string | number, quantity: number) => void;
 }
 
-// Internal Submit Button component using useFormStatus
+export default function ProductDetailDisplay({ product }: ProductDetailDisplayProps) {
+  const locale = useLocale() as Locale;
+  const [activeTab, setActiveTab] = useState("description");
+  const sectionRefs = {
+    description: useRef<HTMLElement>(null),
+    properties: useRef<HTMLElement>(null),
+    composition: useRef<HTMLElement>(null),
+    usage: useRef<HTMLElement>(null),
+  };
+  const t = useTranslations();
+  const [quantity, setQuantity] = useState(1);
+  const _setItems = useCartStore((state) => state._setItems);
+
+  const initialState: CartActionResult<CartData | null> = React.useMemo(
+    () => ({
+      success: false,
+      message: "",
+      error: "Initial state",
+      errors: {},
+      data: null,
+    }),
+    []
+  );
+  const [state, formAction] = useActionState(addItemToCart, initialState);
+
+  useEffect(() => {
+    // Do not show any toast if the state is still the initial one.
+    // This is a robust way to prevent toasts on mount, especially with React 18's Strict Mode double-invoking effects.
+    if (state.error === "Initial state") {
+      return;
+    }
+
+    if (isSuccessResult(state)) {
+      toast.success(state.message || t("ProductDetailModal.itemAddedSuccess"));
+      if (state.data?.items) _setItems(state.data.items);
+    } else if (state.success === false) {
+      let errorMessage: string | undefined;
+
+      if (isValidationError(state) && state.errors) {
+        errorMessage = Object.values(state.errors).flat()[0];
+      } else if (isGeneralError(state)) {
+        errorMessage = state.error;
+      }
+      toast.error(state.message || errorMessage || t("Global.errors.generic"));
+    }
+  }, [state, t, _setItems]);
+
+  useEffect(() => {
+    const observerOptions = {
+      rootMargin: "-120px 0px -50% 0px", // Adjust top margin based on sticky header height
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveTab(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    Object.values(sectionRefs).forEach((ref) => {
+      if (ref.current) {
+        observer.observe(ref.current);
+      }
+    });
+
+    return () => {
+      Object.values(sectionRefs).forEach((ref) => {
+        if (ref.current) {
+          observer.unobserve(ref.current);
+        }
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Refs are stable, no need to re-run
+
+  const tabs = [
+    { id: "description", label: t("ProductDetail.tabs.description") },
+    { id: "properties", label: t("ProductDetail.tabs.properties") },
+    { id: "composition", label: t("ProductDetail.tabs.composition") },
+    { id: "usage", label: t("ProductDetail.tabs.usage") },
+  ];
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      {/* Top section with image and main info */}
+      <div className="flex flex-col md:flex-row md:items-stretch md:gap-12">
+        {/* Image Column */}
+        <div className="md:w-1/2">
+          <div className="relative h-full w-full rounded-lg bg-card p-4 shadow-sm lg:p-6">
+            <Image
+              alt={product.name}
+              src={product.images?.[0]?.src ?? "/images/placeholder.png"}
+              fill={true}
+              className="rounded-lg object-contain object-center"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
+          </div>
+        </div>
+
+        {/* Info Column */}
+        <div className="mt-8 flex flex-col pt-4 md:mt-0 md:w-1/2 lg:pt-6">
+          <div className="flex-grow space-y-4">
+            <h1 className="mb-1 font-serif text-3xl font-bold leading-tight text-gray-900 lg:text-4xl dark:text-white">
+              {product.name}
+            </h1>
+            {product.unit && (
+              <p className="text-sm italic text-muted-foreground lg:text-base">{product.unit}</p>
+            )}
+            <p className="text-foreground/90 text-base leading-relaxed">
+              {product.shortDescription}
+            </p>
+
+            {/* Price & Action Box */}
+            <div className="my-6 rounded-xl bg-background p-6 shadow-lg">
+              <form action={formAction}>
+                <input type="hidden" name="productId" value={product.id} />
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <Price
+                      value={product.price}
+                      locale={locale}
+                      className="text-2xl font-bold text-olive-600"
+                    />
+                    <p className="text-xs text-muted-foreground">{t("Global.TTC")}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <QuantityInput
+                      id="product-quantity"
+                      value={quantity}
+                      onChange={setQuantity}
+                      min={1}
+                      max={10}
+                    />
+                    <SubmitButton />
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Tabs Navigation (at the bottom of the column) */}
+          <nav className="mt-auto w-full border-b pt-6" aria-label="Tabs">
+            <div className="flex space-x-8">
+              {tabs.map((tab) => (
+                <a
+                  key={tab.id}
+                  href={`#${tab.id}`}
+                  className={clsx(
+                    "whitespace-nowrap border-b-2 px-1 pb-2 font-serif text-lg font-medium transition-colors duration-200",
+                    {
+                      "border-primary text-primary": activeTab === tab.id,
+                      "hover:border-primary/70 border-transparent text-muted-foreground hover:text-primary":
+                        activeTab !== tab.id,
+                    }
+                  )}
+                >
+                  {tab.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      {/* Content Sections (full width below) */}
+      <div className="mt-12 space-y-16">
+        <section
+          id="description"
+          ref={sectionRefs.description}
+          className="mx-auto max-w-4xl scroll-mt-24"
+        >
+          <h3 className="mb-4 font-serif text-2xl text-gray-900 dark:text-white">
+            {t("ProductDetail.tabs.description")}
+          </h3>
+          <div className="prose prose-lg dark:prose-invert text-foreground/90 max-w-none leading-relaxed">
+            {product.description_long || t("ProductDetailModal.noDescription")}
+          </div>
+        </section>
+
+        <section
+          id="properties"
+          ref={sectionRefs.properties}
+          className="mx-auto max-w-4xl scroll-mt-24"
+        >
+          <h3 className="mb-4 font-serif text-2xl text-gray-900 dark:text-white">
+            {t("ProductDetail.tabs.properties")}
+          </h3>
+          {product.properties ? (
+            <ul className="text-foreground/90 list-inside list-disc space-y-2 text-lg">
+              {product.properties.split(/\n|\\n/).map((line, index) => (
+                <li key={index}>{line.trim().replace(/^\*\s*/, "")}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>{t("ProductDetailModal.noProperties")}</p>
+          )}
+        </section>
+
+        <section
+          id="composition"
+          ref={sectionRefs.composition}
+          className="mx-auto max-w-4xl scroll-mt-24"
+        >
+          <h3 className="mb-4 font-serif text-2xl text-gray-900 dark:text-white">
+            {t("ProductDetail.tabs.composition")}
+          </h3>
+          <div className="prose prose-lg dark:prose-invert text-foreground/90 max-w-none leading-relaxed">
+            {product.compositionText}
+          </div>
+          <h4 className="mb-2 mt-6 font-serif text-xl text-gray-800 dark:text-gray-300">
+            {t("ProductDetailModal.inciList")}
+          </h4>
+          {product.inciList && product.inciList.length > 0 ? (
+            <ul className="grid grid-cols-1 gap-x-6 gap-y-1 text-base text-muted-foreground sm:grid-cols-2">
+              {product.inciList.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="italic">{t("ProductDetailModal.noInci")}</p>
+          )}
+        </section>
+
+        <section id="usage" ref={sectionRefs.usage} className="mx-auto max-w-4xl scroll-mt-24">
+          <h3 className="mb-4 font-serif text-2xl text-gray-900 dark:text-white">
+            {t("ProductDetail.tabs.usage")}
+          </h3>
+          {product.usageInstructions ? (
+            <div className="prose prose-lg dark:prose-invert text-foreground/90 max-w-none leading-relaxed">
+              {product.usageInstructions.split(/\n|\\n/).map((line, index) => (
+                <p key={index}>{line.trim().replace(/^\*\s*/, "")}</p>
+              ))}
+            </div>
+          ) : (
+            <p>{t("ProductDetailModal.noUsage")}</p>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+// Submit button needs to be adapted for the new design
 function SubmitButton() {
   const { pending } = useFormStatus();
   const t = useTranslations("ProductDetailModal");
 
   return (
     <Button
+      variant="olive"
+      size="lg"
       type="submit"
       disabled={pending}
       aria-disabled={pending}
-      className="inline-flex h-12 w-[200px] items-center justify-center rounded-2xl bg-secondary px-6 font-semibold text-secondary-foreground shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"
+      className="h-12 max-w-xs text-lg font-semibold"
     >
       {pending ? t("addingToCart") : t("addToCart")}
     </Button>
-  );
-}
-
-export default function ProductDetailDisplay({ product }: ProductDetailDisplayProps) {
-  const tModal = useTranslations("ProductDetailModal");
-  const tProdDetail = useTranslations("ProductDetail");
-  const tQuantity = useTranslations("QuantityInput");
-  const tGlobal = useTranslations("Global"); // For generic error messages
-  const [activeTab, setActiveTab] = useState("description");
-  const [quantity, setQuantity] = useState(1);
-  const _setItems = useCartStore((state) => state._setItems); // Get _setItems for store updates
-
-  // Initial state for the form, memoized
-  const initialState: CartActionResult<CartData | null> = React.useMemo(
-    () => ({
-      success: false,
-      message: "",
-      error: "Initial state", // Requis pour GeneralErrorResult
-    }),
-    []
-  );
-  // useActionState hook to manage the action's state
-  const [state, formAction] = useActionState(addItemToCart, initialState);
-
-  // Show toast notification based on form state and update cart store
-  useEffect(() => {
-    // Only process if the state has changed from the initial 'pending' like state.
-    // Check if success is explicitly false (an error occurred) or true (a success occurred).
-    // The initial state has success: false, but we also check message/error to avoid reacting to it.
-    if (
-      state.success === true ||
-      (state.success === false &&
-        (state.message ||
-          ("error" in state && state.error !== initialState.error) ||
-          "errors" in state))
-    ) {
-      if (state.success) {
-        toast.success(state.message || tModal("itemAddedSuccess"));
-        if (state.data?.items) {
-          _setItems(state.data.items);
-        }
-        // Optionally reset quantity displayed on the page
-        // setQuantity(1);
-      } else {
-        // Handle errors
-        let errorMessage = state.message; // General message if present
-        if (!errorMessage && "error" in state && state.error) {
-          errorMessage = state.error; // Specific error string
-        }
-        if (
-          !errorMessage &&
-          "errors" in state &&
-          state.errors &&
-          Object.keys(state.errors).length > 0
-        ) {
-          // Take the first field error message
-          const firstFieldError = Object.values(state.errors).flat()[0];
-          if (firstFieldError) {
-            errorMessage = firstFieldError;
-          }
-        }
-        toast.error(errorMessage || tGlobal("genericError"));
-      }
-    }
-  }, [state, tModal, _setItems, initialState, tGlobal]); // Ensure all reactive dependencies used in the effect are listed
-
-  if (!product) {
-    return <div>{tProdDetail("productNotFound", { defaultMessage: "Produit non trouvé." })}</div>; // Add default message
-  }
-
-  return (
-    // Use <section> for the main component block
-    <motion.section
-      className="grid items-start gap-8 bg-card md:grid-cols-2 lg:gap-16"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      {/* Left Column: Image wrapped in <figure> */}
-      {/* Add shadow and overflow-hidden for rounded corners on figure */}
-      <figure className="relative h-full w-full overflow-hidden rounded-2xl shadow-lg">
-        {product.images && product.images.length > 0 ? (
-          <Image
-            src={product.images[0].src}
-            alt={product.images[0].alt}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover object-bottom"
-            priority
-          />
-        ) : (
-          <div className="bg-muted/30 flex h-full w-full items-center justify-center rounded-2xl">
-            {tModal("noImage")}
-          </div>
-        )}
-      </figure>
-      {/* Right Column: Details, Actions, Tabs */}
-      {/* Use <article> for the main product information and actions */}
-      <article className="flex h-full flex-col justify-center p-8">
-        {/* Product Title */}
-        <h1 className="mb-2 font-serif text-3xl font-semibold text-foreground">{product.name}</h1>
-        {/* Unit: Smaller, muted, under title */}
-        {product.unit && (
-          <p className="mb-4 font-sans text-sm italic text-muted-foreground">({product.unit})</p>
-        )}
-        {/* Short Description */}
-        {product.shortDescription && (
-          <p className="text-foreground/90 mb-6 font-sans text-base leading-relaxed">
-            {product.shortDescription}
-          </p>
-        )}
-        <div className="my-8 rounded-2xl bg-primary-foreground p-8 shadow-lg">
-          <div className="grid grid-cols-2 items-center gap-4">
-            {/* Price */}
-            <div className="">
-              <div className="mb-1 text-3xl font-bold text-secondary">{product.price}</div>
-              <div className="text-xs text-muted-foreground">
-                {tProdDetail("taxInclusiveLabel")}
-              </div>
-            </div>
-
-            {/* Quantity Input */}
-            <div className="flex items-center justify-end space-x-3">
-              <label htmlFor={`quantity-${product.id}`} className="text-sm font-medium">
-                {tQuantity("quantity")}
-              </label>
-              <QuantityInput
-                id={`quantity-${product.id}`}
-                value={quantity}
-                onChange={setQuantity}
-              />
-            </div>
-          </div>
-
-          {/* Form to handle adding to cart */}
-          <form action={formAction} className="mt-6 flex justify-center">
-            {/* Hidden inputs to pass data to the server action */}
-            <input type="hidden" name="productId" value={product.id} />
-            <input type="hidden" name="quantity" value={quantity} />
-            <SubmitButton />
-          </form>
-        </div>
-
-        {/* Information Tabs */}
-        {/* We need to manage the active tab state for AnimatePresence */}
-        {/* defaultValue sets initial, onValueChange updates state */}
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="mt-6 w-full">
-          {/* Update grid columns to 4 */}
-          <TabsList className="mb-4 flex flex-wrap justify-start gap-2">
-            {/* Apply active/inactive styles */}
-            <TabsTrigger
-              value="description"
-              className="relative font-serif data-[state=active]:text-foreground"
-            >
-              {tModal("descriptionTab")}
-              {activeTab === "description" && (
-                <motion.div
-                  layoutId="active-tab-underline"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="properties"
-              className="relative font-serif data-[state=active]:text-foreground"
-            >
-              {tModal("propertiesTab")}
-              {activeTab === "properties" && (
-                <motion.div
-                  layoutId="active-tab-underline"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="composition"
-              className="relative font-serif data-[state=active]:text-foreground"
-            >
-              {tModal("compositionTab")}
-              {activeTab === "composition" && (
-                <motion.div
-                  layoutId="active-tab-underline"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="usage"
-              className="relative font-serif data-[state=active]:text-foreground"
-            >
-              {tModal("usageTab")}
-              {activeTab === "usage" && (
-                <motion.div
-                  layoutId="active-tab-underline"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              )}
-            </TabsTrigger>
-          </TabsList>
-          {/* Animation container - Use relative for absolute positioning of motion divs */}
-          <div className="relative max-h-60 overflow-y-auto rounded-lg bg-primary-foreground p-8">
-            <AnimatePresence initial={false} mode="wait">
-              {/* Description Tab */}
-              {activeTab === "description" && (
-                <motion.div
-                  key="description"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="prose prose-sm dark:prose-invert max-w-none overflow-y-auto pr-2 text-muted-foreground"
-                >
-                  <p>{product.description_long || tModal("noDescription")}</p>
-                </motion.div>
-              )}
-
-              {/* Properties Tab */}
-              {activeTab === "properties" && (
-                <motion.div
-                  key="properties"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="max-w-none overflow-y-auto pr-2"
-                >
-                  {product.properties ? (
-                    <ul className="space-y-2">
-                      {product.properties
-                        .split(/\n|\\n/)
-                        .map((line) => line.trim())
-                        .filter((line) => line.length > 0)
-                        .map((line, index) => (
-                          <li key={index} className="flex items-start text-sm text-foreground">
-                            <span className="mr-2 mt-1 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
-                            <span>{line.replace(/^\*\s*/, "")}</span>
-                          </li>
-                        ))}
-                    </ul>
-                  ) : (
-                    <p>{tModal("noProperties")}</p>
-                  )}
-                </motion.div>
-              )}
-
-              {/* Composition Tab */}
-              {activeTab === "composition" && (
-                <motion.div
-                  key="composition"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="max-w-none space-y-4 overflow-y-auto pr-2"
-                >
-                  {product.compositionText && (
-                    <div className="mb-4">
-                      <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground">
-                        {product.compositionText}
-                      </div>
-                    </div>
-                  )}
-                  <h4 className="mb-1 text-sm font-semibold">{tModal("inciList")}</h4>
-                  {product.inciList && product.inciList.length > 0 ? (
-                    <ul className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2">
-                      {product.inciList.map((item, index) => (
-                        <li key={index}>{item}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-xs italic">{tModal("noInci")}</p>
-                  )}
-                  {!product.compositionText &&
-                    (!product.inciList || product.inciList.length === 0) && (
-                      <p>{tModal("noCompositionText")}</p>
-                    )}
-                </motion.div>
-              )}
-
-              {/* Usage Tab */}
-              {activeTab === "usage" && (
-                <motion.div
-                  key="usage"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="max-w-none overflow-y-auto pr-2"
-                >
-                  {product.usageInstructions ? (
-                    <ul className="space-y-2">
-                      {product.usageInstructions
-                        .split(/\n|\\n/)
-                        .map((line) => line.trim())
-                        .filter((line) => line.length > 0)
-                        .map((line, index) => (
-                          <li key={index} className="flex items-start text-sm text-foreground">
-                            <span className="mr-2 mt-1 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
-                            <span>{line.replace(/^\*\s*/, "")}</span>
-                          </li>
-                        ))}
-                    </ul>
-                  ) : (
-                    <p className="prose prose-sm dark:prose-invert text-muted-foreground">
-                      {tModal("noUsage")}
-                    </p>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </Tabs>
-      </article>
-    </motion.section>
   );
 }

@@ -84,23 +84,31 @@ export async function addItemToCart(
       p_quantity_to_add: quantityToAdd,
     });
 
-    if (rpcError) throw rpcError;
+    if (rpcError) {
+      console.error("Supabase RPC Error:", rpcError);
+      throw new Error(
+        `[RPC] ${rpcError.code || ""}: ${rpcError.message} | ${rpcError.details || ""}`
+      );
+    }
 
     // 5. Revalidate and Refetch
     revalidateTag("cart");
 
     const cartStateAfterRpc = await getCart();
     if (!isSuccessResult(cartStateAfterRpc)) {
-      return cartStateAfterRpc;
+      // Instead of returning the raw error, create a properly-formed one.
+      const errorMessage = "Failed to fetch updated cart state after adding item.";
+      const displayMessage = cartStateAfterRpc.message || "Le panier n'a pas pu être mis à jour.";
+      return createGeneralErrorResult(errorMessage, displayMessage);
     }
 
     return createSuccessResult(cartStateAfterRpc.data, "Article ajouté/mis à jour dans le panier.");
   } catch (error: unknown) {
     const e = error as Error;
-    console.error(`addItemToCart - Erreur inattendue: ${e.message}`);
+    console.error(`addItemToCart - Erreur inattendue:`, e);
     return createGeneralErrorResult(
       e.message,
-      "Une erreur inattendue est survenue lors de l'ajout au panier."
+      `Une erreur inattendue est survenue. ${e.message.startsWith("[RPC]") ? e.message.substring(6) : "Veuillez réessayer."}`
     );
   }
 }
