@@ -165,14 +165,14 @@ const useCartStore = create<CartStore>()(
       name: "inherbis-cart-storage",
       storage: createJSONStorage(() => localStorage),
       version: 1, // Solution 2: Add versioning
-      migrate: (persistedState: Partial<CartState>, version: number) => {
+      migrate: (persistedState: unknown, version: number) => {
         // Solution 2: Handle migration from older state versions
         if (version === 0) {
           console.log("CartStore: Migrating state from version 0 to 1. Old data will be cleared.");
           // For this migration, we clear the incompatible old state.
-          return { items: [], isLoading: false, error: null };
+          return { items: [], isLoading: false, error: null } as Partial<CartState>;
         }
-        return persistedState;
+        return persistedState as Partial<CartState>;
       },
       onRehydrateStorage: () => {
         // Solution 1: Robust rehydration logic
@@ -196,12 +196,15 @@ const useCartStore = create<CartStore>()(
           // Also validate the data that was rehydrated successfully
           if (state?.items) {
             const isValidCartItem = (item: unknown): item is CartItem => {
+              if (typeof item !== "object" || item === null) {
+                return false;
+              }
+              const obj = item as Record<string, unknown>;
               return (
-                item &&
-                typeof item.productId === "string" &&
-                typeof item.name === "string" &&
-                typeof item.price === "number" &&
-                typeof item.quantity === "number"
+                typeof obj.productId === "string" &&
+                typeof obj.name === "string" &&
+                typeof obj.price === "number" &&
+                typeof obj.quantity === "number"
               );
             };
             const validItems = state.items.filter(isValidCartItem);
