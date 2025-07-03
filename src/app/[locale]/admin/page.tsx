@@ -1,38 +1,40 @@
-// src/app/[locale]/admin/page.tsx
+import { getTranslations } from "next-intl/server";
 import { Locale } from "@/i18n-config";
 import { DashboardShell } from "@/components/admin/dashboard-shell";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ActivityLog } from "@/components/admin/ActivityLog";
+import { getRecentActivityLogs } from "@/lib/admin/dashboard";
 
 interface AdminPageProps {
-  params: Promise<{ locale: Locale }>;
+  params: { locale: Locale };
 }
 
-export default async function AdminDashboardPage(_props: AdminPageProps) {
-  // const { locale } = await props.params;
-  // now you can safely use `locale`…
-
-  // const t = await getTranslations({ locale, namespace: "AdminPage" });
+export default async function AdminDashboardPage({ params: { locale } }: AdminPageProps) {
+  const t = await getTranslations({ locale, namespace: "AdminDashboard" });
+  const recentActivity = await getRecentActivityLogs();
 
   return (
-    <DashboardShell title="Vue d'ensemble">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <DashboardShell title={t("title")}>
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardTitle>Revenus Totaux</CardTitle>
-            <CardDescription>Ce mois-ci</CardDescription>
+            <CardTitle>{t("kpi.totalRevenue.title")}</CardTitle>
+            <CardDescription>{t("kpi.totalRevenue.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">€1,234.56</p>
           </CardContent>
         </Card>
         {/* Add more KPI cards here */}
-      </div>
+      </section>
+
+      <section className="mt-8">
+        <ActivityLog
+          logs={recentActivity}
+          title={t("activityLog.title")}
+          description={t("activityLog.description")}
+        />
+      </section>
     </DashboardShell>
   );
 }

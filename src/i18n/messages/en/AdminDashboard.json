@@ -1,0 +1,13 @@
+{
+  "title": "Dashboard",
+  "kpi": {
+    "totalRevenue": {
+      "title": "Total Revenue",
+      "description": "This month"
+    }
+  },
+  "activityLog": {
+    "title": "Recent Activity",
+    "description": "Log of the latest events that have occurred in the application."
+  }
+}

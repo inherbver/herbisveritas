@@ -298,6 +298,15 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load AdminProducts.json for locale ${localeToUse}:`, e);
   }
 
+  let adminDashboardNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    adminDashboardNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/AdminDashboard.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load AdminDashboard.json for locale ${localeToUse}:`, e);
+  }
+
   let unauthorizedNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     unauthorizedNamespaceContent = (
@@ -342,6 +351,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeFilters = filtersNamespaceContent || {};
   const safeOrdersPage = ordersPageNamespaceContent || {};
   const safeAdminProducts = adminProductsNamespaceContent || {};
+  const safeAdminDashboard = adminDashboardNamespaceContent || {};
   const safeUnauthorized = unauthorizedNamespaceContent || {};
 
   const mergedMessages = {
@@ -387,6 +397,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeFilters).length > 0 ? { Filters: safeFilters } : {}),
     ...(Object.keys(safeOrdersPage).length > 0 ? { OrdersPage: safeOrdersPage } : {}),
     ...(Object.keys(safeAdminProducts).length > 0 ? { AdminProducts: safeAdminProducts } : {}),
+    ...(Object.keys(safeAdminDashboard).length > 0 ? { AdminDashboard: safeAdminDashboard } : {}),
     ...(Object.keys(safeUnauthorized).length > 0 ? { Unauthorized: safeUnauthorized } : {}),
   };
 

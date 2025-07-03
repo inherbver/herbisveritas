@@ -1,0 +1,13 @@
+{
+  "title": "Tableau de Bord",
+  "kpi": {
+    "totalRevenue": {
+      "title": "Revenus Totaux",
+      "description": "Ce mois-ci"
+    }
+  },
+  "activityLog": {
+    "title": "Activité Récente",
+    "description": "Journal des derniers événements survenus dans l'application."
+  }
+}
