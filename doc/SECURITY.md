@@ -44,16 +44,19 @@ Le rôle d'un utilisateur (`admin`, `dev`, `user`) est déterminé **uniquement*
 ### 3.2. Niveaux d'Accès
 
 - **`anon` (Invité)**
-
   - **Permissions :**
     - Parcourir le site et consulter les produits.
-    - Créer et gérer un panier (via une session anonyme Supabase).
+    - Créer et gérer un panier.
+  - **Mécanisme de Sécurité du Panier Invité (Session Anonyme) :**
+    - Le système **utilise les sessions anonymes de Supabase**. Chaque visiteur reçoit un `auth.uid()` unique dès sa première visite.
+    - Le panier est toujours lié à cet `auth.uid()`. Il n'y a pas de gestion manuelle d'ID invité.
+    - La sécurité est assurée par les **politiques RLS** qui vérifient que `auth.uid() = carts.user_id`.
+    - Les Server Actions n'ont pas besoin de s'exécuter avec des privilèges élevés (`service_role`) pour gérer le panier, ce qui renforce la sécurité.
   - **Restrictions :**
     - Ne peut pas accéder aux pages de profil ou de commande.
-    - Doit s'inscrire ou se connecter pour finaliser une commande.
+    - Doit s'inscrire ou se connecter pour finaliser une commande, ce qui déclenche un [flux de fusion de panier](./CART.md#32-flux-de-connexion-et-fusion).
 
 - **`authenticated` (Utilisateur)**
-
   - **Permissions :**
     - Toutes les permissions de l'invité.
     - Accéder à son profil, gérer ses adresses, voir son historique de commandes.
@@ -62,7 +65,6 @@ Le rôle d'un utilisateur (`admin`, `dev`, `user`) est déterminé **uniquement*
     - Ne peut voir et gérer que ses propres données (son profil, ses adresses, ses commandes, son panier).
 
 - **`dev` (Développeur)**
-
   - **Permissions :**
     - Accès étendu en lecture/écriture sur la plupart des tables via les politiques RLS pour faciliter le débogage et la maintenance.
   - **Restrictions :**

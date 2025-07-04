@@ -1,369 +1,172 @@
 # Guide de la Base de Données HerbisVeritas
 
-## Introduction
+## 1. Introduction
 
-Ce document décrit l'architecture, la structure, et les principes de fonctionnement de la base de données PostgreSQL du projet HerbisVeritas, hébergée sur Supabase.
-L'objectif est de fournir aux développeurs une compréhension claire des données, de leurs relations, des règles de sécurité et des conventions utilisées.
+Ce document est la référence centrale pour l'architecture, la structure et les principes de fonctionnement de la base de données PostgreSQL du projet HerbisVeritas, hébergée sur Supabase. Il vise à fournir une compréhension claire des données, de leurs relations et des règles de sécurité.
 
-**Conventions Générales Importantes:**
+**Principes Fondamentaux :**
 
-- **Source de Vérité SQL :** Les définitions SQL exactes des tables, index, triggers, fonctions et politiques RLS se trouvent dans les **fichiers de migration Supabase**. Ce document décrit la structure logique et le comportement attendu.
-- **Gestion des Rôles :** L'identification du rôle d'un utilisateur (ex: 'admin', 'dev', 'user') repose sur la revendication `app_metadata.role` dans le JWT. Les fonctions SQL utilisent cette information comme source de vérité.
-- **Timestamp `updated_at` :** De nombreuses tables possèdent une colonne `updated_at` automatiquement mise à jour par un trigger.
+- **Source de Vérité :** Les fichiers de **migration Supabase** constituent l'unique source de vérité pour le schéma de la base de données (tables, fonctions, RLS). Ce document en est une représentation lisible et commentée.
+- **Gestion des Rôles :** Le rôle d'un utilisateur (`admin`, `dev`, `user`) est déterminé par la revendication (claim) `app_metadata.role` présente dans son JWT. C'est la source de vérité pour les politiques RLS et la logique applicative.
+- **Timestamps :** La plupart des tables possèdent des colonnes `created_at` et `updated_at` gérées automatiquement.
 
-## Types Énumérés (ENUMs)
+---
 
-#### `public.app_role`
+## 2. Schéma `public`
 
-Définit les rôles applicatifs possibles pour un utilisateur.
+### 2.1. Types Énumérés (ENUMs)
 
-```sql
-CREATE TYPE public.app_role AS ENUM ('admin', 'dev', 'user');
-```
+- **`public.app_role`**: Définit les rôles applicatifs (`admin`, `dev`, `user`).
+- **`public.order_status`**: Définit les statuts d'une commande (`pending`, `processing`, `shipped`, `delivered`, `cancelled`, `refunded`).
 
-#### `public.order_status`
+### 2.2. Structure des Tables
 
-Définit les statuts possibles pour une commande.
+#### `public.profiles`
 
-```sql
-CREATE TYPE public.order_status AS ENUM ('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded');
-```
+Étend `auth.users` avec des données spécifiques à l'application.
 
-## Schéma des Tables
-
-### Table: `public.profiles`
-
-Étend la table `auth.users` avec des informations spécifiques à l'application.
-
-- **Colonnes Clés:**
-  - `id (UUID, PK)`: Référence à `auth.users.id`.
-  - `role (app_role, DEFAULT 'user')`: Rôle de l'utilisateur dans l'application.
+- **Colonnes Clés :**
+  - `id` (UUID, PK) : Référence `auth.users.id`.
+  - `role` (TEXT, DEFAULT 'user') : Rôle par défaut à la création. **Note :** Cette colonne n'est plus la source de vérité pour les permissions. C'est le claim JWT `app_metadata.role` qui est utilisé.
   - `first_name`, `last_name`, `phone`, `avatar_url` (TEXT).
-  - `default_billing_address_id`, `default_shipping_address_id` (UUID, FK -> `public.addresses`).
-- **RLS:**
-  - Les utilisateurs peuvent lire/mettre à jour leur propre profil.
-  - Les admins ont un accès complet.
-  - **Logique applicative :** La création du profil est gérée par le trigger `handle_new_user` suite à l'action `signUpAction`. Les mises à jour sont gérées par les actions dans `profileActions.ts`. Voir [la documentation des actions](./ACTIONS.md#4-actions-du-profil-utilisateur-srcactionsprofileactionsts) et le [flux d'authentification](./AUTHFLOW.md).
+- **RLS :**
+  - Les utilisateurs peuvent lire et modifier leur propre profil.
+  - Les administrateurs ont un accès complet.
+- **Logique :** Un profil est créé automatiquement via le trigger `handle_new_user` lors de l'inscription.
 
-### Table: `public.products`
+#### `public.addresses`
 
-Stocke les informations sur les produits.
+Stocke les adresses de livraison et de facturation des utilisateurs.
 
-- **Colonnes Clés:**
-  - `id (TEXT, PK)`: Identifiant unique (ex: `prod_cos_003`).
-  - `name`, `description_short`, `description_long` (TEXT).
-  - `inci_list (TEXT[])`: Liste des ingrédients INCI.
-  - `price (NUMERIC)`.
-  - `stock_quantity (INTEGER)`.
-  - `is_active (BOOLEAN, DEFAULT true)`.
-- **RLS:**
-  - Accès en lecture public pour les produits actifs.
-  - Accès complet pour les admins/devs.
+- **Colonnes Clés :**
+  - `id` (UUID, PK).
+  - `user_id` (UUID, FK -> `auth.users`).
+  - `address_line1`, `city`, `postal_code`, `country`, etc. (TEXT).
+- **RLS :**
+  - Les utilisateurs peuvent gérer (CRUD) leurs propres adresses.
+  - Les administrateurs ont un accès complet.
 
-### Table: `public.addresses`
+#### `public.products`
 
-Stocke les adresses des utilisateurs.
+Contient les données de base, non-traduisibles, des produits.
 
-- **Colonnes Clés:**
-  - `id (UUID, PK)`.
-  - `user_id (UUID, FK -> auth.users)`.
-  - `address_line1`, `city`, `postal_code`, `country` (TEXT).
-- **RLS:**
-  - Les utilisateurs peuvent gérer leurs propres adresses.
-  - Accès complet pour les admins/devs.
-  - **Logique applicative :** La gestion CRUD est implémentée dans `addressActions.ts`. Voir [la documentation des actions](./ACTIONS.md#5-actions-des-adresses-srcactionsaddressactionsts).
+- **Colonnes Clés :**
+  - `id` (TEXT, PK) : Identifiant unique (ex: `pdct_1`).
+  - `slug` (TEXT, UNIQUE) : Pour les URLs.
+  - `price` (NUMERIC).
+  - `stock` (INTEGER).
+  - `unit` (TEXT) : Unité de mesure (ex: 'kg', 'piece').
+  - `is_active`, `is_new`, `is_on_promotion` (BOOLEAN).
+  - `image_url` (TEXT).
+  - `inci_list` (TEXT[]).
+- **RLS :**
+  - Lecture publique pour les produits actifs (`is_active = true`).
+  - Accès complet pour les administrateurs/développeurs.
 
-### Table: `public.carts`
+#### `public.product_translations`
 
-Représente les paniers d'achat.
+Stocke les contenus traduisibles des produits.
 
-- **Colonnes Clés:**
-  - `id (UUID, PK)`.
-  - `user_id (UUID, FK -> auth.users)`: **NULLABLE** pour les paniers invités.
-  - `metadata (JSONB)`: Pour stocker des informations additionnelles.
-- **RLS:**
-  - Les utilisateurs authentifiés peuvent gérer leur propre panier.
-  - Les admins/devs ont un accès complet.
-  - La gestion des paniers invités se fait via des Server Actions avec `service_role`.
-  - **Logique applicative :** L'ensemble de la logique du panier est géré par `cartActions.ts`. Voir [la documentation des actions](./ACTIONS.md#3-actions-du-panier-srcactionscartactionsts).
+- **Colonnes Clés :**
+  - `id` (UUID, PK).
+  - `product_id` (TEXT, FK -> `public.products`).
+  - `locale` (TEXT) : Code de la langue (ex: 'fr', 'en').
+  - `name`, `short_description` (TEXT).
+- **RLS :**
+  - Lecture publique.
+  - Accès en écriture pour les administrateurs/développeurs.
 
-### Table: `public.cart_items`
+#### `public.carts` & `public.cart_items`
 
-Détaille le contenu des paniers.
+Gèrent les paniers d'achat.
 
-- **Colonnes Clés:**
-  - `id (UUID, PK)`.
-  - `cart_id (UUID, FK -> public.carts)`.
-  - `product_id (TEXT, FK -> public.products)`.
-  - `quantity (INTEGER)`.
-- **RLS:**
-  - Les utilisateurs peuvent gérer les articles de leur propre panier (via une jointure sur `carts`).
-  - Accès complet pour les admins/devs.
-  - **Logique applicative :** La logique est gérée par `cartActions.ts`. Voir [la documentation des actions](./ACTIONS.md#3-actions-du-panier-srcactionscartactionsts).
+- **`carts` Colonnes Clés :**
+  - `id` (UUID, PK).
+  - `user_id` (UUID, FK -> `auth.users`) : Clé étrangère vers `auth.users`. N'est **jamais `NULL`**, car même les visiteurs anonymes ont un `id` utilisateur grâce aux sessions anonymes de Supabase.
+- **`cart_items` Colonnes Clés :**
+  - `id` (UUID, PK).
+  - `cart_id` (UUID, FK -> `public.carts`).
+  - `product_id` (TEXT).
+  - `quantity` (INTEGER).
+- **RLS :**
+  - La politique est unifiée : tout utilisateur (anonyme ou authentifié) ne peut accéder qu'au panier correspondant à son `auth.uid()`.
+  - Les administrateurs ont un accès complet.
+  - Aucun privilège `service_role` n'est nécessaire pour les opérations sur le panier.
 
-### Table: `public.orders`
+#### `public.orders` & `public.order_items`
 
-Stocke les informations sur les commandes passées par les utilisateurs.
+Historique des commandes.
 
-- **Colonnes Clés:**
-  - `id (UUID, PK)`: Identifiant unique de la commande.
-  - `user_id (UUID, FK -> auth.users)`: L'utilisateur qui a passé la commande.
-  - `status (order_status, DEFAULT 'pending')`: Le statut actuel de la commande.
-  - `total_amount (NUMERIC)`: Le montant total de la commande.
-  - `stripe_checkout_session_id (TEXT, UNIQUE)`: L'identifiant de la session de checkout Stripe, pour la réconciliation.
-  - `created_at (TIMESTAMPTZ, DEFAULT now())`: La date de création de la commande.
-- **RLS:**
-  - `orders_user_access`: Permet aux utilisateurs de lire (`SELECT`) leurs propres commandes.
-    - `(auth.uid() = user_id)`
-  - `orders_service_role_access`: Donne un accès complet (`ALL`) au `service_role`.
-- **Logique applicative :** La création des commandes est gérée exclusivement par la fonction RPC `create_order_from_cart`, elle-même appelée par le webhook Stripe. Ce processus s'exécute avec les privilèges `service_role` pour garantir l'intégrité des données.
+- **`orders` Colonnes Clés :**
+  - `id` (UUID, PK).
+  - `user_id` (UUID, FK -> `auth.users`).
+  - `status` (`order_status`).
+  - `total_amount` (NUMERIC).
+  - `stripe_checkout_session_id` (TEXT).
+- **`order_items` Colonnes Clés :**
+  - `order_id` (UUID, FK -> `public.orders`).
+  - `product_id` (TEXT).
+  - `quantity` (INTEGER).
+  - `price_at_purchase` (NUMERIC).
+- **RLS :**
+  - Les utilisateurs peuvent lire leurs propres commandes.
+  - Accès complet pour les administrateurs et le `service_role` (pour la création via webhook).
 
-### Table: `public.order_items`
+#### `public.featured_hero_items`
 
-Détaille les produits inclus dans chaque commande.
+Gère le contenu dynamique du composant "Hero" de la page d'accueil.
 
-- **Colonnes Clés:**
-  - `id (UUID, PK)`: Identifiant unique de l'article de commande.
-  - `order_id (UUID, FK -> public.orders)`: La commande à laquelle cet article appartient.
-  - `product_id (TEXT, FK -> public.products)`: Le produit commandé.
-  - `quantity (INTEGER)`: La quantité commandée.
-  - `price_at_purchase (NUMERIC)`: Le prix du produit au moment de l'achat, pour garantir l'exactitude historique.
-- **RLS:**
-  - `order_items_user_access`: Permet aux utilisateurs de lire (`SELECT`) les articles des commandes qui leur appartiennent.
-    - `(EXISTS ( SELECT 1 FROM orders o WHERE ((o.id = order_items.order_id) AND (o.user_id = auth.uid()))))`
-  - `order_items_service_role_access`: Donne un accès complet (`ALL`) au `service_role`.
-- **Logique applicative :** La création est gérée par la fonction RPC `create_order_from_cart` en même temps que la commande.
-
-### Table: `public.featured_hero_items`
-
-Contenu pour le composant Hero de la page d'accueil.
-
-- **Colonnes Clés:**
-  - `id (UUID, PK)`.
-  - `title`, `description`, `cta_text`, `cta_link` (TEXT).
-  - `image_url`, `image_alt` (TEXT).
-  - `image_hero_url` (TEXT, nullable): URL d'une image spécifique pour le Hero, prioritaire sur l'image du produit.
-  - `roles (app_role[])`: Cible les rôles qui peuvent voir cet item.
-- **RLS:**
-  - Les utilisateurs peuvent lire les items correspondant à leur rôle.
-  - Accès complet pour les admins/devs.
-
-## Fonctions RPC (Remote Procedure Call)
-
-Fonctions SQL exposées via l'API Supabase.
-
-### `create_product_with_translations`
-
-Crée un nouveau produit et ses traductions associées de manière atomique (transactionnelle).
-
-- **Objectif :** Garantir que si la création du produit ou d'une de ses traductions échoue, toute l'opération est annulée.
-- **Paramètres :**
-  - `product_data (JSONB)`: Un objet JSON contenant les données du produit principal (slug, prix, stock, etc.).
-  - `translations_data (JSONB)`: Un tableau d'objets JSON, où chaque objet représente une traduction complète du produit.
-- **Logique Clé :**
-  - Insère d'abord dans la table `products`.
-  - Utilise le nom (`name`) de la **première traduction** comme valeur pour la colonne `name` de la table `products` afin de respecter la contrainte `NOT NULL`.
-  - Boucle sur le tableau `translations_data` pour insérer chaque traduction dans la table `product_translations`.
-  - Gère la conversion de l'ID produit (`text`) en `uuid` pour la clé étrangère.
-- **Retourne :** L'ID (`text`) du produit nouvellement créé.
-
-```sql
-CREATE OR REPLACE FUNCTION public.create_product_with_translations(
-    product_data jsonb,
-    translations_data jsonb
-)
-RETURNS text AS $$ /* ... implémentation ... */ $$ LANGUAGE plpgsql;
-```
-
-### `safe_cast_to_jsonb`
-
-Fonction utilitaire pour convertir une chaîne de caractères en `JSONB` de manière sécurisée.
-
-- **Objectif :** Éviter les erreurs PostgreSQL (`invalid input syntax for type json`) si un champ texte destiné à être `JSONB` (comme les "propriétés" d'un produit) contient du texte non-valide ou est vide.
-- **Paramètres :**
-  - `p_text (TEXT)`: La chaîne de caractères à convertir.
-- **Logique Clé :**
-  - Tente de caster le texte en `JSONB`.
-  - En cas d'échec (syntaxe invalide) ou si le texte est `NULL` ou vide, la fonction retourne `NULL` au lieu de lever une erreur.
-- **Retourne :** Une valeur `JSONB` valide ou `NULL`.
-
-```sql
-CREATE OR REPLACE FUNCTION public.safe_cast_to_jsonb(p_text text)
-RETURNS jsonb AS $$ /* ... implémentation ... */ $$ LANGUAGE plpgsql IMMUTABLE;
-```
-
-- `get_my_custom_role()`: Retourne le rôle de l'utilisateur courant (base de la plupart des RLS).
-- `is_current_user_admin()`, `is_current_user_dev()`: Fonctions booléennes pour simplifier les vérifications de rôle.
-- `add_or_update_cart_item(p_cart_id, p_product_id, p_quantity_to_add)`: Ajoute un produit au panier ou met à jour sa quantité. Retourne l'article de panier mis à jour.
-- `merge_carts(p_guest_cart_id, p_auth_cart_id)`: Fusionne un panier invité dans un panier authentifié.
-- `custom_access_token_hook(event)`: Ajoute des claims personnalisés (`role`, `guest_id`) au JWT lors de l'authentification.
-
-## Triggers
-
-- `handle_new_user`: Crée une entrée dans `public.profiles` après l'inscription d'un utilisateur dans `auth.users`. Ce trigger est appelé suite à l'action `signUpAction`. Voir le [flux d'inscription](./AUTHFLOW.md#flux-dinscription-sign-up).
-- `handle_new_user_role`: Assigne le rôle par défaut à un nouveau profil.
-- `update_updated_at_column`: Met à jour automatiquement le champ `updated_at` sur les tables concernées lors d'une modification.
+- **Colonnes Clés :**
+  - `title`, `description`, `cta_text`, `cta_link`, `image_url`.
+  - `target_roles` (TEXT[]) : Rôles ciblés par cet élément.
+- **RLS :**
+  - Les utilisateurs peuvent lire les éléments correspondant à leur rôle.
+  - Accès complet pour les administrateurs.
 
 ---
 
-## Bonnes Pratiques et Maintenance
+## 3. Fonctions et Logique de la Base de Données
 
-(Cette section reste conceptuellement similaire à la version précédente, axée sur les conventions de nommage, l'utilisation d'UUID, la gestion des migrations, les sauvegardes, le monitoring et la sécurité.)
+### 3.1. Fonctions RPC (Remote Procedure Call)
 
-- **Application du Trigger :**
-  - Un trigger est créé pour chaque table nécessitant ce comportement (ex: `profiles`, `products`, `orders`, etc.).
-  - Exemple de création de trigger :
-    ```sql
-    CREATE TRIGGER on_updated_at
-    BEFORE UPDATE ON public.your_table_name
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_updated_at();
-    ```
-  - Ces triggers s'exécutent `BEFORE UPDATE` sur `FOR EACH ROW`.
+Exposées via l'API Supabase et utilisées par les Server Actions.
 
-Ce système garantit que la colonne `updated_at` reflète toujours la dernière fois qu'une ligne a été modifiée, sans nécessiter de mise à jour manuelle depuis l'application.
+- **`check_email_exists(email_to_check)`**: Vérifie si un email existe déjà dans `auth.users`. `SECURITY DEFINER`.
+- **`create_product_with_translations(...)`**: Crée un produit et ses traductions de manière atomique.
+- **`update_product_with_translations(...)`**: Met à jour un produit et ses traductions.
+- **`add_or_update_cart_item(...)`**: Ajoute/met à jour un article dans un panier.
+- **`merge_carts(anonymous_user_id UUID, authenticated_user_id UUID)`**: Fusionne le panier d'un utilisateur anonyme avec celui d'un utilisateur authentifié. Appelée par l'action `migrateAndGetCart` lors de la connexion.
+- **`get_my_custom_role()`**: Retourne le rôle de l'utilisateur actuel à partir du JWT. Base de nombreuses RLS.
+- **`is_current_user_admin()` / `is_current_user_dev()`**: Fonctions booléennes utilitaires pour les RLS.
+- **`current_user_id()`**: Retourne l'`id` de l'utilisateur authentifié.
+- **`custom_access_token_hook(event)`**: Ajoute le claim personnalisé `role` au JWT lors de la connexion.
 
----
+### 3.2. Triggers
 
-## Vues (Views)
+Automatisent certaines actions.
 
-Les vues SQL sont utilisées pour simplifier les requêtes complexes, encapsuler la logique métier, ou pour des raisons de sécurité en exposant uniquement un sous-ensemble de données ou de colonnes.
-
-**Principes Généraux :**
-
-- **Simplification :** Des vues peuvent être créées pour joindre plusieurs tables fréquemment utilisées ensemble (par exemple, `products` avec `product_variants` et `product_images` pour obtenir une liste complète des détails de produits actifs).
-- **Sécurité :** Les vues peuvent limiter l'accès aux colonnes sensibles d'une table ou présenter des données agrégées sans exposer les détails sous-jacents.
-- **Performance :** Dans certains cas, des vues matérialisées (non couvertes en détail ici, mais une possibilité PostgreSQL) peuvent être utilisées pour stocker le résultat d'une requête complexe et améliorer les performances des lectures fréquentes. Les vues standard ne stockent pas de données elles-mêmes mais exécutent la requête sous-jacente à chaque appel.
-- **RLS sur les Vues :** Les politiques RLS s'appliquent aux tables sous-jacentes accédées par une vue. Si un utilisateur n'a pas accès à certaines lignes des tables de base, il ne les verra pas via la vue, même si la vue elle-même n'a pas de politique RLS distincte (bien que l'on puisse aussi définir des RLS sur les vues si nécessaire).
-
-**Exemples Potentiels (Conceptuels) :**
-
-- `public.view_active_products_with_details`: Pourrait joindre `products`, `product_variants`, `product_images`, `categories` et filtrer sur `products.is_active = true`.
-- `public.view_user_order_history`: Pourrait joindre `orders` et `order_items` pour un `user_id` spécifique.
-
-Les définitions SQL exactes de toutes les vues existantes se trouvent dans les fichiers de migration Supabase. Ce document souligne leur utilité et les principes de leur application.
+- **`handle_new_user`**: Sur `auth.users`, crée une entrée correspondante dans `public.profiles`.
+- **`trigger_set_timestamp`**: Sur de nombreuses tables, met à jour automatiquement la colonne `updated_at` lors d'une modification.
 
 ---
 
-## Extensions PostgreSQL
+## 4. Politiques de Sécurité (Row Level Security - RLS)
 
-Supabase, étant basé sur PostgreSQL, permet l'utilisation de nombreuses extensions PostgreSQL pour enrichir les fonctionnalités de la base de données.
+La sécurité est appliquée de manière centralisée via RLS sur presque toutes les tables.
 
-**Activation et Gestion :**
-
-- Les extensions sont activées et gérées via le dashboard Supabase (section "Database" -> "Extensions") ou directement via des commandes SQL (`CREATE EXTENSION extension_name;`) dans les migrations si elles ne sont pas activées par défaut.
-- Il est important de n'activer que les extensions réellement nécessaires pour minimiser la surface d'attaque et la consommation de ressources.
-
-**Extensions Couramment Utilisées ou Pertinentes pour ce Projet :**
-
-- **`uuid-ossp` (souvent activée par défaut) :** Fournit des fonctions pour générer des identifiants uniques universels (UUIDs), comme `uuid_generate_v4()`, largement utilisé pour les clés primaires.
-- **`pg_graphql` (activée par défaut par Supabase) :** Permet d'exposer une API GraphQL au-dessus de la base de données PostgreSQL.
-- **`pg_net` :** Permet aux fonctions PostgreSQL d'effectuer des requêtes HTTP sortantes (par exemple, pour appeler des webhooks depuis des triggers ou des fonctions). Son utilisation doit être soigneusement contrôlée pour des raisons de sécurité.
-- **`pgsodium` (activée par défaut par Supabase) :** Fournit des fonctions de cryptographie, utiles pour le chiffrement de données sensibles au repos si nécessaire (au-delà du chiffrement de disque standard).
-- **`plpgsql` (activée par défaut) :** Langage procédural par défaut de PostgreSQL, utilisé pour écrire des fonctions et des triggers.
-- **`http` :** Une autre extension pour effectuer des requêtes HTTP (alternative à `pg_net`).
-- **`pg_cron` :** Permet de planifier des tâches SQL (jobs cron) directement dans la base de données.
-- **Extensions pour la Recherche Full-Text (FTS) :**
-  - `fuzzystrmatch`, `pg_trgm` : Peuvent être utilisées pour améliorer la pertinence des recherches textuelles (par exemple, recherche de produits par nom avec tolérance aux fautes de frappe).
-
-La liste exacte des extensions activées pour ce projet peut être consultée dans le dashboard Supabase. Leur utilisation spécifique (si elle va au-delà des fonctions standards comme `uuid_generate_v4()`) serait détaillée dans les fonctions ou la logique applicative qui les emploient.
+- **Principe du Moindre Privilège :** Par défaut, aucun accès n'est autorisé. Des politiques sont ajoutées pour autoriser explicitement des actions.
+- **Isolation des Données Utilisateur :** Les politiques garantissent que les utilisateurs ne peuvent accéder et modifier que leurs propres données (profil, adresses, panier, commandes). La condition `user_id = current_user_id()` est omniprésente.
+- **Accès Administrateur :** Les utilisateurs avec le rôle `admin` (vérifié via `is_current_user_admin()`) ont des droits étendus sur la plupart des tables.
+- **Accès Anonyme et Invité :** Les utilisateurs anonymes (via les sessions anonymes Supabase) ont un accès en lecture seule aux données publiques (produits). Leurs opérations sur leur propre panier sont directement contrôlées par les politiques RLS basées sur leur `auth.uid()`, sans nécessiter de privilèges élevés.
 
 ---
 
-## Bonnes Pratiques et Conventions
+## 5. Conventions et Bonnes Pratiques
 
-Pour assurer la maintenabilité, la sécurité et la performance de la base de données, les conventions et bonnes pratiques suivantes sont à respecter :
-
-1.  **Nommage :**
-
-    - Tables, colonnes, fonctions, triggers, etc. : `snake_case` (minuscules avec underscores).
-    - Types ENUM : `snake_case_type`.
-    - Clés primaires : `id` par convention.
-    - Clés étrangères : `related_table_singular_name_id` (ex: `product_id` dans `order_items`).
-    - Noms explicites et concis.
-
-2.  **Migrations Supabase :**
-
-    - Toute modification de schéma (tables, colonnes, types, fonctions, politiques RLS, index, etc.) DOIT être effectuée via un nouveau fichier de migration Supabase.
-    - Ne pas modifier directement la structure en production via le dashboard Supabase, sauf pour des explorations temporaires non persistantes. Les migrations sont la source de vérité du schéma.
-    - Tester les migrations en local et en staging avant de les appliquer en production.
-
-3.  **Sécurité :**
-
-    - RLS activée sur toutes les tables contenant des données utilisateur ou sensibles.
-    - Politiques RLS aussi restrictives que possible, en suivant le principe du moindre privilège.
-    - Utiliser les fonctions `public.get_my_custom_role()` et `public.is_current_user_admin()` pour standardiser les vérifications de rôle dans les RLS.
-    - Pour les fonctions `SECURITY DEFINER`, toujours spécifier `SET search_path` pour éviter les attaques par manipulation de `search_path`.
-    - Valider et nettoyer toutes les entrées utilisateur avant de les utiliser dans des requêtes SQL pour prévenir les injections SQL (bien que l'ORM et les clients Supabase aident, la vigilance reste de mise, surtout pour le SQL dynamique).
-    - Gérer les secrets (clés API, etc.) de manière sécurisée, jamais en dur dans le code SQL ou applicatif. Utiliser les secrets managers de Supabase ou de l'environnement.
-
-4.  **Performance :**
-
-    - Ajouter des index judicieusement sur les colonnes fréquemment utilisées dans les clauses `WHERE`, `JOIN`, `ORDER BY`.
-    - Analyser les requêtes lentes avec `EXPLAIN ANALYZE`.
-    - Éviter les `SELECT *` lorsque seules quelques colonnes sont nécessaires.
-    - Utiliser les jointures appropriées et s'assurer que les conditions de jointure utilisent des colonnes indexées.
-
-5.  **Documentation :**
-
-    - Maintenir ce document `DATABASE.md` à jour avec les changements majeurs d'architecture ou de logique.
-    - Commenter le code SQL complexe (fonctions, triggers) pour expliquer son objectif et son fonctionnement.
-
-6.  **Types de Données :**
-
-    - Utiliser le type de données le plus approprié et le plus restrictif pour chaque colonne (ex: `BOOLEAN` au lieu de `SMALLINT` pour vrai/faux, `TIMESTAMPTZ` pour les dates/heures).
-    - Définir des contraintes `NOT NULL` lorsque la colonne doit toujours avoir une valeur.
-    - Utiliser des contraintes `CHECK` pour valider les données au niveau de la base de données (ex: `CHECK (price >= 0)`).
-
-7.  **Développement Local et Environnements :**
-    - Utiliser Supabase CLI pour le développement local afin de refléter l'environnement de production.
-    - Avoir des environnements distincts (local, dev/staging, production) avec des configurations et des données séparées.
-
----
-
-## Maintenance et Évolution
-
-La base de données est un composant vivant du système et nécessitera une maintenance et des évolutions continues.
-
-1.  **Sauvegardes (Backups) :**
-
-    - Supabase gère automatiquement les sauvegardes quotidiennes (Point-In-Time Recovery - PITR est disponible sur les plans payants pour une granularité plus fine).
-    - Se familiariser avec le processus de restauration de Supabase en cas de besoin.
-    - Pour des données critiques, envisager des sauvegardes logiques supplémentaires (ex: `pg_dump`) stockées en externe, si les fonctionnalités de Supabase ne suffisent pas.
-
-2.  **Monitoring :**
-
-    - Utiliser les outils de monitoring de Supabase (disponibles dans le dashboard) pour surveiller l'état de la base de données, l'utilisation des ressources, les requêtes lentes, etc.
-    - Configurer des alertes si possible pour les métriques critiques (ex: utilisation élevée du CPU, peu d'espace disque restant).
-
-3.  **Mises à Jour PostgreSQL :**
-
-    - Supabase gère les mises à jour mineures de PostgreSQL. Les mises à jour majeures peuvent nécessiter une planification et une intervention. Se tenir informé des communications de Supabase à ce sujet.
-
-4.  **Gestion de la Taille des Données :**
-
-    - Surveiller la croissance des tables.
-    - Archiver ou purger les anciennes données non essentielles si nécessaire, après discussion et validation (par exemple, anciens logs, paniers abandonnés depuis très longtemps).
-
-5.  **Optimisation des Performances :**
-
-    - Revoir périodiquement les performances des requêtes critiques.
-    - Utiliser `EXPLAIN ANALYZE` pour identifier les goulots d'étranglement.
-    - Mettre à jour les statistiques des tables (`ANALYZE table_name;`) si le planificateur de requêtes semble prendre de mauvaises décisions (bien que PostgreSQL le fasse souvent automatiquement).
-    - Envisager le partitionnement de tables très volumineuses si les performances se dégradent.
-
-6.  **Évolution du Schéma :**
-
-    - Lorsque de nouvelles fonctionnalités sont ajoutées à l'application, le schéma de la base de données devra probablement évoluer.
-    - Appliquer tous les changements de schéma via des migrations Supabase, en respectant les bonnes pratiques de nommage et de documentation.
-    - Considérer l'impact des changements sur les données existantes et prévoir des scripts de migration de données si nécessaire.
-    - Pour les changements non rétrocompatibles, planifier soigneusement le déploiement pour minimiser l'impact sur les utilisateurs.
-
-7.  **Revue de Sécurité :**
-    - Revoir périodiquement les politiques RLS et les permissions des fonctions pour s'assurer qu'elles sont toujours appropriées et alignées avec les besoins de sécurité.
-    - Se tenir informé des vulnérabilités PostgreSQL ou des extensions utilisées et appliquer les correctifs ou mises à jour recommandés par Supabase.
-
-Ce document sert de guide. L'adaptabilité et la proactivité face aux besoins changeants du projet sont clés pour maintenir une base de données saine et performante.
+- **Nommage :** `snake_case` pour tous les objets de la base de données.
+- **Migrations :** Toute modification de schéma doit passer par un fichier de migration Supabase.
+- **Sécurité :** Utiliser des fonctions `SECURITY DEFINER` avec précaution, en spécifiant toujours `SET search_path`.
+- **Performance :** Utiliser des index sur les clés étrangères et les colonnes fréquemment interrogées.
 
 ---
 

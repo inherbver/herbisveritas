@@ -5,242 +5,171 @@
 Ce document décrit les flux d'authentification et de gestion de session pour l'application HerbisVeritas. Le système repose sur Supabase pour l'authentification et la gestion des utilisateurs, et est intégré dans une application Next.js utilisant les Server Actions et les Server Components.
 
 - **Source de Vérité :** Supabase Auth est la source de vérité unique pour l'identité et la session de l'utilisateur.
-- **Logique Métier :** Les interactions avec Supabase Auth (connexion, inscription, etc.) sont encapsulées dans des **Server Actions** (`src/actions/`).
-- **Sécurité :** Les routes sont protégées à l'aide d'un **middleware** (`src/middleware.ts`) qui vérifie la session de l'utilisateur à chaque requête. Les accès aux données sont contrôlés par les **Row Level Security (RLS)** de Supabase, qui s'appuient sur le rôle de l'utilisateur (`app_metadata.role` dans le JWT). Pour plus de détails sur la structure des tables et les politiques RLS, voir le [guide de la base de données](./DATABASE.md#schéma-des-tables).
+- **Logique Métier :** Les interactions avec Supabase Auth (connexion, inscription, etc.) sont encapsulées dans des **Server Actions** (principalement dans `src/actions/auth.ts`).
+- **Sécurité et Rôles :** La sécurité repose sur deux mécanismes clés :
+  1.  **Middleware (`src/middleware.ts`) :** Protège les routes en vérifiant la session de l'utilisateur à chaque requête.
+  2.  **Row Level Security (RLS) :** Contrôle l'accès aux données directement dans la base de données. Les politiques RLS s'appuient sur le rôle de l'utilisateur, qui est la **source de vérité unique**. Ce rôle est stocké dans les **`app_metadata.role` du JWT** et lu par des fonctions SQL comme `public.get_my_custom_role()`. Pour plus de détails, voir le [guide de la base de données](./DATABASE.md).
 - **Synchronisation Client :** L'état de l'interface utilisateur est synchronisé en temps réel avec l'état d'authentification grâce au listener `onAuthStateChange` de Supabase dans un composant client de layout (`src/components/layout/client-layout.tsx`).
 
 ---
 
 ## 2. Flux d'Authentification de Base
 
-Ces flux sont principalement gérés dans `src/actions/auth.ts`. Pour une description détaillée de chaque action, consultez la [documentation des actions d'authentification](./ACTIONS.md#2-actions-dauthentification-srcactionsauthts).
+Ces flux sont gérés dans `src/actions/authActions.ts`.
 
 ### 2.1. Inscription (Sign Up)
+
+Le processus d'inscription est sécurisé pour éviter l'énumération d'utilisateurs et guider l'utilisateur.
 
 1.  **Initiation :** L'utilisateur remplit le formulaire d'inscription.
 2.  **Action :** La `signUpAction` est appelée.
 3.  **Processus :**
-    - Valide les entrées utilisateur avec un schéma Zod centralisé. Voir la section [Validation Centralisée des Mots de Passe](#24-validation-centralisée-des-mots-passe) pour plus de détails.
-    - Appelle `supabase.auth.signUp()`.
-    - L'option `emailRedirectTo` est utilisée pour spécifier l'URL de callback (`/auth/callback`) où l'utilisateur sera redirigé après avoir cliqué sur le lien de confirmation.
-4.  **Confirmation :** Supabase envoie un email de confirmation à l'utilisateur. L'utilisateur n'est pas connecté tant que son email n'est pas vérifié. À la création de l'utilisateur dans `auth.users`, un [trigger](./DATABASE.md#triggers) (`handle_new_user`) crée une entrée correspondante dans la table `public.profiles`.
+    a. **Validation des entrées :** Les données du formulaire sont validées par un schéma Zod centralisé (`src/lib/validation/auth-schemas.ts`).
+    b. **Vérification de l'e-mail (Pré-inscription) :** Pour éviter de créer un compte pour un e-mail déjà existant et pour des raisons de sécurité, un appel RPC est fait à la fonction SQL `check_email_exists(:email)`. Si la fonction retourne `true`, le processus s'arrête et informe l'utilisateur que l'e-mail est déjà utilisé.
+    c. **Création de l'utilisateur :** Si l'e-mail est disponible, `supabase.auth.signUp()` est appelée. L'option `emailRedirectTo` est utilisée pour spécifier l'URL de callback (`/auth/callback`).
+4.  **Confirmation :** Supabase envoie un e-mail de confirmation. L'utilisateur n'est pas connecté tant que son e-mail n'est pas vérifié. À la création dans `auth.users`, un [trigger](./DATABASE.md#triggers) (`handle_new_user`) crée une entrée correspondante dans la table `public.profiles`.
 
 ### 2.2. Connexion (Sign In)
 
-1.  **Initiation :** L'utilisateur soumet le formulaire de connexion.
+1.  **Initiation :** Un utilisateur (potentiellement anonyme) soumet le formulaire de connexion.
 2.  **Action :** La `loginAction` est appelée.
 3.  **Processus :**
-    - Valide les entrées avec Zod.
-    - Appelle `supabase.auth.signInWithPassword()` avec l'email et le mot de passe.
-4.  **Résultat :** Si les identifiants sont corrects, Supabase crée une session et retourne un JWT. Le listener `onAuthStateChange` côté client détecte l'événement `SIGNED_IN` et met à jour l'application.
+    a. L'action capture l'ID de l'utilisateur anonyme (`anonymous_user_id`) de la session en cours.
+    b. Elle valide les entrées avec Zod, puis appelle `supabase.auth.signInWithPassword()`.
+    c. Si la connexion réussit, elle appelle immédiatement l'action `migrateAndGetCart(anonymous_user_id)` pour fusionner le panier de l'invité avec celui de l'utilisateur authentifié.
+4.  **Résultat :** Supabase crée une session authentifiée. Le client reçoit le résultat de l'action, y compris le panier fusionné, et l'UI est mise à jour.
 
 ### 2.3. Déconnexion (Sign Out)
 
 1.  **Initiation :** L'utilisateur clique sur le bouton de déconnexion.
-2.  **Action :** La `logoutAction` est appelée.
-3.  **Processus :** Appelle `supabase.auth.signOut()`.
-4.  **Résultat :** La session est terminée. Le listener `onAuthStateChange` détecte l'événement `SIGNED_OUT`, ce qui déclenche le nettoyage de l'état local (ex: vidage du panier du store Zustand).
+2.  **Action :** La `logoutAction` est appelée, qui exécute `supabase.auth.signOut()`.
+3.  **Résultat :** La session est terminée. Supabase bascule automatiquement l'utilisateur vers une nouvelle session anonyme. Le listener `onAuthStateChange` détecte `SIGNED_OUT`, déclenchant le rechargement du panier pour la nouvelle session anonyme.
 
 ### 2.4. Validation Centralisée des Mots de Passe
 
-Pour garantir la cohérence et la robustesse des mots de passe sur l'ensemble de l'application, la logique de validation a été centralisée.
-
-- **Fichier Schéma Principal :** `src/lib/validation/auth-schemas.ts`
-
-  - Ce fichier exporte des fonctions qui créent des schémas Zod pour différents contextes (inscription, changement de mot de passe, etc.).
-  - Il contient un schéma de base `createPasswordSchema` qui applique les règles communes : longueur minimale, présence de majuscules, de chiffres et de caractères spéciaux.
-  - Les messages d'erreur sont internationalisés via `next-intl`.
-
-- **Composants d'UI Partagés :** `src/components/domain/auth/password-strength.tsx`
-
-  - `PasswordRequirement` : Affiche une exigence de mot de passe (ex: "Au moins 8 caractères") et son état de validation (icône ✓ ou X).
-  - `PasswordStrengthBar` : Fournit un retour visuel en temps réel sur la force du mot de passe.
-
-- **Intégration :**
-  - Tous les formulaires concernés (`RegisterForm`, `PasswordChangeForm`, etc.) utilisent `react-hook-form` avec le `zodResolver` pour appliquer ces schémas.
-  - Ils intègrent également les composants d'UI pour guider l'utilisateur lors de la saisie de son mot de passe.
-
-Cette approche garantit que toute modification des règles de mot de passe est appliquée uniformément sur toute la plateforme en ne modifiant qu'un seul fichier.
+Pour garantir la cohérence des mots de passe, la logique de validation est centralisée dans `src/lib/validation/auth-schemas.ts` et les composants d'UI associés (`src/components/domain/auth/password-strength.tsx`). Cette approche garantit que toute modification des règles de mot de passe est appliquée uniformément.
 
 ---
 
-## 3. Flux de Réinitialisation de Mot de Passe (Password Reset)
+## 3. Flux de Réinitialisation de Mot de Passe
 
-Ce flux permet aux utilisateurs ayant oublié leur mot de passe de regagner l'accès à leur compte de manière sécurisée.
+### Phase 1: Demande de Lien
 
-### Phase 1: Demande de Lien de Réinitialisation
+1.  **Formulaire :** L'utilisateur saisit son e-mail sur la page `/forgot-password`.
+2.  **Action Serveur :** `requestPasswordResetAction` appelle `supabase.auth.resetPasswordForEmail()`.
+3.  **Sécurité :** Pour éviter l'énumération d'e-mails, la fonction retourne un succès, que l'e-mail existe ou non.
+4.  **Envoi de l'E-mail :** Supabase envoie un lien de réinitialisation unique et à durée limitée.
 
-1.  **Navigation Utilisateur** : L'utilisateur se rend sur la page `/forgot-password`.
-2.  **Soumission du Formulaire** : L'utilisateur saisit son adresse e-mail dans le [ForgotPasswordForm](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/components/domain/auth/forgot-password-form.tsx:10:0-64:1) et soumet le formulaire.
-3.  **Action Serveur** : L'action `forgotPasswordAction` (dans [src/actions/auth.ts](cci:7://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/actions/auth.ts:0:0-0:0)) est déclenchée.
-    - Elle valide le format de l'e-mail.
-    - Elle appelle `supabase.auth.resetPasswordForEmail()` avec l'e-mail de l'utilisateur.
-    - **Important** : Pour des raisons de sécurité (afin d'éviter l'énumération d'e-mails), cette fonction retourne un message de succès, que l'e-mail existe ou non dans la base de données.
-4.  **Envoi de l'E-mail** : Supabase envoie un e-mail à l'utilisateur contenant un lien unique et à durée de vie limitée. Ce lien dirige l'utilisateur vers la page `/update-password` et inclut un jeton de sécurité.
+### Phase 2: Mise à Jour
 
-### Phase 2: Mise à Jour du Mot de Passe
-
-1.  **Clic sur le Lien** : L'utilisateur clique sur le lien dans son e-mail et est redirigé vers la page `/update-password`. Supabase gère automatiquement la vérification du jeton depuis l'URL et établit une session authentifiée pour permettre la mise à jour du mot de passe.
-2.  **Affichage du Formulaire** : Le [UpdatePasswordForm](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/components/domain/auth/update-password-form.tsx:12:0-75:1) est affiché, invitant l'utilisateur à saisir un nouveau mot de passe et à le confirmer.
-3.  **Validation Côté Client** : Le formulaire fournit un retour en temps réel sur la force du mot de passe en utilisant les composants [PasswordStrengthBar](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/components/domain/auth/password-strength.tsx:16:0-46:2) et [PasswordRequirement](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/components/domain/auth/password-strength.tsx:5:0-14:2).
-4.  **Soumission du Formulaire** : L'utilisateur soumet le nouveau mot de passe.
-5.  **Action Serveur** : L'action [updatePasswordAction](cci:1://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/actions/auth.ts:256:0-298:1) (dans [src/actions/auth.ts](cci:7://file:///c:/Users/util37.montpellier/Desktop/Omar/Priv%C3%A9/herbisveritas/src/actions/auth.ts:0:0-0:0)) est déclenchée.
-    - Elle utilise le schéma centralisé `createPasswordSchema` pour valider que le nouveau mot de passe est suffisamment fort et que la confirmation correspond.
-    - Elle appelle `supabase.auth.updateUser()` avec le nouveau mot de passe. Comme l'utilisateur dispose d'une session valide grâce au jeton de réinitialisation, Supabase autorise cette opération.
-6.  **Retour d'Information** :
-    - En cas de succès, un message de confirmation est affiché, et un lien est fourni à l'utilisateur pour se connecter.
-    - En cas d'échec (par exemple, jeton expiré, erreur de validation), un message d'erreur approprié est affiché.
+1.  **Redirection :** L'utilisateur clique sur le lien, arrive sur `/update-password`. Supabase vérifie le jeton et crée une session temporaire.
+2.  **Formulaire :** L'utilisateur saisit son nouveau mot de passe.
+3.  **Action Serveur :** `updatePasswordAction` (dans `src/actions/authActions.ts`) valide le mot de passe et appelle `supabase.auth.updateUser()`.
+4.  **Résultat :** Si le succès, l'utilisateur est informé et doit se reconnecter.
 
 ---
 
-## 4. Gestion des Sessions et des Utilisateurs Anonymes
+## 4. Gestion des Sessions (Anonymes et Authentifiées)
 
 ### 4.1. Protection des Routes (Middleware)
 
-- Le fichier `src/middleware.ts` intercepte chaque requête vers une route protégée.
-- Il utilise `supabase.auth.getUser()` pour vérifier si une session valide existe.
-- Si l'utilisateur n'est pas authentifié, le middleware (via la logique de `next-intl`) le redirige vers la page de connexion.
+Le fichier `src/middleware.ts` intercepte chaque requête. Il utilise `supabase.auth.getUser()` pour vérifier la session. Certaines routes (ex: `/profile`) nécessitent une session authentifiée (`is_anonymous = false`) et redirigent les utilisateurs anonymes vers la page de connexion.
 
-### 4.2. Utilisateurs Anonymes (Invités)
+### 4.2. Gestion des Utilisateurs Invités (Sessions Anonymes)
 
-Pour des fonctionnalités comme le panier invité, l'application a besoin d'une session même pour les utilisateurs non connectés.
+L'application **utilise pleinement les sessions anonymes de Supabase**. Chaque visiteur, dès sa première visite, se voit attribuer une session anonyme.
 
-- **Fichier Clé :** `src/lib/authUtils.ts`
-- **Fonction :** `getActiveUserId()`
-- **Processus :**
-  1. Tente de récupérer l'utilisateur actuel avec `supabase.auth.getUser()`.
-  2. Si aucun utilisateur n'est trouvé (l'utilisateur est un invité), la fonction appelle `supabase.auth.signInAnonymously()` pour créer une session anonyme.
-  3. Cette session anonyme est utilisée pour lier des données (comme un panier) à cet invité spécifique. Voir la définition de la [table `carts`](./DATABASE.md#table-publiccarts) qui autorise un `user_id` nullable.
+- **Principe :** Chaque utilisateur (invité ou non) possède un `auth.uid()` et une session valide. La distinction se fait via le `claim` `is_anonymous` dans le JWT.
+- **Avantages :**
+  - **Simplicité :** Pas besoin de gérer des `guestId` manuellement dans le `localStorage`.
+  - **Sécurité Unifiée :** Les politiques RLS s'appliquent de la même manière à tous les utilisateurs en se basant sur `auth.uid()`. Il n'est pas nécessaire d'utiliser des privilèges `service_role` pour les opérations de panier.
+- **Transition vers Authentifié :** Le flux de connexion (voir section 2.2) gère la transition transparente d'une session anonyme à une session authentifiée, y compris la migration des données comme le panier.
 
 ### 4.3. Synchronisation de l'État Côté Client
 
-- **Fichier Clé :** `src/components/layout/client-layout.tsx`
-- **Processus :**
-  - Un `useEffect` s'abonne à `supabase.auth.onAuthStateChange`.
-  - Cet écouteur réagit aux événements `SIGNED_IN`, `SIGNED_OUT`, `TOKEN_REFRESHED`, etc.
-  - Il permet de mettre à jour l'état global de l'application (via Zustand) et de déclencher des actions critiques, comme la fusion du panier invité avec le panier utilisateur lors d'un `SIGNED_IN`.
+Le composant `src/components/layout/client-layout.tsx` utilise `useEffect` pour s'abonner à `supabase.auth.onAuthStateChange`. Cet écouteur est crucial :
+
+- **`INITIAL_SESSION`**: Charge le panier initial de l'utilisateur (anonyme ou authentifié).
+- **`SIGNED_IN`**: Déclenché après une connexion réussie. Le client est déjà à jour grâce au retour de la `loginAction`. L'écouteur peut rafraîchir des données supplémentaires si nécessaire.
+- **`SIGNED_OUT`**: Déclenché après une déconnexion. Le client vide les données utilisateur et recharge le panier de la nouvelle session anonyme.
 
 ---
 
 ## 5. Gestion du Compte Utilisateur
 
-Ces flux sont principalement gérés dans `src/app/[locale]/profile/actions.ts`.
+Ces flux sont gérés dans `src/app/[locale]/profile/actions.ts`.
 
-### 5.1. Changement de Mot de Passe
+### 5.1. Changement de Mot de Passe (Authentifié)
 
-Ce flux est sécurisé pour s'assurer que seul le propriétaire du compte peut changer son mot de passe.
-
-1.  **Initiation :** L'utilisateur est sur sa page de profil et remplit le formulaire de changement de mot de passe (ancien mot de passe, nouveau, confirmation).
+1.  **Initiation :** L'utilisateur authentifié remplit le formulaire sur sa page de profil.
 2.  **Action :** La `updatePasswordAction` est appelée.
-3.  **Processus en plusieurs étapes :**
-    a. **Validation des entrées :** Le formulaire utilise un schéma Zod centralisé pour valider le nouveau mot de passe et la confirmation. Voir la section [Validation Centralisée des Mots de Passe](#24-validation-centralisée-des-mots-passe).
-    a. **Vérification de la session :** `supabase.auth.getUser()` confirme que l'utilisateur est bien connecté.
-    b. **Validation de l'ancien mot de passe :** La fonction tente de se reconnecter avec l'email de l'utilisateur et l'ancien mot de passe fourni (`supabase.auth.signInWithPassword()`). C'est une étape de vérification cruciale. Si elle échoue, l'action s'arrête.
-    c. **Mise à jour du mot de passe :** Si l'étape précédente réussit, `supabase.auth.updateUser({ password: newPassword })` est appelée pour définir le nouveau mot de passe.
-    d. **Déconnexion Forcée :** Après une mise à jour réussie, `supabase.auth.signOut()` est appelée pour invalider toutes les sessions existantes et forcer l'utilisateur à se reconnecter avec son nouveau mot de passe.
-4.  **Résultat :** L'utilisateur est déconnecté et doit se reconnecter.
+3.  **Processus Sécurisé :**
+    a. Valide les entrées (force du nouveau mot de passe, etc.).
+    b. Vérifie la session de l'utilisateur.
+    c. **Valide l'ancien mot de passe** en tentant une ré-authentification (`signInWithPassword`). C'est une étape de sécurité cruciale.
+    d. Si l'ancien mot de passe est correct, met à jour avec `supabase.auth.updateUser()`.
+    e. **Déconnexion forcée** de toutes les sessions avec `signOut()` pour des raisons de sécurité.
+4.  **Résultat :** L'utilisateur est déconnecté et doit se reconnecter avec ses nouveaux identifiants.
 
 ### 5.2. Mise à jour des Informations du Profil
 
-- La mise à jour des informations de profil (nom, etc.) est gérée par la `updateUserProfile` action dans `src/actions/profileActions.ts`.
-- Elle récupère l'utilisateur actuel et met à jour la [table `profiles`](./DATABASE.md#table-publicprofiles) correspondante en base de données.
+La mise à jour des informations (nom, etc.) est gérée par une action dédiée qui modifie les données dans la table `public.profiles`.
 
 ---
 
-## 6 . Flux de Callback (`/auth/callback`)
+## 6. Flux de Callback (`/auth/callback`)
 
-La page `src/app/[locale]/auth/callback/page.tsx` est un point d'entrée central pour les flux initiés par un email.
-
-- **Rôle :** Gérer les redirections depuis les emails de Supabase (confirmation d'inscription, réinitialisation de mot de passe, etc.).
-- **Processus :**
-  - C'est un Client Component qui utilise `onAuthStateChange`.
-  - Lorsqu'un utilisateur atterrit sur cette page après avoir cliqué sur un lien magique ou de confirmation, le client Supabase JS traite automatiquement le token dans l'URL.
-  - Cela déclenche un événement `SIGNED_IN`, qui est capturé par le listener.
-  - Le composant affiche un message de statut (chargement, succès, erreur) et redirige l'utilisateur vers la page appropriée (définie par le paramètre `next` dans l'URL ou une page par défaut).
+La page `src/app/[locale]/auth/callback/page.tsx` gère les redirections depuis les e-mails Supabase. C'est un Client Component qui attend l'événement `SIGNED_IN` déclenché par le traitement du token dans l'URL, puis redirige l'utilisateur de manière appropriée.
 
 ---
 
-## Annexe 2 : Gestion des Rôles et Permissions (RBAC)
+## Annexe : Gestion des Rôles et Permissions (RBAC)
 
-Cette section documente le système de contrôle d'accès basé sur les rôles (RBAC) utilisé pour sécuriser les différentes parties de l'application, notamment le tableau de bord d'administration.
+Cette section documente le système de contrôle d'accès basé sur les rôles (RBAC).
 
 ### 1. Vue d'ensemble
 
-Le système RBAC repose sur trois piliers :
+Le système RBAC repose sur :
 
-1.  **Les Rôles** : Des identifiants qui regroupent des utilisateurs (ex: `admin`, `editor`, `user`).
-2.  **Les Permissions** : Des actions granulaires qu'un utilisateur peut effectuer (ex: `products:create`, `orders:read:all`).
-3.  **La Logique de Contrôle** : Un ensemble de fonctions qui vérifient si un rôle possède une permission donnée.
+1.  **Les Rôles** : Identifiants définis dans l'application (ex: `admin`, `dev`, `user`).
+2.  **Les Permissions** : Actions granulaires (ex: `products:create`, `orders:read:all`).
+3.  **La Logique de Contrôle** : Fonctions vérifiant si un rôle possède une permission.
 
-La source de vérité pour le rôle d'un utilisateur est la colonne `role` dans la table `public.profiles`.
-
-> **Note Importante sur la Source de Vérité**
-> L'implémentation actuelle utilise la table `public.profiles` pour déterminer le rôle d'un utilisateur. Cela diffère d'une stratégie précédente (ou future) où le rôle était stocké dans les `app_metadata` du JWT. Il est crucial de garder cette distinction à l'esprit lors de la maintenance ou de l'évolution du système.
+La **source de vérité unique** pour le rôle d'un utilisateur est la revendication (`claim`) **`app_metadata.role` dans le JWT**. Ce rôle est attribué manuellement ou via des fonctions serveur sécurisées.
 
 ### 2. Flux de Vérification d'une Permission
 
-Le contrôle d'accès pour les routes sensibles, comme le tableau de bord `/admin`, est géré de manière centralisée.
+Le contrôle d'accès pour les routes sensibles (ex: `/admin`) est géré de manière centralisée.
 
 **Étape 1 : Protection de la Route (Layout)**
 
--   Le fichier `src/app/[locale]/admin/layout.tsx` sert de point d'entrée pour toutes les routes sous `/admin`.
--   Il appelle la fonction `checkUserPermission('admin:access')` pour vérifier si l'utilisateur a le droit d'accéder à cette section.
+- Le layout `src/app/[locale]/admin/layout.tsx` protège toutes les routes `/admin`.
+- Il appelle une fonction de vérification, par exemple `checkUserPermission('admin:access')`.
 
 **Étape 2 : Logique de Vérification Côté Serveur**
 
--   La fonction `checkUserPermission` (dans `src/lib/auth/server-auth.ts`) orchestre la vérification :
-    1.  Elle récupère l'utilisateur authentifié via `supabase.auth.getUser()`.
-    2.  Elle interroge la table `public.profiles` pour obtenir le `role` associé à l'ID de l'utilisateur.
-    3.  Elle appelle la fonction utilitaire `hasPermission(userRole, permission)` pour valider l'accès.
-    4.  Elle retourne un objet `AuthResult` contenant le statut de l'autorisation (`isAuthorized`), l'utilisateur, son rôle et une éventuelle erreur.
+- La fonction `checkUserPermission` (ex: dans `src/lib/auth/server-auth.ts`) orchestre la vérification :
+  1.  Elle récupère la session utilisateur via `supabase.auth.getUser()`.
+  2.  Elle extrait le rôle des métadonnées du JWT (`user.app_metadata.role`).
+  3.  Elle appelle `hasPermission(userRole, permission)` pour valider l'accès.
+  4.  Elle retourne un résultat (`isAuthorized`, `user`, `role`, etc.).
 
 **Étape 3 : Configuration des Rôles et Permissions**
 
--   Le fichier `src/config/permissions.ts` est la source de vérité de la logique RBAC.
--   `AppRole`: Définit les types de rôles disponibles (`user`, `editor`, `admin`, `dev`).
--   `AppPermission`: Définit toutes les permissions possibles (ex: `admin:access`, `products:update`).
--   `permissionsByRole`: C'est la carte maîtresse qui associe à chaque rôle un tableau des permissions qu'il détient.
+- Le fichier `src/config/permissions.ts` est la source de vérité de la logique RBAC.
+- Il contient la carte `permissionsByRole` qui associe à chaque rôle un tableau des permissions qu'il détient.
 
 ```typescript
 // src/config/permissions.ts (exemple simplifié)
-
 export const permissionsByRole: Record<AppRole, AppPermission[]> = {
   admin: [
     "admin:access",
-    "products:read",
-    "products:create",
-    // ... autres permissions
+    "products:*", // Wildcard pour toutes les actions sur les produits
   ],
-  editor: [
-    "admin:access", // Peut accéder au dashboard
-    "products:read",
-    "content:create",
-    // ...
-  ],
-  user: [
-    "orders:read:own",
-    "profile:update:own",
-  ],
+  user: ["orders:read:own", "profile:update:own"],
 };
 ```
 
 **Étape 4 : Validation de la Permission**
 
--   La fonction `hasPermission` (dans `src/lib/auth/utils.ts`) contient la logique finale :
-    -   Elle vérifie si le rôle de l'utilisateur (`admin`, `editor`...) possède directement la permission demandée (ex: `products:create`) en consultant la carte `permissionsByRole`.
-    -   Elle gère également les permissions génériques (wildcards). Par exemple, si un rôle a la permission `products:*`, la fonction lui accordera l'accès pour `products:create`, `products:update`, etc.
-
-### 3. Tests
-
-Actuellement, les tests d'intégration pour le système de permissions ne sont pas implémentés. Les fichiers de test existants (`auth.test.ts`, `authUtils.test.ts`) se concentrent sur les actions d'authentification (login, signup, logout) et non sur la logique RBAC.
-
-**Recommandations pour les tests :**
-
--   Créer un fichier de test dédié `src/lib/auth/permissions.test.ts`.
--   Tester la fonction `hasPermission` avec différents scénarios :
-    -   Un rôle ayant la permission directe.
-    -   Un rôle n'ayant pas la permission.
-    -   La gestion des wildcards (`*`).
-    -   Le comportement avec des rôles ou permissions inexistants.
--   Simuler des appels à `checkUserPermission` pour tester la protection des routes de bout en bout.
-
+- La fonction `hasPermission` (`src/lib/auth/utils.ts`) vérifie si le rôle de l'utilisateur possède la permission demandée, en tenant compte des wildcards (`*`).
