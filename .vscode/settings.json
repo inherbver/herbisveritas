@@ -1,9 +1,8 @@
 {
-  // Enable Deno for the Supabase Edge Functions folder and specify its path.
-  "deno.enable": true,
-  "deno.lint": true,
-  "deno.enablePaths": ["supabase/functions"],
-
-  // Point to the project's TypeScript version to ensure consistency.
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "deno.enablePaths": [
+    "./supabase/functions"
+  ],
+  "deno.importMap": "./supabase/functions/import_map.json",
+  "deno.unstable": true,
+  "deno.lint": true
 }

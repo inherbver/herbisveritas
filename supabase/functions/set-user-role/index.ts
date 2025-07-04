@@ -1,6 +1,6 @@
 // supabase/functions/set-user-role/index.ts
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient, User } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors";
 
 type AppRole = "user" | "dev" | "admin";
@@ -24,23 +24,24 @@ interface AuditLog {
 
 // Fonction utilitaire pour l'audit
 async function logSecurityEvent(adminClient: SupabaseClient, event: AuditLog) {
-  try {
-    const { error } = await adminClient.from("audit_logs").insert({
-      event_type: event.event_type,
-      user_id: event.admin_id,
-      data: {
-        target_user_id: event.target_user_id,
-        old_role: event.old_role,
-        new_role: event.new_role,
-        reason: event.reason,
-        ip_address: event.ip_address,
-        user_agent: event.user_agent,
-        timestamp: new Date().toISOString(),
-      },
-    });
-    if (error) throw error;
-  } catch (error) {
-    console.error("Erreur lors de l'enregistrement du journal d'audit:", error);
+  const { error } = await adminClient.from("audit_logs").insert({
+    event_type: event.event_type,
+    user_id: event.admin_id,
+    data: {
+      target_user_id: event.target_user_id,
+      old_role: event.old_role,
+      new_role: event.new_role,
+      reason: event.reason,
+      ip_address: event.ip_address,
+      user_agent: event.user_agent,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
+  if (error) {
+    console.error("Erreur critique lors de l'enregistrement du journal d'audit:", error);
+    // Propage l'erreur pour qu'elle soit capturée par le gestionnaire principal
+    throw new Error(`Échec de l'enregistrement du journal d'audit: ${error.message}`);
   }
 }
 
@@ -57,25 +58,43 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Token d'authentification requis" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const internalAuthHeader = req.headers.get("X-Internal-Authorization");
+    const internalFunctionSecret = Deno.env.get("INTERNAL_FUNCTION_SECRET");
 
-    const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user: caller },
-      error: authError,
-    } = await adminClient.auth.getUser(token);
+    let caller: User | null = null;
+    let isInternalCall = false;
 
-    if (authError || !caller) {
-      return new Response(JSON.stringify({ error: "Token invalide ou expiré" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const { userId, role, reason, callerId }: SetRolePayload & { callerId?: string } = await req.json();
+
+    if (internalAuthHeader && internalAuthHeader === internalFunctionSecret) {
+      isInternalCall = true;
+      if (!callerId) {
+        return new Response(JSON.stringify({ error: "'callerId' est requis pour les appels internes" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      const { data: callerData, error: callerError } = await adminClient.auth.admin.getUserById(callerId);
+      if (callerError || !callerData.user) {
+        return new Response(JSON.stringify({ error: "L'utilisateur appelant est invalide" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      caller = callerData.user;
+    } else {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Token d'authentification requis" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Token invalide ou expiré" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      caller = user;
     }
 
     const callerRole = caller.app_metadata?.role;
@@ -85,25 +104,18 @@ Deno.serve(async (req: Request) => {
       await logSecurityEvent(adminClient, {
         event_type: "unauthorized_role_assignment_attempt",
         admin_id: caller.id,
-        target_user_id: "N/A",
+        target_user_id: userId || "N/A",
         old_role: null,
-        new_role: "N/A",
+        new_role: role || "N/A",
         reason: `Tentative non autorisée par ${caller.email} (rôle: ${callerRole})`,
         ip_address: req.headers.get("CF-Connecting-IP") || req.headers.get("X-Forwarded-For"),
         user_agent: req.headers.get("User-Agent") || "",
       });
       return new Response(
-        JSON.stringify({
-          error: "Accès refusé. Seul un administrateur autorisé peut assigner des rôles.",
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: "Accès refusé. Seul un administrateur autorisé peut assigner des rôles." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const { userId, role, reason }: SetRolePayload = await req.json();
 
     if (!userId || !role || !["user", "dev", "admin"].includes(role)) {
       return new Response(JSON.stringify({ error: "ID utilisateur et rôle valides sont requis" }), {
@@ -130,7 +142,7 @@ Deno.serve(async (req: Request) => {
         error: usersError,
       } = await adminClient.auth.admin.listUsers();
       if (usersError) throw usersError;
-      const currentAdmins = users.filter((u) => u.app_metadata?.role === "admin");
+      const currentAdmins = users.filter((u: User) => u.app_metadata?.role === "admin");
       if (currentAdmins.length <= 1) {
         return new Response(
           JSON.stringify({ error: "Impossible de supprimer le dernier administrateur du système" }),

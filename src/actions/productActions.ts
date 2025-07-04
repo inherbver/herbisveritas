@@ -1,6 +1,6 @@
 "use server";
 
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
 import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
 import { revalidateProductPages } from "@/utils/revalidation";
@@ -41,7 +41,7 @@ export const createProduct = withPermissionSafe(
       data.id = crypto.randomUUID();
     }
 
-    const supabase = createSupabaseAdminClient();
+    const supabase = await createSupabaseServerClient();
 
     const validationResult = productSchema.safeParse(data);
     if (!validationResult.success) {
@@ -103,7 +103,7 @@ export const createProduct = withPermissionSafe(
 export const updateProduct = withPermissionSafe(
   "products:update",
   async (data: ProductFormValues) => {
-    const supabase = createSupabaseAdminClient();
+    const supabase = await createSupabaseServerClient();
 
     const validationResult = productSchema.safeParse(data);
     if (!validationResult.success) {
@@ -163,7 +163,7 @@ export const updateProduct = withPermissionSafe(
 
 // ===== DELETE PRODUCT =====
 export const deleteProduct = withPermissionSafe("products:delete", async (productId: string) => {
-  const supabase = createSupabaseAdminClient();
+  const supabase = await createSupabaseServerClient();
 
   const validation = deleteProductSchema.safeParse({ id: productId });
   if (!validation.success) {
@@ -218,7 +218,7 @@ export const deleteProduct = withPermissionSafe("products:delete", async (produc
 export const updateProductStatus = withPermissionSafe(
   "products:update",
   async (data: z.infer<typeof updateProductStatusSchema>) => {
-    const supabase = createSupabaseAdminClient();
+    const supabase = await createSupabaseServerClient();
 
     const validation = updateProductStatusSchema.safeParse(data);
     if (!validation.success) {
@@ -296,7 +296,7 @@ export type UploadImageResult =
 export const uploadProductImage = withPermissionSafe(
   "products:update",
   async (formData: FormData): Promise<UploadImageResult> => {
-    const supabase = createSupabaseAdminClient();
+    const supabase = await createSupabaseServerClient();
 
     const file = formData.get("file") as File;
     const fileName = formData.get("fileName") as string;

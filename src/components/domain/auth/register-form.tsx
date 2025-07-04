@@ -8,7 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import { signUpAction } from "@/actions/auth";
+import { signUpAction } from "@/actions/authActions";
 import { createSignupSchema } from "@/lib/validators/auth.validator";
 import { Button } from "@/components/ui/button";
 import {

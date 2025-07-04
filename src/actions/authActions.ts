@@ -155,7 +155,7 @@ export async function signUpAction(
   const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
 
   // 3. Essayer d'inscrire l'utilisateur
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -182,7 +182,24 @@ export async function signUpAction(
     };
   }
 
-  // 4. Succès
+  // 4. Audit the successful signup
+  if (data.user) {
+    const { error: auditError } = await supabase.from("audit_logs").insert({
+      actor_id: data.user.id,
+      action: "USER_SIGNUP",
+      target_table: "auth.users",
+      target_id: data.user.id,
+      status: "SUCCESS",
+      justification: "User self-registration",
+    });
+
+    if (auditError) {
+      console.error("Failed to create audit log for user signup:", auditError);
+      // Do not fail the signup if audit fails, just log it.
+    }
+  }
+
+  // 5. Succès
   return {
     success: true,
     message:

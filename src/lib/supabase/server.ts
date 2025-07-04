@@ -1,4 +1,5 @@
 // src/lib/supabase/server.ts
+import { createClient } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -35,7 +36,18 @@ export async function createSupabaseServerClient() {
       },
     }
   );
-}
+};
+
+export const createSupabaseAdminClient = () => {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set.");
+  }
+
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+};
 
 // getSupabaseUserSession reste async et attend createSupabaseServerClient
 export async function getSupabaseUserSession() {

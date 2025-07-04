@@ -3,15 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Home, Package } from "lucide-react";
+import { Menu, Home, Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/utils/cn";
 
 const navItems = [
   { href: "/admin", label: "Vue d'ensemble", icon: Home },
   { href: "/admin/products", label: "Produits", icon: Package },
-  // { href: '/admin/users', label: 'Utilisateurs', icon: Users }, // Future
+  { href: "/admin/users", label: "Gestions utilisateurs", icon: Users },
   // { href: '/admin/orders', label: 'Commandes', icon: ShoppingCart }, // Future
 ];
 
@@ -38,6 +38,12 @@ export function MobileSidebar() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-64 p-4">
+        <SheetHeader className="sr-only">
+          <SheetTitle>Menu de navigation</SheetTitle>
+          <SheetDescription>
+            Liste des liens pour naviguer dans le panneau d'administration.
+          </SheetDescription>
+        </SheetHeader>
         <nav className="flex flex-col gap-2">
           <h2 className="mb-2 text-lg font-semibold tracking-tight">Dashboard</h2>
           {navItems.map((item) => (
