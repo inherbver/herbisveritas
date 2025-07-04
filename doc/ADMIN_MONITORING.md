@@ -48,9 +48,17 @@ Un hook `useAdminMonitoring` qui appelle l'API à intervalle régulier (ex: 2 mi
 
 ## Phase 2 : Amélioration Temps Réel (V2)
 
-### 2.1 Migration vers Supabase Realtime
+### 2.1 Migration vers une Surveillance via Audit Log
 
-Utilisation de Supabase Realtime pour s'abonner aux changements sur la table `profiles`. Le client écoute les événements `UPDATE` et `INSERT` où le rôle est `admin` ou `dev` et déclenche une nouvelle vérification immédiatement.
+Étant donné que le rôle de l'utilisateur est stocké dans les `app_metadata` du JWT et géré via l'API GoTrue de Supabase, la surveillance des changements sur la table `profiles` n'est pas une méthode fiable pour détecter les promotions de rôle.
+
+Une architecture plus robuste consisterait à :
+
+1.  **Créer une table d'audit** (`admin_audit_log`) où toute action administrative (y compris la modification de rôle via une fonction serveur sécurisée) est enregistrée.
+2.  **Utiliser Supabase Realtime** pour s'abonner aux `INSERT` sur cette nouvelle table `admin_audit_log`.
+3.  Lorsqu'un nouvel événement est détecté, le client peut alors déclencher une nouvelle vérification de sécurité.
+
+Cette approche est plus sécurisée et découplée de la table `profiles`.
 
 ```typescript
 // src/hooks/use-admin-monitoring-realtime.ts

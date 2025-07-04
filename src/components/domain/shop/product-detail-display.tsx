@@ -40,13 +40,11 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   const [quantity, setQuantity] = useState(1);
   const _setItems = useCartStore((state) => state._setItems);
 
+  // Define a clear, initial state for the action. It's a GeneralErrorResult by default.
   const initialState: CartActionResult<CartData | null> = React.useMemo(
     () => ({
       success: false,
-      message: "",
-      error: "Initial state",
-      errors: {},
-      data: null,
+      error: "Initial state", // Use a specific error message to identify the initial state
     }),
     []
   );
@@ -55,7 +53,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   useEffect(() => {
     // Do not show any toast if the state is still the initial one.
     // This is a robust way to prevent toasts on mount, especially with React 18's Strict Mode double-invoking effects.
-    if (state.error === "Initial state") {
+    if (isGeneralError(state) && state.error === "Initial state") {
       return;
     }
 

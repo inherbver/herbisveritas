@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Package } from "lucide-react";
+import { Home, Package, Users } from "lucide-react";
 import { cn } from "@/utils/cn";
 
 const navItems = [
   { href: "/admin", label: "Vue d'ensemble", icon: Home },
   { href: "/admin/products", label: "Produits", icon: Package },
-  // { href: '/admin/users', label: 'Utilisateurs', icon: Users }, // Future
+  { href: "/admin/roles", label: "Gestion des Rôles", icon: Users },
   // { href: '/admin/orders', label: 'Commandes', icon: ShoppingCart }, // Future
 ];
 

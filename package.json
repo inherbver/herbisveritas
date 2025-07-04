@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "audit-roles": "tsx scripts/audit-roles.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -72,6 +73,7 @@
     "@types/react-dom": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",
+    "dotenv": "^16.4.5",
     "autoprefixer": "^10.4.19",
     "eslint": "^9.25.1",
     "eslint-config-next": "^15.3.1",
@@ -97,6 +99,8 @@
     "supabase": "^2.22.6",
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.3.4",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.16.2",
     "typescript": "^5",
     "typescript-eslint": "^8.31.0"
   },

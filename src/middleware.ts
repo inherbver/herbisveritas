@@ -152,16 +152,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(loginRedirectPath, request.nextUrl.origin));
     }
 
-    // Utilisateur authentifié : vérifier le rôle
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    // Utilisateur authentifié : vérifier le rôle à partir du JWT
+    const userRole = user.app_metadata.role as AppRole | undefined;
 
-    const userRole = profile?.role as AppRole | undefined;
-
-    if (profileError || !userRole || !hasPermission(userRole, "admin:access")) {
+    if (!userRole || !hasPermission(userRole, "admin:access")) {
       const unauthorizedUrl = new URL(`/${currentLocale}/unauthorized`, request.url);
       return NextResponse.redirect(unauthorizedUrl);
     }

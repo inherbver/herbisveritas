@@ -1,7 +1,6 @@
 // src/lib/supabase/server.ts
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createClient } from '@supabase/supabase-js';
 
 // createSupabaseServerClient redevient async pour gérer correctement le typage de cookies()
 export async function createSupabaseServerClient() {
@@ -54,25 +53,4 @@ export async function getSupabaseUserSession() {
   }
 
   return session;
-}
-
-// ✅ Nouveau client pour les actions d'administration
-// Ce client utilise la SERVICE_ROLE_KEY pour outrepasser les RLS.
-// À n'utiliser que dans les Server Actions où des privilèges élevés sont requis.
-export function createSupabaseAdminClient() {
-  // Assurez-vous que les variables d'environnement sont définies
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("Supabase URL ou Service Role Key manquante dans les variables d'environnement.");
-  }
-
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
 }

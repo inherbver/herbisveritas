@@ -123,6 +123,22 @@ Gère le contenu dynamique du composant "Hero" de la page d'accueil.
   - Les utilisateurs peuvent lire les éléments correspondant à leur rôle.
   - Accès complet pour les administrateurs.
 
+#### `public.audit_logs`
+
+Journalise les événements de sécurité et les actions administratives critiques.
+
+- **Colonnes Clés :**
+  - `id` (BIGINT, PK) : Identifiant unique.
+  - `event_type` (TEXT) : Type d'événement (ex: `role_change`, `unauthorized_access_attempt`).
+  - `user_id` (UUID, FK -> `auth.users`) : L'utilisateur (souvent un admin) qui a déclenché l'événement.
+  - `data` (JSONB) : Données détaillées (cible, changements, justification, IP, etc.).
+- **RLS :**
+  - **Lecture :** Les administrateurs peuvent lire tous les journaux (`SELECT`).
+  - **Insertion :** Les administrateurs peuvent insérer de nouveaux journaux (`INSERT`).
+  - **Mise à jour :** Les journaux sont immuables (`UPDATE` interdit).
+  - **Suppression :** Les journaux ne peuvent pas être supprimés (`DELETE` interdit).
+- **Logique :** Les insertions sont effectuées par les Edge Functions (via `service_role`) et par les API Routes sécurisées (via la politique d'insertion pour les admins).
+
 ---
 
 ## 3. Fonctions et Logique de la Base de Données

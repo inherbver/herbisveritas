@@ -62,6 +62,19 @@ Utilisez ces tokens directement dans les classes Tailwind pour assurer la cohér
 
 Le projet utilise deux polices de caractères principales, chargées via Google Fonts grâce à l'optimisation de Next.js (`next/font/google`). Elles sont définies dans `src/app/layout.tsx`.
 
+## Composants et Sémantique
+
+Conformément aux meilleures pratiques d'accessibilité et de clarté du code, le projet privilégie l'utilisation de balises HTML sémantiques plutôt que des `<div>` génériques lorsque le contexte le permet.
+
+- **`<section>`** : Pour regrouper des contenus thématiques majeurs sur une page (ex: section "Nos valeurs", "Produits populaires").
+- **`<article>`** : Pour des contenus autonomes et distribuables (ex: un article de blog, une fiche produit détaillée).
+- **`<nav>`** : Pour les blocs de navigation principaux (menu principal, fil d'Ariane).
+- **`<aside>`** : Pour des contenus complémentaires (ex: une barre latérale, des informations contextuelles).
+- **`<header>` / `<footer>`** : Pour les en-têtes et pieds de page de la page ou d'une section.
+- **`<dl>`, `<dt>`, `<dd>`** : Pour les listes de définitions (ex: caractéristiques d'un produit, FAQ).
+
+Cette approche améliore non seulement la lisibilité du code mais aussi le référencement naturel (SEO) et l'expérience des utilisateurs de lecteurs d'écran.
+
 ### 1. Raleway (Sans-serif)
 
 - **Rôle :** Police principale pour le corps du texte, les paragraphes et les éléments d'interface.
