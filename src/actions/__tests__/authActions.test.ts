@@ -1,6 +1,6 @@
 "use server";
 
-import * as authModule from "./authActions";
+import * as authModule from "../authActions";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { migrateAndGetCart } from "@/actions/cartActions";
@@ -96,7 +96,16 @@ describe("Auth Actions", () => {
         signUp: jest.fn(),
         signOut: jest.fn(),
       },
-    };
+      from: jest.fn((_table: string) => ({
+        insert: jest.fn().mockResolvedValue({ error: null }),
+        select: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        delete: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+      })),
+      rpc: jest.fn(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
     mockedCreateSupabaseServerClient.mockResolvedValue(mockSupabaseClient);
 
     // Mock de base pour les headers

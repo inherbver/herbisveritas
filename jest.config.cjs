@@ -22,27 +22,12 @@ const customJestConfig = {
     '<rootDir>/src/**/*.test.tsx',
   ],
 
-  // CRITIQUE: Transformer tous les modules ESM problématiques, y compris date-fns
-  transformIgnorePatterns: [
-    'node_modules/(?!(next-intl|@formatjs|@babel/runtime|@supabase|isows|ws|date-fns)/)',
-  ],
 
-  // Ajouter des options pour les modules Node.js
-  testEnvironmentOptions: {
-    customExportConditions: ['node', 'node-addons'],
-  },
 
   // Performance et stabilité
   maxWorkers: '50%',
   testTimeout: 15000, // Augmenté pour les composants avec des effets async
   
-  // Gérer les modules ESM
-  extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  globals: {
-    'ts-jest': {
-      useESM: true,
-    },
-  },
 
   // Coverage (optionnel)
   collectCoverageFrom: [

@@ -2,6 +2,7 @@ import { revalidateTag } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
 import { isSuccessResult, isValidationError, createSuccessResult } from "@/lib/cart-helpers";
+import { CartData } from "@/types/cart";
 
 // Mock des modules externes
 jest.mock("next/cache", () => ({
@@ -13,7 +14,7 @@ jest.mock("@/lib/cartReader");
 jest.mock("@/lib/authUtils");
 
 // Import des fonctions à tester
-import { addItemToCart, migrateAndGetCart } from "./cartActions";
+import { addItemToCart, migrateAndGetCart } from "../cartActions";
 import { getCart } from "@/lib/cartReader";
 import { getActiveUserId } from "@/lib/authUtils";
 
@@ -29,7 +30,7 @@ const VALID_GUEST_USER_ID = "987fcdeb-51d3-11e7-9998-23456789abcd";
 const VALID_PRODUCT_ID = "550e8400-e29b-41d4-a716-446655440000";
 
 // Factory pour créer des données de test cohérentes
-function createTestCartData(overrides: Record<string, unknown> = {}) {
+function createTestCartData(overrides: Partial<CartData> = {}): CartData {
   return {
     id: "test-cart-123",
     user_id: VALID_AUTH_USER_ID,
@@ -194,9 +195,9 @@ describe("addItemToCart - Simplified", () => {
     const result = await addItemToCart({}, formData);
 
     expect(result.success).toBe(true);
-    if (isSuccessResult(result)) {
-      expect(result.data?.items).toHaveLength(1);
-      expect(result.data?.items[0].productId).toBe(VALID_PRODUCT_ID);
+    if (isSuccessResult(result) && result.data) {
+      expect(result.data.items).toHaveLength(1);
+      expect(result.data.items[0].productId).toBe(VALID_PRODUCT_ID);
     }
 
     expect(mockSupabase.rpcMock).toHaveBeenCalledWith("add_or_update_cart_item", {
@@ -242,9 +243,9 @@ describe("addItemToCart - Simplified", () => {
     const result = await addItemToCart({}, formData);
 
     expect(result.success).toBe(true);
-    if (isSuccessResult(result)) {
-      expect(result.data?.id).toBe("new-cart-789");
-      expect(result.data?.items[0].productId).toBe(VALID_PRODUCT_ID);
+    if (isSuccessResult(result) && result.data) {
+      expect(result.data.id).toBe("new-cart-789");
+      expect(result.data.items[0].productId).toBe(VALID_PRODUCT_ID);
     }
 
     expect(mockSupabase.insertMock).toHaveBeenCalledWith({
@@ -361,9 +362,9 @@ describe("migrateAndGetCart - Simplified", () => {
     const result = await migrateAndGetCart({ guestUserId: VALID_GUEST_USER_ID });
 
     expect(result.success).toBe(true);
-    if (isSuccessResult(result)) {
-      expect(result.data?.id).toBe("guest-cart-id-123");
-      expect(result.data?.user_id).toBe(VALID_AUTH_USER_ID);
+    if (isSuccessResult(result) && result.data) {
+      expect(result.data.id).toBe("guest-cart-id-123");
+      expect(result.data.user_id).toBe(VALID_AUTH_USER_ID);
     }
 
     expect(mockSupabase.updateMock).toHaveBeenCalledWith({
@@ -527,8 +528,8 @@ describe("migrateAndGetCart - Simplified", () => {
     const result = await migrateAndGetCart({ guestUserId: VALID_GUEST_USER_ID });
 
     expect(result.success).toBe(true);
-    if (isSuccessResult(result)) {
-      expect(result.data?.id).toBe("auth-current-cart");
+    if (isSuccessResult(result) && result.data) {
+      expect(result.data.id).toBe("auth-current-cart");
     }
 
     // No migration operations should occur
@@ -556,8 +557,8 @@ describe("migrateAndGetCart - Simplified", () => {
     const result = await migrateAndGetCart({ guestUserId: sameUserId });
 
     expect(result.success).toBe(true);
-    if (isSuccessResult(result)) {
-      expect(result.data?.id).toBe("current-cart-for-same-user");
+    if (isSuccessResult(result) && result.data) {
+      expect(result.data.id).toBe("current-cart-for-same-user");
     }
 
     // Should not call admin functions for same user
