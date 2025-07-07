@@ -8,5 +8,9 @@
   "editAddressButton": "Edit",
   "noShippingAddress": "No shipping address on file.",
   "noBillingAddress": "No billing address on file.",
-  "phone": "Phone"
+  "phone": "Phone",
+  "common": {
+    "shippingAddress": "Shipping address",
+    "billingAddress": "Billing address"
+  }
 }

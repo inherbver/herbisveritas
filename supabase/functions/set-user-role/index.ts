@@ -1,5 +1,6 @@
 // supabase/functions/set-user-role/index.ts
 
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, SupabaseClient, User } from "@supabase/supabase-js";
 import { corsHeaders } from "../_shared/cors";
 
@@ -62,21 +63,26 @@ Deno.serve(async (req: Request) => {
     const internalFunctionSecret = Deno.env.get("INTERNAL_FUNCTION_SECRET");
 
     let caller: User | null = null;
-    let isInternalCall = false;
 
-    const { userId, role, reason, callerId }: SetRolePayload & { callerId?: string } = await req.json();
+    const { userId, role, reason, callerId }: SetRolePayload & { callerId?: string } =
+      await req.json();
 
     if (internalAuthHeader && internalAuthHeader === internalFunctionSecret) {
-      isInternalCall = true;
       if (!callerId) {
-        return new Response(JSON.stringify({ error: "'callerId' est requis pour les appels internes" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+        return new Response(
+          JSON.stringify({ error: "'callerId' est requis pour les appels internes" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
-      const { data: callerData, error: callerError } = await adminClient.auth.admin.getUserById(callerId);
+      const { data: callerData, error: callerError } =
+        await adminClient.auth.admin.getUserById(callerId);
       if (callerError || !callerData.user) {
         return new Response(JSON.stringify({ error: "L'utilisateur appelant est invalide" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       caller = callerData.user;
@@ -84,14 +90,19 @@ Deno.serve(async (req: Request) => {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return new Response(JSON.stringify({ error: "Token d'authentification requis" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const token = authHeader.replace("Bearer ", "");
-      const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
+      const {
+        data: { user },
+        error: authError,
+      } = await adminClient.auth.getUser(token);
       if (authError || !user) {
         return new Response(JSON.stringify({ error: "Token invalide ou expiré" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       caller = user;
@@ -112,7 +123,9 @@ Deno.serve(async (req: Request) => {
         user_agent: req.headers.get("User-Agent") || "",
       });
       return new Response(
-        JSON.stringify({ error: "Accès refusé. Seul un administrateur autorisé peut assigner des rôles." }),
+        JSON.stringify({
+          error: "Accès refusé. Seul un administrateur autorisé peut assigner des rôles.",
+        }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

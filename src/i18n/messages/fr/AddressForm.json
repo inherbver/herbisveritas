@@ -2,24 +2,32 @@
   "formTitleNewShipping": "Ajouter une nouvelle adresse de livraison",
   "formTitleNewBilling": "Ajouter une nouvelle adresse de facturation",
   "formTitleEditShipping": "Modifier l'adresse de livraison",
-  "formTitleEditBilling": "Modifier l'adresse de facturation",
+  "formTitle": "{isEditing, select, true {Modifier l'adresse {addressType}} other {Ajouter une nouvelle adresse {addressType}}}",
+  "recipientSectionTitle": "Destinataire de la livraison",
+  "addressSectionTitle": "Adresse de livraison",
+  "contactSectionTitle": "Informations de contact",
   "fieldLabels": {
     "full_name": "Nom complet",
-    "company_name": "Nom de l'entreprise (Facultatif)",
     "first_name": "Prénom",
     "last_name": "Nom",
-    "address_line1": "Adresse Ligne 1",
-    "address_line2": "Adresse Ligne 2 (Facultatif)",
+    "email": "Adresse e-mail (optionnel)",
+    "company_name": "Nom de l'entreprise (Facultatif)",
+    "address_line1": "Adresse",
+    "address_line2": "Complément d'adresse",
     "postal_code": "Code Postal",
     "city": "Ville",
     "country_code": "Pays",
     "state_province_region": "État/Province/Région (Facultatif)",
-    "phone_number": "Numéro de téléphone (Facultatif)",
+    "phone_number": "Numéro de téléphone (optionnel)",
     "is_default": "Définir comme adresse par défaut ?"
   },
   "checkboxLabelIsDefault": "Définir comme adresse par défaut",
+  "checkboxLabelAddressLine2": "Complément d'adresse ?",
   "placeholders": {
     "full_name": "Saisir le nom complet",
+    "first_name": "Saisir le prénom",
+    "last_name": "Saisir le nom de famille",
+    "email": "Saisir l'adresse e-mail",
     "company_name": "Saisir le nom de l'entreprise",
     "address_line1": "Adresse, Boîte postale, nom de l'entreprise, c/o",
     "address_line2": "Appartement, suite, unité, bâtiment, étage, etc.",
@@ -30,15 +38,18 @@
     "phone_number": "Saisir le numéro de téléphone"
   },
   "buttons": {
-    "save": "Enregistrer l'adresse",
+    "save": "Enregistrer",
     "saving": "Enregistrement...",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "showOptionalFields": "Afficher les champs optionnels"
   },
   "serverActions": {
     "validationError": "La validation a échoué. Veuillez vérifier les champs du formulaire.",
     "addSuccess": "Adresse ajoutée avec succès.",
     "addError": "Échec de l'ajout de l'adresse. Veuillez réessayer.",
     "updateSuccess": "Adresse mise à jour avec succès.",
-    "updateError": "Échec de la mise à jour de l'adresse. Veuillez réessayer."
+    "updateError": "Échec de la mise à jour de l'adresse. Veuillez réessayer.",
+    "success": "L'opération a été réalisée avec succès.",
+    "error": "Une erreur est survenue. Veuillez réessayer."
   }
 }

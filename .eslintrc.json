@@ -21,21 +21,19 @@
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended",
     "plugin:import/typescript",
-    "next/core-web-vitals", // Règles spécifiques à Next.js
-    "plugin:prettier/recommended" // Intègre Prettier et désactive les règles conflictuelles
+    "next/core-web-vitals",
+    "plugin:prettier/recommended"
   ],
   "settings": {
     "react": {
-      "version": "detect" // Détecte automatiquement la version de React
+      "version": "detect"
     },
     "import/resolver": {
       "typescript": {}
     }
   },
   "rules": {
-    // Désactiver temporairement, car peut être strict avec Next.js 13+ App Router
     "react/react-in-jsx-scope": "off",
-    // Permet les fonctions fléchées pour les composants fonctionnels
     "react/function-component-definition": [
       2,
       {
@@ -43,15 +41,14 @@
         "unnamedComponents": "arrow-function"
       }
     ],
-    // Préférences personnelles (optionnel)
-    "react/prop-types": "off", // Pas nécessaire avec TypeScript
+    "react/prop-types": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
-    "prettier/prettier": "warn", // Affiche les erreurs Prettier comme warnings
-    "import/prefer-default-export": "off", // Permet les exports nommés sans export par défaut
-    "react/jsx-props-no-spreading": "off", // Peut être utile pour les props de composants UI
+    "prettier/prettier": "warn",
+    "import/prefer-default-export": "off",
+    "react/no-unescaped-entities": "off",
+    "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": "warn",
-    // Next.js specific (peut être ajusté)
-    "@next/next/no-html-link-for-pages": "off" // Utile si vous mixez pages/ et app/
+    "@next/next/no-html-link-for-pages": "off"
   },
   "ignorePatterns": [
     ".eslintrc.json",
@@ -61,9 +58,9 @@
     "node_modules/",
     ".next/",
     "out/",
-    "public/", // Ou spécifiquement public/build, public/static etc.
+    "public/",
     "*.config.js",
-    "*.config.mjs"
-    // Ajoutez d'autres fichiers/dossiers générés ou non pertinents
+    "*.config.mjs",
+    "supabase/functions/"
   ]
 }

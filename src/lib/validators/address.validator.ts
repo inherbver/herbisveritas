@@ -24,10 +24,21 @@ export const addressSchema = z.object({
     .optional()
     .nullable(), // Permet une chaîne vide ou null
 
-  full_name: z
+  first_name: z
     .string()
-    .min(1, requiredFieldMessage("Le nom complet"))
-    .max(150, "Le nom complet ne doit pas dépasser 150 caractères."),
+    .min(2, { message: "Le prénom doit contenir au moins 2 caractères." })
+    .max(50, { message: "Le prénom ne peut pas dépasser 50 caractères." }),
+
+  last_name: z
+    .string()
+    .min(2, { message: "Le nom de famille doit contenir au moins 2 caractères." })
+    .max(50, { message: "Le nom de famille ne peut pas dépasser 50 caractères." }),
+
+  email: z
+    .string()
+    .email({ message: "Veuillez saisir une adresse e-mail valide." })
+    .optional()
+    .or(z.literal("")), // Permet une chaîne vide
 
   address_line1: z
     .string()
@@ -77,6 +88,63 @@ export const addressSchema = z.object({
 
 // Type TypeScript inféré à partir du schéma Zod
 export type AddressFormData = z.infer<typeof addressSchema>;
+
+// Définit la structure requise pour les traductions du formulaire d'adresse
+export interface AddressFormTranslations {
+  formTitle: (addressType: "shipping" | "billing", isEditing: boolean) => string;
+  recipientSectionTitle: string;
+  addressSectionTitle: string;
+  contactSectionTitle: string;
+  checkboxLabelIsDefault: string;
+  fieldLabels: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    company_name: string;
+    address_line1: string;
+    address_line2: string;
+    postal_code: string;
+    city: string;
+    country_code: string;
+    state_province_region: string;
+    phone_number: string;
+    is_default: string;
+  };
+  placeholders: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    company_name?: string;
+    address_line1?: string;
+    address_line2?: string;
+    postal_code?: string;
+    city?: string;
+    country_code?: string;
+    state_province_region?: string;
+    phone_number?: string;
+  };
+  buttons: {
+    save: string;
+    saving: string;
+    cancel: string;
+    showOptionalFields: string;
+  };
+  serverActions: {
+    validationError: string;
+    success: string;
+    error: string;
+  };
+}
+
+// Interface pour les props du composant AddressForm
+export interface AddressFormProps {
+  translations: AddressFormTranslations;
+  addressType: "shipping" | "billing";
+  existingAddress?: (Partial<AddressFormData> & { id?: string }) | null;
+  onCancel: () => void;
+  onSuccess: () => void;
+  locale: string;
+}
 
 // Un sous-ensemble pour la création, car l'ID n'est pas fourni par le client
 export const createAddressSchema = addressSchema;

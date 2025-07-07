@@ -8,5 +8,9 @@
   "editAddressButton": "Modifier",
   "noShippingAddress": "Aucune adresse de livraison enregistrée.",
   "noBillingAddress": "Aucune adresse de facturation enregistrée.",
-  "phone": "Téléphone"
+  "phone": "Téléphone",
+  "common": {
+    "shippingAddress": "Adresse de livraison",
+    "billingAddress": "Adresse de facturation"
+  }
 }

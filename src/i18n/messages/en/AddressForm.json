@@ -3,20 +3,31 @@
   "formTitleNewBilling": "Add a new billing address",
   "formTitleEditShipping": "Edit shipping address",
   "formTitleEditBilling": "Edit billing address",
+  "formTitle": "{isEditing, select, true {Edit {addressType} address} other {Add a new {addressType} address}}",
+  "recipientSectionTitle": "Recipient",
+  "addressSectionTitle": "Shipping Address",
+  "contactSectionTitle": "Contact Information",
   "fieldLabels": {
+    "first_name": "First name",
+    "last_name": "Last name",
+    "email": "Email address (optional)",
     "full_name": "Full Name",
     "company_name": "Company Name (Optional)",
-    "address_line1": "Address Line 1",
-    "address_line2": "Address Line 2 (Optional)",
+    "address_line1": "Address",
+    "address_line2": "Address line 2",
     "postal_code": "Postal Code",
     "city": "City",
     "country_code": "Country Code (e.g., US)",
     "state_province_region": "State/Province/Region (Optional)",
-    "phone_number": "Phone Number (Optional)",
+    "phone_number": "Phone number (optional)",
     "is_default": "Set as default address?"
   },
   "checkboxLabelIsDefault": "Set as default address",
+  "checkboxLabelAddressLine2": "Address line 2?",
   "placeholders": {
+    "first_name": "Enter first name",
+    "last_name": "Enter last name",
+    "email": "Enter email address",
     "full_name": "Enter full name",
     "company_name": "Enter company name",
     "address_line1": "Street address, P.O. box, company name, c/o",
@@ -28,9 +39,10 @@
     "phone_number": "Enter phone number"
   },
   "buttons": {
-    "save": "Save Address",
+    "save": "Save",
     "saving": "Saving...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "showOptionalFields": "Show optional fields"
   },
   "serverActions": {
     "validationError": "Validation failed. Please check the form fields.",

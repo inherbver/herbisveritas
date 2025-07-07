@@ -115,16 +115,6 @@ const AccountDisplayAddress = ({
   );
 };
 
-// Helper pour formater la date
-function formatDate(dateString: string | null | undefined, locale: string): string {
-  if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleDateString(locale, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 interface AccountPageProps {
   params: { locale: string };
 }
@@ -295,22 +285,6 @@ export default async function AccountPage(props: AccountPageProps) {
               </dt>
               <dd className="mt-1 text-lg font-semibold text-foreground">
                 {userInfo.phone || tGlobal("notProvided")}
-              </dd>
-            </div>
-            <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-muted-foreground">
-                {t("generalInfo.accountCreated")}
-              </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">
-                {formatDate(userInfo.accountCreated, currentLocale)}
-              </dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className="text-sm font-medium text-muted-foreground">{t("terms.status")}</dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">
-                {userInfo.terms_accepted_at
-                  ? `${t("terms.acceptedOn")} ${formatDate(userInfo.terms_accepted_at, currentLocale)}`
-                  : t("terms.notAccepted")}
               </dd>
             </div>
           </dl>
