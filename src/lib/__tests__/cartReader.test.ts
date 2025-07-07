@@ -1,14 +1,14 @@
-import { getCart } from "./cartReader";
+import { getCart } from "../cartReader";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getActiveUserId } from "./authUtils";
-import { isSuccessResult, isGeneralError } from "./cart-helpers";
+import { getActiveUserId } from "../authUtils";
+import { isSuccessResult, isGeneralError } from "../cart-helpers";
 
 // Mock des dépendances
 jest.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: jest.fn(),
 }));
 
-jest.mock("./authUtils", () => ({
+jest.mock("../authUtils", () => ({
   getActiveUserId: jest.fn(),
 }));
 
@@ -89,7 +89,7 @@ describe("getCart", () => {
     expect(result.success).toBe(false);
     expect(isGeneralError(result)).toBe(true);
     if (isGeneralError(result)) {
-      expect(result.message).toBe("Impossible d'identifier l'utilisateur.");
+      expect(result.error).toBe("User identification failed");
     }
   });
 
