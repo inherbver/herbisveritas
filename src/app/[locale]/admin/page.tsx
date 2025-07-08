@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Locale } from "@/i18n-config";
 import { DashboardShell } from "@/components/admin/dashboard-shell";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { ActivityLog } from "@/components/admin/ActivityLog";
 import { getRecentActivityLogs } from "@/lib/admin/dashboard";
 
@@ -17,7 +17,7 @@ export default async function AdminDashboardPage({ params }: AdminPageProps) {
   return (
     <DashboardShell title={t("title")}>
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>{t("kpi.totalRevenue.title")}</CardTitle>
             <CardDescription>{t("kpi.totalRevenue.description")}</CardDescription>
@@ -25,7 +25,7 @@ export default async function AdminDashboardPage({ params }: AdminPageProps) {
           <CardContent>
             <p className="text-2xl font-bold">€1,234.56</p>
           </CardContent>
-        </Card>
+        </Card> */}
         {/* Add more KPI cards here */}
       </section>
 
