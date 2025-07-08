@@ -20,7 +20,7 @@ import { countries } from "@/lib/countries";
 import type { Address } from "@/types";
 import { AddressFormData, addressSchema } from "@/lib/validators/address.validator";
 
-// Types pour l'API d'adresse
+// Types pour l'API d'adresse française
 interface BanAddressProperties {
   label: string;
   city: string;
@@ -63,17 +63,26 @@ interface AddressFormTranslations {
   };
 }
 
-// Type pour les champs qui sont rendus dynamiquement dans le formulaire.
-// Exclut les champs gérés séparément comme `is_default` ou les props comme `address_type`.
+// Type unifié pour les pays
+interface Country {
+  code: string;
+  name: string;
+}
+
+// Type pour les données brutes de pays avant normalisation
+type RawCountry = { code?: string; name?: string; value?: string; label?: string };
+
+// Type pour les champs du formulaire
 type RenderableField = keyof Omit<AddressFormData, "address_type" | "is_default" | "company_name">;
 
 export interface AddressFormProps {
   translations: AddressFormTranslations;
   addressType: "shipping" | "billing";
-  existingAddress?: Address;
+  existingAddress?: (Partial<AddressFormData> & { id?: string }) | null;
   onCancel: () => void;
   onSuccess: () => void;
   locale: string;
+  countries: Record<string, RawCountry[]> | RawCountry[];
 }
 
 const AddressForm: React.FC<AddressFormProps> = ({
@@ -113,20 +122,29 @@ const AddressForm: React.FC<AddressFormProps> = ({
   });
 
   const [showAddressLine2, setShowAddressLine2] = useState(!!existingAddress?.address_line2);
+  const [addressSuggestions, setAddressSuggestions] = useState<BanFeature[]>([]);
+  const [isAddressLoading, setIsAddressLoading] = useState(false);
 
+  const addressLine1Value = watch("address_line1");
+  const watchedCountry = watch("country_code");
+
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  const skipNextFetch = useRef(false);
+  const suggestionsRef = useRef<HTMLFieldSetElement>(null);
+
+  // Initialisation du formulaire avec les données existantes
   useEffect(() => {
     if (existingAddress) {
-      // Defensively handle potential legacy `full_name` from old address data
       const { full_name, ...restOfDefaults } = existingAddress as Partial<
         Address & { full_name: string }
       >;
-
       const newValues: Partial<AddressFormData> = {
         address_type: addressType,
         country_code: "FR",
         ...restOfDefaults,
       };
 
+      // Gestion du nom complet legacy
       if (full_name && !newValues.first_name && !newValues.last_name) {
         const nameParts = full_name.split(/\s+/);
         newValues.first_name = nameParts.shift() || "";
@@ -138,14 +156,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
     }
   }, [existingAddress, reset, addressType]);
 
-  const [addressSuggestions, setAddressSuggestions] = useState<BanFeature[]>([]);
-  const [isAddressLoading, setIsAddressLoading] = useState(false);
-  const addressLine1Value = watch("address_line1");
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
-  const skipNextFetch = useRef(false);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-
-  // Hook pour détecter les clics en dehors du composant
+  // Gestion des clics en dehors des suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
@@ -154,29 +165,17 @@ const AddressForm: React.FC<AddressFormProps> = ({
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelectAddress = (address: BanAddressProperties) => {
-    skipNextFetch.current = true;
-    const streetAddress = `${address.housenumber || ""} ${address.street || ""}`.trim();
-    setValue("address_line1", streetAddress, { shouldValidate: true });
-    setValue("postal_code", address.postcode, { shouldValidate: true });
-    setValue("city", address.city, { shouldValidate: true });
-    setAddressSuggestions([]);
-  };
-
+  // Auto-complétion d'adresse
   useEffect(() => {
     if (skipNextFetch.current) {
       skipNextFetch.current = false;
       return;
     }
 
-    if (timeoutIdRef.current) {
-      clearTimeout(timeoutIdRef.current);
-    }
+    if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
 
     if (addressLine1Value && addressLine1Value.length >= 3) {
       timeoutIdRef.current = setTimeout(async () => {
@@ -186,8 +185,10 @@ const AddressForm: React.FC<AddressFormProps> = ({
           url.searchParams.set("q", addressLine1Value);
           url.searchParams.set("limit", "5");
           url.searchParams.set("autocomplete", "1");
+
           const response = await fetch(url);
           if (!response.ok) throw new Error("Network response was not ok");
+
           const data: BanApiResponse = await response.json();
           setAddressSuggestions(data.features || []);
         } catch (error) {
@@ -202,35 +203,42 @@ const AddressForm: React.FC<AddressFormProps> = ({
     }
 
     return () => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-      }
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
     };
-  }, [addressLine1Value, setValue]);
+  }, [addressLine1Value]);
 
-  const watchedCountry = watch("country_code");
+  const handleSelectAddress = (address: BanAddressProperties) => {
+    skipNextFetch.current = true;
+    const streetAddress = `${address.housenumber || ""} ${address.street || ""}`.trim();
+    setValue("address_line1", streetAddress, { shouldValidate: true });
+    setValue("postal_code", address.postcode, { shouldValidate: true });
+    setValue("city", address.city, { shouldValidate: true });
+    setAddressSuggestions([]);
+  };
 
-  // Fonction pour obtenir la liste des pays
-  const getCountriesList = () => {
-    // Si countries est un tableau simple
-    if (Array.isArray(countries)) {
-      return countries;
-    }
+  // Normalisation des objets pays
+  const normalizeCountry = (country: RawCountry): Country => {
+    if (country.code && country.name) return { code: country.code, name: country.name };
+    if (country.value && country.label) return { code: country.value, name: country.label };
+    return {
+      code: country.code || country.value || "UNKNOWN",
+      name: country.name || country.label || "Unknown Country",
+    };
+  };
 
-    // Si countries est un objet avec des propriétés par locale
+  // Obtention de la liste des pays
+  const getCountriesList = (): Country[] => {
+    if (Array.isArray(countries)) return countries.map(normalizeCountry);
+
     const localeKey = locale.toUpperCase() as keyof typeof countries;
     const countryData = countries[localeKey];
+    if (Array.isArray(countryData)) return countryData.map(normalizeCountry);
 
-    if (Array.isArray(countryData)) {
-      return countryData;
-    }
-
-    // Fallback : essayer d'utiliser FR par défaut
     if ("FR" in countries && Array.isArray(countries.FR)) {
-      return countries.FR;
+      return (countries.FR as RawCountry[]).map(normalizeCountry);
     }
 
-    // Dernier fallback : liste simple
+    // Fallback
     return [
       { code: "FR", name: "France" },
       { code: "US", name: "États-Unis" },
@@ -242,52 +250,55 @@ const AddressForm: React.FC<AddressFormProps> = ({
     ];
   };
 
-  const renderFormField = (fieldName: RenderableField) => {
-    // Conditional rendering for state/province
-    if (
-      fieldName === "state_province_region" &&
-      watchedCountry !== "US" &&
-      watchedCountry !== "CA"
-    ) {
+  // Rendu des champs du formulaire
+  const renderField = (fieldName: RenderableField) => {
+    // Affichage conditionnel pour état/province
+    if (fieldName === "state_province_region" && !["US", "CA"].includes(watchedCountry)) {
       return null;
     }
 
+    // Champ adresse ligne 1 avec auto-complétion
     if (fieldName === "address_line1") {
       return (
-        <div key={fieldName} className="relative" ref={suggestionsRef}>
+        <fieldset key={fieldName} className="relative" ref={suggestionsRef}>
           <Label htmlFor={fieldName}>{t.fieldLabels[fieldName]}</Label>
           <Input
             id={fieldName}
             {...register(fieldName)}
             placeholder={t.placeholders?.[fieldName]}
-            autoComplete="off"
+            autoComplete="address-line1"
           />
-          {isAddressLoading && <p className="mt-1 text-sm text-muted-foreground">Recherche...</p>}
+          {isAddressLoading && (
+            <output className="mt-1 text-sm text-muted-foreground">Recherche...</output>
+          )}
           {addressSuggestions.length > 0 && (
-            <ul className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg">
+            <menu className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-lg">
               {addressSuggestions.map((suggestion) => (
-                <li
-                  key={suggestion.properties.id}
-                  className="cursor-pointer p-2 hover:bg-accent"
-                  onClick={() => handleSelectAddress(suggestion.properties)}
-                >
-                  {suggestion.properties.label}
+                <li key={suggestion.properties.id}>
+                  <button
+                    type="button"
+                    className="w-full cursor-pointer p-2 text-left hover:bg-accent"
+                    onClick={() => handleSelectAddress(suggestion.properties)}
+                  >
+                    {suggestion.properties.label}
+                  </button>
                 </li>
               ))}
-            </ul>
+            </menu>
           )}
           {errors[fieldName] && (
-            <p role="alert" className="mt-1 text-sm text-red-600">
+            <output role="alert" className="mt-1 text-sm text-red-600">
               {errors[fieldName]?.message}
-            </p>
+            </output>
           )}
-        </div>
+        </fieldset>
       );
     }
 
+    // Sélecteur de pays
     if (fieldName === "country_code") {
       return (
-        <div key={fieldName}>
+        <fieldset key={fieldName}>
           <Label htmlFor={fieldName}>{t.fieldLabels[fieldName]}</Label>
           <Controller
             name={fieldName}
@@ -298,12 +309,9 @@ const AddressForm: React.FC<AddressFormProps> = ({
                   <SelectValue placeholder={t.placeholders?.country_code} />
                 </SelectTrigger>
                 <SelectContent>
-                  {getCountriesList().map((country) => (
-                    <SelectItem
-                      key={country.code || (country as { value: string }).value}
-                      value={country.code || (country as { value: string }).value}
-                    >
-                      {country.name || (country as { label: string }).label}
+                  {getCountriesList().map((country: Country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -311,47 +319,46 @@ const AddressForm: React.FC<AddressFormProps> = ({
             )}
           />
           {errors[fieldName] && (
-            <p role="alert" className="mt-1 text-sm text-red-600">
+            <output role="alert" className="mt-1 text-sm text-red-600">
               {errors[fieldName]?.message}
-            </p>
+            </output>
           )}
-        </div>
+        </fieldset>
       );
     }
 
-    // Default input field
+    // Champ input par défaut
     return (
-      <div key={fieldName}>
+      <fieldset key={fieldName}>
         <Label htmlFor={fieldName}>{t.fieldLabels[fieldName]}</Label>
-        <Input id={fieldName} {...register(fieldName)} placeholder={t.placeholders?.[fieldName]} />
+        <Input
+          id={fieldName}
+          {...register(fieldName)}
+          placeholder={t.placeholders?.[fieldName]}
+          autoComplete={fieldName}
+        />
         {errors[fieldName] && (
-          <p role="alert" className="mt-1 text-sm text-red-600">
+          <output role="alert" className="mt-1 text-sm text-red-600">
             {errors[fieldName]?.message}
-          </p>
+          </output>
         )}
-      </div>
+      </fieldset>
     );
   };
 
+  // Soumission du formulaire
   const processSubmit: SubmitHandler<AddressFormData> = async (data) => {
-    const dataToSubmit: AddressFormData = {
-      ...data,
-      address_type: addressType,
-    };
+    const dataToSubmit: AddressFormData = { ...data, address_type: addressType };
 
     try {
-      let result: FormActionResult;
-      if (isEditing && existingAddress?.id) {
-        result = await updateAddress(existingAddress.id, dataToSubmit, locale);
-      } else {
-        result = await addAddress(dataToSubmit, locale);
-      }
+      const result: FormActionResult =
+        isEditing && existingAddress?.id
+          ? await updateAddress(existingAddress.id, dataToSubmit, locale)
+          : await addAddress(dataToSubmit, locale);
 
       if (result.success) {
-        console.log("Success:", result.message);
         onSuccess();
       } else {
-        console.error("Error:", result.error?.message, result.error?.issues);
         if (result.error?.issues) {
           result.error.issues.forEach((issue: ZodIssue) => {
             setError(issue.path[0] as keyof AddressFormData, {
@@ -363,8 +370,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
           setError("root.serverError", { type: "server", message: result.error.message });
         }
       }
-    } catch (error) {
-      console.error("Unexpected error submitting form:", error);
+    } catch (_error) {
       setError("root.unexpectedError", {
         type: "server",
         message: "An unexpected error occurred.",
@@ -372,7 +378,7 @@ const AddressForm: React.FC<AddressFormProps> = ({
     }
   };
 
-  // Define fields for each section
+  // Définition des groupes de champs
   const recipientFields: RenderableField[] = ["first_name", "last_name"];
   const mainAddressFields: RenderableField[] = [
     "postal_code",
@@ -383,82 +389,83 @@ const AddressForm: React.FC<AddressFormProps> = ({
   const contactFields: RenderableField[] = ["email", "phone_number"];
 
   return (
-    <form onSubmit={handleSubmit(processSubmit)} className="space-y-8">
-      <h2 className="text-xl font-semibold">{t.formTitle(addressType, isEditing)}</h2>
+    <main className="space-y-8">
+      <header>
+        <h1 className="text-xl font-semibold">{t.formTitle(addressType, isEditing)}</h1>
+      </header>
 
-      {/* Recipient Section */}
-      <section className="space-y-4 border-t pt-4">
-        <h3 className="text-lg font-medium">{t.recipientSectionTitle}</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {recipientFields.map(renderFormField)}
-        </div>
-      </section>
+      <form onSubmit={handleSubmit(processSubmit)} className="space-y-8">
+        {/* Section Destinataire */}
+        <section className="space-y-4 border-t pt-4">
+          <h2 className="text-lg font-medium">{t.recipientSectionTitle}</h2>
+          <address className="grid grid-cols-1 gap-4 not-italic md:grid-cols-2">
+            {recipientFields.map(renderField)}
+          </address>
+        </section>
 
-      {/* Address Section */}
-      <section className="space-y-4 border-t pt-4">
-        <h3 className="text-lg font-medium">{t.addressSectionTitle}</h3>
+        {/* Section Adresse */}
+        <section className="space-y-4 border-t pt-4">
+          <h2 className="text-lg font-medium">{t.addressSectionTitle}</h2>
 
-        {renderFormField("address_line1")}
+          {renderField("address_line1")}
 
-        <div className="flex items-center space-x-2">
+          <fieldset className="flex items-center space-x-2">
+            <Checkbox
+              id="show_address_line2_checkbox"
+              onCheckedChange={(checked) => {
+                const isChecked = checked as boolean;
+                setShowAddressLine2(isChecked);
+                if (!isChecked) setValue("address_line2", "", { shouldValidate: true });
+              }}
+              checked={showAddressLine2}
+            />
+            <Label htmlFor="show_address_line2_checkbox" className="cursor-pointer">
+              Complément d'adresse ?
+            </Label>
+          </fieldset>
+
+          {showAddressLine2 && <aside className="pl-2">{renderField("address_line2")}</aside>}
+
+          <address className="space-y-4 not-italic">{mainAddressFields.map(renderField)}</address>
+        </section>
+
+        {/* Section Contact */}
+        <section className="space-y-4 border-t pt-4">
+          <h2 className="text-lg font-medium">{t.contactSectionTitle}</h2>
+          <address className="grid grid-cols-1 gap-4 not-italic md:grid-cols-2">
+            {contactFields.map(renderField)}
+          </address>
+        </section>
+
+        {/* Adresse par défaut */}
+        <fieldset className="flex items-center space-x-2 border-t pt-6">
           <Checkbox
-            id="show_address_line2_checkbox"
-            onCheckedChange={(checked) => {
-              const isChecked = checked as boolean;
-              setShowAddressLine2(isChecked);
-              if (!isChecked) {
-                setValue("address_line2", "", { shouldValidate: true });
-              }
-            }}
-            checked={showAddressLine2}
-            className="h-4 w-4 data-[state=unchecked]:border-2 data-[state=unchecked]:border-gray-500"
+            id="is_default"
+            {...register("is_default")}
+            defaultChecked={existingAddress?.is_default}
           />
-          <label
-            htmlFor="show_address_line2_checkbox"
-            className="cursor-pointer text-sm font-medium leading-none"
-          >
-            Complément d'adresse ?
-          </label>
-        </div>
+          <Label htmlFor="is_default">{t.fieldLabels.is_default}</Label>
+        </fieldset>
+        {errors.is_default && (
+          <output role="alert" className="mt-1 text-sm text-red-600">
+            {errors.is_default?.message}
+          </output>
+        )}
 
-        {showAddressLine2 && <div className="pl-2">{renderFormField("address_line2")}</div>}
+        {/* Messages d'erreur globaux */}
+        {errors.root?.serverError && (
+          <output className="text-sm font-medium text-destructive">
+            {errors.root.serverError.message}
+          </output>
+        )}
+        {errors.root?.unexpectedError && (
+          <output className="text-sm font-medium text-destructive">
+            {errors.root.unexpectedError.message}
+          </output>
+        )}
 
-        {mainAddressFields.map(renderFormField)}
-      </section>
-
-      {/* Contact Section */}
-      <section className="space-y-4 border-t pt-4">
-        <h3 className="text-lg font-medium">{t.contactSectionTitle}</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {contactFields.map(renderFormField)}
-        </div>
-      </section>
-
-      <div className="flex items-center space-x-2 border-t pt-6">
-        <Checkbox
-          id="is_default"
-          {...register("is_default")}
-          defaultChecked={existingAddress?.is_default}
-        />
-        <Label htmlFor="is_default">{t.fieldLabels.is_default}</Label>
-      </div>
-      {errors.is_default && (
-        <p role="alert" className="mt-1 text-sm text-red-600">
-          {errors.is_default?.message}
-        </p>
-      )}
-
-      {errors.root?.serverError && (
-        <p className="text-sm font-medium text-destructive">{errors.root.serverError.message}</p>
-      )}
-      {errors.root?.unexpectedError && (
-        <p className="text-sm font-medium text-destructive">
-          {errors.root.unexpectedError.message}
-        </p>
-      )}
-
-      <div className="flex flex-col justify-end space-y-3 pt-4 sm:flex-row sm:space-x-3 sm:space-y-0">
-        {onCancel && (
+        {/* Actions */}
+        <footer className="flex flex-col justify-end space-y-3 pt-4 sm:flex-row sm:space-x-3 sm:space-y-0">
           <Button
             type="button"
             variant="outline"
@@ -468,12 +475,12 @@ const AddressForm: React.FC<AddressFormProps> = ({
           >
             {t.buttons.cancel}
           </Button>
-        )}
-        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-          {isSubmitting ? t.buttons.saving : t.buttons.save}
-        </Button>
-      </div>
-    </form>
+          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+            {isSubmitting ? t.buttons.saving : t.buttons.save}
+          </Button>
+        </footer>
+      </form>
+    </main>
   );
 };
 

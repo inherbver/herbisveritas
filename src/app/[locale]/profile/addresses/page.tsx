@@ -56,7 +56,7 @@ const DisplayAddress = ({
   }
 
   return (
-    <div className="relative space-y-1 rounded-lg border bg-white p-4 shadow-sm">
+    <div className="relative h-full space-y-1 rounded-lg border bg-white p-4 shadow-sm">
       {address.first_name && address.last_name && (
         <p className="text-lg font-semibold">{`${address.first_name} ${address.last_name}`}</p>
       )}
@@ -268,7 +268,7 @@ export default function AddressesPage({ params }: Props) {
         <div
           className={`grid grid-cols-1 ${displayBillingSeparately ? "md:grid-cols-2" : "md:grid-cols-1"} gap-x-8 gap-y-10`}
         >
-          <section>
+          <section className="h-full">
             <div className="mb-4 flex items-center justify-between border-b border-gray-300 pb-2">
               <h2 className="text-2xl font-semibold text-gray-800">
                 {displayBillingSeparately
@@ -305,7 +305,7 @@ export default function AddressesPage({ params }: Props) {
           </section>
 
           {displayBillingSeparately && (
-            <section>
+            <section className="h-full">
               <div className="mb-4 flex items-center justify-between border-b border-gray-300 pb-2">
                 <h2 className="text-2xl font-semibold text-gray-800">{t("billingAddressTitle")}</h2>
               </div>
