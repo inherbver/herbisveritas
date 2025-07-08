@@ -11,6 +11,8 @@
   "phone": "Phone",
   "common": {
     "shippingAddress": "Shipping address",
-    "billingAddress": "Billing address"
+    "billingAddress": "Billing address",
+    "setAsDefaultHint": "Set as default address",
+    "updating": "Updating..."
   }
 }

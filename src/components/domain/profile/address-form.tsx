@@ -82,7 +82,7 @@ export interface AddressFormProps {
   onCancel: () => void;
   onSuccess: () => void;
   locale: string;
-  countries: Record<string, RawCountry[]> | RawCountry[];
+  countries: Record<string, readonly RawCountry[]> | readonly RawCountry[];
 }
 
 const AddressForm: React.FC<AddressFormProps> = ({

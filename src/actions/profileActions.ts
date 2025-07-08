@@ -260,3 +260,32 @@ export async function updatePassword(
 
   return { success: true };
 }
+
+export async function setDefaultAddress(
+  addressId: string,
+  locale: string
+): Promise<{ success: boolean; message?: string }> {
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, message: "User not authenticated." };
+  }
+
+  const { error } = await supabase.rpc("set_default_address", {
+    address_id_to_set: addressId,
+    auth_user_id: user.id,
+  });
+
+  if (error) {
+    console.error("Error setting default address:", error);
+    return { success: false, message: error.message || "Failed to set default address." };
+  }
+
+  revalidatePath(`/${locale}/profile/addresses`);
+
+  return { success: true };
+}

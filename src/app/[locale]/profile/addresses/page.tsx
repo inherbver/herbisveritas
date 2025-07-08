@@ -9,7 +9,8 @@ import { createClient } from "@/lib/supabase/client";
 import { redirect } from "next/navigation";
 import AddressForm from "@/components/domain/profile/address-form";
 import type { AddressFormData, AddressFormTranslations } from "@/lib/validators/address.validator";
-import { syncProfileAddressFlag } from "@/actions/profileActions";
+import { syncProfileAddressFlag, setDefaultAddress } from "@/actions/profileActions";
+import { countries } from "@/lib/countries";
 
 interface Address {
   id: string;
@@ -38,25 +39,27 @@ interface Props {
 const DisplayAddress = ({
   address,
   translations,
-  addressTypeLabel,
+  addressTypeLabel: _addressTypeLabel,
   onEdit,
+  onSetDefault,
+  isDefault,
+  isUpdating,
 }: {
-  address: Address | null;
+  address: Address;
   translations: (key: string, values?: Record<string, string | number | Date>) => string;
   addressTypeLabel: string;
   onEdit: () => void;
+  onSetDefault: (id: string) => void;
+  isDefault: boolean;
+  isUpdating: boolean;
 }) => {
   const t = translations;
-  if (!address) {
-    const noAddressMessage =
-      addressTypeLabel === t("shippingAddressTitle")
-        ? t("noShippingAddress")
-        : t("noBillingAddress");
-    return <p className="italic text-gray-500">{noAddressMessage}</p>;
-  }
 
   return (
-    <div className="relative h-full space-y-1 rounded-lg border bg-white p-4 shadow-sm">
+    <div
+      className={`relative h-full cursor-pointer space-y-1 rounded-lg border bg-white p-4 shadow-sm transition-shadow duration-200 ${isDefault ? "shadow-md shadow-purple-200 ring-2 ring-purple-500" : "hover:shadow-md"} ${isUpdating ? "cursor-wait opacity-50" : ""}`}
+      onClick={() => !isDefault && onSetDefault(address.id)}
+    >
       {address.first_name && address.last_name && (
         <p className="text-lg font-semibold">{`${address.first_name} ${address.last_name}`}</p>
       )}
@@ -73,12 +76,21 @@ const DisplayAddress = ({
           {t("phone")}: {address.phone_number}
         </p>
       )}
-      <button
-        onClick={onEdit}
-        className="mt-3 text-sm text-blue-600 hover:underline focus:outline-none"
-      >
-        {t("editAddressButton")}
-      </button>
+      <div className="mt-3 flex items-center justify-between">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="text-sm text-blue-600 hover:underline focus:outline-none"
+        >
+          {t("editAddressButton")}
+        </button>
+        {!isDefault && (
+          <span className="text-xs text-gray-500">{t("common.setAsDefaultHint")}</span>
+        )}
+        {isUpdating && <p className="text-xs text-gray-500">{t("updating")}</p>}
+      </div>
     </div>
   );
 };
@@ -90,11 +102,24 @@ export default function AddressesPage({ params }: Props) {
   const tForm = useTranslations("AddressForm");
 
   const [user, setUser] = useState<User | null>(null);
-  const [shippingAddress, setShippingAddress] = useState<Address | null>(null);
-  const [billingAddress, setBillingAddress] = useState<Address | null>(null);
+  const [shippingAddresses, setShippingAddresses] = useState<Address[]>([]);
+  const [billingAddresses, setBillingAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingAddressId, setUpdatingAddressId] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
+  const handleSetDefault = async (addressId: string) => {
+    setUpdatingAddressId(addressId);
+    const result = await setDefaultAddress(addressId, locale);
+    if (result.success) {
+      await fetchData(); // Re-fetch data to get the new default address
+    } else {
+      // TODO: Show an error toast
+      console.error(result.message);
+    }
+    setUpdatingAddressId(null);
+  };
+
   const [editingAddress, setEditingAddress] = useState<
     (Partial<AddressFormData> & { id?: string }) | null
   >(null);
@@ -120,13 +145,15 @@ export default function AddressesPage({ params }: Props) {
 
       if (addressesError) throw addressesError;
 
-      const shipping = addresses.find((a) => a.address_type === "shipping");
-      const billing = addresses.find((a) => a.address_type === "billing");
+      const shipping = addresses.filter((a) => a.address_type === "shipping");
+      const billing = addresses.filter((a) => a.address_type === "billing");
 
-      setShippingAddress(shipping || null);
-      setBillingAddress(billing || null);
+      setShippingAddresses(shipping);
+      setBillingAddresses(billing);
 
-      const hasSeparateBillingAddress = !!billing;
+      const hasSeparateBillingAddress = billing.length > 0;
+      // This action might need re-evaluation based on the new logic
+      // For now, we base it on the existence of any billing address.
       await syncProfileAddressFlag(String(hasSeparateBillingAddress));
     } catch (error) {
       console.error("Error fetching addresses:", (error as Error).message);
@@ -243,7 +270,7 @@ export default function AddressesPage({ params }: Props) {
     },
   };
 
-  const displayBillingSeparately = !!billingAddress;
+  const displayBillingSeparately = billingAddresses.length > 0;
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
@@ -260,6 +287,7 @@ export default function AddressesPage({ params }: Props) {
             onCancel={handleCloseForm}
             onSuccess={handleFormSuccess}
             locale={locale}
+            countries={countries}
           />
         </div>
       )}
@@ -270,51 +298,63 @@ export default function AddressesPage({ params }: Props) {
         >
           <section className="h-full">
             <div className="mb-4 flex items-center justify-between border-b border-gray-300 pb-2">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                {displayBillingSeparately
-                  ? t("shippingAddressTitle")
-                  : t("shippingAndBillingAddressTitle")}
-              </h2>
-              {!shippingAddress && (
-                <button
-                  onClick={() => handleOpenForm("shipping")}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  {t("addAddressButton")}
-                </button>
-              )}
-              {shippingAddress && !displayBillingSeparately && (
-                <button
-                  onClick={() => handleOpenForm("billing")}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  {t("addSeparateBillingAddressButton")}
-                </button>
+              <h2 className="text-2xl font-semibold text-gray-800">{t("shippingAddressTitle")}</h2>
+              <button
+                onClick={() => handleOpenForm("shipping")}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                {t("addAddressButton")}
+              </button>
+            </div>
+            <div className="space-y-4">
+              {shippingAddresses.length > 0 ? (
+                shippingAddresses.map((address) => (
+                  <DisplayAddress
+                    key={address.id}
+                    address={address}
+                    translations={t}
+                    addressTypeLabel={t("shippingAddressTitle")}
+                    onEdit={() => handleEdit(address)}
+                    onSetDefault={handleSetDefault}
+                    isDefault={address.is_default}
+                    isUpdating={updatingAddressId === address.id}
+                  />
+                ))
+              ) : (
+                <p className="italic text-gray-500">{t("noShippingAddress")}</p>
               )}
             </div>
-            <DisplayAddress
-              address={shippingAddress}
-              translations={t}
-              addressTypeLabel={
-                displayBillingSeparately
-                  ? t("shippingAddressTitle")
-                  : t("shippingAndBillingAddressTitle")
-              }
-              onEdit={() => handleEdit(shippingAddress!)}
-            />
           </section>
 
           {displayBillingSeparately && (
             <section className="h-full">
               <div className="mb-4 flex items-center justify-between border-b border-gray-300 pb-2">
                 <h2 className="text-2xl font-semibold text-gray-800">{t("billingAddressTitle")}</h2>
+                <button
+                  onClick={() => handleOpenForm("billing")}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  {t("addAddressButton")}
+                </button>
               </div>
-              <DisplayAddress
-                address={billingAddress}
-                translations={t}
-                addressTypeLabel={t("billingAddressTitle")}
-                onEdit={() => handleEdit(billingAddress!)}
-              />
+              <div className="space-y-4">
+                {billingAddresses.length > 0 ? (
+                  billingAddresses.map((address) => (
+                    <DisplayAddress
+                      key={address.id}
+                      address={address}
+                      translations={t}
+                      addressTypeLabel={t("billingAddressTitle")}
+                      onEdit={() => handleEdit(address)}
+                      onSetDefault={handleSetDefault}
+                      isDefault={address.is_default}
+                      isUpdating={updatingAddressId === address.id}
+                    />
+                  ))
+                ) : (
+                  <p className="italic text-gray-500">{t("noBillingAddress")}</p>
+                )}
+              </div>
             </section>
           )}
         </div>

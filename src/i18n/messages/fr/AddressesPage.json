@@ -11,6 +11,8 @@
   "phone": "Téléphone",
   "common": {
     "shippingAddress": "Adresse de livraison",
-    "billingAddress": "Adresse de facturation"
+    "billingAddress": "Adresse de facturation",
+    "setAsDefaultHint": "Définir comme adresse par défaut",
+    "updating": "Mise à jour..."
   }
 }
