@@ -1,0 +1,11 @@
+{
+  "description": "Artisanal and natural cosmetics, crafted with passion to offer you a unique sensory experience.",
+  "navLabel": "Footer navigation",
+  "copyright": "All rights reserved.",
+  "links": {
+    "about": "About",
+    "contact": "Contact",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy"
+  }
+}

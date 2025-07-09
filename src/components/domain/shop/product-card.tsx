@@ -103,7 +103,7 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        "relative flex flex-col rounded-xl bg-card text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-lg",
+        "group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.015] hover:shadow-md",
         isOutOfStock && "opacity-70",
         className
       )}
@@ -135,13 +135,13 @@ export function ProductCard({
 
       {/* Product Image */}
       <NextLink href={linkHref} className="contents" aria-label={`View details for ${title}`}>
-        <figure className="aspect-[4/3] overflow-hidden rounded-t-xl">
+        <figure className="aspect-[3/4] overflow-hidden rounded-t-xl">
           <Image
             src={imageSrc}
             alt={imageAlt}
-            width={400}
-            height={300}
-            className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+            width={300}
+            height={400}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             itemProp="image"
             loading="lazy"
           />
@@ -153,7 +153,7 @@ export function ProductCard({
         <header>
           <NextLink href={linkHref} aria-label={`View details for ${title}`}>
             <h3
-              className="font-serif text-lg font-semibold text-foreground transition-colors hover:text-primary"
+              className="font-serif text-xl font-semibold text-foreground transition-colors hover:text-primary"
               itemProp="name"
             >
               {title}
@@ -161,7 +161,7 @@ export function ProductCard({
           </NextLink>
           {short_description && (
             <p
-              className="mt-1 line-clamp-2 font-sans text-sm text-muted-foreground"
+              className="mt-2 line-clamp-2 font-sans text-base text-muted-foreground"
               itemProp="description"
             >
               {short_description}
@@ -182,7 +182,7 @@ export function ProductCard({
         </section>
 
         {/* Spacer */}
-        <div className="flex-grow" aria-hidden="true" />
+        <span className="flex-grow" aria-hidden="true" />
 
         {/* Add to Cart Action */}
         <footer className="mt-4">
@@ -199,7 +199,8 @@ export function ProductCard({
               disabled={isPending || isOutOfStock}
               aria-disabled={isPending || isOutOfStock}
               aria-describedby={isOutOfStock ? `${id}-out-of-stock` : undefined}
-              className="w-full rounded-full bg-secondary px-6 py-3 font-semibold text-secondary-foreground transition-all duration-200 ease-out hover:scale-105 hover:bg-secondary-foreground hover:text-secondary"
+              variant="secondary"
+              className="w-full transition-transform duration-200 hover:scale-105"
             >
               {isPending ? t("addingToCart") : isOutOfStock ? t("outOfStock") : t("addToCart")}
             </Button>

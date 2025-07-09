@@ -19,9 +19,9 @@ export const pathnames = {
     en: "/about",
     fr: "/a-propos",
   },
-  "/privacy": {
-    en: "/privacy",
-    fr: "/privacy", // Ou '/confidentialite'
+  "/privacy-policy": {
+    en: "/privacy-policy",
+    fr: "/privacy-policy",
   },
   "/terms": {
     en: "/terms",

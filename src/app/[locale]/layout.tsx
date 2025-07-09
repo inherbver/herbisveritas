@@ -4,6 +4,8 @@ import { locales, Locale } from "@/i18n-config";
 import ClientLayout from "@/components/layout/client-layout";
 import { setRequestLocale, getTimeZone, getMessages } from "next-intl/server";
 import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
+import { Container } from "@/components/layout/container";
 import { Toaster } from "@/components/ui/sonner";
 import "@/app/globals.css";
 
@@ -40,12 +42,12 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <ClientLayout locale={currentLocale} messages={messages} timeZone={timeZone}>
-      <div className="mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8">
+      <Container>
         <Header />
         {children}
-      </div>
+      </Container>
+      <Footer />
       <Toaster richColors position="bottom-right" />
-      {/* <Footer /> */}
     </ClientLayout>
   );
 }

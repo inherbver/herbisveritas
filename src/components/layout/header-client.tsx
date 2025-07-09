@@ -24,8 +24,10 @@ import {
 import { Menu, Info } from "lucide-react";
 import { CartSheet } from "@/components/domain/shop/cart-sheet";
 import { useTranslations } from "next-intl";
+import { cn } from "@/utils/cn";
 import { useRouter } from "@/i18n/navigation";
 import LocaleSwitcher from "./locale-switcher";
+import { useScroll } from "@/hooks/use-scroll";
 
 const Logo = () => {
   const tGlobal = useTranslations("Global");
@@ -51,6 +53,7 @@ interface AuthState {
 }
 
 export function HeaderClient({ isAdmin }: HeaderClientProps) {
+  const scrolled = useScroll(10);
   const tGlobal = useTranslations("Global");
   const [authState, setAuthState] = useState<AuthState>({
     session: null,
@@ -99,7 +102,12 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
   return (
     <header
       suppressHydrationWarning
-      className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur"
+      className={cn(
+        "sticky top-0 z-50 w-full transition-all duration-300",
+        scrolled
+          ? "border-border/40 bg-background/80 border-b shadow-md backdrop-blur-md"
+          : "border-b border-transparent"
+      )}
     >
       {/* 1. Barre d'annonce (Optionnelle) */}
       {/* Barre d'annonce - conditionnellement affichée si nécessaire à l'avenir */}

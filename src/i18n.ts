@@ -316,6 +316,13 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load Unauthorized.json for locale ${localeToUse}:`, e);
   }
 
+  let footerNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    footerNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Footer.json`)).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load Footer.json for locale ${localeToUse}:`, e);
+  }
+
   // Cette partie doit venir APRÈS TOUTES les importations de namespaces
   const safeGlobal = globalNamespaceContent || {};
   const safeAccountPage = accountPageNamespaceContent || {};
@@ -353,6 +360,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeAdminProducts = adminProductsNamespaceContent || {};
   const safeAdminDashboard = adminDashboardNamespaceContent || {};
   const safeUnauthorized = unauthorizedNamespaceContent || {};
+  const safeFooter = footerNamespaceContent || {};
 
   const mergedMessages = {
     ...(Object.keys(safeGlobal).length > 0 ? { Global: safeGlobal } : {}),
@@ -399,6 +407,7 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     ...(Object.keys(safeAdminProducts).length > 0 ? { AdminProducts: safeAdminProducts } : {}),
     ...(Object.keys(safeAdminDashboard).length > 0 ? { AdminDashboard: safeAdminDashboard } : {}),
     ...(Object.keys(safeUnauthorized).length > 0 ? { Unauthorized: safeUnauthorized } : {}),
+    ...(Object.keys(safeFooter).length > 0 ? { Footer: safeFooter } : {}),
   };
 
   // Condition pour notFound si AUCUN message de namespace n'est chargé
