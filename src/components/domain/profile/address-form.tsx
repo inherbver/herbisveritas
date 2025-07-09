@@ -73,7 +73,7 @@ interface Country {
 type RawCountry = { code?: string; name?: string; value?: string; label?: string };
 
 // Type pour les champs du formulaire
-type RenderableField = keyof Omit<AddressFormData, "address_type" | "is_default" | "company_name">;
+type RenderableField = keyof Omit<AddressFormData, "address_type" | "company_name">;
 
 export interface AddressFormProps {
   translations: AddressFormTranslations;
@@ -117,7 +117,6 @@ const AddressForm: React.FC<AddressFormProps> = ({
       country_code: existingAddress?.country_code || "FR",
       state_province_region: existingAddress?.state_province_region || "",
       phone_number: existingAddress?.phone_number || "",
-      is_default: existingAddress?.is_default || false,
     },
   });
 
@@ -436,21 +435,6 @@ const AddressForm: React.FC<AddressFormProps> = ({
             {contactFields.map(renderField)}
           </address>
         </section>
-
-        {/* Adresse par défaut */}
-        <fieldset className="flex items-center space-x-2 border-t pt-6">
-          <Checkbox
-            id="is_default"
-            {...register("is_default")}
-            defaultChecked={existingAddress?.is_default}
-          />
-          <Label htmlFor="is_default">{t.fieldLabels.is_default}</Label>
-        </fieldset>
-        {errors.is_default && (
-          <output role="alert" className="mt-1 text-sm text-red-600">
-            {errors.is_default?.message}
-          </output>
-        )}
 
         {/* Messages d'erreur globaux */}
         {errors.root?.serverError && (
