@@ -1,42 +1,33 @@
 {
-  "formTitleNewShipping": "Add a new shipping address",
-  "formTitleNewBilling": "Add a new billing address",
-  "formTitleEditShipping": "Edit shipping address",
-  "formTitleEditBilling": "Edit billing address",
-  "formTitle": "{isEditing, select, true {Edit {addressType} address} other {Add a new {addressType} address}}",
+  "formTitle": "{isEditing, select, true {Edit} false {Add a}} {addressType, select, shipping {shipping} billing {billing} other {}} address",
   "recipientSectionTitle": "Recipient",
-  "addressSectionTitle": "Shipping Address",
-  "contactSectionTitle": "Contact Information",
-  "fieldLabels": {
+  "addressSectionTitle": "Address",
+  "contactSectionTitle": "Contact",
+  "labels": {
     "first_name": "First name",
     "last_name": "Last name",
-    "email": "Email address (optional)",
-    "full_name": "Full Name",
-    "company_name": "Company Name (Optional)",
-    "address_line1": "Address",
-    "address_line2": "Address line 2",
-    "postal_code": "Postal Code",
+    "email": "Email (optional)",
+    "company_name": "Company (optional)",
+    "address_line1": "Address line 1",
+    "address_line2": "Apartment, suite, etc. (optional)",
+    "postal_code": "Postal code",
     "city": "City",
-    "country_code": "Country Code (e.g., US)",
-    "state_province_region": "State/Province/Region (Optional)",
-    "phone_number": "Phone number (optional)",
-    "is_default": "Set as default address?"
+    "country_code": "Country/Region",
+    "state_province_region": "State / Province / Region",
+    "phone_number": "Phone number (optional)"
   },
-  "checkboxLabelIsDefault": "Set as default address",
-  "checkboxLabelAddressLine2": "Address line 2?",
   "placeholders": {
-    "first_name": "Enter first name",
-    "last_name": "Enter last name",
-    "email": "Enter email address",
-    "full_name": "Enter full name",
-    "company_name": "Enter company name",
-    "address_line1": "Street address, P.O. box, company name, c/o",
-    "address_line2": "Apartment, suite, unit, building, floor, etc.",
-    "postal_code": "Enter postal code",
-    "city": "Enter city",
-    "country_code": "US",
-    "state_province_region": "Enter state/province/region",
-    "phone_number": "Enter phone number"
+    "first_name": "First name",
+    "last_name": "Last name",
+    "email": "Your email address",
+    "company_name": "Company name",
+    "address_line1": "Street number and name",
+    "address_line2": "Apartment, suite, etc.",
+    "postal_code": "Postal code",
+    "city": "City",
+    "country_code": "Select a country",
+    "state_province_region": "State / Province / Region",
+    "phone_number": "Your phone number"
   },
   "buttons": {
     "save": "Save",
@@ -46,9 +37,7 @@
   },
   "serverActions": {
     "validationError": "Validation failed. Please check the form fields.",
-    "addSuccess": "Address added successfully.",
-    "addError": "Failed to add address. Please try again.",
-    "updateSuccess": "Address updated successfully.",
-    "updateError": "Failed to update address. Please try again."
+    "success": "Address saved successfully.",
+    "error": "An error occurred while saving the address. Please try again."
   }
 }

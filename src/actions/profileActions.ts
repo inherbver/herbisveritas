@@ -124,88 +124,6 @@ interface UpdatePasswordResult {
     code?: string;
   } | null;
 }
-// Add this interface near the top with other type/schema definitions
-interface AddressForSync {
-  id: string;
-  user_id: string;
-  address_type: "shipping" | "billing";
-  is_default: boolean;
-  // We only need these fields for the logic
-}
-
-export async function syncProfileAddressFlag(
-  locale: string,
-  userId?: string // Optional: if called from a context where user ID is already known
-): Promise<{ success: boolean; message?: string }> {
-  const supabase = await createSupabaseServerClient();
-  let currentUserId = userId;
-
-  if (!currentUserId) {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error("syncProfileAddressFlag: User not authenticated.", authError);
-      return { success: false, message: "User not authenticated." };
-    }
-    currentUserId = user.id;
-  }
-
-  const { data: userAddresses, error: fetchAddressesError } = await supabase
-    .from("addresses")
-    .select("id, user_id, address_type, is_default")
-    .eq("user_id", currentUserId);
-
-  if (fetchAddressesError) {
-    console.error("syncProfileAddressFlag: Error fetching user addresses:", fetchAddressesError);
-    return { success: false, message: "Could not fetch user addresses." };
-  }
-
-  const defaultShippingAddress =
-    userAddresses?.find(
-      (addr: AddressForSync) => addr.address_type === "shipping" && addr.is_default
-    ) || null;
-
-  const defaultBillingAddress =
-    userAddresses?.find(
-      (addr: AddressForSync) => addr.address_type === "billing" && addr.is_default
-    ) || null;
-
-  let newBillingAddressIsDifferent = false;
-
-  if (defaultBillingAddress) {
-    if (defaultShippingAddress) {
-      // If both exist, they are different if their IDs are different
-      if (defaultBillingAddress.id !== defaultShippingAddress.id) {
-        newBillingAddressIsDifferent = true;
-      }
-    } else {
-      // Only default billing exists, so it's different from a non-existent default shipping
-      newBillingAddressIsDifferent = true;
-    }
-  }
-  // If no defaultBillingAddress, newBillingAddressIsDifferent remains false.
-
-  const { error: updateProfileError } = await supabase
-    .from("profiles")
-    .update({
-      billing_address_is_different: newBillingAddressIsDifferent,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", currentUserId);
-
-  if (updateProfileError) {
-    console.error("syncProfileAddressFlag: Error updating profile flag:", updateProfileError);
-    return { success: false, message: "Could not update profile address flag." };
-  }
-
-  revalidatePath(`/${locale}/profile/account`);
-  // Potentially revalidate addresses page too if it uses this flag, though less likely.
-  // revalidatePath(`/${locale}/profile/addresses`);
-
-  return { success: true, message: "Profile address flag synchronized." };
-}
 
 export async function updatePassword(
   // Le formulaire enverra currentPassword, newPassword, confirmPassword.
@@ -257,35 +175,6 @@ export async function updatePassword(
   // Optionnel: Révalider des chemins si nécessaire, par exemple pour déconnecter l'utilisateur
   // ou mettre à jour une section "dernière modification du mot de passe".
   // revalidatePath('/profile/account');
-
-  return { success: true };
-}
-
-export async function setDefaultAddress(
-  addressId: string,
-  locale: string
-): Promise<{ success: boolean; message?: string }> {
-  const supabase = await createSupabaseServerClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, message: "User not authenticated." };
-  }
-
-  const { error } = await supabase.rpc("set_default_address", {
-    address_id_to_set: addressId,
-    auth_user_id: user.id,
-  });
-
-  if (error) {
-    console.error("Error setting default address:", error);
-    return { success: false, message: error.message || "Failed to set default address." };
-  }
-
-  revalidatePath(`/${locale}/profile/addresses`);
 
   return { success: true };
 }

@@ -3,16 +3,18 @@
   "shippingAddressTitle": "Adresse de Livraison",
   "billingAddressTitle": "Adresse de Facturation",
   "shippingAndBillingAddressTitle": "Adresse de Livraison et de Facturation",
+  "editShippingAddressTitle": "Modifier l'adresse de livraison",
+  "editBillingAddressTitle": "Modifier l'adresse de facturation",
   "addAddressButton": "Ajouter une Adresse",
   "addSeparateBillingAddressButton": "Ajouter une adresse de facturation distincte",
   "editAddressButton": "Modifier",
   "noShippingAddress": "Aucune adresse de livraison enregistrée.",
   "noBillingAddress": "Aucune adresse de facturation enregistrée.",
   "phone": "Téléphone",
+  "loading": "Chargement des adresses...",
   "common": {
     "shippingAddress": "Adresse de livraison",
     "billingAddress": "Adresse de facturation",
-    "setAsDefaultHint": "Définir comme adresse par défaut",
     "updating": "Mise à jour..."
   }
 }

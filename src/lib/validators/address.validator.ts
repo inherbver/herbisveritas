@@ -2,8 +2,6 @@ import { z } from "zod";
 
 // Messages d'erreur communs pour la réutilisation
 const requiredFieldMessage = (fieldName: string) => `${fieldName} est requis.`;
-const invalidTypeMessage = (fieldName: string, type: string) =>
-  `${fieldName} doit être de type ${type}.`;
 
 export const addressSchema = z.object({
   // id, user_id, created_at, updated_at ne sont généralement pas dans le formulaire utilisateur
@@ -12,10 +10,6 @@ export const addressSchema = z.object({
   address_type: z.enum(["shipping", "billing"], {
     required_error: requiredFieldMessage("Le type d'adresse"),
     invalid_type_error: "Le type d'adresse doit être 'shipping' ou 'billing'.",
-  }),
-
-  is_default: z.boolean({
-    invalid_type_error: invalidTypeMessage('La case "Adresse par défaut"', "booléen"),
   }),
 
   company_name: z
@@ -95,7 +89,7 @@ export interface AddressFormTranslations {
   recipientSectionTitle: string;
   addressSectionTitle: string;
   contactSectionTitle: string;
-  checkboxLabelIsDefault: string;
+
   fieldLabels: {
     first_name: string;
     last_name: string;
@@ -108,7 +102,6 @@ export interface AddressFormTranslations {
     country_code: string;
     state_province_region: string;
     phone_number: string;
-    is_default: string;
   };
   placeholders: {
     first_name?: string;

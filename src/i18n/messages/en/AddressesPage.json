@@ -3,16 +3,18 @@
   "shippingAddressTitle": "Shipping Address",
   "billingAddressTitle": "Billing Address",
   "shippingAndBillingAddressTitle": "Shipping and Billing Address",
+  "editShippingAddressTitle": "Edit Shipping Address",
+  "editBillingAddressTitle": "Edit Billing Address",
   "addAddressButton": "Add Address",
   "addSeparateBillingAddressButton": "Add separate billing address",
   "editAddressButton": "Edit",
   "noShippingAddress": "No shipping address on file.",
   "noBillingAddress": "No billing address on file.",
   "phone": "Phone",
+  "loading": "Loading addresses...",
   "common": {
     "shippingAddress": "Shipping address",
     "billingAddress": "Billing address",
-    "setAsDefaultHint": "Set as default address",
     "updating": "Updating..."
   }
 }

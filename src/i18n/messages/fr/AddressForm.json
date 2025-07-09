@@ -1,41 +1,33 @@
 {
-  "formTitleNewShipping": "Ajouter une nouvelle adresse de livraison",
-  "formTitleNewBilling": "Ajouter une nouvelle adresse de facturation",
-  "formTitleEditShipping": "Modifier l'adresse de livraison",
-  "formTitle": "{isEditing, select, true {Modifier l'adresse {addressType}} other {Ajouter une nouvelle adresse {addressType}}}",
-  "recipientSectionTitle": "Destinataire de la livraison",
-  "addressSectionTitle": "Adresse de livraison",
-  "contactSectionTitle": "Informations de contact",
-  "fieldLabels": {
-    "full_name": "Nom complet",
+  "formTitle": "{isEditing, select, true {Modifier l'} false {Ajouter une }} adresse de {addressType, select, shipping {livraison} billing {facturation} other {générale}}",
+  "recipientSectionTitle": "Destinataire",
+  "addressSectionTitle": "Adresse",
+  "contactSectionTitle": "Contact",
+  "labels": {
     "first_name": "Prénom",
-    "last_name": "Nom",
-    "email": "Adresse e-mail (optionnel)",
-    "company_name": "Nom de l'entreprise (Facultatif)",
-    "address_line1": "Adresse",
-    "address_line2": "Complément d'adresse",
-    "postal_code": "Code Postal",
+    "last_name": "Nom de famille",
+    "email": "Adresse e-mail (facultatif)",
+    "company_name": "Entreprise (facultatif)",
+    "address_line1": "Adresse (ligne 1)",
+    "address_line2": "Appartement, suite, etc. (facultatif)",
+    "postal_code": "Code postal",
     "city": "Ville",
-    "country_code": "Pays",
-    "state_province_region": "État/Province/Région (Facultatif)",
-    "phone_number": "Numéro de téléphone (optionnel)",
-    "is_default": "Définir comme adresse par défaut ?"
+    "country_code": "Pays/Région",
+    "state_province_region": "État / Province / Région",
+    "phone_number": "Numéro de téléphone (facultatif)"
   },
-  "checkboxLabelIsDefault": "Définir comme adresse par défaut",
-  "checkboxLabelAddressLine2": "Complément d'adresse ?",
   "placeholders": {
-    "full_name": "Saisir le nom complet",
-    "first_name": "Saisir le prénom",
-    "last_name": "Saisir le nom de famille",
-    "email": "Saisir l'adresse e-mail",
-    "company_name": "Saisir le nom de l'entreprise",
-    "address_line1": "Adresse, Boîte postale, nom de l'entreprise, c/o",
-    "address_line2": "Appartement, suite, unité, bâtiment, étage, etc.",
-    "postal_code": "Saisir le code postal",
-    "city": "Saisir la ville",
-    "country_code": "FR",
-    "state_province_region": "Saisir l'état/province/région",
-    "phone_number": "Saisir le numéro de téléphone"
+    "first_name": "Prénom",
+    "last_name": "Nom de famille",
+    "email": "Votre adresse e-mail",
+    "company_name": "Nom de l'entreprise",
+    "address_line1": "Numéro et nom de rue",
+    "address_line2": "Appartement, suite, etc.",
+    "postal_code": "Code postal",
+    "city": "Ville",
+    "country_code": "Sélectionnez un pays",
+    "state_province_region": "État / Province / Région",
+    "phone_number": "Votre numéro de téléphone"
   },
   "buttons": {
     "save": "Enregistrer",
@@ -45,11 +37,7 @@
   },
   "serverActions": {
     "validationError": "La validation a échoué. Veuillez vérifier les champs du formulaire.",
-    "addSuccess": "Adresse ajoutée avec succès.",
-    "addError": "Échec de l'ajout de l'adresse. Veuillez réessayer.",
-    "updateSuccess": "Adresse mise à jour avec succès.",
-    "updateError": "Échec de la mise à jour de l'adresse. Veuillez réessayer.",
-    "success": "L'opération a été réalisée avec succès.",
-    "error": "Une erreur est survenue. Veuillez réessayer."
+    "success": "Adresse enregistrée avec succès.",
+    "error": "Une erreur est survenue lors de l'enregistrement de l'adresse. Veuillez réessayer."
   }
 }
