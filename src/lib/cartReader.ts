@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   type CartActionResult,
@@ -11,22 +12,33 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
   const supabase = await createSupabaseServerClient();
   const activeUserId = await getActiveUserId(supabase);
 
-  if (!activeUserId) {
-    return createGeneralErrorResult(
-      "User identification failed",
-      "Impossible d'identifier l'utilisateur."
-    );
-  }
-
   const selectQuery = `id, user_id, created_at, updated_at, cart_items (id, product_id, quantity, products (id, name, price, image_url, slug))`;
 
   try {
-    const { data: cart, error: queryError } = await supabase
+    let query = supabase
       .from("carts")
       .select(selectQuery)
-      .eq("user_id", activeUserId)
-      .order("id", { foreignTable: "cart_items", ascending: true })
-      .maybeSingle();
+      .order("id", { foreignTable: "cart_items", ascending: true });
+
+    // Si l'utilisateur est authentifié, on cherche son panier.
+    if (activeUserId) {
+      query = query.eq("user_id", activeUserId);
+    } else {
+      // Sinon, on cherche le panier invité via le cartId stocké dans les cookies.
+      const cartStore = cookies().get("cart-storage")?.value;
+      if (!cartStore) {
+        return createSuccessResult(null, "Aucun panier invité trouvé.");
+      }
+      const { state } = JSON.parse(cartStore);
+      const guestCartId = state.cartId;
+
+      if (!guestCartId) {
+        return createSuccessResult(null, "Aucun ID de panier invité trouvé.");
+      }
+      query = query.eq("id", guestCartId).is("user_id", null);
+    }
+
+    const { data: cart, error: queryError } = await query.maybeSingle();
 
     if (queryError) {
       return createGeneralErrorResult(queryError.message, `Erreur Supabase: ${queryError.message}`);

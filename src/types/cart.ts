@@ -82,6 +82,13 @@ export const createInitialActionState = <T = undefined>(): ActionState<T | undef
 // Si CartData vient de @/actions/cartActions, cela crée une dépendance de types -> actions.
 // Une meilleure approche serait de définir CartData dans un fichier de types commun ou ici.
 
+export interface Cart {
+  id: string; // cartId
+  items: CartItem[];
+  totalPrice: number;
+  totalItems: number;
+}
+
 // Définition de CartData (structure serveur) pour être utilisée ici et éviter les cycles d'import.
 // Ceci est une copie de la structure attendue de cartActions.ts pour CartData.
 // Il serait préférable de l'avoir dans un fichier `types/shared.ts` ou similaire à l'avenir.

@@ -1,0 +1,13 @@
+{
+  "recipientLabel": "Nom du destinataire",
+  "recipientPlaceholder": "Ex: Jean Dupont",
+  "streetLabel": "Adresse (numéro et rue)",
+  "streetPlaceholder": "Ex: 123 Rue de la République",
+  "postalCodeLabel": "Code Postal",
+  "postalCodePlaceholder": "Ex: 75001",
+  "cityLabel": "Ville",
+  "cityPlaceholder": "Ex: Paris",
+  "countryLabel": "Pays",
+  "cancelButton": "Annuler",
+  "submitButton": "Enregistrer l'adresse"
+}

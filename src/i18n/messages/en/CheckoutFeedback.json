@@ -1,0 +1,8 @@
+{
+  "successTitle": "Thank you for your order!",
+  "successMessage": "Your payment was successful and your order is being processed. You will receive a confirmation email shortly.",
+  "backToHome": "Back to Home",
+  "canceledTitle": "Payment Canceled",
+  "canceledMessage": "Your payment was canceled. Your cart has been saved if you wish to try again.",
+  "tryAgain": "Try Again"
+}

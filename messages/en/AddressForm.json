@@ -1,0 +1,13 @@
+{
+  "recipientLabel": "Recipient Name",
+  "recipientPlaceholder": "E.g. John Doe",
+  "streetLabel": "Address (street and number)",
+  "streetPlaceholder": "E.g. 123 Main Street",
+  "postalCodeLabel": "Postal Code",
+  "postalCodePlaceholder": "E.g. 10001",
+  "cityLabel": "City",
+  "cityPlaceholder": "E.g. New York",
+  "countryLabel": "Country",
+  "cancelButton": "Cancel",
+  "submitButton": "Save Address"
+}

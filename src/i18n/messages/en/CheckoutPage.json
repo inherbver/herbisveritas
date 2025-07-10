@@ -1,0 +1,40 @@
+{
+  "title": "Checkout",
+  "address": {
+    "title": "Delivery Address",
+    "description": "Select an existing address or add a new one.",
+    "addNewButton": "Add a new address",
+    "editButton": "Edit address",
+    "noAddresses": "No saved addresses."
+  },
+  "shipping": {
+    "title": "Shipping Method",
+    "description": "Choose your preferred shipping method."
+  },
+  "summary": {
+    "title": "Summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "total": "Total",
+    "payButton": "Pay"
+  },
+  "toast": {
+    "selectAddressError": "Please select a delivery address.",
+    "selectShippingError": "Please select a shipping method.",
+    "paymentErrorTitle": "Payment Error",
+    "addressSaved": "Address saved successfully!"
+  },
+  "form": {
+    "recipientLabel": "Recipient's name",
+    "recipientPlaceholder": "e.g., John Doe",
+    "streetLabel": "Address (number, street)",
+    "streetPlaceholder": "e.g., 123 Main Street",
+    "postalCodeLabel": "Postal code",
+    "postalCodePlaceholder": "e.g., 90210",
+    "cityLabel": "City",
+    "cityPlaceholder": "e.g., Beverly Hills",
+    "countryLabel": "Country",
+    "cancelButton": "Cancel",
+    "submitButton": "Save Address"
+  }
+}

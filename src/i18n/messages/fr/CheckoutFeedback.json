@@ -1,0 +1,8 @@
+{
+  "successTitle": "Merci pour votre commande !",
+  "successMessage": "Votre paiement a été effectué avec succès et votre commande est en cours de traitement. Vous recevrez un e-mail de confirmation sous peu.",
+  "backToHome": "Retour à l'accueil",
+  "canceledTitle": "Paiement annulé",
+  "canceledMessage": "Votre paiement a été annulé. Votre panier a été sauvegardé si vous souhaitez réessayer.",
+  "tryAgain": "Réessayer"
+}

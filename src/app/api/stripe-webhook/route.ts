@@ -89,6 +89,16 @@ export async function POST(req: Request) {
 
       console.log(`[STRIPE_WEBHOOK] Found cart with ${cartData.items.length} items`);
 
+      // --- Récupération des données de livraison ---
+      const shippingAddressId = session.metadata?.shippingAddressId || null;
+      const shippingMethodId = session.metadata?.shippingMethodId || null;
+      const shippingAmount = session.shipping_cost ? session.shipping_cost.amount_total / 100 : 0;
+
+      if (!shippingAddressId || !shippingMethodId) {
+        console.error(`[STRIPE_WEBHOOK] Missing shipping information in metadata for session ${session.id}`);
+        // Vous pourriez choisir de lever une erreur ici si la livraison est toujours obligatoire
+      }
+
       const { data: newOrder, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -100,6 +110,10 @@ export async function POST(req: Request) {
           payment_status: "succeeded",
           payment_intent_id:
             typeof session.payment_intent === "string" ? session.payment_intent : null,
+          // Ajout des informations de livraison
+          shipping_address_id: shippingAddressId,
+          shipping_method_id: shippingMethodId,
+          shipping_amount: shippingAmount,
         })
         .select("id")
         .single();

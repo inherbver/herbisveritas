@@ -1,0 +1,40 @@
+{
+  "title": "Finaliser ma commande",
+  "address": {
+    "title": "Adresse de livraison",
+    "description": "Sélectionnez une adresse existante ou ajoutez-en une nouvelle.",
+    "addNewButton": "Ajouter une nouvelle adresse",
+    "editButton": "Modifier l'adresse",
+    "noAddresses": "Aucune adresse enregistrée."
+  },
+  "shipping": {
+    "title": "Mode de livraison",
+    "description": "Choisissez votre méthode d'expédition préférée."
+  },
+  "summary": {
+    "title": "Récapitulatif",
+    "subtotal": "Sous-total",
+    "shipping": "Livraison",
+    "total": "Total",
+    "payButton": "Payer"
+  },
+  "toast": {
+    "selectAddressError": "Veuillez sélectionner une adresse de livraison.",
+    "selectShippingError": "Veuillez sélectionner un mode de livraison.",
+    "paymentErrorTitle": "Erreur de paiement",
+    "addressSaved": "Adresse enregistrée avec succès !"
+  },
+  "form": {
+    "recipientLabel": "Nom du destinataire",
+    "recipientPlaceholder": "ex: Jean Dupont",
+    "streetLabel": "Adresse (n°, rue)",
+    "streetPlaceholder": "ex: 123 rue de la République",
+    "postalCodeLabel": "Code postal",
+    "postalCodePlaceholder": "ex: 75001",
+    "cityLabel": "Ville",
+    "cityPlaceholder": "ex: Paris",
+    "countryLabel": "Pays",
+    "cancelButton": "Annuler",
+    "submitButton": "Enregistrer l'adresse"
+  }
+}

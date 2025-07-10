@@ -1,14 +1,14 @@
 {
-  "formTitle": "{isEditing, select, true {Edit} false {Add a}} {addressType, select, shipping {shipping} billing {billing} other {}} address",
+  "formTitle": "{isEditing, select, true {Edit} false {Add a}} {addressType, select, shipping {shipping} billing {billing} other {general}} address",
   "recipientSectionTitle": "Recipient",
   "addressSectionTitle": "Address",
   "contactSectionTitle": "Contact",
   "labels": {
     "first_name": "First name",
     "last_name": "Last name",
-    "email": "Email (optional)",
+    "email": "Email address (optional)",
     "company_name": "Company (optional)",
-    "address_line1": "Address line 1",
+    "address_line1": "Address (line 1)",
     "address_line2": "Apartment, suite, etc. (optional)",
     "postal_code": "Postal code",
     "city": "City",

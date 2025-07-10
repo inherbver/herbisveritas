@@ -97,6 +97,27 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     console.error(`[i18n] Failed to load AddressesPage.json for locale ${localeToUse}:`, e);
   }
 
+  let addressFormNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    addressFormNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AddressForm.json`))
+      .default;
+  } catch (_e) {
+    console.error(`[i18n] Failed to load AddressForm.json for locale ${localeToUse}:`, _e);
+  }
+
+  let checkoutPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  try {
+    checkoutPageNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/CheckoutPage.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load CheckoutPage.json for locale ${localeToUse}:`, e);
+  }
+
+
+
+
+
   let checkoutSuccessPageNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     checkoutSuccessPageNamespaceContent = (
@@ -107,12 +128,21 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   }
 
   let checkoutCanceledPageNamespaceContent: Record<string, unknown> | undefined = undefined;
+  let checkoutFeedbackNamespaceContent: Record<string, unknown> | undefined = undefined;
   try {
     checkoutCanceledPageNamespaceContent = (
       await import(`./i18n/messages/${localeToUse}/CheckoutCanceledPage.json`)
     ).default;
   } catch (e) {
     console.error(`[i18n] Failed to load CheckoutCanceledPage.json for locale ${localeToUse}:`, e);
+  }
+
+  try {
+    checkoutFeedbackNamespaceContent = (
+      await import(`./i18n/messages/${localeToUse}/CheckoutFeedback.json`)
+    ).default;
+  } catch (e) {
+    console.error(`[i18n] Failed to load CheckoutFeedback.json for locale ${localeToUse}:`, e);
   }
 
   let productCardNamespaceContent: Record<string, unknown> | undefined = undefined;
@@ -145,14 +175,6 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
     authNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Auth.json`)).default;
   } catch (_e) {
     console.error(`[i18n] Failed to load Auth.json for locale ${localeToUse}:`, _e);
-  }
-
-  let addressFormNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    addressFormNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AddressForm.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load AddressForm.json for locale ${localeToUse}:`, _e);
   }
 
   let adminLayoutNamespaceContent: Record<string, unknown> | undefined = undefined;
@@ -334,13 +356,16 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const safeProfileEditPage = profileEditPageNamespaceContent || {};
   const safeShopPage = shopPageNamespaceContent || {};
   const safeAddressesPage = addressesPageNamespaceContent || {};
+  const safeAddressForm = addressFormNamespaceContent || {};
+  const safeCheckoutPage = checkoutPageNamespaceContent || {};
   const safeCheckoutSuccessPage = checkoutSuccessPageNamespaceContent || {};
   const safeCheckoutCanceledPage = checkoutCanceledPageNamespaceContent || {};
+  const safeCheckoutFeedback = checkoutFeedbackNamespaceContent || {};
   const safeProductCard = productCardNamespaceContent || {};
   const safeMagazinePage = magazinePageNamespaceContent || {};
   const safeContactPage = contactPageNamespaceContent || {};
   const safeAuth = authNamespaceContent || {};
-  const safeAddressForm = addressFormNamespaceContent || {};
+
   const safeAdminLayout = adminLayoutNamespaceContent || {};
   const safeProductDetailModal = productDetailModalNamespaceContent || {};
   const safeQuantityInput = quantityInputNamespaceContent || {};
@@ -375,17 +400,22 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
       : {}),
     ...(Object.keys(safeShopPage).length > 0 ? { ShopPage: safeShopPage } : {}),
     ...(Object.keys(safeAddressesPage).length > 0 ? { AddressesPage: safeAddressesPage } : {}),
+    ...(Object.keys(safeAddressForm).length > 0 ? { AddressForm: safeAddressForm } : {}),
+    ...(Object.keys(safeCheckoutPage).length > 0 ? { CheckoutPage: safeCheckoutPage } : {}),
     ...(Object.keys(safeCheckoutSuccessPage).length > 0
       ? { CheckoutSuccessPage: safeCheckoutSuccessPage }
       : {}),
     ...(Object.keys(safeCheckoutCanceledPage).length > 0
       ? { CheckoutCanceledPage: safeCheckoutCanceledPage }
       : {}),
+    ...(Object.keys(safeCheckoutFeedback).length > 0
+      ? { CheckoutFeedback: safeCheckoutFeedback }
+      : {}),
     ...(Object.keys(safeProductCard).length > 0 ? { ProductCard: safeProductCard } : {}),
     ...(Object.keys(safeMagazinePage).length > 0 ? { MagazinePage: safeMagazinePage } : {}),
     ...(Object.keys(safeContactPage).length > 0 ? { ContactPage: safeContactPage } : {}),
     ...(Object.keys(safeAuth).length > 0 ? { Auth: safeAuth } : {}),
-    ...(Object.keys(safeAddressForm).length > 0 ? { AddressForm: safeAddressForm } : {}),
+
     ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
     ...(Object.keys(safeProductDetailModal).length > 0
       ? { ProductDetailModal: safeProductDetailModal }

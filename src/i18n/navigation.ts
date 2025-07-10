@@ -31,6 +31,18 @@ export const pathnames = {
     en: "/contact",
     fr: "/contact", // Ou '/contactez-nous'
   },
+  "/checkout": {
+    en: "/checkout",
+    fr: "/paiement",
+  },
+  "/checkout/success": {
+    en: "/checkout/success",
+    fr: "/paiement/succes",
+  },
+  "/checkout/canceled": {
+    en: "/checkout/canceled",
+    fr: "/paiement/annule",
+  },
   "/legal": {
     en: "/legal",
     fr: "/legal", // Ou '/mentions-legales'

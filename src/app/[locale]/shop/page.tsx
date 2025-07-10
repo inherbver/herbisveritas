@@ -9,16 +9,16 @@ import type { CartData } from "@/types/cart";
 import { Locale } from "@/i18n-config";
 import { Hero } from "@/components/shared/hero";
 import { getActiveFeaturedHeroItem, type FeaturedHeroItem } from "@/lib/supabase/queries/hero";
-import { Link } from "@/i18n/navigation"; // Import Link to use for React.ComponentProps<typeof Link>
+import { Link } from "@/i18n/navigation";
 
 // Type for route parameters
 type PageParams = {
   locale: Locale;
 };
 
-// Props for ShopPage component, params is now a Promise
+// Props for ShopPage component
 type ShopPageProps = {
-  params: Promise<PageParams>;
+  params: Promise<PageParams>; // ✅ params est maintenant une Promise
 };
 
 // Define the type for the data mapped for the grid
@@ -33,54 +33,46 @@ export type ProductListItem = {
   labels?: string[] | null;
   name: string;
   short_description?: string | null;
-  unit?: string | null; // Ajout du champ unit
+  unit?: string | null;
 };
 
-/*
-export interface Product {
-  id: string;
-  name: string;
-  description_short?: string | null;
-  description_long?: string | null;
-  price: number;
-  currency?: string | null;
-  image_url?: string | null;
-  stock: number;
-  unit?: string | null;
-  category?: string | null;
-  is_active?: boolean | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  is_new?: boolean | null;
-  is_on_promotion?: boolean | null;
-  labels?: string[] | null;
-}
-*/
-
-// Make the function async
+// ✅ Correction de generateMetadata
 export async function generateMetadata({
-  params: paramsPromise,
-}: {
-  params: Promise<PageParams>;
-}): Promise<Metadata> {
-  const { locale } = await paramsPromise;
-  const t = await getTranslations({ locale, namespace: "ShopPage" });
+  params,
+}: ShopPageProps): Promise<Metadata> {
+  const resolvedParams = await params; // ✅ Attendre params
+  const t = await getTranslations({ 
+    locale: resolvedParams.locale, 
+    namespace: "ShopPage" 
+  });
   return {
     title: t("title"),
   };
 }
 
-export default async function ShopPage({ params: paramsPromise }: ShopPageProps) {
-  const { locale } = await paramsPromise;
-
-  const t = await getTranslations("ShopPage");
-  const tHero = await getTranslations("HeroComponent");
+// ✅ Correction de la fonction principale
+export default async function ShopPage({ params }: ShopPageProps) {
+  // ✅ Attendre params en premier
+  const resolvedParams = await params;
+  
+  const t = await getTranslations({ 
+    locale: resolvedParams.locale, 
+    namespace: "ShopPage" 
+  });
+  const tHero = await getTranslations({ 
+    locale: resolvedParams.locale, 
+    namespace: "HeroComponent" 
+  });
+  const tProduct = await getTranslations({ 
+    locale: resolvedParams.locale, 
+    namespace: "ProductCard" 
+  });
 
   // --- Fetch Data ---
-  // Use Promise.all to fetch hero item and products in parallel for slight performance improvement
+  // ✅ Utiliser resolvedParams.locale au lieu de params.locale
   const [heroResult, productsResult, cartResult] = await Promise.allSettled([
     getActiveFeaturedHeroItem(),
-    getAllProducts(locale),
+    getAllProducts(resolvedParams.locale), // ✅ Correction ici
     getCart(),
   ]);
 
@@ -94,6 +86,7 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
   let productsData: ProductForShopQuery[] = [];
   let fetchError: Error | null = null;
   let initialCartData: CartData | null = null;
+  
   if (productsResult.status === "fulfilled") {
     productsData = productsResult.value;
   } else {
@@ -102,22 +95,20 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
         ? productsResult.reason
         : new Error("Unknown error fetching products");
     console.error("Error fetching products for ShopPage:", productsResult.reason);
-    productsData = []; // Ensure productsData is an empty array on error
+    productsData = [];
   }
 
-  // --- Handle Cart Fetch --- (Non-critical for page load, but good to log)
+  // --- Handle Cart Fetch ---
   if (cartResult.status === "fulfilled" && isSuccessResult(cartResult.value)) {
     initialCartData = cartResult.value.data;
   } else if (cartResult.status === "fulfilled" && !isSuccessResult(cartResult.value)) {
-    // Optionally, you might still want to log this as a warning if it's unexpected
-    // console.warn("[ShopPage] Fetching initial cart data returned an error result:", cartResult.value);
+    // Log warning for cart fetch issues
   } else if (cartResult.status === "rejected") {
     console.error("[ShopPage] Error fetching initial cart data:", cartResult.reason);
   }
 
-  // --- Handle Product Fetch Error --- (Hero error is non-critical for page load)
+  // --- Handle Product Fetch Error ---
   if (fetchError && productsResult.status === "rejected") {
-    // Only block page if products fetch fails
     return (
       <MainLayout>
         <div className="container py-8 text-center">
@@ -167,7 +158,7 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
 
   // --- Prepare Product List Items for ShopClientContent ---
   const productListItems: ProductListItem[] = productsData
-    .filter((p) => p.price !== null) // Filter out products with null price
+    .filter((p) => p.price !== null)
     .map((p: ProductForShopQuery) => ({
       id: p.id,
       slug: p.slug,
@@ -175,19 +166,18 @@ export default async function ShopPage({ params: paramsPromise }: ShopPageProps)
         p.product_translations?.[0]?.name ??
         t("defaultProductName", { ns: "translationFallbacks" }),
       short_description: p.product_translations?.[0]?.short_description ?? undefined,
-      price: p.price as number, // Cast to number after filtering nulls
+      price: p.price as number,
       image_url: p.image_url,
-      stock: p.stock ?? 0, // Provide default for null stock
+      stock: p.stock ?? 0,
       is_new: p.is_new,
       is_on_promotion: p.is_on_promotion,
       labels: p.labels,
-      unit: p.unit, // Ajout du mappage pour unit
+      unit: p.unit,
     }));
 
   // --- Render Page ---
   return (
     <MainLayout>
-      {/* Hero Section, using heroPropsForComponent prepared earlier */}
       <Hero
         heading={heroPropsForComponent.heading}
         description={heroPropsForComponent.description}
