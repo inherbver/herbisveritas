@@ -1,40 +1,41 @@
 {
-  "title": "Finaliser ma commande",
+  "title": "Paiement",
   "address": {
-    "title": "Adresse de livraison",
-    "description": "Sélectionnez une adresse existante ou ajoutez-en une nouvelle.",
+    "shippingTitle": "Adresse de livraison",
+    "billingTitle": "Adresse de facturation",
+    "useDifferentBilling": "Utiliser une adresse de facturation différente",
+    "editButton": "Modifier",
+    "saveButton": "Enregistrer",
     "addNewButton": "Ajouter une nouvelle adresse",
-    "editButton": "Modifier l'adresse",
     "noAddresses": "Aucune adresse enregistrée."
   },
   "shipping": {
-    "title": "Mode de livraison",
-    "description": "Choisissez votre méthode d'expédition préférée."
+    "title": "Méthode de livraison"
   },
   "summary": {
-    "title": "Récapitulatif",
+    "title": "Récapitulatif de la commande",
     "subtotal": "Sous-total",
     "shipping": "Livraison",
-    "total": "Total",
-    "payButton": "Payer"
+    "total": "Total"
+  },
+  "payment": {
+    "button": "Procéder au paiement",
+    "processing": "Traitement..."
   },
   "toast": {
-    "selectAddressError": "Veuillez sélectionner une adresse de livraison.",
-    "selectShippingError": "Veuillez sélectionner un mode de livraison.",
-    "paymentErrorTitle": "Erreur de paiement",
-    "addressSaved": "Adresse enregistrée avec succès !"
+    "selectAddressError": "Veuillez sélectionner ou enregistrer une adresse de livraison.",
+    "selectBillingAddressError": "Veuillez sélectionner ou enregistrer une adresse de facturation.",
+    "addressSaved": "Adresse enregistrée avec succès.",
+    "paymentError": "Une erreur est survenue lors du paiement."
   },
   "form": {
     "recipientLabel": "Nom du destinataire",
-    "recipientPlaceholder": "ex: Jean Dupont",
-    "streetLabel": "Adresse (n°, rue)",
-    "streetPlaceholder": "ex: 123 rue de la République",
-    "postalCodeLabel": "Code postal",
-    "postalCodePlaceholder": "ex: 75001",
+    "addressLabel": "Adresse",
+    "addressLine2Label": "Appartement, suite, etc. (facultatif)",
     "cityLabel": "Ville",
-    "cityPlaceholder": "ex: Paris",
+    "postalCodeLabel": "Code postal",
     "countryLabel": "Pays",
-    "cancelButton": "Annuler",
-    "submitButton": "Enregistrer l'adresse"
+    "saveButton": "Enregistrer l'adresse",
+    "cancelButton": "Annuler"
   }
 }

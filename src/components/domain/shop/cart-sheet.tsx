@@ -37,12 +37,12 @@ export function CartSheet() {
                 "absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground",
                 "animate-in fade-in zoom-in duration-300"
               )}
-              aria-label={tGlobal("itemCount", { count: totalItems })}
+              aria-label={tGlobal("Cart.itemCount", { count: totalItems })}
             >
               {totalItems}
             </span>
           )}
-          <span className="sr-only">{tGlobal("openCart")}</span>
+          <span className="sr-only">{tGlobal("Cart.openCart")}</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-lg">

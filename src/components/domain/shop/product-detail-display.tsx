@@ -278,7 +278,7 @@ function SubmitButton() {
 
   return (
     <Button
-      variant="olive"
+      variant="default"
       size="lg"
       type="submit"
       disabled={pending}

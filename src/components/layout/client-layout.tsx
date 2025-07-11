@@ -40,15 +40,18 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
   // Fonction pour valider la session de manière asynchrone
   const validateSession = useCallback(async () => {
     try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-      if (error) {
-        console.error("ClientLayout: Error validating session:", error);
+      // Utilise getUser() pour une validation côté serveur, plus sécurisée
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        // Pas d'utilisateur authentifié côté serveur
         return null;
       }
+
+      // Si l'utilisateur est validé, on peut récupérer la session locale en toute confiance
+      const { data: { session } } = await supabase.auth.getSession();
       return session;
+
     } catch (error) {
       console.error("ClientLayout: Exception during session validation:", error);
       return null;
@@ -163,4 +166,5 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
       </NextIntlClientProvider>
     </ThemeProvider>
   );
+
 }

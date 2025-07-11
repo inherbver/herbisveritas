@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { getCart } from '@/lib/cartReader';
+import { getCart } from "@/lib/cartReader";
+import { PostgrestError } from "@supabase/supabase-js";
 import { pick } from 'lodash';
 import { NextIntlClientProvider } from 'next-intl';
 import { redirect } from 'next/navigation';
@@ -41,15 +42,23 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     totalItems: cartData.items.reduce((acc, item) => acc + item.quantity, 0),
   };
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const fetchAddresses = async (): Promise<{ data: Address[]; error: any }> => {
-    if (!session) return { data: [], error: null };
-    const { data, error } = await supabase.from('addresses').select('*').eq('user_id', session.user.id);
-    return { data: data || [], error };
+  const fetchUserAddresses = async (): Promise<{ shippingAddress: Address | null; billingAddress: Address | null; error: PostgrestError | null }> => {
+    if (!user) return { shippingAddress: null, billingAddress: null, error: null };
+    const { data, error } = await supabase.from('addresses').select('*').eq('user_id', user.id);
+
+    if (error) {
+      return { shippingAddress: null, billingAddress: null, error: error as PostgrestError | null };
+    }
+
+    const shippingAddress = data?.find(addr => addr.address_type === 'shipping') || null;
+    const billingAddress = data?.find(addr => addr.address_type === 'billing') || null;
+
+    return { shippingAddress, billingAddress, error: null };
   };
 
-  const fetchShippingMethods = async (): Promise<{ data: ShippingMethod[]; error: any }> => {
+  const fetchShippingMethods = async (): Promise<{ data: ShippingMethod[]; error: PostgrestError | null }> => {
     const { data, error } = await supabase.from('shipping_methods').select('*');
     if (error) {
       console.warn('[CHECKOUT] shipping_methods table does not exist. Using default data.');
@@ -70,13 +79,13 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     return { data: data || [], error };
   };
 
-  const [addressesResult, shippingMethodsResult] = await Promise.all([
-    fetchAddresses(),
+  const [userAddressesResult, shippingMethodsResult] = await Promise.all([
+    fetchUserAddresses(),
     fetchShippingMethods(),
   ]);
 
-  if (addressesResult.error) {
-    console.error('Error fetching addresses:', addressesResult.error);
+  if (userAddressesResult.error) {
+    console.error('Error fetching addresses:', userAddressesResult.error);
   }
   if (shippingMethodsResult.error) {
     console.error('Error fetching shipping methods:', shippingMethodsResult.error);
@@ -85,12 +94,13 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   return (
     <main className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8 text-center">{t('title')}</h1>
-      <NextIntlClientProvider messages={pick(messages, 'AddressForm', 'CheckoutPage')}>
+      <NextIntlClientProvider messages={pick(messages, 'AddressForm', 'CheckoutPage', 'CartDisplay', 'CartSheet', 'Global')}>
         <CheckoutClientPage
           cart={cart}
-          addresses={addressesResult.data}
+          shippingAddress={userAddressesResult.shippingAddress}
+          billingAddress={userAddressesResult.billingAddress}
           shippingMethods={shippingMethodsResult.data}
-          isUserAuthenticated={!!session}
+          isUserAuthenticated={!!user}
         />
       </NextIntlClientProvider>
     </main>

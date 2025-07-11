@@ -297,7 +297,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
           {t("shippingTaxesCalculatedAtCheckout")}
         </p>
         <nav className="mt-6">
-          <CheckoutButton />
+          <CheckoutButton onClose={onClose} />
         </nav>
         <nav className="mt-6 flex justify-center text-center text-sm text-muted-foreground">
           <p>
