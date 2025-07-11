@@ -3,464 +3,141 @@ import { IntlErrorCode, IntlError } from "next-intl";
 import { notFound } from "next/navigation";
 import { locales, defaultLocale, Locale } from "./i18n-config";
 
+// ==========================================
+// CONFIGURATION DES NAMESPACES
+// ==========================================
+const namespaces = [
+  "AboutPage",
+  "AccountPage",
+  "AddressForm",
+  "AddressesPage",
+  "AdminDashboard",
+  "AdminLayout",
+  "AdminProducts",
+  "Auth",
+  "AuthCallback",
+  "CartDisplay",
+  "CartSheet",
+  "CategoryFilter",
+  "CheckoutCanceledPage",
+  "CheckoutFeedback",
+  "CheckoutPage",
+  "CheckoutSuccessPage",
+  "ContactPage",
+  "Filters",
+  "Footer",
+  "Global",
+  "Hero",
+  "HeroComponent",
+  "HomePage",
+  "Legal",
+  "MagazinePage",
+  "MissionPage",
+  "NotFoundPage",
+  "OrdersPage",
+  "PasswordPage",
+  "ProductCard",
+  "ProductDetail",
+  "ProductDetailModal",
+  "ProductGrid",
+  "ProfileEditPage",
+  "ProfileNav",
+  "QuantityInput",
+  "ShopPage",
+  "TestPage",
+  "Unauthorized",
+] as const;
+
+// ==========================================
+// FONCTION DE CHARGEMENT DYNAMIQUE
+// ==========================================
+type Messages = Record<string, Record<string, string>>;
+
+async function loadMessagesForLocale(locale: Locale): Promise<Messages> {
+  const messages: Messages = {};
+  let successCount = 0;
+  let errorCount = 0;
+
+  // Chargement parallèle de tous les namespaces
+  const promises = namespaces.map(async (namespace) => {
+    try {
+      const module = await import(`./i18n/messages/${locale}/${namespace}.json`);
+      const content = module.default || module;
+
+      // Ne garder que les namespaces avec du contenu
+      if (content && Object.keys(content).length > 0) {
+        messages[namespace] = content;
+        successCount++;
+        return { namespace, status: "success" };
+      } else {
+        console.warn(`[i18n] Empty content for ${namespace} in locale ${locale}`);
+        return { namespace, status: "empty" };
+      }
+    } catch (e: unknown) {
+      const error = e as Error;
+      errorCount++;
+      console.error(`[i18n] Failed to load ${namespace}.json for locale ${locale}:`, error.message);
+      return { namespace, status: "error", error };
+    }
+  });
+
+  // Attendre tous les chargements
+  const results = await Promise.all(promises);
+
+  // Log du résumé de chargement
+  console.log(
+    `[i18n] Loaded ${successCount}/${namespaces.length} namespaces for locale '${locale}' (${errorCount} errors)`
+  );
+
+  // Debug en développement
+  if (process.env.NODE_ENV === "development") {
+    const failed = results.filter((r) => r.status === "error");
+    if (failed.length > 0) {
+      console.group(`[i18n] Failed namespaces for ${locale}:`);
+      failed.forEach((f) => console.log(`- ${f.namespace}`));
+      console.groupEnd();
+    }
+  }
+
+  return messages;
+}
+
+// ==========================================
+// CONFIGURATION PRINCIPALE
+// ==========================================
 export default getRequestConfig(async ({ locale: requestLocale }) => {
+  // Détermination de la locale à utiliser
   let localeToUse = defaultLocale;
 
   if (requestLocale && locales.includes(requestLocale as Locale)) {
     localeToUse = requestLocale as Locale;
-  } else if (requestLocale) {
-    // requestLocale was provided, but it's not in the supported locales.
-    // localeToUse remains defaultLocale. This comment prevents an empty block.
-  }
-  // If requestLocale was undefined, localeToUse also remains defaultLocale.
-  // This structure ensures no empty blocks from previous else/else if.
-
-  let globalNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    globalNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Global.json`)).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load Global.json for locale ${localeToUse}:`, _e);
   }
 
-  let accountPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    accountPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AccountPage.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load AccountPage.json for locale ${localeToUse}:`, _e);
-  }
+  // Chargement des messages
+  const messages = await loadMessagesForLocale(localeToUse);
 
-  let aboutPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    aboutPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AboutPage.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load AboutPage.json for locale ${localeToUse}:`, _e);
-  }
+  // Vérification critique : au moins quelques namespaces essentiels doivent être chargés
+  const essentialNamespaces = ["Global", "ShopPage", "Auth"];
+  const hasEssentials = essentialNamespaces.some((ns) => messages[ns]);
 
-  let profileNavNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    profileNavNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ProfileNav.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load ProfileNav.json for locale ${localeToUse}:`, _e);
-  }
-
-  let cartSheetNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    cartSheetNamespaceContent = (await import(`./i18n/messages/${localeToUse}/CartSheet.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load CartSheet.json for locale ${localeToUse}:`, _e);
-  }
-
-  let cartDisplayNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    cartDisplayNamespaceContent = (await import(`./i18n/messages/${localeToUse}/CartDisplay.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load CartDisplay.json for locale ${localeToUse}:`, _e);
-  }
-
-  let passwordPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    passwordPageNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/PasswordPage.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load PasswordPage.json for locale ${localeToUse}:`, e);
-  }
-
-  let profileEditPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    profileEditPageNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/ProfileEditPage.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load ProfileEditPage.json for locale ${localeToUse}:`, e);
-  }
-
-  let shopPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    shopPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ShopPage.json`))
-      .default;
-  } catch (e) {
-    console.error(`[i18n] FAILED TO LOAD ShopPage.json for locale ${localeToUse}:`, e);
-  }
-
-  let addressesPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    addressesPageNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/AddressesPage.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load AddressesPage.json for locale ${localeToUse}:`, e);
-  }
-
-  let addressFormNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    addressFormNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AddressForm.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load AddressForm.json for locale ${localeToUse}:`, _e);
-  }
-
-  let checkoutPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    checkoutPageNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/CheckoutPage.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load CheckoutPage.json for locale ${localeToUse}:`, e);
-  }
-
-
-
-
-
-  let checkoutSuccessPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    checkoutSuccessPageNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/CheckoutSuccessPage.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load CheckoutSuccessPage.json for locale ${localeToUse}:`, e);
-  }
-
-  let checkoutCanceledPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  let checkoutFeedbackNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    checkoutCanceledPageNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/CheckoutCanceledPage.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load CheckoutCanceledPage.json for locale ${localeToUse}:`, e);
-  }
-
-  try {
-    checkoutFeedbackNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/CheckoutFeedback.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load CheckoutFeedback.json for locale ${localeToUse}:`, e);
-  }
-
-  let productCardNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    productCardNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ProductCard.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load ProductCard.json for locale ${localeToUse}:`, _e);
-  }
-
-  let magazinePageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    magazinePageNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/MagazinePage.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load MagazinePage.json for locale ${localeToUse}:`, e);
-  }
-
-  let contactPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    contactPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ContactPage.json`))
-      .default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load ContactPage.json for locale ${localeToUse}:`, e);
-  }
-
-  let authNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    authNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Auth.json`)).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load Auth.json for locale ${localeToUse}:`, _e);
-  }
-
-  let adminLayoutNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    adminLayoutNamespaceContent = (await import(`./i18n/messages/${localeToUse}/AdminLayout.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load AdminLayout.json for locale ${localeToUse}:`, _e);
-  }
-
-  // aboutPageNamespaceContent est déjà déclaré et chargé plus haut (lignes 32-38)
-
-  let productDetailModalNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    productDetailModalNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/ProductDetailModal.json`)
-    ).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load ProductDetailModal.json for locale ${localeToUse}:`, _e);
-  }
-
-  let quantityInputNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    quantityInputNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/QuantityInput.json`)
-    ).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load QuantityInput.json for locale ${localeToUse}:`, _e);
-  }
-
-  let productDetailNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    productDetailNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/ProductDetail.json`)
-    ).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load ProductDetail.json for locale ${localeToUse}:`, _e);
-  }
-
-  let notFoundPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    notFoundPageNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/NotFoundPage.json`)
-    ).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load NotFoundPage.json for locale ${localeToUse}:`, _e);
-  }
-
-  let categoryFilterNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    categoryFilterNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/CategoryFilter.json`)
-    ).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load CategoryFilter.json for locale ${localeToUse}:`, _e);
-  }
-
-  let heroComponentNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    heroComponentNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/HeroComponent.json`)
-    ).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load HeroComponent.json for locale ${localeToUse}:`, _e);
-  }
-
-  let homePageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    homePageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/HomePage.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load HomePage.json for locale ${localeToUse}:`, _e);
-  }
-
-  let productGridNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    productGridNamespaceContent = (await import(`./i18n/messages/${localeToUse}/ProductGrid.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load ProductGrid.json for locale ${localeToUse}:`, _e);
-  }
-
-  let heroNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    heroNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Hero.json`)).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load Hero.json for locale ${localeToUse}:`, _e);
-  }
-
-  let legalNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    legalNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Legal.json`)).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load Legal.json for locale ${localeToUse}:`, _e);
-  }
-
-  let testPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    testPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/TestPage.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load TestPage.json for locale ${localeToUse}:`, _e);
-  }
-
-  let missionPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    missionPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/MissionPage.json`))
-      .default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load MissionPage.json for locale ${localeToUse}:`, _e);
-  }
-
-  let authCallbackNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    authCallbackNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/AuthCallback.json`)
-    ).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load AuthCallback.json for locale ${localeToUse}:`, _e);
-  }
-
-  let filtersNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    filtersNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Filters.json`)).default;
-  } catch (_e) {
-    console.error(`[i18n] Failed to load Filters.json for locale ${localeToUse}:`, _e);
-  }
-
-  let ordersPageNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    ordersPageNamespaceContent = (await import(`./i18n/messages/${localeToUse}/OrdersPage.json`))
-      .default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load OrdersPage.json for locale ${localeToUse}:`, e);
-  }
-
-  let adminProductsNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    adminProductsNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/AdminProducts.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load AdminProducts.json for locale ${localeToUse}:`, e);
-  }
-
-  let adminDashboardNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    adminDashboardNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/AdminDashboard.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load AdminDashboard.json for locale ${localeToUse}:`, e);
-  }
-
-  let unauthorizedNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    unauthorizedNamespaceContent = (
-      await import(`./i18n/messages/${localeToUse}/Unauthorized.json`)
-    ).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load Unauthorized.json for locale ${localeToUse}:`, e);
-  }
-
-  let footerNamespaceContent: Record<string, unknown> | undefined = undefined;
-  try {
-    footerNamespaceContent = (await import(`./i18n/messages/${localeToUse}/Footer.json`)).default;
-  } catch (e) {
-    console.error(`[i18n] Failed to load Footer.json for locale ${localeToUse}:`, e);
-  }
-
-  // Cette partie doit venir APRÈS TOUTES les importations de namespaces
-  const safeGlobal = globalNamespaceContent || {};
-  const safeAccountPage = accountPageNamespaceContent || {};
-  const safeAboutPage = aboutPageNamespaceContent || {};
-  const safeProfileNav = profileNavNamespaceContent || {};
-  const safeCartSheet = cartSheetNamespaceContent || {};
-  const safeCartDisplay = cartDisplayNamespaceContent || {};
-  const safePasswordPage = passwordPageNamespaceContent || {};
-  const safeProfileEditPage = profileEditPageNamespaceContent || {};
-  const safeShopPage = shopPageNamespaceContent || {};
-  const safeAddressesPage = addressesPageNamespaceContent || {};
-  const safeAddressForm = addressFormNamespaceContent || {};
-  const safeCheckoutPage = checkoutPageNamespaceContent || {};
-  const safeCheckoutSuccessPage = checkoutSuccessPageNamespaceContent || {};
-  const safeCheckoutCanceledPage = checkoutCanceledPageNamespaceContent || {};
-  const safeCheckoutFeedback = checkoutFeedbackNamespaceContent || {};
-  const safeProductCard = productCardNamespaceContent || {};
-  const safeMagazinePage = magazinePageNamespaceContent || {};
-  const safeContactPage = contactPageNamespaceContent || {};
-  const safeAuth = authNamespaceContent || {};
-
-  const safeAdminLayout = adminLayoutNamespaceContent || {};
-  const safeProductDetailModal = productDetailModalNamespaceContent || {};
-  const safeQuantityInput = quantityInputNamespaceContent || {};
-  const safeProductDetail = productDetailNamespaceContent || {};
-  const safeNotFoundPage = notFoundPageNamespaceContent || {};
-  const safeCategoryFilter = categoryFilterNamespaceContent || {};
-  const safeHeroComponent = heroComponentNamespaceContent || {};
-  const safeHomePage = homePageNamespaceContent || {};
-  const safeProductGrid = productGridNamespaceContent || {};
-  const safeHero = heroNamespaceContent || {};
-  const safeLegal = legalNamespaceContent || {};
-  const safeTestPage = testPageNamespaceContent || {};
-  const safeMissionPage = missionPageNamespaceContent || {};
-  const safeAuthCallback = authCallbackNamespaceContent || {};
-  const safeFilters = filtersNamespaceContent || {};
-  const safeOrdersPage = ordersPageNamespaceContent || {};
-  const safeAdminProducts = adminProductsNamespaceContent || {};
-  const safeAdminDashboard = adminDashboardNamespaceContent || {};
-  const safeUnauthorized = unauthorizedNamespaceContent || {};
-  const safeFooter = footerNamespaceContent || {};
-
-  const mergedMessages = {
-    ...(Object.keys(safeGlobal).length > 0 ? { Global: safeGlobal } : {}),
-    ...(Object.keys(safeAccountPage).length > 0 ? { AccountPage: safeAccountPage } : {}),
-    ...(Object.keys(safeAboutPage).length > 0 ? { AboutPage: safeAboutPage } : {}),
-    ...(Object.keys(safeProfileNav).length > 0 ? { ProfileNav: safeProfileNav } : {}),
-    ...(Object.keys(safeCartSheet).length > 0 ? { CartSheet: safeCartSheet } : {}),
-    ...(Object.keys(safeCartDisplay).length > 0 ? { CartDisplay: safeCartDisplay } : {}),
-    ...(Object.keys(safePasswordPage).length > 0 ? { PasswordPage: safePasswordPage } : {}),
-    ...(Object.keys(safeProfileEditPage).length > 0
-      ? { ProfileEditPage: safeProfileEditPage }
-      : {}),
-    ...(Object.keys(safeShopPage).length > 0 ? { ShopPage: safeShopPage } : {}),
-    ...(Object.keys(safeAddressesPage).length > 0 ? { AddressesPage: safeAddressesPage } : {}),
-    ...(Object.keys(safeAddressForm).length > 0 ? { AddressForm: safeAddressForm } : {}),
-    ...(Object.keys(safeCheckoutPage).length > 0 ? { CheckoutPage: safeCheckoutPage } : {}),
-    ...(Object.keys(safeCheckoutSuccessPage).length > 0
-      ? { CheckoutSuccessPage: safeCheckoutSuccessPage }
-      : {}),
-    ...(Object.keys(safeCheckoutCanceledPage).length > 0
-      ? { CheckoutCanceledPage: safeCheckoutCanceledPage }
-      : {}),
-    ...(Object.keys(safeCheckoutFeedback).length > 0
-      ? { CheckoutFeedback: safeCheckoutFeedback }
-      : {}),
-    ...(Object.keys(safeProductCard).length > 0 ? { ProductCard: safeProductCard } : {}),
-    ...(Object.keys(safeMagazinePage).length > 0 ? { MagazinePage: safeMagazinePage } : {}),
-    ...(Object.keys(safeContactPage).length > 0 ? { ContactPage: safeContactPage } : {}),
-    ...(Object.keys(safeAuth).length > 0 ? { Auth: safeAuth } : {}),
-
-    ...(Object.keys(safeAdminLayout).length > 0 ? { AdminLayout: safeAdminLayout } : {}),
-    ...(Object.keys(safeProductDetailModal).length > 0
-      ? { ProductDetailModal: safeProductDetailModal }
-      : {}),
-    ...(Object.keys(safeQuantityInput).length > 0 ? { QuantityInput: safeQuantityInput } : {}),
-    ...(Object.keys(safeProductDetail).length > 0 ? { ProductDetail: safeProductDetail } : {}),
-    ...(Object.keys(safeNotFoundPage).length > 0 ? { NotFoundPage: safeNotFoundPage } : {}),
-    ...(Object.keys(safeCategoryFilter).length > 0 ? { CategoryFilter: safeCategoryFilter } : {}),
-    ...(Object.keys(safeHeroComponent).length > 0 ? { HeroComponent: safeHeroComponent } : {}),
-    ...(Object.keys(safeHomePage).length > 0 ? { HomePage: safeHomePage } : {}),
-    ...(Object.keys(safeProductGrid).length > 0 ? { ProductGrid: safeProductGrid } : {}),
-    ...(Object.keys(safeHero).length > 0 ? { Hero: safeHero } : {}),
-    ...(Object.keys(safeLegal).length > 0 ? { Legal: safeLegal } : {}),
-    ...(Object.keys(safeTestPage).length > 0 ? { TestPage: safeTestPage } : {}),
-    ...(Object.keys(safeMissionPage).length > 0 ? { MissionPage: safeMissionPage } : {}),
-    ...(Object.keys(safeAuthCallback).length > 0 ? { AuthCallback: safeAuthCallback } : {}),
-    ...(Object.keys(safeFilters).length > 0 ? { Filters: safeFilters } : {}),
-    ...(Object.keys(safeOrdersPage).length > 0 ? { OrdersPage: safeOrdersPage } : {}),
-    ...(Object.keys(safeAdminProducts).length > 0 ? { AdminProducts: safeAdminProducts } : {}),
-    ...(Object.keys(safeAdminDashboard).length > 0 ? { AdminDashboard: safeAdminDashboard } : {}),
-    ...(Object.keys(safeUnauthorized).length > 0 ? { Unauthorized: safeUnauthorized } : {}),
-    ...(Object.keys(safeFooter).length > 0 ? { Footer: safeFooter } : {}),
-  };
-
-  // Condition pour notFound si AUCUN message de namespace n'est chargé
-  if (Object.keys(mergedMessages).length === 0) {
+  if (Object.keys(messages).length === 0 || !hasEssentials) {
+    console.error(`[i18n] Critical: No essential messages loaded for locale ${localeToUse}`);
     notFound();
   }
 
   return {
     locale: localeToUse,
-    messages: mergedMessages,
+    messages,
     timeZone: "Europe/Paris",
+
     onError(error: IntlError) {
-      console.log(
-        `\n[[[!!! i18n DEBUG onError !!!]]] ERROR CODE: ${error.code}, MESSAGE: ${error.message}\n`
-      );
+      console.log(`[i18n] ERROR: ${error.code} - ${error.message}`);
+
       if (error.code === IntlErrorCode.MISSING_MESSAGE) {
-        console.log(
-          `\n[[[!!! i18n DEBUG onError !!!]]] Specific log for MISSING_MESSAGE: ${error.message}\n`
-        );
-      } else {
-        console.log(`\n[[[!!! i18n DEBUG onError !!!]]] Other i18n error: ${error.message}\n`);
+        console.log(`[i18n] MISSING_MESSAGE: ${error.message}`);
       }
     },
+
     getMessageFallback: ({
       namespace,
       key,
@@ -470,16 +147,20 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
       key: string;
       error: IntlError;
     }) => {
-      console.log(
-        `\n[[[!!! i18n DEBUG getMessageFallback !!!]]] NAMESPACE: ${namespace}, KEY: ${key}, ERROR_CODE: ${error.code}\n`
-      );
       const path = [namespace, key].filter((part) => part != null).join(".");
-      if (error.code === IntlErrorCode.MISSING_MESSAGE) {
-        return process.env.NODE_ENV === "development" ? `⚠️ MISSING_TRANSLATION: ${path}` : ""; // En production, chaîne vide ou clé de secours
-      } else {
-        // Pour d'autres types d'erreurs (ex: FORMATTING_ERROR)
-        return process.env.NODE_ENV === "development" ? `❌ TRANSLATION_ERROR_IN_KEY: ${path}` : ""; // En production, chaîne vide ou clé de secours
+
+      if (process.env.NODE_ENV === "development") {
+        console.log(`[i18n] FALLBACK: ${path} (${error.code})`);
+
+        if (error.code === IntlErrorCode.MISSING_MESSAGE) {
+          return `⚠️ MISSING: ${path}`;
+        } else {
+          return `❌ ERROR: ${path}`;
+        }
       }
+
+      // En production, retour silencieux
+      return "";
     },
   };
 });

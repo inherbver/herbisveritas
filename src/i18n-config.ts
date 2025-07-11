@@ -10,14 +10,34 @@ export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "fr";
 export const localePrefix = "always"; // Options: 'as-needed', 'always', 'never'
 
-// Optionnel: Définir des pathnames spécifiques par locale si nécessaire
+// Définition des pathnames pour le routage localisé
 export const pathnames = {
-  "/shop": "/", // The shop content (canonical /shop) is served at the root URL (/)
-  // Exemple:
-  // '/about': {
-  //   en: '/about',
-  //   fr: '/a-propos'
-  // }
+  // Le chemin canonique '/' est mappé à la page d'accueil
+  "/": "/",
+
+  // Le chemin canonique '/shop' est mappé à des URLs localisées
+  "/shop": {
+    en: "/shop",
+    fr: "/boutique",
+  },
+
+  // Le chemin canonique pour les produits (route dynamique)
+  "/products/[slug]": {
+    en: "/products/[slug]",
+    fr: "/produits/[slug]",
+  },
+
+  // Le chemin canonique pour la page de paiement
+  "/checkout": {
+    en: "/checkout",
+    fr: "/paiement",
+  },
+
+  // Exemple pour d'autres pages
+  "/profile": {
+    en: "/profile",
+    fr: "/profil",
+  },
 };
 
 export const localeDetection = true; // Activer/désactiver la détection automatique

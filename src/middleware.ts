@@ -1,6 +1,12 @@
 import createMiddleware from "next-intl/middleware";
-import { locales, defaultLocale, localePrefix, localeDetection, type Locale } from "./i18n-config";
-import { pathnames } from "./i18n/navigation"; // Importer depuis le bon fichier
+import {
+  locales,
+  defaultLocale,
+  localePrefix,
+  localeDetection,
+  pathnames,
+  type Locale,
+} from "./i18n-config";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type AppRole } from "@/config/permissions";
 import { hasPermission, clearSupabaseCookies } from "@/lib/auth/utils";
@@ -9,10 +15,10 @@ import { logSecurityEvent } from "@/lib/admin/monitoring-service";
 import { type NextRequest, NextResponse } from "next/server";
 
 const handleI18n = createMiddleware({
-  locales: locales,
+  locales,
   defaultLocale,
   localePrefix,
-  pathnames, // Passé ici pour la gestion des URLs localisées par next-intl
+  pathnames,
   localeDetection,
 });
 
@@ -127,13 +133,6 @@ export async function middleware(request: NextRequest) {
     // Pour l'instant, on laisse la logique suivante gérer le cas où l'utilisateur n'est pas authentifié/admin.
   }
 
-  // Redirect from root to the main shop page
-  if (pathToCheck === "/") {
-    const shopPath = pathnames["/shop"][currentLocale];
-    const redirectUrl = new URL(`/${currentLocale}${shopPath}`, request.url);
-    return NextResponse.redirect(redirectUrl);
-  }
-
   // Protéger les routes de profil
   if (pathToCheck.startsWith("/profile")) {
     if (!user) {
@@ -186,9 +185,12 @@ export async function middleware(request: NextRequest) {
 // La configuration du matcher reste la même
 export const config = {
   matcher: [
-    // Match all pathnames except for
-    // - … if they start with `/api`, `/_next` or `/_vercel`
-    // - … the ones containing a dot (e.g. `favicon.ico`)
-    "/((?!api|_next|_vercel|.*\\.).*)",
+    // Match all request paths except for the ones starting with:
+    // - api (API routes)
+    // - _next/static (static files)
+    // - _next/image (image optimization files)
+    // - favicon.ico (favicon file)
+    // - any other files with an extension (e.g. .svg, .png, .jpg)
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)",
   ],
 };
