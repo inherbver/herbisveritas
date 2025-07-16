@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe le client Supabase côté serveur
 
 import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
-import { isGeneralError, isValidationError } from "@/lib/cart-helpers"; // AJOUT: Importer les gardiens de type
+import { isGeneralErrorResult, isValidationErrorResult } from "@/lib/cart-helpers"; // ✅ Corriger les noms d'imports
 import { getTranslations } from "next-intl/server";
 import { createPasswordSchema, createSignupSchema } from "@/lib/validators/auth.validator";
 
@@ -89,13 +89,14 @@ export async function loginAction(
     const migrationResult = await migrateAndGetCart({ guestUserId });
     if (!migrationResult.success) {
       let errorDetails = "Détails de l'erreur de migration non disponibles.";
-      if (isGeneralError(migrationResult)) {
+      // ✅ Corriger les gardiens de type et l'accès aux propriétés
+      if (isGeneralErrorResult(migrationResult)) {
         errorDetails = `Erreur générale: ${migrationResult.error}`;
-      } else if (isValidationError(migrationResult)) {
+      } else if (isValidationErrorResult(migrationResult)) {
         errorDetails = `Erreurs de validation: ${JSON.stringify(migrationResult.errors)}`;
       }
       console.warn(
-        `loginAction: La migration du panier pour l'invité ${guestUserId} a échoué. ${errorDetails}. Message: ${migrationResult.message}`
+        `loginAction: La migration du panier pour l'invité ${guestUserId} a échoué. ${errorDetails}. Message: ${migrationResult.message || 'Aucun message'}`
       );
       // Ne pas bloquer la redirection, la connexion a réussi.
     } else {
@@ -182,15 +183,17 @@ export async function signUpAction(
     };
   }
 
-  // 4. Audit the successful signup
+  // 4. ✅ Audit the successful signup - Corriger les propriétés selon le schéma DB
   if (data.user) {
     const { error: auditError } = await supabase.from("audit_logs").insert({
-      actor_id: data.user.id,
-      action: "USER_SIGNUP",
-      target_table: "auth.users",
-      target_id: data.user.id,
-      status: "SUCCESS",
-      justification: "User self-registration",
+      user_id: data.user.id, // ✅ Utiliser user_id au lieu de actor_id
+      event_type: "USER_SIGNUP", // ✅ Utiliser event_type au lieu de action
+      data: { // ✅ Utiliser le champ data pour stocker les métadonnées
+        target_table: "auth.users",
+        target_id: data.user.id,
+        status: "SUCCESS",
+        justification: "User self-registration",
+      },
     });
 
     if (auditError) {

@@ -3,56 +3,57 @@
 import crypto from "crypto";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
+
 import { getActiveUserId } from "@/lib/authUtils";
-import { getCart } from "@/lib/cartReader";
 import {
-  type CartActionResult,
-  isSuccessResult,
+  createGeneralErrorResult,
   createSuccessResult,
   createValidationErrorResult,
-  createGeneralErrorResult,
+  isGeneralErrorResult,
+  type CartActionResult,
 } from "@/lib/cart-helpers";
-import type { CartData } from "@/types/cart";
+import { getCart } from "@/lib/cartReader";
+import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { CartDataFromServer } from "@/lib/supabase/types";
 import {
   AddToCartInputSchema,
   RemoveFromCartInputSchema,
-  type RemoveFromCartInput,
   UpdateCartItemQuantityInputSchema,
+  type RemoveFromCartInput,
   type UpdateCartItemQuantityInput,
 } from "@/lib/validators/cart.validator";
 
+// Re-export getCart for external usage
+export { getCart };
+
+// --- Cart Actions ---
+
 export async function addItemToCart(
-  prevState: CartActionResult<CartData | null> | unknown,
+  prevState: unknown, // previous state is not used but required by useActionState
   formData: FormData
-): Promise<CartActionResult<CartData | null>> {
+): Promise<CartActionResult<CartDataFromServer | null>> {
   try {
-    // 1. Validation
     const validatedFields = AddToCartInputSchema.safeParse({
       productId: formData.get("productId"),
       quantity: formData.get("quantity"),
     });
 
     if (!validatedFields.success) {
-      const firstError =
-        Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
-        "Erreur de validation.";
-      return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
-    }
-    const { productId: validProductId, quantity: quantityToAdd } = validatedFields.data;
-
-    // 2. Auth & Setup
-    const supabase = await createSupabaseServerClient();
-    const activeUserId = await getActiveUserId(supabase);
-    if (!activeUserId) {
-      return createGeneralErrorResult(
-        "User identification failed",
-        "Impossible d'identifier l'utilisateur."
+      return createValidationErrorResult(
+        validatedFields.error.flatten().fieldErrors,
+        "Erreur de validation."
       );
     }
 
-    // 3. Database Logic: Find or create cart
+    const { productId, quantity } = validatedFields.data;
+
+    const supabase = await createSupabaseServerClient();
+    const activeUserId = await getActiveUserId(supabase);
+    if (!activeUserId) {
+      return createGeneralErrorResult("User identification failed", "Impossible d'identifier l'utilisateur.");
+    }
+
     const { data: existingCart, error: findCartError } = await supabase
       .from("carts")
       .select("id")
@@ -61,224 +62,207 @@ export async function addItemToCart(
 
     if (findCartError) throw findCartError;
 
-    let cartId: string;
-    if (existingCart) {
-      cartId = existingCart.id;
-    } else {
+    let cartId = existingCart?.id;
+    if (!cartId) {
       const { data: newCart, error: newCartError } = await supabase
         .from("carts")
         .insert({ user_id: activeUserId })
         .select("id")
         .single();
-
       if (newCartError || !newCart) {
         throw newCartError || new Error("Cart creation failed.");
       }
       cartId = newCart.id;
     }
 
-    // 4. Call RPC
     const { error: rpcError } = await supabase.rpc("add_or_update_cart_item", {
       p_cart_id: cartId,
-      p_product_id: validProductId,
-      p_quantity_to_add: quantityToAdd,
+      p_product_id: productId,
+      p_quantity_to_add: quantity,
     });
 
     if (rpcError) {
       console.error("Supabase RPC Error:", rpcError);
-      throw new Error(
-        `[RPC] ${rpcError.code || ""}: ${rpcError.message} | ${rpcError.details || ""}`
-      );
+      throw new Error(`Erreur lors de l'ajout au panier: ${rpcError.message}`);
     }
 
-    // 5. Revalidate and Refetch
     revalidateTag("cart");
 
-    const cartStateAfterRpc = await getCart();
-    if (!isSuccessResult(cartStateAfterRpc)) {
-      // Instead of returning the raw error, create a properly-formed one.
-      const errorMessage = "Failed to fetch updated cart state after adding item.";
-      const displayMessage = cartStateAfterRpc.message || "Le panier n'a pas pu être mis à jour.";
-      return createGeneralErrorResult(errorMessage, displayMessage);
+    const updatedCart = await getCart();
+    if (!updatedCart.success) {
+      if (isGeneralErrorResult(updatedCart)) {
+        return createGeneralErrorResult(updatedCart.error, updatedCart.message);
+      } else {
+        return createGeneralErrorResult(
+          "UnexpectedError",
+          "Une erreur inattendue est survenue lors de la récupération du panier mis à jour."
+        );
+      }
     }
 
-    return createSuccessResult(cartStateAfterRpc.data, "Article ajouté/mis à jour dans le panier.");
+    return createSuccessResult(updatedCart.data, "Article ajouté au panier avec succès.");
   } catch (error: unknown) {
-    const e = error as Error;
-    console.error(`addItemToCart - Erreur inattendue:`, e);
-    return createGeneralErrorResult(
-      e.message,
-      `Une erreur inattendue est survenue. ${e.message.startsWith("[RPC]") ? e.message.substring(6) : "Veuillez réessayer."}`
-    );
+    const errorMessage = (error as Error).message;
+    console.error("addItemToCart Error:", error);
+    return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
   }
 }
 
 export async function removeItemFromCart(
   input: RemoveFromCartInput
-): Promise<CartActionResult<CartData | null>> {
-  const validatedFields = RemoveFromCartInputSchema.safeParse(input);
-  if (!validatedFields.success) {
-    const firstError =
-      Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
-      "Erreur de validation.";
-    return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
-  }
-
-  const { cartItemId } = validatedFields.data;
-  const supabase = await createSupabaseServerClient();
-  const activeUserId = await getActiveUserId(supabase);
-
-  if (!activeUserId) {
-    return createGeneralErrorResult("Impossible d'identifier l'utilisateur.");
-  }
-
+): Promise<CartActionResult<CartDataFromServer | null>> {
   try {
-    const { data: itemData, error: fetchItemError } = await supabase
-      .from("cart_items")
-      .select("id, carts (user_id)")
-      .eq("id", cartItemId)
-      .maybeSingle();
-
-    if (fetchItemError) {
-      return createGeneralErrorResult(`Erreur interne: ${fetchItemError.message}`);
-    }
-
-    if (!itemData) {
-      return createGeneralErrorResult("Article du panier non trouvé.");
-    }
-
-    // @ts-expect-error itemData.carts is expected to be an object if found
-    if (!itemData.carts || itemData.carts.user_id !== activeUserId) {
-      return createGeneralErrorResult(
-        "Action non autorisée: cet article n'appartient pas à votre panier."
+    const validatedFields = RemoveFromCartInputSchema.safeParse(input);
+    if (!validatedFields.success) {
+      return createValidationErrorResult(
+        validatedFields.error.flatten().fieldErrors,
+        "Erreur de validation."
       );
     }
+    const { cartItemId } = validatedFields.data;
 
-    const { error: deleteItemError } = await supabase
+    const supabase = await createSupabaseServerClient();
+    const activeUserId = await getActiveUserId(supabase);
+    if (!activeUserId) {
+      return createGeneralErrorResult("User not authenticated.", "Impossible d'identifier l'utilisateur.");
+    }
+
+    const { error: deleteError } = await supabase
       .from("cart_items")
       .delete()
       .eq("id", cartItemId);
 
-    if (deleteItemError) {
-      return createGeneralErrorResult(`Erreur lors de la suppression: ${deleteItemError.message}`);
+    if (deleteError) {
+      console.error("Supabase Delete Error:", deleteError);
+      throw new Error(`Erreur lors de la suppression de l'article: ${deleteError.message}`);
     }
 
     revalidateTag("cart");
 
-    const cartStateAfterRemove = await getCart();
-    if (!isSuccessResult(cartStateAfterRemove)) {
-      return createGeneralErrorResult(
-        "Erreur lors de la récupération du panier après suppression."
-      );
+    const updatedCart = await getCart();
+    if (!updatedCart.success) {
+      if (isGeneralErrorResult(updatedCart)) {
+        return createGeneralErrorResult(updatedCart.error, updatedCart.message);
+      } else {
+        return createGeneralErrorResult(
+          "UnexpectedError",
+          "Une erreur inattendue est survenue lors de la récupération du panier mis à jour."
+        );
+      }
     }
 
-    return createSuccessResult(cartStateAfterRemove.data, "Article supprimé du panier.");
-  } catch (_e: unknown) {
-    return createGeneralErrorResult("Une erreur inattendue est survenue lors de la suppression.");
+    return createSuccessResult(updatedCart.data, "Article supprimé du panier.");
+  } catch (error: unknown) {
+    const errorMessage = (error as Error).message;
+    console.error("removeItemFromCart Error:", error);
+    return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
   }
 }
 
-// Dans cartActions.ts - Version simplifiée de updateCartItemQuantity
-
 export async function updateCartItemQuantity(
   input: UpdateCartItemQuantityInput
-): Promise<CartActionResult<CartData | null>> {
-  const logPrefix = `[updateCartItemQuantity ${new Date().toISOString()}]`;
-  console.log(`${logPrefix} CALLED with input:`, JSON.stringify(input, null, 2));
-
-  const validatedFields = UpdateCartItemQuantityInputSchema.safeParse(input);
-  if (!validatedFields.success) {
-    const firstError =
-      Object.values(validatedFields.error.flatten().fieldErrors).flat()[0] ||
-      "Erreur de validation.";
-    console.error(`${logPrefix} Validation FAILED:`, validatedFields.error.flatten().fieldErrors);
-    return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, firstError);
-  }
-
-  const { cartItemId, quantity } = validatedFields.data;
-  console.log(`${logPrefix} Validated data - cartItemId: ${cartItemId}, quantity: ${quantity}`);
-
-  if (quantity <= 0) {
-    console.log(
-      `${logPrefix} Quantity <= 0, redirecting to removeItemFromCart for cartItemId: ${cartItemId}`
-    );
-    return await removeItemFromCart({ cartItemId });
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const activeUserId = await getActiveUserId(supabase);
-
-  if (!activeUserId) {
-    console.error(`${logPrefix} FAILED to identify active user.`);
-    return createGeneralErrorResult("Impossible d'identifier l'utilisateur.");
-  }
-  console.log(`${logPrefix} Active user identified: ${activeUserId}`);
-
+): Promise<CartActionResult<CartDataFromServer | null>> {
   try {
-    // ÉTAPE 1: Vérifier que l'item appartient bien à l'utilisateur
-    console.log(`${logPrefix} Verifying item ownership`);
-    const { data: itemData, error: fetchError } = await supabase
-      .from("cart_items")
-      .select("id, quantity, carts!inner(user_id)") // !inner pour faire un JOIN obligatoire
-      .eq("id", cartItemId)
-      .eq("carts.user_id", activeUserId) // Maintenant carts est inclus dans le select
-      .maybeSingle();
+    const validatedFields = UpdateCartItemQuantityInputSchema.safeParse(input);
+    if (!validatedFields.success) {
+      return createValidationErrorResult(
+        validatedFields.error.flatten().fieldErrors,
+        "Erreur de validation."
+      );
+    }
+    const { cartItemId, quantity } = validatedFields.data;
 
-    if (fetchError) {
-      console.error(`${logPrefix} FAILED to fetch item for ownership verification:`, fetchError);
-      return createGeneralErrorResult(`Erreur lors de la vérification: ${fetchError.message}`);
+    if (quantity <= 0) {
+      return await removeItemFromCart({ cartItemId });
     }
 
-    if (!itemData) {
-      console.warn(`${logPrefix} Item not found or unauthorized access`);
-      return createGeneralErrorResult("Article du panier non trouvé ou action non autorisée.");
+    const supabase = await createSupabaseServerClient();
+    const activeUserId = await getActiveUserId(supabase);
+    if (!activeUserId) {
+      return createGeneralErrorResult("User not authenticated.", "Impossible d'identifier l'utilisateur.");
     }
 
-    console.log(`${logPrefix} Ownership verified. Current quantity: ${itemData.quantity}`);
-
-    // ÉTAPE 2: Mettre à jour la quantité
-    console.log(`${logPrefix} Updating cart item quantity`);
-    const { data: updateResult, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from("cart_items")
-      .update({
-        quantity: quantity,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", cartItemId)
-      .select("id, quantity") // Simple select sans relation
-      .single();
+      .update({ quantity })
+      .eq("id", cartItemId);
 
     if (updateError) {
-      console.error(`${logPrefix} FAILED to update cart_items:`, updateError);
-      return createGeneralErrorResult(`Erreur lors de la mise à jour: ${updateError.message}`);
+      console.error("Supabase Update Error:", updateError);
+      throw new Error(`Erreur lors de la mise à jour de la quantité: ${updateError.message}`);
     }
 
-    if (!updateResult) {
-      console.warn(`${logPrefix} No rows updated`);
-      return createGeneralErrorResult("Erreur lors de la mise à jour.");
-    }
-
-    console.log(
-      `${logPrefix} Successfully updated cart_items. New quantity: ${updateResult.quantity}`
-    );
-
-    // Revalidation pour les futures requêtes
     revalidateTag("cart");
 
-    // ✅ ÉTAPE 3: Renvoyer l'état complet du panier mis à jour
-    const cartStateAfterUpdate = await getCart();
-    if (!isSuccessResult(cartStateAfterUpdate)) {
-      return cartStateAfterUpdate; // Transférer l'erreur si la récupération échoue
+    const updatedCart = await getCart();
+    if (!updatedCart.success) {
+      if (isGeneralErrorResult(updatedCart)) {
+        return createGeneralErrorResult(updatedCart.error, updatedCart.message);
+      } else {
+        return createGeneralErrorResult(
+          "UnexpectedError",
+          "Une erreur inattendue est survenue lors de la récupération du panier mis à jour."
+        );
+      }
     }
 
-    return createSuccessResult(cartStateAfterUpdate.data, "Quantité de l'article mise à jour.");
-  } catch (_e: unknown) {
-    const e = _e as Error;
-    console.error(`${logPrefix} UNEXPECTED ERROR:`, e);
-    return createGeneralErrorResult(
-      `Une erreur inattendue est survenue lors de la mise à jour: ${e.message}`
+    return createSuccessResult(updatedCart.data, "Quantité mise à jour.");
+  } catch (error: unknown) {
+    const errorMessage = (error as Error).message;
+    console.error("updateCartItemQuantity Error:", error);
+    return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
+  }
+}
+
+// --- Wrapper Actions pour useActionState ---
+
+/**
+ * Wrapper pour removeItemFromCart compatible avec useActionState
+ * useActionState passe (state, formData), mais removeItemFromCart attend un objet
+ */
+export async function removeItemFromCartFormAction(
+  prevState: unknown,
+  formData: FormData
+): Promise<CartActionResult<CartDataFromServer | null>> {
+  const cartItemId = formData.get("cartItemId") as string;
+  
+  if (!cartItemId) {
+    return createValidationErrorResult(
+      { cartItemId: ["L'ID de l'article est requis"] },
+      "L'ID de l'article est requis"
     );
   }
+
+  return removeItemFromCart({ cartItemId });
+}
+
+/**
+ * Wrapper pour updateCartItemQuantity compatible avec useActionState
+ * useActionState passe (state, formData), mais updateCartItemQuantity attend un objet
+ */
+export async function updateCartItemQuantityFormAction(
+  prevState: unknown,
+  formData: FormData
+): Promise<CartActionResult<CartDataFromServer | null>> {
+  const cartItemId = formData.get("cartItemId") as string;
+  const quantityStr = formData.get("quantity") as string;
+  
+  if (!cartItemId) {
+    return createValidationErrorResult(
+      { cartItemId: ["L'ID de l'article est requis"] },
+      "L'ID de l'article est requis"
+    );
+  }
+
+  const quantity = parseInt(quantityStr, 10);
+  if (isNaN(quantity) || quantity < 0) {
+    return createValidationErrorResult(
+      { quantity: ["La quantité doit être un nombre positif"] },
+      "La quantité doit être un nombre positif"
+    );
+  }
+
+  return updateCartItemQuantity({ cartItemId, quantity });
 }
 
 const MigrateCartInputSchema = z.object({
@@ -287,147 +271,109 @@ const MigrateCartInputSchema = z.object({
 
 export async function migrateAndGetCart(
   input: z.infer<typeof MigrateCartInputSchema>
-): Promise<CartActionResult<CartData | null>> {
-  const migrationId = crypto.randomUUID();
-  console.log(`[Migration ${migrationId}] Début: ${input.guestUserId}`);
-
-  const validatedFields = MigrateCartInputSchema.safeParse(input);
-  if (!validatedFields.success) {
-    console.log(`[Migration ${migrationId}] ÉCHEC - Validation input`);
-    return createValidationErrorResult(validatedFields.error.flatten().fieldErrors);
-  }
-
-  const { guestUserId } = validatedFields.data;
+): Promise<CartActionResult<CartDataFromServer | null>> {
+  const migrationId = crypto.randomBytes(4).toString("hex");
   let migrationSuccessful = false;
-
   try {
+    console.log(`[Migration ${migrationId}] Starting...`);
+    const validatedFields = MigrateCartInputSchema.safeParse(input);
+    if (!validatedFields.success) {
+      return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, "ID invité invalide.");
+    }
+    const { guestUserId } = validatedFields.data;
+
     const supabase = await createSupabaseServerClient();
-    const supabaseAdmin = createSupabaseAdminClient();
-    console.log(`[Migration ${migrationId}] Clients créés`);
+    const authenticatedUserId = await getActiveUserId(supabase);
 
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
-
-    if (!authUser) {
-      console.log(`[Migration ${migrationId}] ÉCHEC - Pas d'utilisateur authentifié`);
-      return createGeneralErrorResult("Migration impossible : utilisateur non authentifié.");
+    if (!authenticatedUserId) {
+      return createGeneralErrorResult("Authenticated user not found.", "Utilisateur authentifié non trouvé.");
     }
 
-    const authenticatedUserId = authUser.id;
-    console.log(`[Migration ${migrationId}] Auth user ID: ${authenticatedUserId}`);
-
-    if (guestUserId === authenticatedUserId) {
-      console.log(`[Migration ${migrationId}] IDs identiques - retour getCart simple`);
+    if (authenticatedUserId === guestUserId) {
+      console.log(`[Migration ${migrationId}] No migration needed (same user).`);
       return getCart();
     }
 
-    console.log(`[Migration ${migrationId}] Vérification utilisateur invité...`);
-    const { data: guestUserData, error: adminError } =
-      await supabaseAdmin.auth.admin.getUserById(guestUserId);
-
-    if (adminError || !guestUserData?.user) {
-      console.log(`[Migration ${migrationId}] ÉCHEC - Admin error:`, adminError);
-      console.log(`[Migration ${migrationId}] ÉCHEC - Guest user data:`, guestUserData);
-      return createGeneralErrorResult("Utilisateur invité invalide ou non trouvé.");
-    }
-
-    if (!guestUserData.user.is_anonymous) {
-      console.log(`[Migration ${migrationId}] ÉCHEC - User not anonymous:`, guestUserData.user);
-      return createGeneralErrorResult("L'ID invité ne correspond pas à un utilisateur anonyme.");
-    }
-
-    console.log(`[Migration ${migrationId}] Recherche panier invité...`);
+    console.log(`[Migration ${migrationId}] Finding guest cart...`);
     const { data: guestCart, error: guestCartError } = await supabase
       .from("carts")
       .select("id")
       .eq("user_id", guestUserId)
       .maybeSingle();
 
-    if (guestCartError) {
-      console.log(`[Migration ${migrationId}] ÉCHEC - Guest cart error:`, guestCartError);
-      throw guestCartError;
-    }
+    if (guestCartError) throw guestCartError;
 
     if (!guestCart) {
-      console.log(`[Migration ${migrationId}] Pas de panier invité - retour getCart`);
-      migrationSuccessful = true;
+      console.log(`[Migration ${migrationId}] No guest cart found. Returning current user cart.`);
+      migrationSuccessful = true; // No action needed, so technically successful.
       return getCart();
     }
 
-    console.log(`[Migration ${migrationId}] Panier invité trouvé: ${guestCart.id}`);
-
-    console.log(`[Migration ${migrationId}] Recherche panier auth user...`);
+    console.log(`[Migration ${migrationId}] Guest cart found: ${guestCart.id}. Finding auth user cart...`);
     const { data: authCart, error: authCartError } = await supabase
       .from("carts")
       .select("id")
       .eq("user_id", authenticatedUserId)
       .maybeSingle();
 
-    if (authCartError) {
-      console.log(`[Migration ${migrationId}] ÉCHEC - Auth cart error:`, authCartError);
-      throw authCartError;
-    }
+    if (authCartError) throw authCartError;
 
     if (!authCart) {
-      console.log(`[Migration ${migrationId}] Pas de panier auth - mise à jour ownership...`);
+      console.log(`[Migration ${migrationId}] No auth cart, updating ownership...`);
       const { error: updateError } = await supabase
         .from("carts")
         .update({ user_id: authenticatedUserId })
         .eq("id", guestCart.id);
 
-      if (updateError) {
-        console.log(`[Migration ${migrationId}] ÉCHEC - Update error:`, updateError);
-        throw updateError;
-      }
-      console.log(`[Migration ${migrationId}] Update réussie`);
+      if (updateError) throw updateError;
+      console.log(`[Migration ${migrationId}] Ownership update successful.`);
     } else {
-      console.log(`[Migration ${migrationId}] Fusion des paniers via RPC...`);
+      console.log(`[Migration ${migrationId}] Merging carts via RPC...`);
       const { error: rpcError } = await supabase.rpc("merge_carts", {
         p_guest_cart_id: guestCart.id,
         p_auth_cart_id: authCart.id,
       });
 
-      if (rpcError) {
-        console.log(`[Migration ${migrationId}] ÉCHEC - RPC error:`, rpcError);
-        throw rpcError;
-      }
-      console.log(`[Migration ${migrationId}] RPC réussie`);
+      if (rpcError) throw rpcError;
+      console.log(`[Migration ${migrationId}] RPC merge successful.`);
     }
 
     migrationSuccessful = true;
     revalidateTag("cart");
 
-    console.log(`[Migration ${migrationId}] Récupération panier final...`);
-    const finalResult = await getCart();
-    console.log(`[Migration ${migrationId}] Résultat final:`, finalResult.success);
+    console.log(`[Migration ${migrationId}] Fetching final cart state...`);
+    return getCart();
 
-    return finalResult;
   } catch (error: unknown) {
+    const errorMessage = (error as Error).message;
     console.error(`[Migration ${migrationId}] EXCEPTION:`, error);
-    const errorMessage = (error as Error).message || "Erreur de migration.";
-    return createGeneralErrorResult(errorMessage);
+    return createGeneralErrorResult(errorMessage, "Erreur de migration.");
   } finally {
     if (migrationSuccessful) {
       try {
-        const supabaseAdmin = createSupabaseAdminClient();
-        await supabaseAdmin.auth.admin.deleteUser(guestUserId);
-        console.log(`[Migration ${migrationId}] Nettoyage réussi.`);
+        // Re-parse to safely access guestUserId for cleanup
+        const validatedFields = MigrateCartInputSchema.safeParse(input);
+        if (validatedFields.success) {
+          const { guestUserId } = validatedFields.data;
+          const supabaseAdmin = createSupabaseAdminClient();
+          await supabaseAdmin.auth.admin.deleteUser(guestUserId);
+          console.log(`[Migration ${migrationId}] Guest user cleanup successful for ${guestUserId}.`);
+        }
       } catch (cleanupError) {
-        console.warn(`[Migration ${migrationId}] Échec du nettoyage.`, cleanupError);
+        console.warn(`[Migration ${migrationId}] Guest user cleanup failed.`, cleanupError);
       }
     }
   }
 }
 
 export async function clearCartAction(
-  _prevState: CartActionResult<CartData | null>
-): Promise<CartActionResult<CartData | null>> {
+  _prevState: unknown
+): Promise<CartActionResult<CartDataFromServer | null>> {
   const supabase = await createSupabaseServerClient();
   const activeUserId = await getActiveUserId(supabase);
 
   if (!activeUserId) {
-    return createGeneralErrorResult("Impossible d'identifier l'utilisateur.");
+    return createGeneralErrorResult("User not authenticated.", "Impossible d'identifier l'utilisateur.");
   }
 
   try {
@@ -438,9 +384,7 @@ export async function clearCartAction(
       .maybeSingle();
 
     if (cartError) {
-      return createGeneralErrorResult(
-        `Erreur lors de la recherche du panier: ${cartError.message}`
-      );
+      throw new Error(`Erreur lors de la recherche du panier: ${cartError.message}`);
     }
 
     if (!cartData) {
@@ -453,12 +397,13 @@ export async function clearCartAction(
       .eq("cart_id", cartData.id);
 
     if (deleteItemsError) {
-      return createGeneralErrorResult(`Erreur lors de la suppression: ${deleteItemsError.message}`);
+      throw new Error(`Erreur lors de la suppression: ${deleteItemsError.message}`);
     }
 
     revalidateTag("cart");
     return createSuccessResult(null, "Panier vidé avec succès.");
-  } catch (_e: unknown) {
-    return createGeneralErrorResult("Une erreur inattendue est survenue.");
+  } catch (error: unknown) {
+    const errorMessage = (error as Error).message;
+    return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
   }
 }

@@ -123,19 +123,19 @@ export const updateProduct = withPermissionSafe(
       };
     }
 
-    // ✅ Paramètres correspondant exactement à la fonction RPC documentée
+    // Les types sont désormais garantis non-nuls par le schéma Zod.
     const params = {
       p_id: id,
       p_slug: productData.slug,
       p_price: productData.price,
       p_stock: productData.stock,
-      p_unit: productData.unit || "",
+      p_unit: productData.unit,
       p_image_url: productData.image_url,
-      p_inci_list: productData.inci_list || [],
+      p_inci_list: productData.inci_list,
       p_is_active: productData.is_active,
       p_is_new: productData.is_new,
       p_is_on_promotion: productData.is_on_promotion,
-      p_translations: translations,
+      p_translations: translations as any, // Cast vers Json pour Supabase RPC
     };
 
     const { error } = await supabase.rpc("update_product_with_translations", params);
@@ -144,7 +144,7 @@ export const updateProduct = withPermissionSafe(
       console.error("RPC update_product_with_translations error:", error);
       return {
         success: false,
-        message: `La mise à jour du produit a échoué: ${error.message}`,
+        message: `Erreur lors de la mise à jour: ${error.message}`,
       };
     }
 

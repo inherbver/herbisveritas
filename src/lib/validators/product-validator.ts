@@ -11,7 +11,7 @@ export const productTranslationSchema = z.object({
   composition_text: z.string().optional(),
 });
 
-// ✅ Schéma simplifié pour éviter les conflits TypeScript
+// Schéma principal avec des types cohérents
 export const productSchema = z.object({
   // Champs obligatoires
   id: z.string().uuid({ message: "Le SKU/ID doit être un UUID valide." }).optional(),
@@ -22,16 +22,16 @@ export const productSchema = z.object({
       message: "Le slug ne peut contenir que des minuscules, chiffres et tirets.",
     }),
 
-  // Champs numériques optionnels (nullable)
-  price: z.number().min(0).nullable().optional(),
-  stock: z.number().int().nullable().optional(),
+  // Champs numériques - utilisation de coerce pour conversion automatique
+  price: z.coerce.number().min(0, { message: "Le prix doit être positif." }),
+  stock: z.coerce.number().int().min(0, { message: "Le stock doit être un entier positif." }),
 
-  // Champs texte optionnels
-  unit: z.string().optional(),
-  image_url: z.string().url().nullable().optional(),
+  // Champs texte
+  unit: z.string(),
+  image_url: z.string(),
 
-  // Arrays (avec defaults dans le composant)
-  inci_list: z.array(z.string()).optional(),
+  // Arrays
+  inci_list: z.array(z.string()),
 
   // Booléens
   is_active: z.boolean(),
@@ -44,8 +44,31 @@ export const productSchema = z.object({
     .min(1, { message: "Au moins une traduction est requise." }),
 });
 
-// ✅ Correction : Type inféré plus strict
+// Types inférés
 export type ProductFormValues = z.infer<typeof productSchema>;
-
-// ✅ Type pour les traductions
 export type ProductTranslation = z.infer<typeof productTranslationSchema>;
+
+// Type pour les valeurs par défaut
+export const getDefaultProductValues = (): ProductFormValues => ({
+  id: crypto.randomUUID(),
+  slug: "",
+  price: 0,
+  stock: 0,
+  unit: "",
+  image_url: "",
+  inci_list: [],
+  is_active: true,
+  is_new: false,
+  is_on_promotion: false,
+  translations: [
+    {
+      locale: "fr",
+      name: "",
+      short_description: "",
+      description_long: "",
+      usage_instructions: "",
+      properties: "",
+      composition_text: "",
+    },
+  ],
+});

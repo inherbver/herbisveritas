@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
-import { requestPasswordResetAction } from "@/actions/auth";
+import { requestPasswordResetAction } from "@/actions/authActions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";

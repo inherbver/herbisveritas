@@ -1,41 +1,25 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
-import { redirect as navRedirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LOGIN_REDIRECT_URL } from "@/lib/constants";
-import { ProfileData } from "@/types/profile";
+import type { Tables } from "@/types/supabase";
 import { Metadata } from "next";
-import { LogoutButton } from "@/components/domain/profile/logout-button"; // Import LogoutButton
+import { LogoutButton } from "@/components/domain/profile/logout-button";
 
-// Minimal Address type definition (ideally import from a shared types file)
-interface Address {
-  id: string;
-  user_id: string;
-  address_type: "shipping" | "billing";
-  is_default: boolean;
-  company_name?: string | null;
-  full_name?: string | null;
-  address_line1: string;
-  address_line2?: string | null;
-  postal_code: string;
-  city: string;
-  country_code: string; // Matches 'addresses' table
-  state_province_region?: string | null;
-  phone_number?: string | null;
-  created_at: string;
-  updated_at: string;
-}
+// Use the generated type for addresses to ensure it's always in sync with the DB schema.
+type Address = Tables<"addresses">;
+type Profile = Tables<"profiles">;
 
-// Helper component to display an address (can be moved to a separate file)
-// This is a simplified version of DisplayAddress from AddressesPage
+// Helper component to display an address. This could be moved to a separate file.
 const AccountDisplayAddress = ({
   address,
   title,
-  t, // translations from AccountPage
+  t,
 }: {
   address: Address | null;
   title: string;
-  t: (key: string) => string; // More specific type for t function
+  t: (key: string) => string;
 }) => {
   if (!address) {
     return (
@@ -119,18 +103,16 @@ interface AccountPageProps {
   params: { locale: string };
 }
 
-export async function generateMetadata(props: AccountPageProps): Promise<Metadata> {
-  const { locale: currentLocale } = await props.params;
-  const t = await getTranslations({ locale: currentLocale, namespace: "AccountPage" });
+export async function generateMetadata({ params }: AccountPageProps): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "AccountPage" });
   return {
     title: t("metadata.title"),
     description: t("metadata.description"),
   };
 }
 
-export default async function AccountPage(props: AccountPageProps) {
-  const { locale: currentLocale } = await props.params;
-
+export default async function AccountPage({ params }: AccountPageProps) {
+  const { locale: currentLocale } = params;
   const t = await getTranslations({ locale: currentLocale, namespace: "AccountPage" });
   const tGlobal = await getTranslations({ locale: currentLocale, namespace: "Global" });
 
@@ -141,161 +123,99 @@ export default async function AccountPage(props: AccountPageProps) {
     error: userError,
   } = await supabase.auth.getUser();
 
-  // Si aucun utilisateur n'est authentifié
-  if (!user) {
-    // Ne pas considérer l'absence de session comme une erreur serveur à logger pour un invité.
-    // Rediriger vers la page de connexion.
-    // Logger une erreur seulement si userError existe et n'est pas une AuthSessionMissingError.
+  if (userError || !user) {
     if (userError && userError.name !== "AuthSessionMissingError") {
       console.error("Error fetching user:", userError);
     }
     const redirectTo = `/${currentLocale}${LOGIN_REDIRECT_URL}?next=/profile/account`;
-    return navRedirect(redirectTo); // Utiliser return pour arrêter l'exécution ici
+    redirect(redirectTo);
   }
 
-  // Si userError existe même si user est potentiellement non-null (moins courant)
-  if (userError) {
-    console.error("An error occurred while fetching user data:", userError);
-    const redirectTo = `/${currentLocale}${LOGIN_REDIRECT_URL}?next=/profile/account`;
-    return navRedirect(redirectTo); // Utiliser return pour arrêter l'exécution ici
-  }
-
-  // À ce stade, l'utilisateur est authentifié et userError est null.
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select(
-      `
-      first_name,
-      last_name,
-      phone_number,
-      terms_accepted_at,
-      billing_address_is_different
-    `
-    )
+    .select("*")
     .eq("id", user.id)
-    .single<
-      Omit<
-        ProfileData,
-        | "shipping_address_line1"
-        | "shipping_address_line2"
-        | "shipping_postal_code"
-        | "shipping_city"
-        | "shipping_country"
-        | "billing_address_line1"
-        | "billing_address_line2"
-        | "billing_postal_code"
-        | "billing_city"
-        | "billing_country"
-      >
-    >();
+    .single<Profile>();
 
-  // Fetch addresses from the 'addresses' table
   const { data: userAddresses, error: addressesError } = await supabase
     .from("addresses")
     .select("*")
     .eq("user_id", user.id)
-    .order("is_default", { ascending: false })
-    .order("address_type", { ascending: true });
+    .returns<Address[]>();
 
+  if (profileError) {
+    console.error("Error fetching profile data:", profileError);
+    return (
+      <section className="container mx-auto px-4 py-8">
+        <h1 className="mb-6 text-3xl font-bold text-foreground">{t("title")}</h1>
+        <p className="text-destructive">{t("errors.userProfileNotFound")}</p>
+      </section>
+    );
+  }
+  
   if (addressesError) {
     console.error("Error fetching user addresses:", addressesError);
-    // Handle error appropriately, maybe show a message to the user
+    // You might want to show a less disruptive error if only addresses fail
   }
 
-  let displayShippingAddress: Address | null = null;
-  let displayBillingAddress: Address | null = null;
+  // FIX: Utiliser 'is_default' au lieu de 'is_default_shipping' et 'is_default_billing'
+  // et filtrer par address_type pour déterminer les adresses par défaut
+  const defaultShippingAddress = userAddresses?.find((addr) => 
+    addr.is_default && addr.address_type === 'shipping'
+  ) ?? null;
+  const defaultBillingAddress = userAddresses?.find((addr) => 
+    addr.is_default && addr.address_type === 'billing'
+  ) ?? null;
+  
+  // Determine the display addresses based on defaults and types
+  const shippingAddress = defaultShippingAddress ?? userAddresses?.find(addr => addr.address_type === 'shipping') ?? null;
+  const billingAddress = defaultBillingAddress ?? userAddresses?.find(addr => addr.address_type === 'billing') ?? null;
 
-  if (userAddresses) {
-    displayShippingAddress =
-      userAddresses.find(
-        (addr: Address) => addr.address_type === "shipping" && addr.is_default === true
-      ) ||
-      userAddresses.find((addr: Address) => addr.address_type === "shipping") ||
-      null;
-
-    displayBillingAddress =
-      userAddresses.find(
-        (addr: Address) => addr.address_type === "billing" && addr.is_default === true
-      ) ||
-      userAddresses.find((addr: Address) => addr.address_type === "billing") ||
-      null;
-  }
-
-  if (profileError && profileError.code !== "PGRST116") {
-    console.error("Error fetching profile:", profileError);
-    // Afficher un message d'erreur plus visible à l'utilisateur pourrait être une amélioration
-  }
-
-  const userInfo = {
-    firstName: profile?.first_name || "",
-    lastName: profile?.last_name || "",
-    email: user.email || "",
-    phone: profile?.phone_number || user.phone || "",
-    accountCreated: user.created_at,
-    terms_accepted_at: profile?.terms_accepted_at,
-    billing_address_is_different: profile?.billing_address_is_different || false,
-    // Addresses will be handled by the new display components
-    shippingAddress: displayShippingAddress,
-    billingAddress: displayBillingAddress,
-  };
+  // FIX: Construire le nom complet et l'email à partir des données disponibles
+  const fullName = profile.first_name && profile.last_name 
+    ? `${profile.first_name} ${profile.last_name}` 
+    : profile.first_name || profile.last_name || '';
+  
+  const email = user.email || ''; // L'email vient de l'objet user, pas du profil
 
   return (
-    <section className="space-y-8 rounded-lg bg-card p-6 shadow-lg md:p-8">
-      <header>
-        <h1 className="mb-8 text-3xl font-bold text-foreground">{t("title")}</h1>
-      </header>
-      {/* Section Informations Personnelles */}
+    <section className="flex flex-col gap-8">
+      {/* Personal Information Section */}
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("generalInfo.title")}</h2>
+            <h2 className="text-xl font-semibold text-foreground">
+              {t("personalInfo.title")}
+            </h2>
             <Link
-              href={`/${currentLocale}/profile/account/edit`}
+              href={`/${currentLocale}/profile/edit-info`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {tGlobal("edit")}
             </Link>
           </div>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-muted-foreground">
-                {t("generalInfo.firstName")}
+                {t("personalInfo.fullName")}
               </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">
-                {userInfo.firstName || tGlobal("notProvided")}
-              </dd>
+              <dd className="mt-1 text-base text-foreground">{fullName}</dd>
             </div>
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-muted-foreground">
-                {t("generalInfo.lastName")}
+                {t("personalInfo.email")}
               </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">
-                {userInfo.lastName || tGlobal("notProvided")}
-              </dd>
-            </div>
-            <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-muted-foreground">
-                {t("generalInfo.email")}
-              </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">{userInfo.email}</dd>
-            </div>
-            <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-muted-foreground">
-                {t("generalInfo.phone")}
-              </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">
-                {userInfo.phone || tGlobal("notProvided")}
-              </dd>
+              <dd className="mt-1 text-base text-foreground">{email}</dd>
             </div>
           </dl>
         </div>
       </article>
-      {/* Section Adresses */}
+
+      {/* Addresses Section */}
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("addresses.title")}</h2>{" "}
-            {/* Предполагая ключ t("addresses.title") */}
+            <h2 className="text-xl font-semibold text-foreground">{t("addresses.title")}</h2>
             <Link
               href={`/${currentLocale}/profile/addresses`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -304,9 +224,9 @@ export default async function AccountPage(props: AccountPageProps) {
             </Link>
           </div>
           <AccountDisplayAddress
-            address={userInfo.shippingAddress}
+            address={shippingAddress}
             title={
-              userInfo.billing_address_is_different
+              profile.billing_address_is_different
                 ? t("shippingAddress.title")
                 : t("shippingAndBillingAddress.title")
             }
@@ -314,12 +234,12 @@ export default async function AccountPage(props: AccountPageProps) {
           />
         </div>
 
-        {userInfo.billing_address_is_different && (
+        {profile.billing_address_is_different && (
           <>
             <hr className="my-4 border-border" />
             <div className="px-4 py-5 sm:p-6">
               <AccountDisplayAddress
-                address={userInfo.billingAddress}
+                address={billingAddress}
                 title={t("billingAddress.title")}
                 t={t}
               />
@@ -327,12 +247,12 @@ export default async function AccountPage(props: AccountPageProps) {
           </>
         )}
       </article>
-      {/* Section Mon Mot de Passe */}
+
+      {/* Password Section */}
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("password.sectionTitle")}</h2>{" "}
-            {/* Clef à ajouter: "Mon Mot de Passe"*/}
+            <h2 className="text-xl font-semibold text-foreground">{t("password.sectionTitle")}</h2>
             <Link
               href={`/${currentLocale}/profile/password`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -340,11 +260,11 @@ export default async function AccountPage(props: AccountPageProps) {
               {tGlobal("edit")}
             </Link>
           </div>
-          <p className="text-muted-foreground">{t("password.description")}</p>{" "}
-          {/* Clef à ajouter: "Modifiez votre mot de passe ici." */}
+          <p className="text-muted-foreground">{t("password.description")}</p>
         </div>
       </article>
-      {/* Section Mes Commandes */}
+
+      {/* Orders Section */}
       <article
         id="my-orders"
         className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg"
@@ -361,17 +281,16 @@ export default async function AccountPage(props: AccountPageProps) {
           </div>
         </div>
       </article>
-      {/* Section Déconnexion */}
+
+      {/* Logout Section */}
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("logout.sectionTitle")}</h2>{" "}
-            {/* Clef à ajouter */}
+            <h2 className="text-xl font-semibold text-foreground">{t("logout.sectionTitle")}</h2>
             <LogoutButton />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            {t("logout.description")}{" "}
-            {/* Clef à ajouter: "Vous serez déconnecté de votre session actuelle." */}
+            {t("logout.description")}
           </p>
         </div>
       </article>

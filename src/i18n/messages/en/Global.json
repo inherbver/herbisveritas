@@ -17,7 +17,9 @@
     "register": "Sign Up",
     "account": "My Account",
     "mobileSheetTitle": "Main Menu",
-    "mobileSheetDescription": "Navigate through the main sections of the site."
+    "mobileSheetDescription": "Navigate through the main sections of the site.",
+    "findUs": "Find Us",
+    "promoBanner": "Free shipping on orders over €50!"
   },
   "home": "Home",
   "shop": "Shop",
@@ -74,5 +76,6 @@
   },
   "shop_global": {
     "addedToCartFeedback": "Product {productName} added to cart!"
-  }
+  },
+  "TTC": "incl. VAT"
 }

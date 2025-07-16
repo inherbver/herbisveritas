@@ -22,7 +22,7 @@ import { TrashIcon } from "@radix-ui/react-icons";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createProduct, updateProduct } from "@/actions/productActions"; // updateProduct sera créé plus tard
+import { createProduct, updateProduct } from "@/actions/productActions";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { type ProductWithTranslations } from "@/lib/supabase/queries/products";
 
@@ -42,10 +42,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
       ? {
           id: initialData.id,
           slug: initialData.slug,
-          price: initialData.price ?? null,
-          stock: initialData.stock ?? null,
+          price: initialData.price ?? 0,
+          stock: initialData.stock ?? 0,
           unit: initialData.unit ?? "",
-          image_url: initialData.image_url ?? null,
+          image_url: initialData.image_url ?? "",
           inci_list: initialData.inci_list ?? [],
           is_active: initialData.is_active,
           is_new: initialData.is_new,
@@ -55,11 +55,11 @@ export function ProductForm({ initialData }: ProductFormProps) {
               ? initialData.product_translations.map((t) => ({
                   locale: t.locale,
                   name: t.name,
-                  short_description: t.short_description ?? undefined,
-                  description_long: t.description_long ?? undefined,
-                  usage_instructions: t.usage_instructions ?? undefined,
-                  properties: t.properties ?? undefined,
-                  composition_text: t.composition_text ?? undefined,
+                  short_description: t.short_description || "",
+                  description_long: t.description_long || "",
+                  usage_instructions: t.usage_instructions || "",
+                  properties: t.properties || "",
+                  composition_text: t.composition_text || "",
                 }))
               : [
                   {
@@ -76,10 +76,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
       : {
           id: crypto.randomUUID(),
           slug: "",
-          price: null,
-          stock: null,
+          price: 0,
+          stock: 0,
           unit: "",
-          image_url: null,
+          image_url: "",
           inci_list: [],
           is_active: true,
           is_new: false,
@@ -98,10 +98,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
         },
   });
 
-  // ✅ Solution 2: useFieldArray sans types génériques pour éviter les conflits
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "translations" as const,
+    name: "translations",
   });
 
   const onSubmit = (data: ProductFormValues) => {
@@ -110,9 +109,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
         const action = isEditMode ? updateProduct : createProduct;
         const result = await action(data);
 
-        // ✅ Fix: Gestion correcte de la structure de retour de withPermissionSafe
         if (result.success) {
-          // result.data contient le vrai résultat de l'action
           const actionResult = result.data;
 
           if (actionResult.success) {
@@ -120,13 +117,11 @@ export function ProductForm({ initialData }: ProductFormProps) {
             router.push("/admin/products");
           } else {
             toast.error(actionResult.message || "Une erreur inattendue est survenue.");
-            // Gestion des erreurs de validation si elles existent
             if (actionResult.errors) {
               console.error("Erreurs de validation:", actionResult.errors);
             }
           }
         } else {
-          // Erreur de permission ou autre erreur de premier niveau
           toast.error(result.error || "Action non autorisée.");
         }
       } catch (error) {
@@ -191,10 +186,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
                           type="number"
                           step="0.01"
                           placeholder="9.99"
-                          value={typeof field.value === "number" ? field.value.toFixed(2) : ""}
+                          value={field.value.toString()}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(value === "" ? null : parseFloat(value));
+                            const value = parseFloat(e.target.value);
+                            field.onChange(isNaN(value) ? 0 : value);
                           }}
                         />
                       </FormControl>
@@ -212,10 +207,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         <Input
                           type="number"
                           placeholder="100"
-                          value={field.value?.toString() ?? ""}
+                          value={field.value.toString()}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(value === "" ? null : parseInt(value, 10));
+                            const value = parseInt(e.target.value);
+                            field.onChange(isNaN(value) ? 0 : value);
                           }}
                         />
                       </FormControl>
@@ -300,7 +295,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <FormField
                       control={form.control}
-                      name={`translations.${index}.locale` as const}
+                      name={`translations.${index}.locale`}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t("languageLabel")}</FormLabel>
@@ -313,7 +308,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     />
                     <FormField
                       control={form.control}
-                      name={`translations.${index}.name` as const}
+                      name={`translations.${index}.name`}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t("productNameLabel")}</FormLabel>
@@ -327,15 +322,14 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   </div>
                   <FormField
                     control={form.control}
-                    name={`translations.${index}.short_description` as const}
+                    name={`translations.${index}.short_description`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("shortDescriptionLabel")}</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Un savon naturel pour une peau hydratée..."
-                            value={field.value ?? ""}
-                            onChange={(e) => field.onChange(e.target.value || undefined)}
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -344,7 +338,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   />
                   <FormField
                     control={form.control}
-                    name={`translations.${index}.description_long` as const}
+                    name={`translations.${index}.description_long`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("longDescriptionLabel")}</FormLabel>
@@ -352,8 +346,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                           <Textarea
                             rows={5}
                             placeholder="Découvrez les bienfaits de notre savon..."
-                            value={field.value ?? ""}
-                            onChange={(e) => field.onChange(e.target.value || undefined)}
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -362,15 +355,14 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   />
                   <FormField
                     control={form.control}
-                    name={`translations.${index}.usage_instructions` as const}
+                    name={`translations.${index}.usage_instructions`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("usageInstructionsLabel")}</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Appliquer sur peau humide..."
-                            value={field.value ?? ""}
-                            onChange={(e) => field.onChange(e.target.value || undefined)}
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -379,15 +371,14 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   />
                   <FormField
                     control={form.control}
-                    name={`translations.${index}.properties` as const}
+                    name={`translations.${index}.properties`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("propertiesLabel")}</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Hydratant, nourrissant..."
-                            value={field.value ?? ""}
-                            onChange={(e) => field.onChange(e.target.value || undefined)}
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -396,15 +387,14 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   />
                   <FormField
                     control={form.control}
-                    name={`translations.${index}.composition_text` as const}
+                    name={`translations.${index}.composition_text`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t("compositionTextLabel")}</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Composition détaillée du produit..."
-                            value={field.value ?? ""}
-                            onChange={(e) => field.onChange(e.target.value || undefined)}
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />

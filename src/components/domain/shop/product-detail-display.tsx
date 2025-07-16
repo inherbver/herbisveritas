@@ -10,11 +10,12 @@ import { ProductDetailData } from "@/types/product-types";
 import { addItemToCart } from "@/actions/cartActions";
 import {
   type CartActionResult,
-  isGeneralError,
+  isGeneralErrorResult, // ✅ Corriger les noms d'imports
   isSuccessResult,
-  isValidationError,
+  isValidationErrorResult, // ✅ Corriger les noms d'imports
 } from "@/lib/cart-helpers";
-import type { CartData } from "@/types/cart";
+import type { CartDataFromServer } from "@/lib/supabase/types"; // ✅ Import depuis le bon fichier
+import type { CartItem } from "@/types/cart"; // ✅ Import pour la transformation
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import useCartStore from "@/stores/cartStore";
@@ -40,8 +41,8 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   const [quantity, setQuantity] = useState(1);
   const _setItems = useCartStore((state) => state._setItems);
 
-  // Define a clear, initial state for the action. It's a GeneralErrorResult by default.
-  const initialState: CartActionResult<CartData | null> = React.useMemo(
+  // ✅ Define a clear, initial state for the action avec le bon type
+  const initialState: CartActionResult<CartDataFromServer | null> = React.useMemo(
     () => ({
       success: false,
       error: "Initial state", // Use a specific error message to identify the initial state
@@ -51,21 +52,34 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   const [state, formAction] = useActionState(addItemToCart, initialState);
 
   useEffect(() => {
-    // Do not show any toast if the state is still the initial one.
+    // ✅ Do not show any toast if the state is still the initial one.
     // This is a robust way to prevent toasts on mount, especially with React 18's Strict Mode double-invoking effects.
-    if (isGeneralError(state) && state.error === "Initial state") {
+    if (isGeneralErrorResult(state) && state.error === "Initial state") {
       return;
     }
 
     if (isSuccessResult(state)) {
       toast.success(state.message || t("ProductDetailModal.itemAddedSuccess"));
-      if (state.data?.items) _setItems(state.data.items);
+      // ✅ Transformer ServerCartItem vers CartItem avant de passer au store
+      if (state.data?.items) {
+        const clientCartItems: CartItem[] = state.data.items.map(serverItem => ({
+          id: `${state.data!.id}-${serverItem.product_id}`,
+          productId: serverItem.product_id,
+          name: serverItem.name,
+          price: serverItem.price,
+          quantity: serverItem.quantity,
+          image: serverItem.image_url || undefined,
+          slug: undefined
+        }));
+        _setItems(clientCartItems);
+      }
     } else if (state.success === false) {
       let errorMessage: string | undefined;
 
-      if (isValidationError(state) && state.errors) {
+      // ✅ Utiliser les bons noms de fonctions
+      if (isValidationErrorResult(state) && state.errors) {
         errorMessage = Object.values(state.errors).flat()[0];
-      } else if (isGeneralError(state)) {
+      } else if (isGeneralErrorResult(state)) {
         errorMessage = state.error;
       }
       toast.error(state.message || errorMessage || t("Global.errors.generic"));
@@ -145,6 +159,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             <div className="my-6 rounded-xl bg-background p-6 shadow-lg">
               <form action={formAction}>
                 <input type="hidden" name="productId" value={product.id} />
+                <input type="hidden" name="quantity" value={quantity} />
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <Price

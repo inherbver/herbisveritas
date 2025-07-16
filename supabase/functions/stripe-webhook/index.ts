@@ -1,8 +1,4 @@
-// Add reference to Supabase's edge function types for IDE support
-/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
-
 // Stripe webhooks handler
-// Based on: https://github.com/supabase/supabase/blob/master/examples/edge-functions/supabase/functions/stripe-webhooks/index.ts
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@15.8.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.4";
@@ -20,7 +16,6 @@ if (!SUPABASE_SERVICE_ROLE_KEY)
 if (!signingSecret) throw new Error("STRIPE_WEBHOOK_SECRET environment variable is missing");
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  // @ts-expect-error -- Deno/Edge runtime requires a custom fetch client.
   httpClient: Stripe.createFetchHttpClient(),
   apiVersion: "2024-04-10", // IMPORTANT: Match the API version in your Stripe dashboard
 });

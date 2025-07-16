@@ -13,11 +13,11 @@ import { AdminStatus } from "@/components/admin/AdminStatus";
 
 interface AdminLayoutProps {
   children: ReactNode;
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 }
 
 export default async function AdminLayout({ children, params }: AdminLayoutProps) {
-  const { locale } = await params;
+  const { locale } = params;
   setRequestLocale(locale);
 
   const {

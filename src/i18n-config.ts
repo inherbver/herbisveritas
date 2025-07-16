@@ -33,6 +33,12 @@ export const pathnames = {
     fr: "/paiement",
   },
 
+  // Le chemin canonique pour la page de contact
+  "/contact": {
+    en: "/contact",
+    fr: "/contact",
+  },
+
   // Exemple pour d'autres pages
   "/profile": {
     en: "/profile",

@@ -17,7 +17,9 @@
     "register": "S'inscrire",
     "account": "Mon Compte",
     "mobileSheetTitle": "Menu Principal",
-    "mobileSheetDescription": "Naviguez à travers les sections principales du site."
+    "mobileSheetDescription": "Naviguez à travers les sections principales du site.",
+    "findUs": "Retrouvez-nous",
+    "promoBanner": "Livraison offerte dès 50€ d'achat !"
   },
   "home": "Accueil",
   "shop": "Boutique",
@@ -78,5 +80,6 @@
     "filterByCategory": "Filtrer par catégorie",
     "close": "Fermer",
     "noCategoriesAvailable": "Aucune catégorie disponible pour le moment."
-  }
+  },
+  "TTC": "TTC"
 }

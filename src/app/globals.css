@@ -336,3 +336,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* === utils de clamp + lien "Lire plus…" ========================= */
+.line-clamp-3 {
+  position: relative; /* Indispensable pour le positionnement du ::after */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3; /* Ajout de la propriété standard */
+  overflow: hidden;
+}
+
+.line-clamp-3.is-clamped {
+  cursor: pointer; /* Ajoute le curseur uniquement si le texte est tronqué */
+}
+
+.line-clamp-3.is-clamped::after {
+  content: "… Lire plus";
+  color: var(--primary);      /* lavande */
+  font-weight: 500;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(to right, transparent, var(--card) 20%);
+  padding-left: 1rem;
+}

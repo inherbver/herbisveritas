@@ -3,8 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+import type { Database } from "@/types/supabase";
+import type { SupabaseClientType } from "@/lib/supabase/types";
+
 // createSupabaseServerClient redevient async pour gérer correctement le typage de cookies()
-export async function createSupabaseServerClient() {
+export async function createSupabaseServerClient(): Promise<SupabaseClientType> {
   const cookieStore = await cookies(); // await est nécessaire pour le typage correct
 
   return createServerClient(
@@ -35,18 +38,18 @@ export async function createSupabaseServerClient() {
         },
       },
     }
-  );
-};
+  ) as unknown as SupabaseClientType;
+}
 
-export const createSupabaseAdminClient = () => {
+export const createSupabaseAdminClient = (): SupabaseClientType => {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set.");
   }
 
-  return createClient(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-  );
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) as unknown as SupabaseClientType;
 };
 
 // getSupabaseUserSession reste async et attend createSupabaseServerClient

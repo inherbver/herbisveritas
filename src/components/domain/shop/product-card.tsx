@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useActionState, useEffect } from "react";
+import React, { useActionState, useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Link as NextLink } from "@/i18n/navigation";
 import Image from "next/image";
@@ -15,6 +15,7 @@ import type {
 import type { CartData } from "@/types/cart";
 import { addItemToCart as addItemToCartAction } from "@/actions/cartActions";
 import { toast } from "sonner";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 export interface ProductCardProps {
   /** Unique identifier for the product */
@@ -75,6 +76,9 @@ export function ProductCard({
     message: undefined,
   };
 
+
+        const [isClamped, setIsClamped] = useState(false);
+
   const [state, formAction, isPending] = useActionState<
     CartActionResult<CartData | null>,
     FormData
@@ -91,19 +95,33 @@ export function ProductCard({
     }
   }, [state, t, tGlobal]);
 
+                // Utilisation d'une callback ref pour une gestion robuste du DOM
+  const descriptionRef = useCallback((node: HTMLParagraphElement | null) => {
+    if (node) {
+      const observer = new ResizeObserver(() => {
+        const isOverflowing = node.scrollHeight > node.clientHeight;
+        setIsClamped(isOverflowing);
+      });
+      observer.observe(node);
+
+      // Nettoyage de l'observer
+      return () => observer.disconnect();
+    }
+  }, []);
+
   const linkHref = {
     pathname: "/products/[slug]",
     params: { slug },
   } as const;
 
   if (isLoading) {
-    return <Skeleton className="h-[420px] w-full rounded-lg" />;
+    return <Skeleton className="aspect-square w-full rounded-2xl xl:aspect-[4/5]" />;
   }
 
   return (
     <article
       className={cn(
-        "group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.015] hover:shadow-md",
+        "group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm transition-shadow duration-300 hover:shadow-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/40",
         isOutOfStock && "opacity-70",
         className
       )}
@@ -111,12 +129,27 @@ export function ProductCard({
       itemScope
       itemType="https://schema.org/Product"
     >
-      {/* Badges Container */}
-      <aside className="pointer-events-none absolute inset-x-4 top-4 z-10 flex items-start justify-between">
+      {/* Image Container with Link */}
+      <NextLink href={linkHref} className="contents" aria-label={`View details for ${title}`}>
+        <figure className="relative aspect-square w-full overflow-hidden rounded-t-2xl xl:aspect-[4/5]">
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            fill
+            sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            itemProp="image"
+            loading="lazy"
+          />
+        </figure>
+      </NextLink>
+
+      {/* Badges */}
+      <aside className="pointer-events-none absolute left-2 top-2 z-10 flex flex-col items-start space-y-1">
         {is_on_promotion && (
           <Badge
             variant="secondary"
-            className="rounded-full bg-accent px-3 py-1 text-xs font-medium uppercase text-accent-foreground"
+            className="rounded-full bg-accent/90 px-2 py-0.5 text-[10px] font-medium uppercase text-accent-foreground"
             aria-label={t("promoLabel")}
           >
             {t("promoLabel")}
@@ -125,7 +158,7 @@ export function ProductCard({
         {is_new && (
           <Badge
             variant="default"
-            className="rounded-full bg-primary px-3 py-1 text-xs font-medium uppercase text-primary-foreground"
+            className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium uppercase text-primary-foreground"
             aria-label={t("newLabel")}
           >
             {t("newLabel")}
@@ -133,85 +166,88 @@ export function ProductCard({
         )}
       </aside>
 
-      {/* Product Image */}
-      <NextLink href={linkHref} className="contents" aria-label={`View details for ${title}`}>
-        <figure className="aspect-[3/4] overflow-hidden rounded-t-xl">
-          <Image
-            src={imageSrc}
-            alt={imageAlt}
-            width={300}
-            height={400}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            itemProp="image"
-            loading="lazy"
-          />
-        </figure>
-      </NextLink>
-
-      {/* Product Information */}
-      <section className="flex flex-grow flex-col p-6">
+      {/* Body */}
+      <section className="flex flex-1 flex-col space-y-1 p-4">
         <header>
           <NextLink href={linkHref} aria-label={`View details for ${title}`}>
             <h3
-              className="font-serif text-xl font-semibold text-foreground transition-colors hover:text-primary"
+              className="line-clamp-1 font-serif text-base font-semibold leading-snug text-foreground"
               itemProp="name"
             >
               {title}
             </h3>
           </NextLink>
-          {short_description && (
-            <p
-              className="mt-2 line-clamp-2 font-sans text-base text-muted-foreground"
-              itemProp="description"
-            >
-              {short_description}
-            </p>
-          )}
         </header>
 
-        {/* Price Information */}
-        <section className="mt-2" itemProp="offers" itemScope itemType="https://schema.org/Offer">
-          <data value={price} className="font-sans text-lg font-bold text-primary" itemProp="price">
-            {price.toFixed(2)} €
-          </data>
-          <meta itemProp="priceCurrency" content="EUR" />
-          <meta
-            itemProp="availability"
-            content={isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"}
-          />
-        </section>
+        <div className="h-[3.75rem]">
+          {short_description ? (
+            <HoverCard open={isClamped ? undefined : false}>
+              <HoverCardTrigger asChild>
+                <p
+                  ref={descriptionRef}
+                  className={cn(
+                    "line-clamp-3 select-none text-sm text-foreground/70",
+                    isClamped && "is-clamped"
+                  )}
+                >
+                  {short_description}
+                </p>
+              </HoverCardTrigger>
+              {isClamped && (
+                <HoverCardContent className="w-80">
+                  <p className="text-sm">{short_description}</p>
+                </HoverCardContent>
+              )}
+            </HoverCard>
+          ) : null}
+        </div>
 
-        {/* Spacer */}
-        <span className="flex-grow" aria-hidden="true" />
-
-        {/* Add to Cart Action */}
-        <footer className="mt-4">
-          <form action={formAction} aria-label={`Add ${title} to cart`}>
-            <input type="hidden" name="productId" value={String(id)} />
-            <input type="hidden" name="productName" value={title} />
-            <input type="hidden" name="productPrice" value={price} />
-            <input type="hidden" name="productImage" value={imageSrc} />
-            <input type="hidden" name="productSlug" value={slug} />
-            <input type="hidden" name="quantity" value={1} />
-
-            <Button
-              type="submit"
-              disabled={isPending || isOutOfStock}
-              aria-disabled={isPending || isOutOfStock}
-              aria-describedby={isOutOfStock ? `${id}-out-of-stock` : undefined}
-              variant="secondary"
-              className="w-full transition-transform duration-200 hover:scale-105"
+        {/* Price & CTA */}
+        <div className="mt-auto flex flex-col space-y-2 pt-2">
+          <section itemProp="offers" itemScope itemType="https://schema.org/Offer">
+            <data
+              value={price}
+              className="font-sans text-base font-semibold text-primary"
+              itemProp="price"
             >
-              {isPending ? t("addingToCart") : isOutOfStock ? t("outOfStock") : t("addToCart")}
-            </Button>
+              {price.toFixed(2)} €
+            </data>
+            <meta itemProp="priceCurrency" content="EUR" />
+            <meta
+              itemProp="availability"
+              content={isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"}
+            />
+          </section>
 
-            {isOutOfStock && (
-              <span id={`${id}-out-of-stock`} className="sr-only">
-                {t("outOfStockDescription")}
-              </span>
-            )}
-          </form>
-        </footer>
+          <footer>
+            <form action={formAction} aria-label={`Add ${title} to cart`}>
+              <input type="hidden" name="productId" value={String(id)} />
+              <input type="hidden" name="productName" value={title} />
+              <input type="hidden" name="productPrice" value={price} />
+              <input type="hidden" name="productImage" value={imageSrc} />
+              <input type="hidden" name="productSlug" value={slug} />
+              <input type="hidden" name="quantity" value={1} />
+
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isPending || isOutOfStock}
+                aria-disabled={isPending || isOutOfStock}
+                aria-describedby={isOutOfStock ? `${id}-out-of-stock` : undefined}
+                variant="secondary"
+                className="w-full rounded-xl"
+              >
+                {isPending ? t("addingToCart") : isOutOfStock ? t("outOfStock") : t("addToCart")}
+              </Button>
+
+              {isOutOfStock && (
+                <span id={`${id}-out-of-stock`} className="sr-only">
+                  {t("outOfStockDescription")}
+                </span>
+              )}
+            </form>
+          </footer>
+        </div>
       </section>
     </article>
   );

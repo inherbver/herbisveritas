@@ -1,6 +1,0 @@
-{
-  "compilerOptions": {
-    "types": ["@supabase/functions-js/edge-runtime"]
-  },
-  "include": ["./**/*.ts"]
-}

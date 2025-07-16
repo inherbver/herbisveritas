@@ -6,12 +6,21 @@ import { getCart } from "@/lib/cartReader";
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import Stripe from 'stripe';
 import { Address } from "@/types";
+import type { ServerCartItem } from "@/lib/supabase/types"; // ✅ Importer le type correct
 
 interface Product {
   id: string;
   name: string;
   price: number;
   image_url: string | null;
+}
+
+// ✅ Interface pour les méthodes de livraison selon le schéma DB réel
+interface ShippingMethod {
+  id: string;
+  name: string;
+  price: number;
+  // Pas de delivery_time_min/max dans le schéma DB actuel
 }
 
 /**
@@ -89,8 +98,8 @@ export async function createStripeCheckoutSession(
       return { success: false, error: e.message };
     }
 
-    // Valider les produits et la méthode de livraison (logique existante)
-    const productIds = cart.items.map((item) => item.productId);
+    // ✅ Valider les produits avec le bon type
+    const productIds = cart.items.map((item: ServerCartItem) => item.product_id); // ✅ Utiliser product_id selon le schéma
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("id, name, price, image_url")
@@ -101,21 +110,22 @@ export async function createStripeCheckoutSession(
 
     const productPriceMap = new Map(products.map((p: Product) => [p.id, p]));
 
+    // ✅ Requête corrigée pour les méthodes de livraison selon le schéma DB réel
     const { data: shippingMethod, error: shippingError } = await supabase
       .from("shipping_methods")
-      .select("id, name, price, delivery_time_min, delivery_time_max")
+      .select("id, name, price") // ✅ Supprimer delivery_time_min/max qui n'existent pas
       .eq("id", shippingMethodId)
       .eq("is_active", true)
-      .single();
+      .single<ShippingMethod>();
 
     if (shippingError || !shippingMethod) {
       throw new Error("La méthode de livraison sélectionnée n'est pas valide.");
     }
 
-    // Construire les line_items
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cart.items.map((item) => {
-      const product = productPriceMap.get(item.productId);
-      if (!product) throw new Error(`Produit ${item.productId} non trouvé.`);
+    // ✅ Construire les line_items avec le bon type
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cart.items.map((item: ServerCartItem) => {
+      const product = productPriceMap.get(item.product_id); // ✅ Utiliser product_id
+      if (!product) throw new Error(`Produit ${item.product_id} non trouvé.`);
       return {
         price_data: {
           currency: "eur",
@@ -145,16 +155,8 @@ export async function createStripeCheckoutSession(
               currency: 'eur',
             },
             display_name: shippingMethod.name,
-            delivery_estimate: {
-              minimum: {
-                unit: 'business_day',
-                value: shippingMethod.delivery_time_min,
-              },
-              maximum: {
-                unit: 'business_day',
-                value: shippingMethod.delivery_time_max,
-              },
-            },
+            // ✅ Supprimer delivery_estimate qui utilisait des colonnes inexistantes
+            // Si vous avez besoin d'estimations de livraison, ajoutez ces colonnes à votre DB
           },
         },
       ],
@@ -171,18 +173,20 @@ export async function createStripeCheckoutSession(
     };
 
     if (user) {
-      // Pour les utilisateurs existants, récupérer leur profil pour obtenir l'ID client Stripe
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('stripe_customer_id')
-        .eq('id', user.id)
-        .single();
-
-      sessionParams.customer = profile?.stripe_customer_id || undefined;
+      // ✅ Les profils n'ont pas de stripe_customer_id dans votre schéma actuel
+      // Si vous voulez cette fonctionnalité, ajoutez cette colonne à la table profiles
+      // Pour l'instant, on commente cette partie ou on utilise l'email uniquement
       sessionParams.customer_email = user.email;
+      
+      // TODO: Ajouter stripe_customer_id à la table profiles si nécessaire
+      // const { data: profile } = await supabase
+      //   .from('profiles')
+      //   .select('stripe_customer_id')
+      //   .eq('id', user.id)
+      //   .single();
+      // sessionParams.customer = profile?.stripe_customer_id || undefined;
     } else {
       // Pour les utilisateurs invités, laisser Stripe créer un client.
-      // Nous collecterons l'adresse de facturation sur la page de paiement.
       sessionParams.customer_creation = 'always';
       sessionParams.customer_email = billingAddress.email;
       sessionParams.billing_address_collection = 'required';

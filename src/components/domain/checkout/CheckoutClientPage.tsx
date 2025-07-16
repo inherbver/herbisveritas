@@ -5,10 +5,12 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { Link as NextLink } from '@/i18n/navigation';
 import useCartStore, { selectCartItems, selectCartSubtotal } from '@/stores/cartStore';
-import { removeItemFromCart, updateCartItemQuantity as updateCartItemQuantityAction } from '@/actions/cartActions';
+import { removeItemFromCartFormAction, updateCartItemQuantityFormAction } from '@/actions/cartActions'; // ✅ Utiliser les wrappers FormAction
 import { createStripeCheckoutSession } from '@/actions/stripeActions';
-import type { Cart, ShippingMethod, Address, CartItem, CartData } from '@/types';
-import type { CartActionResult, RemoveFromCartInput, UpdateCartItemQuantityInput } from '@/lib/cart-helpers';
+import type { ShippingMethod, Address } from '@/types';
+import type { CartItem } from '@/types/cart'; // ✅ Import depuis le bon fichier
+import type { CartDataFromServer, Cart } from '@/lib/supabase/types'; // ✅ Import depuis le bon fichier
+import type { CartActionResult } from '@/lib/cart-helpers';
 import { isSuccessResult } from '@/lib/cart-helpers';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,9 +21,10 @@ import { toast } from 'sonner';
 import { Loader2, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
 import CheckoutAddressForm from './AddressForm';
 import type { AddressFormData } from '@/lib/validators/address.validator';
+import type { ServerCartItem } from '@/lib/supabase/types'; // ✅ Importer le bon type
 
 interface CheckoutClientPageProps {
-  cart: Cart;
+  cart: CartDataFromServer; // ✅ Utiliser le bon type
   shippingAddress: Address | null;
   billingAddress: Address | null;
   shippingMethods: ShippingMethod[];
@@ -37,7 +40,13 @@ const DisplayAddress = ({ address }: { address: Address | AddressFormData }) => 
   </div>
 );
 
-export default function CheckoutClientPage({ cart, shippingAddress: initialShippingAddress, billingAddress: initialBillingAddress, shippingMethods, isUserAuthenticated }: CheckoutClientPageProps) {
+export default function CheckoutClientPage({ 
+  cart, 
+  shippingAddress: initialShippingAddress, 
+  billingAddress: initialBillingAddress, 
+  shippingMethods, 
+  isUserAuthenticated 
+}: CheckoutClientPageProps) {
   const t = useTranslations('CheckoutPage');
   const tCart = useTranslations('CartDisplay');
   const tGlobal = useTranslations('Global');
@@ -56,9 +65,19 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
   const [selectedShippingMethodId, setSelectedShippingMethodId] = useState<string | undefined>(shippingMethods[0]?.id);
 
   useEffect(() => {
-    // Sync server-side cart data with client-side Zustand store on initial mount
-    if (cart) {
-      useCartStore.getState()._setItems(cart.items);
+    // ✅ Sync server-side cart data with client-side Zustand store on initial mount
+    // Transformer ServerCartItem vers CartItem
+    if (cart?.items) {
+      const clientCartItems: CartItem[] = cart.items.map(serverItem => ({
+        id: `${cart.id}-${serverItem.product_id}`, // Créer un ID temporaire
+        productId: serverItem.product_id,
+        name: serverItem.name,
+        price: serverItem.price,
+        quantity: serverItem.quantity,
+        image: serverItem.image_url || undefined, // ✅ Convertir null vers undefined
+        slug: undefined // Pas de slug disponible côté serveur
+      }));
+      useCartStore.getState()._setItems(clientCartItems);
     }
 
     if (isUserAuthenticated && !initialShippingAddress) {
@@ -81,20 +100,34 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
     toast.success(t('toast.addressSaved'));
   };
 
+  // ✅ Correction: Utiliser les wrappers FormAction avec FormData
   const handleRemoveItem = async (cartItemId: string) => {
-    const actionInput: RemoveFromCartInput = { cartItemId };
-    const result: CartActionResult<CartData | null> = await removeItemFromCart(actionInput);
+    const formData = new FormData();
+    formData.append('cartItemId', cartItemId);
+    
+    const result: CartActionResult<CartDataFromServer | null> = await removeItemFromCartFormAction(undefined, formData);
 
     if (isSuccessResult(result)) {
       toast.success(result.message || tCart('itemRemovedSuccess'));
       if (result.data?.items) {
-        _setItems(result.data.items);
+        // ✅ Transformer ServerCartItem vers CartItem
+        const clientCartItems: CartItem[] = result.data.items.map(serverItem => ({
+          id: `${result.data!.id}-${serverItem.product_id}`,
+          productId: serverItem.product_id,
+          name: serverItem.name,
+          price: serverItem.price,
+          quantity: serverItem.quantity,
+          image: serverItem.image_url || undefined, // ✅ Convertir null vers undefined
+          slug: undefined
+        }));
+        _setItems(clientCartItems);
       }
     } else {
       toast.error(result.message || tGlobal('genericError'));
     }
   };
 
+  // ✅ Correction: Utiliser les wrappers FormAction avec FormData
   const handleUpdateItemQuantity = async (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 0) return;
 
@@ -107,11 +140,24 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
 
     _setItems(optimisticItems);
 
-    const actionInput: UpdateCartItemQuantityInput = { cartItemId, quantity: newQuantity };
-    const result: CartActionResult<CartData | null> = await updateCartItemQuantityAction(actionInput);
+    const formData = new FormData();
+    formData.append('cartItemId', cartItemId);
+    formData.append('quantity', newQuantity.toString());
+    
+    const result: CartActionResult<CartDataFromServer | null> = await updateCartItemQuantityFormAction(undefined, formData);
 
     if (isSuccessResult(result) && result.data?.items) {
-       _setItems(result.data.items);
+      // ✅ Transformer ServerCartItem vers CartItem
+      const clientCartItems: CartItem[] = result.data.items.map(serverItem => ({
+        id: `${result.data!.id}-${serverItem.product_id}`,
+        productId: serverItem.product_id,
+        name: serverItem.name,
+        price: serverItem.price,
+        quantity: serverItem.quantity,
+        image: serverItem.image_url || undefined, // ✅ Convertir null vers undefined
+        slug: undefined
+      }));
+      _setItems(clientCartItems);
     } else {
       toast.error(result.message || tGlobal('genericError'));
       _setItems(previousState); // Rollback on error
@@ -163,7 +209,7 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
 
     if (editingAddressType === type) {
       return (
-        <div className="mt-4">
+        <section className="mt-4">
           <h3 className="text-lg font-semibold mb-4">{title}</h3>
           <CheckoutAddressForm
             addressType={type}
@@ -172,33 +218,33 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
             onCancel={() => setEditingAddressType(null)}
             existingAddress={address && 'id' in address ? address : undefined}
           />
-        </div>
+        </section>
       );
     }
 
     if (address) {
       return (
-        <div className="mt-4 p-4 border rounded-md flex justify-between items-start">
+        <section className="mt-4 p-4 border rounded-md flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold mb-2">{title}</h3>
             <DisplayAddress address={address} />
           </div>
           <Button variant="outline" size="sm" onClick={() => setEditingAddressType(type)}>{t('address.editButton')}</Button>
-        </div>
+        </section>
       );
     }
 
     return (
-      <div className="mt-4">
+      <section className="mt-4">
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
         <Button variant="secondary" onClick={() => setEditingAddressType(type)}>{t('address.addButton')}</Button>
-      </div>
+      </section>
     );
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      <div className="lg:col-span-2 space-y-8">
+    <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <section className="lg:col-span-2 space-y-8">
         <Card>
           <CardHeader>
             <CardTitle>{t('address.shippingTitle')}</CardTitle>
@@ -239,9 +285,9 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
             </RadioGroup>
           </CardContent>
         </Card>
-      </div>
+      </section>
 
-      <div className="lg:col-span-1">
+      <aside className="lg:col-span-1">
         <Card className="sticky top-24">
           <CardHeader>
             <CardTitle>{t('summary.title')}</CardTitle>
@@ -252,7 +298,7 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
                 <li key={item.id} className="flex py-4">
                   <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                     <Image
-                      src={item.imageUrl || '/placeholder.svg'}
+                      src={item.image || '/placeholder.svg'} // ✅ Utiliser 'image' selon le type CartItem
                       alt={item.name}
                       width={96}
                       height={96}
@@ -263,7 +309,12 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
                     <div>
                       <div className="flex justify-between text-base font-medium text-gray-900">
                         <h3>
-                          <NextLink href={`/product/${item.productSlug}`}>{item.name}</NextLink>
+                          {/* ✅ Solution: Créer un lien générique ou utiliser un slug si disponible */}
+                          {item.slug ? (
+                            <NextLink href={`/products/${item.slug}` as any}>{item.name}</NextLink>
+                          ) : (
+                            <span>{item.name}</span>
+                          )}
                         </h3>
                         <p className="ml-4">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(item.price * item.quantity)}</p>
                       </div>
@@ -271,16 +322,38 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
                     </div>
                     <div className="flex flex-1 items-end justify-between text-sm">
                       <div className="flex items-center">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateItemQuantity(item.id, item.quantity - 1)} aria-label={tCart('decreaseQuantity', { itemName: item.name })}>
+                        {/* ✅ Correction: Vérifier que item.id existe et utiliser productId selon CartItem */}
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => item.id && handleUpdateItemQuantity(item.id, item.quantity - 1)} 
+                          disabled={!item.id}
+                          aria-label={tCart('decreaseQuantity')}
+                        >
                           <MinusIcon className="h-4 w-4" />
                         </Button>
                         <span className="mx-3 w-8 text-center" aria-live="polite">{item.quantity}</span>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleUpdateItemQuantity(item.id, item.quantity + 1)} aria-label={tCart('increaseQuantity', { itemName: item.name })}>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => item.id && handleUpdateItemQuantity(item.id, item.quantity + 1)} 
+                          disabled={!item.id}
+                          aria-label={tCart('increaseQuantity')}
+                        >
                           <PlusIcon className="h-4 w-4" />
                         </Button>
                       </div>
                       <div className="flex">
-                        <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(item.id)} className="hover:text-destructive/80 font-medium text-destructive" aria-label={tCart('removeItem', { itemName: item.name })}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => item.id && handleRemoveItem(item.id)} 
+                          disabled={!item.id}
+                          className="hover:text-destructive/80 font-medium text-destructive" 
+                          aria-label={tCart('removeItem')}
+                        >
                           <XIcon className="mr-1 h-4 w-4" />
                           {tCart('remove')}
                         </Button>
@@ -306,13 +379,17 @@ export default function CheckoutClientPage({ cart, shippingAddress: initialShipp
             </div>
           </CardContent>
           <CardFooter>
-            <Button onClick={handlePayment} disabled={isPending || !shippingAddress || (useDifferentBilling && !billingAddress) || !selectedShippingMethodId} className="w-full">
+            <Button 
+              onClick={handlePayment} 
+              disabled={isPending || !shippingAddress || (useDifferentBilling && !billingAddress) || !selectedShippingMethodId} 
+              className="w-full"
+            >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('payment.button')}
             </Button>
           </CardFooter>
         </Card>
-      </div>
-    </div>
+      </aside>
+    </main>
   );
 }

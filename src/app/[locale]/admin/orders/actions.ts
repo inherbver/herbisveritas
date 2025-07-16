@@ -8,7 +8,7 @@ export const updateOrderStatus = withPermissionSafe(
   "orders:update:status",
   async (
     orderId: string,
-    status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
+    status: "pending_payment" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded"
   ) => {
     const supabase = await createSupabaseServerClient();
 

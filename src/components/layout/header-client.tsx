@@ -25,9 +25,10 @@ import { Menu, Info } from "lucide-react";
 import { CartSheet } from "@/components/domain/shop/cart-sheet";
 import { useTranslations } from "next-intl";
 import { cn } from "@/utils/cn";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import LocaleSwitcher from "./locale-switcher";
 import { useScroll } from "@/hooks/use-scroll";
+import { motion } from "framer-motion";
 
 const Logo = () => {
   const tGlobal = useTranslations("Global");
@@ -54,6 +55,7 @@ interface AuthState {
 
 export function HeaderClient({ isAdmin }: HeaderClientProps) {
   const scrolled = useScroll(10);
+  const pathname = usePathname();
   const tGlobal = useTranslations("Global");
   const [authState, setAuthState] = useState<AuthState>({
     session: null,
@@ -99,21 +101,29 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
   const { session, isLoading } = authState;
   const isLoggedIn = !!session;
 
+  const navLinks = [
+    { href: "/shop", label: tGlobal("Header.home") },
+    { href: "/contact", label: tGlobal("Header.findUs") },
+    { href: "/about", label: tGlobal("Header.aboutLink") },
+  ];
+
   return (
-    <header
+    <motion.header
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       suppressHydrationWarning
       className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300",
+        "sticky top-0 z-50 w-full transition-colors duration-300",
         scrolled
-          ? "border-border/40 bg-background/80 border-b shadow-md backdrop-blur-md"
+          ? "border-border/40 bg-background/80 shadow-md backdrop-blur-md dark:bg-background/90 dark:border-foreground/10"
           : "border-b border-transparent"
       )}
     >
       {/* 1. Barre d'annonce (Optionnelle) */}
-      {/* Barre d'annonce - conditionnellement affichée si nécessaire à l'avenir */}
-      <div className="bg-primary px-4 py-1.5 text-center text-xs font-medium text-primary-foreground md:text-sm">
-        <Info className="mr-1 inline h-3 w-3 md:mr-2 md:h-4 md:w-4" />
-        Livraison offerte dès 50€ d'achat !
+      <div className="flex h-8 items-center justify-center bg-primary text-center text-xs font-medium text-primary-foreground">
+        <Info className="mr-2 h-3.5 w-3.5" />
+        <span>{tGlobal("Header.promoBanner")}</span>
       </div>
       {/* 2. Barre Principale */}
       <div className="container flex h-16 items-center justify-between">
@@ -123,21 +133,24 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
           {/* 4. Navigation Principale (Desktop) */}
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
-              <NavigationMenuItem>
-                <Link href="/shop" className={navigationMenuTriggerStyle()}>
-                  {tGlobal("Header.home")}
-                </Link>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <Link href="/contact" className={navigationMenuTriggerStyle()}>
-                  {tGlobal("Header.contactLink")}
-                </Link>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <Link href="/about" className={navigationMenuTriggerStyle()}>
-                  {tGlobal("Header.aboutLink")}
-                </Link>
-              </NavigationMenuItem>
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <NavigationMenuItem key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                        isActive ? "text-primary" : "text-foreground/80"
+                      )}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      {link.label}
+                    </Link>
+                  </NavigationMenuItem>
+                );
+              })}
               {isAdmin && (
                 <NavigationMenuItem>
                   <Link href="/admin" className={navigationMenuTriggerStyle()}>
@@ -175,16 +188,12 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
             </div>
           ) : (
             <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  {tGlobal("Header.login")}
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button variant="default" size="sm">
-                  {tGlobal("Header.register")}
-                </Button>
-              </Link>
+              <Button asChild variant="ghost" size="sm" className="rounded-2xl">
+                <Link href="/login">{tGlobal("Header.login")}</Link>
+              </Button>
+              <Button asChild variant="primary" size="sm" className="rounded-2xl">
+                <Link href="/register">{tGlobal("Header.register")}</Link>
+              </Button>
             </>
           )}
         </div>
@@ -282,6 +291,6 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
           </SheetContent>
         </Sheet>
       </div>
-    </header>
+    </motion.header>
   );
 }
