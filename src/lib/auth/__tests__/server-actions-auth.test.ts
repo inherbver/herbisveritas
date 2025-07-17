@@ -1,5 +1,6 @@
 import { withPermission, withPermissionSafe } from '../server-actions-auth';
 import { checkUserPermission } from '../server-auth';
+import type { AppPermission } from '@/config/permissions';
 
 // Mock the server-auth module
 jest.mock('../server-auth', () => ({
@@ -24,7 +25,8 @@ describe('Server Action HOFs', () => {
   describe('withPermission', () => {
     it('should call the action if permission is granted', async () => {
       (checkUserPermission as jest.Mock).mockResolvedValue({ isAuthorized: true });
-      const securedAction = withPermission('test:perm', mockAction);
+      // ✅ Utiliser une permission valide du type AppPermission
+      const securedAction = withPermission('products:read' as AppPermission, mockAction);
 
       await expect(securedAction('hello', 123)).resolves.toEqual({ result: 'Success: hello, 123' });
       expect(mockAction).toHaveBeenCalledWith('hello', 123);
@@ -32,7 +34,8 @@ describe('Server Action HOFs', () => {
 
     it('should throw an error if permission is denied', async () => {
       (checkUserPermission as jest.Mock).mockResolvedValue({ isAuthorized: false, error: 'Permission denied' });
-      const securedAction = withPermission('test:perm', mockAction);
+      // ✅ Utiliser une permission valide du type AppPermission
+      const securedAction = withPermission('products:read' as AppPermission, mockAction);
 
       await expect(securedAction('hello', 123)).rejects.toThrow('Permission denied');
       expect(mockAction).not.toHaveBeenCalled();
@@ -42,37 +45,49 @@ describe('Server Action HOFs', () => {
   describe('withPermissionSafe', () => {
     it('should return success response if permission is granted', async () => {
       (checkUserPermission as jest.Mock).mockResolvedValue({ isAuthorized: true });
-      const securedAction = withPermissionSafe('test:perm', mockAction);
+      // ✅ Utiliser une permission valide du type AppPermission
+      const securedAction = withPermissionSafe('products:read' as AppPermission, mockAction);
 
       const response = await securedAction('hello', 123);
 
+      // ✅ Corriger les assertions pour correspondre au type ActionResult
       expect(response.success).toBe(true);
-      expect(response.data).toEqual({ result: 'Success: hello, 123' });
-      expect(response.error).toBeUndefined();
+      if (response.success) {
+        expect(response.data).toEqual({ result: 'Success: hello, 123' });
+        expect((response as any).error).toBeUndefined();
+      }
       expect(mockAction).toHaveBeenCalledWith('hello', 123);
     });
 
     it('should return error response if permission is denied', async () => {
       (checkUserPermission as jest.Mock).mockResolvedValue({ isAuthorized: false, error: 'Permission denied' });
-      const securedAction = withPermissionSafe('test:perm', mockAction);
+      // ✅ Utiliser une permission valide du type AppPermission
+      const securedAction = withPermissionSafe('products:read' as AppPermission, mockAction);
 
       const response = await securedAction('hello', 123);
 
+      // ✅ Corriger les assertions pour correspondre au type ActionResult
       expect(response.success).toBe(false);
-      expect(response.error).toBe('Permission denied');
-      expect(response.data).toBeUndefined();
+      if (!response.success) {
+        expect(response.error).toBe('Permission denied');
+        expect((response as any).data).toBeUndefined();
+      }
       expect(mockAction).not.toHaveBeenCalled();
     });
 
     it('should handle errors thrown from within the action', async () => {
       (checkUserPermission as jest.Mock).mockResolvedValue({ isAuthorized: true });
-      const securedAction = withPermissionSafe('test:perm', mockAction);
+      // ✅ Utiliser une permission valide du type AppPermission
+      const securedAction = withPermissionSafe('products:read' as AppPermission, mockAction);
 
       const response = await securedAction('throw', 456);
 
+      // ✅ Corriger les assertions pour correspondre au type ActionResult
       expect(response.success).toBe(false);
-      expect(response.error).toBe('Action failed');
-      expect(response.data).toBeUndefined();
+      if (!response.success) {
+        expect(response.error).toBe('Action failed');
+        expect((response as any).data).toBeUndefined();
+      }
       expect(mockAction).toHaveBeenCalledWith('throw', 456);
     });
   });

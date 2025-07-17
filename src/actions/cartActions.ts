@@ -15,7 +15,8 @@ import {
 import { getCart } from "@/lib/cartReader";
 import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { CartDataFromServer } from "@/lib/supabase/types";
+// ✅ Utiliser CartData depuis types/cart.ts
+import type { CartData } from "@/types/cart";
 import {
   AddToCartInputSchema,
   RemoveFromCartInputSchema,
@@ -30,9 +31,9 @@ export { getCart };
 // --- Cart Actions ---
 
 export async function addItemToCart(
-  prevState: unknown, // previous state is not used but required by useActionState
+  prevState: unknown,
   formData: FormData
-): Promise<CartActionResult<CartDataFromServer | null>> {
+): Promise<CartActionResult<CartData | null>> {
   try {
     const validatedFields = AddToCartInputSchema.safeParse({
       productId: formData.get("productId"),
@@ -110,7 +111,7 @@ export async function addItemToCart(
 
 export async function removeItemFromCart(
   input: RemoveFromCartInput
-): Promise<CartActionResult<CartDataFromServer | null>> {
+): Promise<CartActionResult<CartData | null>> {
   try {
     const validatedFields = RemoveFromCartInputSchema.safeParse(input);
     if (!validatedFields.success) {
@@ -161,7 +162,7 @@ export async function removeItemFromCart(
 
 export async function updateCartItemQuantity(
   input: UpdateCartItemQuantityInput
-): Promise<CartActionResult<CartDataFromServer | null>> {
+): Promise<CartActionResult<CartData | null>> {
   try {
     const validatedFields = UpdateCartItemQuantityInputSchema.safeParse(input);
     if (!validatedFields.success) {
@@ -214,16 +215,10 @@ export async function updateCartItemQuantity(
   }
 }
 
-// --- Wrapper Actions pour useActionState ---
-
-/**
- * Wrapper pour removeItemFromCart compatible avec useActionState
- * useActionState passe (state, formData), mais removeItemFromCart attend un objet
- */
 export async function removeItemFromCartFormAction(
   prevState: unknown,
   formData: FormData
-): Promise<CartActionResult<CartDataFromServer | null>> {
+): Promise<CartActionResult<CartData | null>> {
   const cartItemId = formData.get("cartItemId") as string;
   
   if (!cartItemId) {
@@ -236,14 +231,10 @@ export async function removeItemFromCartFormAction(
   return removeItemFromCart({ cartItemId });
 }
 
-/**
- * Wrapper pour updateCartItemQuantity compatible avec useActionState
- * useActionState passe (state, formData), mais updateCartItemQuantity attend un objet
- */
 export async function updateCartItemQuantityFormAction(
   prevState: unknown,
   formData: FormData
-): Promise<CartActionResult<CartDataFromServer | null>> {
+): Promise<CartActionResult<CartData | null>> {
   const cartItemId = formData.get("cartItemId") as string;
   const quantityStr = formData.get("quantity") as string;
   
@@ -271,7 +262,7 @@ const MigrateCartInputSchema = z.object({
 
 export async function migrateAndGetCart(
   input: z.infer<typeof MigrateCartInputSchema>
-): Promise<CartActionResult<CartDataFromServer | null>> {
+): Promise<CartActionResult<CartData | null>> {
   const migrationId = crypto.randomBytes(4).toString("hex");
   let migrationSuccessful = false;
   try {
@@ -305,7 +296,7 @@ export async function migrateAndGetCart(
 
     if (!guestCart) {
       console.log(`[Migration ${migrationId}] No guest cart found. Returning current user cart.`);
-      migrationSuccessful = true; // No action needed, so technically successful.
+      migrationSuccessful = true;
       return getCart();
     }
 
@@ -351,7 +342,6 @@ export async function migrateAndGetCart(
   } finally {
     if (migrationSuccessful) {
       try {
-        // Re-parse to safely access guestUserId for cleanup
         const validatedFields = MigrateCartInputSchema.safeParse(input);
         if (validatedFields.success) {
           const { guestUserId } = validatedFields.data;
@@ -368,7 +358,7 @@ export async function migrateAndGetCart(
 
 export async function clearCartAction(
   _prevState: unknown
-): Promise<CartActionResult<CartDataFromServer | null>> {
+): Promise<CartActionResult<CartData | null>> {
   const supabase = await createSupabaseServerClient();
   const activeUserId = await getActiveUserId(supabase);
 

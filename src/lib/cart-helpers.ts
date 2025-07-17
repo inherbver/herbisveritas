@@ -1,7 +1,7 @@
 // src/lib/cart-helpers.ts
 // Helper functions pour les actions du panier (sans "use server")
 
-import type { CartDataFromServer, ServerCartItem } from "@/lib/supabase/types";
+import type { CartDataFromServer, ServerCartItem } from "@/types/cart";
 
 // --- Action Result Types ---
 
@@ -25,11 +25,8 @@ export type GeneralErrorResult = {
 
 /**
  * A discriminated union for server action results.
- * The `success` property can be `true`, `false`, or `undefined` for the initial state.
  */
-export type CartActionResult<T> = (SuccessResult<T> | ValidationErrorResult | GeneralErrorResult) & {
-  success?: boolean;
-};
+export type CartActionResult<T> = SuccessResult<T> | ValidationErrorResult | GeneralErrorResult;
 
 // --- Result Creator Functions ---
 
@@ -62,22 +59,25 @@ export function isGeneralErrorResult<T>(result: CartActionResult<T>): result is 
   return result.success === false && "error" in result;
 }
 
+// Alias pour la compatibilité avec les tests existants
+export const isGeneralError = isGeneralErrorResult;
+
 // --- Initial State for useActionState ---
 
 /**
  * Initial state for `useActionState`.
- * `success` is `undefined` to distinguish it from a failed action (`false`).
+ * `success` is `false` pour un état initial valide.
  */
 export const INITIAL_ACTION_STATE_DO_NOT_PROCESS: CartActionResult<null> = {
-  success: undefined,
+  success: false,
   message: "Initial state. This result should not be processed.",
+  errors: {},
 };
 
 // --- Transformation Functions ---
 
 /**
- * CORRECTION: Cette fonction transforme les ServerCartItem[] en structure client
- * Elle ne prend pas CartDataFromServer[] mais ServerCartItem[]
+ * Cette fonction transforme les ServerCartItem[] en structure client
  */
 export const transformServerCartToClientItems = (
   serverItems: ServerCartItem[]
@@ -95,7 +95,7 @@ export const transformServerCartToClientItems = (
   }
   
   return serverItems.map((serverItem: ServerCartItem) => ({
-    id: serverItem.product_id, // Utilise product_id comme id temporaire côté client
+    id: serverItem.id, // Utilise l'ID réel de l'item
     productId: serverItem.product_id,
     name: serverItem.name,
     price: serverItem.price,

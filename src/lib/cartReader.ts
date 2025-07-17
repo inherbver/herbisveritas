@@ -5,7 +5,7 @@ import {
   createGeneralErrorResult,
   createSuccessResult,
 } from "@/lib/cart-helpers";
-import type { CartData, CartItem, ProductDetails } from "@/types/cart";
+import type { CartData, CartItem } from "@/types/cart";
 import { getActiveUserId } from "./authUtils";
 
 export async function getCart(): Promise<CartActionResult<CartData | null>> {
@@ -15,55 +15,36 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
   const selectQuery = `id, user_id, created_at, updated_at, cart_items (id, product_id, quantity, products (id, name, price, image_url, slug))`;
 
   try {
-    let query = supabase
-      .from("carts")
-      .select(selectQuery)
-      .order("id", { foreignTable: "cart_items", ascending: true });
+    let query = supabase.from("carts").select(selectQuery);
 
-    // Si l'utilisateur est authentifié, on cherche son panier.
     if (activeUserId) {
       query = query.eq("user_id", activeUserId);
     } else {
-      // Sinon, on cherche le panier invité via le cartId stocké dans les cookies.
-      const cartStore = cookies().get("cart-storage")?.value;
-      if (!cartStore) {
-        return createSuccessResult(null, "Aucun panier invité trouvé.");
-      }
-      const { state } = JSON.parse(cartStore);
-      const guestCartId = state.cartId;
-
+      const cookieStore = await cookies();
+      const guestCartId = cookieStore.get("herbis-cart-id")?.value;
       if (!guestCartId) {
-        return createSuccessResult(null, "Aucun ID de panier invité trouvé.");
+        return createSuccessResult(null, "Aucun panier invité trouvé.");
       }
       query = query.eq("id", guestCartId).is("user_id", null);
     }
 
-    const { data: cart, error: queryError } = await query.maybeSingle();
+    const { data: cartData, error: queryError } = await query.maybeSingle();
 
     if (queryError) {
-      return createGeneralErrorResult(queryError.message, `Erreur Supabase: ${queryError.message}`);
+      console.error("Supabase query error in getCart:", queryError);
+      return createGeneralErrorResult(
+        queryError.message,
+        `Erreur Supabase: ${queryError.message}`,
+      );
     }
-    if (!cart) {
+
+    if (!cartData) {
       return createSuccessResult(null, "Aucun panier actif trouvé.");
     }
 
-    interface RawSupabaseCartItem {
-      id: string;
-      product_id: string;
-      quantity: number;
-      products: ProductDetails | ProductDetails[] | null;
-    }
-
-    const itemsToTransform: RawSupabaseCartItem[] = cart.cart_items || [];
-    const transformedCartItems: CartItem[] = itemsToTransform
-      .map((item): CartItem | null => {
-        const productData =
-          Array.isArray(item.products) && item.products.length > 0
-            ? item.products[0]
-            : !Array.isArray(item.products) && item.products
-              ? item.products
-              : null;
-
+    const transformedCartItems: CartItem[] = (cartData.cart_items || [])
+      .map((item: any): CartItem | null => {
+        const productData = item.products;
         if (!productData) {
           console.error(`Données produit manquantes pour l'article ID: ${item.id}`);
           return null;
@@ -75,16 +56,22 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
           quantity: item.quantity,
           name: productData.name,
           price: productData.price,
-          image: productData.image_url,
+          image: productData.image_url ?? undefined, // Fix: null -> undefined
           slug: productData.slug,
         };
       })
-      .filter((item): item is CartItem => item !== null);
+      .filter((item): item is CartItem => item !== null)
+      .sort((a, b) => (a.id ?? "").localeCompare(b.id ?? "")); // Tri pour la cohérence
 
-    const finalCartData: CartData = { ...cart, items: transformedCartItems };
+    const finalCartData: CartData = { ...cartData, items: transformedCartItems };
+
     return createSuccessResult(finalCartData, "Panier récupéré.");
   } catch (e: unknown) {
-    const errorMessage = (e as Error).message || "Unknown server error";
-    return createGeneralErrorResult(errorMessage, "Une erreur serveur inattendue est survenue.");
+    const errorMessage = e instanceof Error ? e.message : "Unknown server error";
+    console.error("Unexpected error in getCart:", errorMessage);
+    return createGeneralErrorResult(
+      errorMessage,
+      "Une erreur serveur inattendue est survenue.",
+    );
   }
 }

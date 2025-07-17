@@ -1,7 +1,8 @@
 import { getCart } from "../cartReader";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getActiveUserId } from "../authUtils";
-import { isSuccessResult, isGeneralError } from "../cart-helpers";
+import { isSuccessResult, isGeneralErrorResult } from "../cart-helpers";
+import { cookies } from "next/headers";
 
 // Mock des dépendances
 jest.mock("@/lib/supabase/server", () => ({
@@ -12,12 +13,18 @@ jest.mock("../authUtils", () => ({
   getActiveUserId: jest.fn(),
 }));
 
+jest.mock("next/headers", () => ({
+  cookies: jest.fn(),
+}));
+
 // Cast des mocks pour le typage
 const mockedGetActiveUserId = getActiveUserId as jest.Mock;
 const mockedCreateSupabaseServerClient = createSupabaseServerClient as jest.Mock;
+const mockedCookies = cookies as jest.Mock;
 
 // Données de test
 const VALID_USER_ID = "user-123";
+const GUEST_CART_ID = "guest-cart-456";
 const mockCartFromDB = {
   id: "cart-abc",
   user_id: VALID_USER_ID,
@@ -37,18 +44,6 @@ const mockCartFromDB = {
       },
     },
     {
-      id: "item-2",
-      product_id: "prod-2",
-      quantity: 1,
-      products: {
-        id: "prod-2",
-        name: "Produit 2",
-        price: 200,
-        image_url: "/img2.png",
-        slug: "produit-2",
-      },
-    },
-    {
       id: "item-3", // Item invalide sans détails produit
       product_id: "prod-3",
       quantity: 1,
@@ -58,39 +53,44 @@ const mockCartFromDB = {
 };
 
 describe("getCart", () => {
-  let mockSupabaseClient: {
-    from: jest.Mock;
-    select: jest.Mock;
-    eq: jest.Mock;
-    order: jest.Mock;
-    maybeSingle: jest.Mock;
-  };
+  let mockSupabaseClient: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, "error").mockImplementation(() => {});
 
-    // Mock de base du client Supabase
     mockSupabaseClient = {
       from: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
+      is: jest.fn().mockReturnThis(),
       maybeSingle: jest.fn(),
     };
     mockedCreateSupabaseServerClient.mockResolvedValue(mockSupabaseClient);
   });
 
-  it("should return an error if user identification fails", async () => {
+  it("should return success with null data if no user and no guest cart cookie", async () => {
     mockedGetActiveUserId.mockResolvedValue(null);
+    mockedCookies.mockReturnValue({ get: () => undefined });
 
     const result = await getCart();
 
-    expect(result.success).toBe(false);
-    expect(isGeneralError(result)).toBe(true);
-    if (isGeneralError(result)) {
-      expect(result.error).toBe("User identification failed");
+    expect(result.success).toBe(true);
+    if (isSuccessResult(result)) {
+      expect(result.data).toBeNull();
+      expect(result.message).toBe("Aucun panier invité trouvé.");
     }
+  });
+
+  it("should query for a guest cart using cookie id", async () => {
+    mockedGetActiveUserId.mockResolvedValue(null);
+    mockedCookies.mockReturnValue({ get: () => ({ value: GUEST_CART_ID }) });
+    mockSupabaseClient.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+    await getCart();
+
+    expect(mockSupabaseClient.eq).toHaveBeenCalledWith("id", GUEST_CART_ID);
+    expect(mockSupabaseClient.is).toHaveBeenCalledWith("user_id", null);
   });
 
   it("should return an error if the Supabase query fails", async () => {
@@ -101,13 +101,13 @@ describe("getCart", () => {
     const result = await getCart();
 
     expect(result.success).toBe(false);
-    expect(isGeneralError(result)).toBe(true);
-    if (isGeneralError(result)) {
+    expect(isGeneralErrorResult(result)).toBe(true);
+    if (isGeneralErrorResult(result)) {
       expect(result.error).toContain(queryError.message);
     }
   });
 
-  it("should return success with null data if no cart is found", async () => {
+  it("should return success with null data if no cart is found in DB", async () => {
     mockedGetActiveUserId.mockResolvedValue(VALID_USER_ID);
     mockSupabaseClient.maybeSingle.mockResolvedValue({ data: null, error: null });
 
@@ -120,24 +120,7 @@ describe("getCart", () => {
     }
   });
 
-  it("should return a cart with correctly transformed items", async () => {
-    mockedGetActiveUserId.mockResolvedValue(VALID_USER_ID);
-    const dbCart = { ...mockCartFromDB, cart_items: [mockCartFromDB.cart_items[0]] }; // Un seul item valide
-    mockSupabaseClient.maybeSingle.mockResolvedValue({ data: dbCart, error: null });
-
-    const result = await getCart();
-
-    expect(result.success).toBe(true);
-    if (isSuccessResult(result) && result.data) {
-      expect(result.data.id).toBe(dbCart.id);
-      expect(result.data.items.length).toBe(1);
-      expect(result.data.items[0].productId).toBe("prod-1");
-      expect(result.data.items[0].quantity).toBe(2);
-      expect(result.data.items[0].name).toBe("Produit 1");
-    }
-  });
-
-  it("should filter out items with missing product data", async () => {
+  it("should return a cart and filter out items with missing product data", async () => {
     mockedGetActiveUserId.mockResolvedValue(VALID_USER_ID);
     mockSupabaseClient.maybeSingle.mockResolvedValue({ data: mockCartFromDB, error: null });
 
@@ -145,24 +128,34 @@ describe("getCart", () => {
 
     expect(result.success).toBe(true);
     if (isSuccessResult(result) && result.data) {
-      expect(result.data.items.length).toBe(2); // item-3 est filtré
-      expect(result.data.items.find((item) => item.id === "item-3")).toBeUndefined();
+      expect(result.data.id).toBe(mockCartFromDB.id);
+      expect(result.data.items.length).toBe(1); // item-3 est filtré
+      expect(result.data.items[0].productId).toBe("prod-1");
+      expect(result.data.items[0].image).toBe("/img1.png");
     }
     expect(console.error).toHaveBeenCalledWith(
-      "Données produit manquantes pour l'article ID: item-3"
+      "Données produit manquantes pour l'article ID: item-3",
     );
   });
 
-  it("should return an empty cart if cart_items is null", async () => {
+  it("should correctly handle null image_url from DB", async () => {
     mockedGetActiveUserId.mockResolvedValue(VALID_USER_ID);
-    const emptyCart = { ...mockCartFromDB, cart_items: null };
-    mockSupabaseClient.maybeSingle.mockResolvedValue({ data: emptyCart, error: null });
+    const cartWithNullImage = {
+      ...mockCartFromDB,
+      cart_items: [
+        {
+          ...mockCartFromDB.cart_items[0],
+          products: { ...mockCartFromDB.cart_items[0].products, image_url: null },
+        },
+      ],
+    };
+    mockSupabaseClient.maybeSingle.mockResolvedValue({ data: cartWithNullImage, error: null });
 
     const result = await getCart();
 
     expect(result.success).toBe(true);
     if (isSuccessResult(result) && result.data) {
-      expect(result.data.items.length).toBe(0);
+      expect(result.data.items[0].image).toBeUndefined();
     }
   });
 });

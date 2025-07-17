@@ -36,28 +36,4 @@ export type CartItem = Table<'cart_items'>;
 export type Profile = Table<'profiles'>;
 export type Address = Table<'addresses'>;
 
-// --- RPC Function Types ---
-/**
- * Defines the structure of the data returned by the `get_cart_data` RPC function.
- * This function is expected to join cart items with product details.
- */
-export type CartDataFromServer = { 
-  id: string; // cart id
-  user_id: string;
-  items: ServerCartItem[];
-  // Computed properties if returned by the function
-  subtotal?: number;
-  total_items?: number;
-};
 
-/**
- * Represents a single item within the cart as returned by the server,
- * including details from the joined 'products' table.
- */
-export type ServerCartItem = {
-  product_id: string;
-  quantity: number;
-  name: string; // from products table
-  price: number; // from products table
-  image_url: string | null; // from products table
-};

@@ -6,6 +6,18 @@
  * Action result types are imported from `@/lib/cart-helpers.ts`.
  */
 
+// --- Product Details Structure ---
+/**
+ * Represents product details used in cart operations.
+ */
+export interface ProductDetails {
+  id: string;
+  name: string;
+  price: number;
+  image_url?: string;
+  slug?: string;
+}
+
 // --- Client-Side Cart Item Structure ---
 /**
  * Represents a single item in the client-side cart store.
@@ -18,6 +30,44 @@ export interface CartItem {
   quantity: number;
   image?: string;
   slug?: string;
+}
+
+// --- Server Response Cart Data ---
+/**
+ * Represents the complete cart data structure returned from server operations.
+ * Used in cartReader.ts and other server-side cart operations.
+ */
+export interface CartData {
+  id: string;
+  user_id?: string | null; // ✅ Permettre undefined pour la compatibilité
+  created_at: string;
+  updated_at: string;
+  items: CartItem[];
+}
+
+// --- Server-Side Types (for compatibility) ---
+/**
+ * Represents a cart item as stored in the database.
+ */
+export interface ServerCartItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  name: string;
+  price: number;
+  image_url?: string;
+}
+
+/**
+ * Represents cart data as returned from server with server cart items.
+ * ✅ Harmonisé avec CartData pour éviter les conflits de types
+ */
+export interface CartDataFromServer {
+  id: string;
+  user_id?: string | null; // ✅ Permettre undefined comme CartData
+  created_at: string;
+  updated_at: string;
+  cart_items: ServerCartItem[];
 }
 
 // --- Zustand Store Shape ---
@@ -67,4 +117,3 @@ export const selectCartTotalItems = (state: CartState) =>
  */
 export const selectCartSubtotal = (state: CartState) =>
   state.items.reduce((total, item) => total + item.price * item.quantity, 0);
-

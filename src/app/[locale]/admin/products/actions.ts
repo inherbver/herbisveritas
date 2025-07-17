@@ -18,11 +18,27 @@ export const createProduct = withPermissionSafe("products:create", async (data: 
         };
     }
 
-    const { translations, ...productData } = validationResult.data;
+    const { translations, ...productDataWithoutName } = validationResult.data;
+
+    // ✅ Récupérer le nom principal depuis la traduction française
+    const defaultTranslation = translations.find(t => t.locale === "fr");
+    if (!defaultTranslation?.name) {
+        return {
+            success: false,
+            message: "La traduction française avec un nom de produit est requise.",
+        };
+    }
+
+    // ✅ Préparer les données du produit avec le champ name requis
+    const productData = {
+        ...productDataWithoutName,
+        name: defaultTranslation.name, // Ajouter le champ name requis par la DB
+        id: productDataWithoutName.id || crypto.randomUUID(), // Assurer qu'il y a un ID
+    };
 
     const { data: newProduct, error: productError } = await supabase
         .from("products")
-        .insert(productData)
+        .insert(productData) // ✅ Maintenant productData a le champ name
         .select()
         .single();
 
@@ -46,8 +62,6 @@ export const createProduct = withPermissionSafe("products:create", async (data: 
 
     if (translationsError) {
         console.error("Error creating product translations:", translationsError);
-        // Dans un scénario réel, nous pourrions vouloir supprimer le produit qui vient d'être créé.
-        // Pour l'instant, nous retournons un message d'erreur.
         return { success: false, message: `Produit créé, mais l'enregistrement des traductions a échoué: ${translationsError.message}` };
     }
 
@@ -60,19 +74,16 @@ export const createProduct = withPermissionSafe("products:create", async (data: 
     };
 });
 
-
 export const deleteProduct = withPermissionSafe("products:delete", async (productId: string) => {
   const supabase = await createSupabaseServerClient();
 
   const { error } = await supabase.from("products").delete().eq("id", productId);
 
   if (error) {
-    // Le HOF interceptera cette erreur et retournera un format d'erreur standard
     throw new Error(`La suppression du produit a échoué: ${error.message}`);
   }
 
   revalidatePath("/admin/products");
-  // On retourne explicitement l'objet attendu par le client pour le toast
   return { success: true, message: "Produit supprimé avec succès." };
 });
 
@@ -91,9 +102,17 @@ export const updateProduct = withPermissionSafe("products:update", async (data: 
 
     const { id, translations, ...productData } = validationResult.data;
 
+    // ✅ Vérifier que l'ID existe pour la mise à jour
+    if (!id) {
+        return {
+            success: false,
+            message: "L'ID du produit est requis pour la mise à jour.",
+        };
+    }
+
     // 2. Prepare parameters for the RPC call, ensuring they match the function signature
     const params = {
-        p_id: id,
+        p_id: id, // ✅ id est maintenant garanti d'être une string
         p_slug: productData.slug,
         p_price: productData.price,
         p_stock: productData.stock,
@@ -103,7 +122,7 @@ export const updateProduct = withPermissionSafe("products:update", async (data: 
         p_is_active: productData.is_active,
         p_is_new: productData.is_new,
         p_is_on_promotion: productData.is_on_promotion,
-        p_translations: translations,
+        p_translations: translations as any, // ✅ Cast pour le type Json de Supabase
     };
 
     // 3. Call the RPC function
@@ -140,8 +159,6 @@ export const updateProductStatus = withPermissionSafe(
       const { data: pendingOrders, error: orderError } = await supabase
         .from("order_items")
         .select("id")
-        // This is a simplified query; a real implementation might need to join with orders table
-        // .eq("order.status", "pending") 
         .eq("product_id", productId)
         .limit(1);
 
@@ -154,9 +171,15 @@ export const updateProductStatus = withPermissionSafe(
       }
     }
 
+    // ✅ Convertir le status en booléen is_active pour correspondre au schéma DB
+    const updateData = {
+      is_active: status === "active",
+      // Vous pouvez ajouter d'autres champs selon votre logique métier
+    };
+
     const { data, error } = await supabase
       .from("products")
-      .update({ status })
+      .update(updateData) // ✅ Utiliser updateData au lieu de { status }
       .eq("id", productId)
       .select()
       .single();
@@ -166,8 +189,13 @@ export const updateProductStatus = withPermissionSafe(
     }
 
     revalidatePath("/admin/products");
-    revalidatePath(`/products/${(data as any)?.slug}`); // Invalidate specific product page
-    revalidatePath("/shop"); // Invalidate the main shop page
-    return data;
+    revalidatePath(`/products/${(data as any)?.slug}`);
+    revalidatePath("/shop");
+    
+    return {
+      success: true,
+      message: "Statut du produit mis à jour avec succès.",
+      data,
+    };
   }
 );
