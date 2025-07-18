@@ -75,7 +75,7 @@ describe("hasPermission", () => {
   });
 
   test("user should not have permission to read all orders", () => {
-    expect(hasPermission("user", "orders:read")).toBe(false);
+    expect(hasPermission("user", "orders:read:all")).toBe(false);
   });
 
   // Test cases for the 'editor' role
