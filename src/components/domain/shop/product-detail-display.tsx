@@ -14,7 +14,7 @@ import {
   isSuccessResult,
   isValidationErrorResult, // ✅ Corriger les noms d'imports
 } from "@/lib/cart-helpers";
-import type { CartDataFromServer } from "@/lib/supabase/types"; // ✅ Import depuis le bon fichier
+import type { CartDataFromServer } from "@/types/cart"; // ✅ Import depuis le bon fichier
 import type { CartItem } from "@/types/cart"; // ✅ Import pour la transformation
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -62,14 +62,14 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
       toast.success(state.message || t("ProductDetailModal.itemAddedSuccess"));
       // ✅ Transformer ServerCartItem vers CartItem avant de passer au store
       if (state.data?.items) {
-        const clientCartItems: CartItem[] = state.data.items.map(serverItem => ({
+        const clientCartItems: CartItem[] = state.data.items.map((serverItem) => ({
           id: `${state.data!.id}-${serverItem.product_id}`,
           productId: serverItem.product_id,
           name: serverItem.name,
           price: serverItem.price,
           quantity: serverItem.quantity,
           image: serverItem.image_url || undefined,
-          slug: undefined
+          slug: undefined,
         }));
         _setItems(clientCartItems);
       }
@@ -165,7 +165,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                     <Price
                       value={product.price}
                       locale={locale}
-                      className="text-2xl font-bold text-olive-600"
+                      className="text-olive-600 text-2xl font-bold"
                     />
                     <p className="text-xs text-muted-foreground">{t("Global.TTC")}</p>
                   </div>
@@ -218,7 +218,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
           <h3 className="mb-4 font-serif text-2xl text-gray-900 dark:text-white">
             {t("ProductDetail.tabs.description")}
           </h3>
-          <div className="prose prose-lg dark:prose-invert text-foreground/90 max-w-none leading-relaxed">
+          <div className="text-foreground/90 prose prose-lg max-w-none leading-relaxed dark:prose-invert">
             {product.description_long || t("ProductDetailModal.noDescription")}
           </div>
         </section>
@@ -250,7 +250,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
           <h3 className="mb-4 font-serif text-2xl text-gray-900 dark:text-white">
             {t("ProductDetail.tabs.composition")}
           </h3>
-          <div className="prose prose-lg dark:prose-invert text-foreground/90 max-w-none leading-relaxed">
+          <div className="text-foreground/90 prose prose-lg max-w-none leading-relaxed dark:prose-invert">
             {product.compositionText}
           </div>
           <h4 className="mb-2 mt-6 font-serif text-xl text-gray-800 dark:text-gray-300">
@@ -272,7 +272,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             {t("ProductDetail.tabs.usage")}
           </h3>
           {product.usageInstructions ? (
-            <div className="prose prose-lg dark:prose-invert text-foreground/90 max-w-none leading-relaxed">
+            <div className="text-foreground/90 prose prose-lg max-w-none leading-relaxed dark:prose-invert">
               {product.usageInstructions.split(/\n|\\n/).map((line, index) => (
                 <p key={index}>{line.trim().replace(/^\*\s*/, "")}</p>
               ))}

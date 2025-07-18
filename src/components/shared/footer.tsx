@@ -19,7 +19,7 @@ const Footer = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
             </Text>
           </div>
           <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground md:justify-end">
-            <Link href={{ pathname: "/privacy" }}>Politique de confidentialité</Link>
+            <Link href={{ pathname: "/privacy-policy" }}>Politique de confidentialité</Link>
             <Link href={{ pathname: "/terms" }}>Conditions d'utilisation</Link>
             <Link href={{ pathname: "/legal" }}>Mentions Légales</Link>
             {/* Ajouter d'autres liens ici... */}

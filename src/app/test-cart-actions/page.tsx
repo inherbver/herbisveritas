@@ -15,10 +15,10 @@ import {
   isValidationErrorResult,
   type CartActionResult,
 } from "@/lib/cart-helpers";
-import type { CartDataFromServer } from "@/lib/supabase/types";
+import type { CartData } from "@/types/cart";
 
 export default function TestCartActionsPage() {
-  const [cart, setCart] = useState<CartDataFromServer | null>(null);
+  const [cart, setCart] = useState<CartData | null>(null);
   const [isFetchingCart, startFetchingCart] = useTransition();
 
   // --- Action States ---
@@ -66,21 +66,32 @@ export default function TestCartActionsPage() {
     }
   }, [addItemState, removeItemState, updateItemState, clearCartState]);
 
-  const isLoading = isFetchingCart || isAddingItem || isRemovingItem || isUpdatingItem || isClearingCart;
+  const isLoading =
+    isFetchingCart || isAddingItem || isRemovingItem || isUpdatingItem || isClearingCart;
 
   const styles: { [key: string]: React.CSSProperties } = {
     container: { fontFamily: "sans-serif", padding: "20px", maxWidth: "800px", margin: "0 auto" },
-    section: { marginBottom: "30px", padding: "20px", border: "1px solid #ccc", borderRadius: "4px" },
+    section: {
+      marginBottom: "30px",
+      padding: "20px",
+      border: "1px solid #ccc",
+      borderRadius: "4px",
+    },
     title: { marginTop: 0, borderBottom: "2px solid #eee", paddingBottom: "10px" },
     button: { marginRight: "10px", padding: "8px 12px", cursor: "pointer" },
     input: { margin: "5px 0 10px", padding: "8px", width: "calc(100% - 20px)" },
-    pre: { backgroundColor: "#f5f5f5", padding: "15px", borderRadius: "4px", overflowX: "auto" as const },
+    pre: {
+      backgroundColor: "#f5f5f5",
+      padding: "15px",
+      borderRadius: "4px",
+      overflowX: "auto" as const,
+    },
     error: { color: "red", fontWeight: "bold" },
     success: { color: "green", fontWeight: "bold" },
     loading: { fontStyle: "italic" },
   };
 
-  const renderActionResult = (title: string, result: CartActionResult<CartDataFromServer | null>) => {
+  const renderActionResult = (title: string, result: CartActionResult<CartData | null>) => {
     if (result.success === undefined) return null; // Don't render initial state
 
     return (
@@ -110,9 +121,13 @@ export default function TestCartActionsPage() {
 
       <div style={styles.section}>
         <h2 style={styles.title}>Panier Actuel :</h2>
-        <button style={styles.button} onClick={handleGetCart} disabled={isLoading}>Rafraîchir</button>
-        <form action={clearCartSubmit} style={{ display: 'inline' }}>
-          <button type="submit" style={styles.button} disabled={isLoading}>Vider le Panier</button>
+        <button style={styles.button} onClick={handleGetCart} disabled={isLoading}>
+          Rafraîchir
+        </button>
+        <form action={clearCartSubmit} style={{ display: "inline" }}>
+          <button type="submit" style={styles.button} disabled={isLoading}>
+            Vider le Panier
+          </button>
         </form>
         {cart ? <pre style={styles.pre}>{JSON.stringify(cart, null, 2)}</pre> : <p>Panier vide.</p>}
       </div>
@@ -123,25 +138,42 @@ export default function TestCartActionsPage() {
         <input type="text" name="productId" defaultValue="prod_cos_003" style={styles.input} />
         <label>Quantité:</label>
         <input type="number" name="quantity" defaultValue={1} style={styles.input} />
-        <button type="submit" style={styles.button} disabled={isLoading}>Ajouter</button>
+        <button type="submit" style={styles.button} disabled={isLoading}>
+          Ajouter
+        </button>
       </form>
 
       <form action={removeItemSubmit} style={styles.section}>
         <h2 style={styles.title}>Supprimer un Article</h2>
         <label>ID de l'article à supprimer:</label>
-        <input type="text" name="cartItemId" placeholder="ID de l'article à supprimer" required style={styles.input} />
-        <button type="submit" style={styles.button} disabled={isLoading}>Supprimer</button>
+        <input
+          type="text"
+          name="cartItemId"
+          placeholder="ID de l'article à supprimer"
+          required
+          style={styles.input}
+        />
+        <button type="submit" style={styles.button} disabled={isLoading}>
+          Supprimer
+        </button>
       </form>
 
       <form action={updateItemSubmit} style={styles.section}>
         <h2 style={styles.title}>Mettre à Jour la Quantité</h2>
         <label>ID de l'article à mettre à jour:</label>
-        <input type="text" name="cartItemId" placeholder="ID de l'article à màj" required style={styles.input} />
+        <input
+          type="text"
+          name="cartItemId"
+          placeholder="ID de l'article à màj"
+          required
+          style={styles.input}
+        />
         <label>Nouvelle quantité:</label>
         <input type="number" name="quantity" defaultValue={2} min={1} style={styles.input} />
-        <button type="submit" style={styles.button} disabled={isLoading}>Mettre à jour</button>
+        <button type="submit" style={styles.button} disabled={isLoading}>
+          Mettre à jour
+        </button>
       </form>
     </div>
   );
-
 }

@@ -56,6 +56,12 @@ export const useProfileStore = create<AdminProfileEditState & { actions: AdminPr
             shipping_city: null,
             shipping_country: null,
             terms_accepted_at: null,
+            billing_address_is_different: false,
+            billing_address_line1: null,
+            billing_address_line2: null,
+            billing_postal_code: null,
+            billing_city: null,
+            billing_country: null,
           };
 
           if (!data) {

@@ -117,7 +117,7 @@ export default async function OrdersPage({ params }: OrdersPageProps) {
                       <figure className="flex-shrink-0">
                         <Image
                           src={item.product_image_url_at_purchase || "/images/placeholder.svg"}
-                          alt={item.product_name_at_purchase}
+                          alt={item.product_name_at_purchase || "Produit"}
                           width={80}
                           height={80}
                           className="aspect-square rounded-md object-cover"

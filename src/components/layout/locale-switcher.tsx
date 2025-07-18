@@ -62,11 +62,11 @@ export default function LocaleSwitcher() {
       variant="ghost"
       size="icon"
       onClick={handleChangeLocale}
-      aria-label={t("switchLocale", { locale: otherLocale })}
-      title={t("switchLocale", { locale: otherLocale })}
+      aria-label={t("switchLocale", { locale: otherLocale || "en" })}
+      title={t("switchLocale", { locale: otherLocale || "en" })}
     >
       <LanguagesIcon className="h-5 w-5" />
-      <span className="sr-only">{t("switchLocale", { locale: otherLocale })}</span>
+      <span className="sr-only">{t("switchLocale", { locale: otherLocale || "en" })}</span>
     </Button>
   );
 }

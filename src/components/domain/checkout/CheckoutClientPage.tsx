@@ -10,7 +10,7 @@ import {
 } from "@/actions/cartActions";
 import { createStripeCheckoutSession } from "@/actions/stripeActions";
 import type { ShippingMethod, Address } from "@/types";
-import type { CartItem, CartData, CartDataFromServer, ServerCartItem } from "@/types/cart";
+import type { CartItem, CartData, ServerCartItem } from "@/types/cart";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ import CheckoutAddressForm from "./AddressForm";
 import type { AddressFormData } from "@/lib/validators/address.validator";
 
 interface CheckoutClientPageProps {
-  cart: CartDataFromServer;
+  cart: CartData;
   shippingAddress: Address | null;
   billingAddress: Address | null;
   shippingMethods: ShippingMethod[];
@@ -100,8 +100,8 @@ export default function CheckoutClientPage({
 
   useEffect(() => {
     // ✅ CORRECTION: Utiliser la fonction utilitaire pour transformer les données
-    if (cart?.cart_items && cart.id) {
-      const clientCartItems = transformServerItemsToCartItems(cart.cart_items, cart.id);
+    if (cart?.items && cart.id) {
+      const clientCartItems = transformServerItemsToCartItems(cart.items, cart.id);
       useCartStore.getState()._setItems(clientCartItems);
     }
 

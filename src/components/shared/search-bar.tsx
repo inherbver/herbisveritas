@@ -34,7 +34,7 @@ const SearchBar = React.forwardRef<HTMLFormElement, SearchBarProps>(
         onSearchSubmit(trimmedQuery);
       } else {
         // Comportement par défaut: rediriger vers une page de recherche
-        router.push(`/search?q=${query.trim()}`);
+        router.push(`/shop?q=${query.trim()}` as "/shop");
       }
     };
 
