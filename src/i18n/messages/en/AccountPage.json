@@ -25,6 +25,7 @@
   "title": "My Account Area",
   "generalInfo": {
     "title": "Personal Information",
+    "fullName": "Full Name",
     "firstName": "First Name",
     "lastName": "Last Name",
     "email": "Email Address",

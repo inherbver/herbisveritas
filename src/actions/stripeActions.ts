@@ -6,7 +6,7 @@ import { getCart } from "@/lib/cartReader";
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import Stripe from 'stripe';
 import { Address } from "@/types";
-import type { ServerCartItem } from "@/lib/supabase/types"; // ✅ Importer le type correct
+import type { ServerCartItem } from "@/types/cart"; // ✅ Importer le type correct
 
 interface Product {
   id: string;
@@ -99,7 +99,7 @@ export async function createStripeCheckoutSession(
     }
 
     // ✅ Valider les produits avec le bon type
-    const productIds = cart.items.map((item: ServerCartItem) => item.product_id); // ✅ Utiliser product_id selon le schéma
+    const productIds = cart.items.map((item) => item.product_id); // ✅ Utiliser product_id selon le schéma
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("id, name, price, image_url")
@@ -123,7 +123,7 @@ export async function createStripeCheckoutSession(
     }
 
     // ✅ Construire les line_items avec le bon type
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cart.items.map((item: ServerCartItem) => {
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cart.items.map((item) => {
       const product = productPriceMap.get(item.product_id); // ✅ Utiliser product_id
       if (!product) throw new Error(`Produit ${item.product_id} non trouvé.`);
       return {

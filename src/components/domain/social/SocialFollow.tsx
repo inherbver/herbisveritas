@@ -3,12 +3,12 @@ import { Facebook, Instagram } from "lucide-react";
 const socialLinks = [
   {
     name: "Facebook",
-    href: "https://www.facebook.com/HerbisVeritas", // TODO: Remplacer par le lien réel
+    href: "https://www.facebook.com/in.herbis.veritas",
     icon: Facebook,
   },
   {
     name: "Instagram",
-    href: "https://www.instagram.com/herbisveritas", // TODO: Remplacer par le lien réel
+    href: "https://www.instagram.com/in_herbis_veritas/?utm_source=ig_web_button_share_sheet",
     icon: Instagram,
   },
 ];

@@ -3,5 +3,6 @@
   "account": "My Account",
   "addresses": "My Addresses",
   "orders": "My Orders",
-  "password": "My Password"
+  "password": "My Password",
+  "backToAccount": "Back to My Account"
 }

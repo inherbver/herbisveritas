@@ -2,7 +2,7 @@ import { revalidateTag } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
 import { isSuccessResult, createSuccessResult } from "@/lib/cart-helpers";
-import { CartDataFromServer, ServerCartItem } from "@/lib/supabase/types";
+import { CartDataFromServer, ServerCartItem } from "@/types/cart";
 
 // Mock des modules externes
 jest.mock("next/cache", () => ({
@@ -34,8 +34,11 @@ function createTestCartData(overrides: Partial<CartDataFromServer> = {}): CartDa
   return {
     id: "test-cart-123",
     user_id: VALID_AUTH_USER_ID,
-    items: [
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    cart_items: [
       {
+        id: "test-item-1",
         product_id: VALID_PRODUCT_ID,
         name: "Test Product",
         price: 10.99,
@@ -299,13 +302,13 @@ describe("Server Action: migrateAndGetCart", () => {
     const guestCartData = createTestCartData({
       id: "guest-cart-id",
       user_id: VALID_GUEST_USER_ID,
-      items: [{ product_id: VALID_PRODUCT_ID, quantity: 1, name: "Test", price: 10, image_url: "img.jpg" }],
+      cart_items: [{ id: "test-item-2", product_id: VALID_PRODUCT_ID, quantity: 1, name: "Test", price: 10, image_url: "img.jpg" }],
     });
 
     const authCartData = createTestCartData({
       id: "auth-cart-id",
       user_id: VALID_AUTH_USER_ID,
-      items: [], // Auth cart is initially empty
+      cart_items: [], // Auth cart is initially empty
     });
 
     const mockSupabase = createCompleteSupabaseMock({
@@ -341,7 +344,7 @@ describe("Server Action: migrateAndGetCart", () => {
     const guestCartData = createTestCartData({
       id: "guest-cart-id-2",
       user_id: VALID_GUEST_USER_ID,
-      items: [{ product_id: VALID_PRODUCT_ID, quantity: 3, name: "Test 2", price: 20, image_url: "img2.jpg" }],
+      cart_items: [{ id: "test-item-3", product_id: VALID_PRODUCT_ID, quantity: 3, name: "Test 2", price: 20, image_url: "img2.jpg" }],
     });
 
     const mockSupabase = createCompleteSupabaseMock({
@@ -355,7 +358,7 @@ describe("Server Action: migrateAndGetCart", () => {
     mockGetCart.mockResolvedValue(createSuccessResult({ 
       id: guestCartData.id, 
       user_id: VALID_AUTH_USER_ID, 
-      items: guestCartData.items 
+      items: guestCartData.cart_items 
     }));
 
     const result = await migrateAndGetCart({ guestUserId: VALID_GUEST_USER_ID });

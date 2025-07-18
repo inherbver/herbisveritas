@@ -25,6 +25,7 @@
   "title": "Mon Espace Compte",
   "generalInfo": {
     "title": "Informations Personnelles",
+    "fullName": "Nom complet",
     "firstName": "Prénom",
     "lastName": "Nom",
     "email": "Adresse E-mail",

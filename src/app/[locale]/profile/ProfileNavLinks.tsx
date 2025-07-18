@@ -1,9 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-// Ajustez le chemin d'importation si votre configuration de navigation next-intl est différente
 import { Link, usePathname } from "@/i18n/navigation";
-import { cn } from "@/utils/cn"; // Supposant que vous avez cn pour classnames
+import { cn } from "@/utils/cn";
+import { ArrowLeft } from "lucide-react";
 
 // Définir un type plus spécifique pour les chemins du profil
 type ProfilePathname =
@@ -17,39 +17,61 @@ interface NavLinkItem {
   labelKey: string;
 }
 
-const profileNavLinks: NavLinkItem[] = [
-  { href: "/profile/account", labelKey: "account" },
+const mainLink: NavLinkItem = { href: "/profile/account", labelKey: "account" };
+const subLinks: NavLinkItem[] = [
   { href: "/profile/addresses", labelKey: "addresses" },
   { href: "/profile/orders", labelKey: "orders" },
-  { href: "/profile/password", labelKey: "password" }, // Nouveau lien
-  // Ajoutez d'autres liens ici si nécessaire
+  { href: "/profile/password", labelKey: "password" },
 ];
 
 export default function ProfileNavLinks() {
-  const t = useTranslations("ProfileNav"); // Namespace pour les traductions de ces liens
+  const t = useTranslations("ProfileNav");
   const pathname = usePathname();
 
-  return (
-    <nav aria-label={t("navigationLabel")} className="flex flex-col space-y-1">
-      {profileNavLinks.map((link) => {
-        const isActive = pathname === link.href;
-        // Pour une correspondance plus souple (ex: /profile/account/edit doit activer /profile/account):
-        // const isActive = pathname.startsWith(link.href);
+  const isSubPage = pathname !== mainLink.href;
 
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={cn(
-              "block rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              isActive && "bg-accent font-semibold text-accent-foreground"
-            )}
-            aria-current={isActive ? "page" : undefined}
-          >
-            {t(link.labelKey)}
-          </Link>
-        );
-      })}
+  return (
+    <nav aria-label={t("navigationLabel")} className="flex flex-col space-y-4">
+      {isSubPage && (
+        <Link
+          href={mainLink.href}
+          className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-accent-foreground"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t("backToAccount")}
+        </Link>
+      )}
+
+      <div>
+        <Link
+          href={mainLink.href}
+          className={cn(
+            "block rounded-md px-3 py-2 text-base font-semibold text-foreground",
+            !isSubPage && "bg-accent"
+          )}
+        >
+          {t(mainLink.labelKey)}
+        </Link>
+
+        <div className="mt-2 space-y-1 pl-4">
+          {subLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "block rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  isActive && "bg-accent font-semibold text-accent-foreground"
+                )}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {t(link.labelKey)}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
     </nav>
   );
 }

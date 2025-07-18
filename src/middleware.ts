@@ -133,6 +133,13 @@ export async function middleware(request: NextRequest) {
     // Pour l'instant, on laisse la logique suivante gérer le cas où l'utilisateur n'est pas authentifié/admin.
   }
 
+  // Rediriger la racine vers la page boutique
+  if (pathToCheck === "/") {
+    // Utiliser la configuration de pathnames pour obtenir le chemin localisé de la boutique
+    const shopPath = pathnames["/shop"][currentLocale as Locale] || "/shop";
+    return NextResponse.redirect(new URL(`/${currentLocale}${shopPath}`, request.url));
+  }
+
   // Protéger les routes de profil
   if (pathToCheck.startsWith("/profile")) {
     if (!user) {

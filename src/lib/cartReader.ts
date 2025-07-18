@@ -50,13 +50,24 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
           return null;
         }
 
+        let imageUrl = productData.image_url ?? undefined;
+        if (imageUrl && imageUrl.startsWith("/")) {
+          const filename = imageUrl.split("/").pop();
+          if (filename) {
+            const supabaseStorageBaseUrl =
+              process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+            // Note: Assumes images are in a 'products' bucket.
+            imageUrl = `${supabaseStorageBaseUrl}/storage/v1/object/public/products/${filename}`;
+          }
+        }
+
         return {
           id: item.id,
           productId: item.product_id,
           quantity: item.quantity,
           name: productData.name,
           price: productData.price,
-          image: productData.image_url ?? undefined, // Fix: null -> undefined
+          image: imageUrl,
           slug: productData.slug,
         };
       })

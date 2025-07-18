@@ -5,11 +5,12 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { Link as NextLink } from '@/i18n/navigation';
 import useCartStore, { selectCartItems, selectCartSubtotal } from '@/stores/cartStore';
-import { removeItemFromCartFormAction, updateCartItemQuantityFormAction } from '@/actions/cartActions'; // ✅ Utiliser les wrappers FormAction
+import { removeItemFromCartFormAction, updateCartItemQuantityFormAction } from '@/actions/cartActions';
 import { createStripeCheckoutSession } from '@/actions/stripeActions';
 import type { ShippingMethod, Address } from '@/types';
-import type { CartItem } from '@/types/cart'; // ✅ Import depuis le bon fichier
-import type { CartDataFromServer, Cart } from '@/lib/supabase/types'; // ✅ Import depuis le bon fichier
+import type { CartItem } from '@/types/cart';
+import type { CartDataFromServer, CartData } from '@/types/cart';
+import type { Cart } from '@/lib/supabase/types';
 import type { CartActionResult } from '@/lib/cart-helpers';
 import { isSuccessResult } from '@/lib/cart-helpers';
 import { Button } from '@/components/ui/button';
@@ -21,10 +22,10 @@ import { toast } from 'sonner';
 import { Loader2, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
 import CheckoutAddressForm from './AddressForm';
 import type { AddressFormData } from '@/lib/validators/address.validator';
-import type { ServerCartItem } from '@/lib/supabase/types'; // ✅ Importer le bon type
+import type { ServerCartItem } from '@/types/cart';
 
 interface CheckoutClientPageProps {
-  cart: CartDataFromServer; // ✅ Utiliser le bon type
+  cart: CartDataFromServer;
   shippingAddress: Address | null;
   billingAddress: Address | null;
   shippingMethods: ShippingMethod[];
@@ -39,6 +40,20 @@ const DisplayAddress = ({ address }: { address: Address | AddressFormData }) => 
     <p>{address.postal_code} {address.city}</p>
   </div>
 );
+
+// ✅ CORRECTION: Fonction utilitaire pour transformer ServerCartItem vers CartItem avec IDs uniques
+const transformServerItemsToCartItems = (serverItems: ServerCartItem[], cartId: string): CartItem[] => {
+  return serverItems.map((serverItem, index) => ({
+    // ✅ CORRECTION: Utiliser un ID unique et fiable
+    id: serverItem.id || `${cartId}-${serverItem.product_id || index}`,
+    productId: serverItem.product_id || `unknown-${index}`,
+    name: serverItem.name || 'Produit inconnu',
+    price: serverItem.price || 0,
+    quantity: serverItem.quantity || 1,
+    image: serverItem.image_url || undefined,
+    slug: undefined // Pas de slug disponible côté serveur
+  }));
+};
 
 export default function CheckoutClientPage({ 
   cart, 
@@ -65,18 +80,9 @@ export default function CheckoutClientPage({
   const [selectedShippingMethodId, setSelectedShippingMethodId] = useState<string | undefined>(shippingMethods[0]?.id);
 
   useEffect(() => {
-    // ✅ Sync server-side cart data with client-side Zustand store on initial mount
-    // Transformer ServerCartItem vers CartItem
-    if (cart?.items) {
-      const clientCartItems: CartItem[] = cart.items.map(serverItem => ({
-        id: `${cart.id}-${serverItem.product_id}`, // Créer un ID temporaire
-        productId: serverItem.product_id,
-        name: serverItem.name,
-        price: serverItem.price,
-        quantity: serverItem.quantity,
-        image: serverItem.image_url || undefined, // ✅ Convertir null vers undefined
-        slug: undefined // Pas de slug disponible côté serveur
-      }));
+    // ✅ CORRECTION: Utiliser la fonction utilitaire pour transformer les données
+    if (cart?.cart_items && cart.id) {
+      const clientCartItems = transformServerItemsToCartItems(cart.cart_items, cart.id);
       useCartStore.getState()._setItems(clientCartItems);
     }
 
@@ -100,26 +106,17 @@ export default function CheckoutClientPage({
     toast.success(t('toast.addressSaved'));
   };
 
-  // ✅ Correction: Utiliser les wrappers FormAction avec FormData
   const handleRemoveItem = async (cartItemId: string) => {
     const formData = new FormData();
     formData.append('cartItemId', cartItemId);
     
-    const result: CartActionResult<CartDataFromServer | null> = await removeItemFromCartFormAction(undefined, formData);
+    const result: CartActionResult<CartData | null> = await removeItemFromCartFormAction(undefined, formData);
 
     if (isSuccessResult(result)) {
       toast.success(result.message || tCart('itemRemovedSuccess'));
-      if (result.data?.items) {
-        // ✅ Transformer ServerCartItem vers CartItem
-        const clientCartItems: CartItem[] = result.data.items.map(serverItem => ({
-          id: `${result.data!.id}-${serverItem.product_id}`,
-          productId: serverItem.product_id,
-          name: serverItem.name,
-          price: serverItem.price,
-          quantity: serverItem.quantity,
-          image: serverItem.image_url || undefined, // ✅ Convertir null vers undefined
-          slug: undefined
-        }));
+      if (result.data?.items && result.data.id) {
+        // ✅ CORRECTION: Utiliser la fonction utilitaire
+        const clientCartItems = transformServerItemsToCartItems(result.data.items, result.data.id);
         _setItems(clientCartItems);
       }
     } else {
@@ -127,13 +124,13 @@ export default function CheckoutClientPage({
     }
   };
 
-  // ✅ Correction: Utiliser les wrappers FormAction avec FormData
   const handleUpdateItemQuantity = async (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 0) return;
 
     const currentItems = useCartStore.getState().items;
     const previousState = [...currentItems];
 
+    // Mise à jour optimiste
     const optimisticItems = currentItems
       .map((item) => (item.id === cartItemId ? { ...item, quantity: newQuantity } : item))
       .filter((item) => item.quantity > 0);
@@ -144,19 +141,11 @@ export default function CheckoutClientPage({
     formData.append('cartItemId', cartItemId);
     formData.append('quantity', newQuantity.toString());
     
-    const result: CartActionResult<CartDataFromServer | null> = await updateCartItemQuantityFormAction(undefined, formData);
+    const result: CartActionResult<CartData | null> = await updateCartItemQuantityFormAction(undefined, formData);
 
-    if (isSuccessResult(result) && result.data?.items) {
-      // ✅ Transformer ServerCartItem vers CartItem
-      const clientCartItems: CartItem[] = result.data.items.map(serverItem => ({
-        id: `${result.data!.id}-${serverItem.product_id}`,
-        productId: serverItem.product_id,
-        name: serverItem.name,
-        price: serverItem.price,
-        quantity: serverItem.quantity,
-        image: serverItem.image_url || undefined, // ✅ Convertir null vers undefined
-        slug: undefined
-      }));
+    if (isSuccessResult(result) && result.data?.items && result.data.id) {
+      // ✅ CORRECTION: Utiliser la fonction utilitaire
+      const clientCartItems = transformServerItemsToCartItems(result.data.items, result.data.id);
       _setItems(clientCartItems);
     } else {
       toast.error(result.message || tGlobal('genericError'));
@@ -237,7 +226,7 @@ export default function CheckoutClientPage({
     return (
       <section className="mt-4">
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
-        <Button variant="secondary" onClick={() => setEditingAddressType(type)}>{t('address.addButton')}</Button>
+        <Button variant="secondary" onClick={() => setEditingAddressType(type)}>{t('address.addNewButton')}</Button>
       </section>
     );
   };
@@ -298,7 +287,7 @@ export default function CheckoutClientPage({
                 <li key={item.id} className="flex py-4">
                   <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                     <Image
-                      src={item.image || '/placeholder.svg'} // ✅ Utiliser 'image' selon le type CartItem
+                      src={item.image || '/placeholder.svg'}
                       alt={item.name}
                       width={96}
                       height={96}
@@ -309,7 +298,6 @@ export default function CheckoutClientPage({
                     <div>
                       <div className="flex justify-between text-base font-medium text-gray-900">
                         <h3>
-                          {/* ✅ Solution: Créer un lien générique ou utiliser un slug si disponible */}
                           {item.slug ? (
                             <NextLink href={`/products/${item.slug}` as any}>{item.name}</NextLink>
                           ) : (
@@ -322,14 +310,13 @@ export default function CheckoutClientPage({
                     </div>
                     <div className="flex flex-1 items-end justify-between text-sm">
                       <div className="flex items-center">
-                        {/* ✅ Correction: Vérifier que item.id existe et utiliser productId selon CartItem */}
                         <Button 
                           variant="outline" 
                           size="icon" 
                           className="h-8 w-8" 
                           onClick={() => item.id && handleUpdateItemQuantity(item.id, item.quantity - 1)} 
                           disabled={!item.id}
-                          aria-label={tCart('decreaseQuantity')}
+                          aria-label={tCart('decreaseQuantity', { itemName: item.name })}
                         >
                           <MinusIcon className="h-4 w-4" />
                         </Button>
@@ -340,7 +327,7 @@ export default function CheckoutClientPage({
                           className="h-8 w-8" 
                           onClick={() => item.id && handleUpdateItemQuantity(item.id, item.quantity + 1)} 
                           disabled={!item.id}
-                          aria-label={tCart('increaseQuantity')}
+                          aria-label={tCart('increaseQuantity', { itemName: item.name })}
                         >
                           <PlusIcon className="h-4 w-4" />
                         </Button>
@@ -352,7 +339,7 @@ export default function CheckoutClientPage({
                           onClick={() => item.id && handleRemoveItem(item.id)} 
                           disabled={!item.id}
                           className="hover:text-destructive/80 font-medium text-destructive" 
-                          aria-label={tCart('removeItem')}
+                          aria-label={tCart('removeItem', { itemName: item.name })}
                         >
                           <XIcon className="mr-1 h-4 w-4" />
                           {tCart('remove')}

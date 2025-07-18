@@ -6,9 +6,12 @@ import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 
 const socialLinks = [
-  { name: 'Instagram', href: '#', icon: Instagram },
-  { name: 'Facebook', href: '#', icon: Facebook },
-  { name: 'Twitter', href: '#', icon: Twitter },
+  {
+    name: 'Instagram',
+    href: 'https://www.instagram.com/in_herbis_veritas/?utm_source=ig_web_button_share_sheet',
+    icon: Instagram,
+  },
+  { name: 'Facebook', href: 'https://www.facebook.com/in.herbis.veritas', icon: Facebook },
 ];
 
 const navigationLinks = [
@@ -136,6 +139,8 @@ export function Footer() {
                 <a
                   key={item.name}
                   href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-accent/90 transition-all hover:scale-110 hover:text-accent hover:drop-shadow-md focus-visible:outline-primary"
                   aria-label={item.name}
                 >

@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { getMessages, getTranslations } from 'next-intl/server';
 import CheckoutClientPage from '@/components/domain/checkout/CheckoutClientPage';
 import { Address, ShippingMethod } from '@/types'; // ✅ Supprimer Cart qui n'existe pas
-import { CartDataFromServer, ServerCartItem } from '@/lib/supabase/types'; // ✅ Importer les bons types
+import { CartDataFromServer, ServerCartItem } from '@/types/cart'; // ✅ Importer les bons types
 import { Metadata } from 'next';
 
 interface CheckoutPageProps {

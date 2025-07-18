@@ -104,7 +104,11 @@ interface AccountPageProps {
 }
 
 export async function generateMetadata({ params }: AccountPageProps): Promise<Metadata> {
-  const t = await getTranslations({ locale: params.locale, namespace: "AccountPage" });
+  const { locale } = params;
+  const t = await getTranslations({
+    locale,
+    namespace: "AccountPage",
+  });
   return {
     title: t("metadata.title"),
     description: t("metadata.description"),
@@ -112,7 +116,7 @@ export async function generateMetadata({ params }: AccountPageProps): Promise<Me
 }
 
 export default async function AccountPage({ params }: AccountPageProps) {
-  const { locale: currentLocale } = params;
+  const { locale: currentLocale } = await params;
   const t = await getTranslations({ locale: currentLocale, namespace: "AccountPage" });
   const tGlobal = await getTranslations({ locale: currentLocale, namespace: "Global" });
 
@@ -172,9 +176,10 @@ export default async function AccountPage({ params }: AccountPageProps) {
   const billingAddress = defaultBillingAddress ?? userAddresses?.find(addr => addr.address_type === 'billing') ?? null;
 
   // FIX: Construire le nom complet et l'email à partir des données disponibles
-  const fullName = profile.first_name && profile.last_name 
-    ? `${profile.first_name} ${profile.last_name}` 
-    : profile.first_name || profile.last_name || '';
+  const fullName =
+    profile?.first_name && profile?.last_name
+      ? `${profile.first_name} ${profile.last_name}`
+      : ""; 
   
   const email = user.email || ''; // L'email vient de l'objet user, pas du profil
 
@@ -185,7 +190,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">
-              {t("personalInfo.title")}
+              {t("generalInfo.title")}
             </h2>
             <Link
               href={`/${currentLocale}/profile/edit-info`}
@@ -197,13 +202,13 @@ export default async function AccountPage({ params }: AccountPageProps) {
           <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-muted-foreground">
-                {t("personalInfo.fullName")}
+                {t("generalInfo.fullName")}
               </dt>
               <dd className="mt-1 text-base text-foreground">{fullName}</dd>
             </div>
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-muted-foreground">
-                {t("personalInfo.email")}
+                {t("generalInfo.email")}
               </dt>
               <dd className="mt-1 text-base text-foreground">{email}</dd>
             </div>

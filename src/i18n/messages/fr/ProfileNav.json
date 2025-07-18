@@ -3,5 +3,6 @@
   "account": "Mon Compte",
   "addresses": "Mes Adresses",
   "orders": "Mes Commandes",
-  "password": "Mon Mot de Passe"
+  "password": "Mon Mot de Passe",
+  "backToAccount": "Retour à Mon compte"
 }

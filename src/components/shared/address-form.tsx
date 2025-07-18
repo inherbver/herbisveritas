@@ -207,7 +207,7 @@ const AddressForm: FC<AddressFormProps> = ({
             checked={showAddressLine2}
           />
           <Label htmlFor="show_address_line2_checkbox" className="cursor-pointer">
-            {t('labels.address_line2')}
+            {t('fieldLabels.address_line2')}
           </Label>
         </div>
 

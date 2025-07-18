@@ -42,7 +42,7 @@ export interface CartData {
   user_id?: string | null; // ✅ Permettre undefined pour la compatibilité
   created_at: string;
   updated_at: string;
-  items: CartItem[];
+  items: ServerCartItem[];
 }
 
 // --- Server-Side Types (for compatibility) ---
