@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { hasPermission } from "@/lib/auth/utils";
 import { AppPermission } from "@/config/permissions";
 
 interface CanProps {

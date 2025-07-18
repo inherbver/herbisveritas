@@ -37,13 +37,11 @@ export type ProductListItem = {
 };
 
 // ✅ Correction de generateMetadata
-export async function generateMetadata({
-  params,
-}: ShopPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ShopPageProps): Promise<Metadata> {
   const resolvedParams = await params; // ✅ Attendre params
-  const t = await getTranslations({ 
-    locale: resolvedParams.locale, 
-    namespace: "ShopPage" 
+  const t = await getTranslations({
+    locale: resolvedParams.locale,
+    namespace: "ShopPage",
   });
   return {
     title: t("title"),
@@ -54,18 +52,18 @@ export async function generateMetadata({
 export default async function ShopPage({ params }: ShopPageProps) {
   // ✅ Attendre params en premier
   const resolvedParams = await params;
-  
-  const t = await getTranslations({ 
-    locale: resolvedParams.locale, 
-    namespace: "ShopPage" 
+
+  const t = await getTranslations({
+    locale: resolvedParams.locale,
+    namespace: "ShopPage",
   });
-  const tHero = await getTranslations({ 
-    locale: resolvedParams.locale, 
-    namespace: "HeroComponent" 
+  const tHero = await getTranslations({
+    locale: resolvedParams.locale,
+    namespace: "HeroComponent",
   });
-  const tProduct = await getTranslations({ 
-    locale: resolvedParams.locale, 
-    namespace: "ProductCard" 
+  const _tProduct = await getTranslations({
+    locale: resolvedParams.locale,
+    namespace: "ProductCard",
   });
 
   // --- Fetch Data ---
@@ -86,7 +84,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
   let productsData: ProductForShopQuery[] = [];
   let fetchError: Error | null = null;
   let initialCartData: CartData | null = null;
-  
+
   if (productsResult.status === "fulfilled") {
     productsData = productsResult.value;
   } else {
@@ -141,7 +139,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
       ctaLabel:
         tHero("ctaLabel", { productName: featuredHeroItem.productName }) ||
         tHero("defaultCtaLabel"),
-      ctaLink: `/product/${featuredHeroItem.productSlug}` as any,
+      ctaLink: `/product/${featuredHeroItem.productSlug}` as string,
     };
   } else {
     heroPropsForComponent = {

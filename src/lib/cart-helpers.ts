@@ -1,7 +1,7 @@
 // src/lib/cart-helpers.ts
 // Helper functions pour les actions du panier (sans "use server")
 
-import type { CartDataFromServer, ServerCartItem } from "@/types/cart";
+import type { ServerCartItem } from "@/types/cart";
 
 // --- Action Result Types ---
 
@@ -51,7 +51,9 @@ export function isSuccessResult<T>(result: CartActionResult<T>): result is Succe
   return result.success === true;
 }
 
-export function isValidationErrorResult<T>(result: CartActionResult<T>): result is ValidationErrorResult {
+export function isValidationErrorResult<T>(
+  result: CartActionResult<T>
+): result is ValidationErrorResult {
   return result.success === false && "errors" in result;
 }
 
@@ -93,7 +95,7 @@ export const transformServerCartToClientItems = (
   if (!serverItems || serverItems.length === 0) {
     return [];
   }
-  
+
   return serverItems.map((serverItem: ServerCartItem) => ({
     id: serverItem.id, // Utilise l'ID réel de l'item
     productId: serverItem.product_id,

@@ -5,40 +5,40 @@ import { NextIntlClientProvider } from "next-intl";
 import ContactPage from "../page";
 import { getNextUpcomingMarket, getAllMarketsSorted } from "@/lib/market-utils";
 import { MarketInfo } from "@/types/market";
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 // ✅ Charger TOUS les namespaces nécessaires pour la page
 function loadMessages(locale: string) {
-  const messagesDir = path.join(process.cwd(), 'src/i18n/messages', locale);
-  const messages: Record<string, any> = {};
-  
+  const messagesDir = path.join(process.cwd(), "src/i18n/messages", locale);
+  const messages: Record<string, unknown> = {};
+
   try {
     // Charger tous les fichiers JSON dans le répertoire de la locale
     const files = fs.readdirSync(messagesDir);
-    files.forEach(file => {
-      if (file.endsWith('.json')) {
-        const namespace = file.replace('.json', '');
+    files.forEach((file) => {
+      if (file.endsWith(".json")) {
+        const namespace = file.replace(".json", "");
         const filePath = path.join(messagesDir, file);
-        messages[namespace] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        messages[namespace] = JSON.parse(fs.readFileSync(filePath, "utf-8"));
       }
     });
   } catch (error) {
     console.warn(`Impossible de charger les messages pour la locale ${locale}:`, error);
   }
-  
+
   return messages;
 }
 
-const frMessages = loadMessages('fr');
-const enMessages = loadMessages('en');
+const frMessages = loadMessages("fr");
+const enMessages = loadMessages("en");
 
 // Mock the market utility functions
 jest.mock("@/lib/market-utils", () => ({
   ...jest.requireActual("@/lib/market-utils"),
   getNextUpcomingMarket: jest.fn(),
   getAllMarketsSorted: jest.fn(),
-  formatDate: jest.fn((date: string, locale: string) => {
+  formatDate: jest.fn((_date: string, _locale: string) => {
     // Retourner une date formatée prévisible pour les tests
     return "1er septembre 2024";
   }),
@@ -64,7 +64,7 @@ const mockSingleMarket: MarketInfo = {
 const renderPage = async (locale: "fr" | "en") => {
   const messages = locale === "fr" ? frMessages : enMessages;
   const PageComponent = await ContactPage({ params: Promise.resolve({ locale }) });
-  
+
   await act(async () => {
     render(
       <NextIntlClientProvider locale={locale} messages={messages}>
@@ -84,7 +84,7 @@ describe("ContactPage Integration", () => {
     it("should render the default hero content in French", async () => {
       mockedGetNextUpcomingMarket.mockResolvedValue(null);
       mockedGetAllMarketsSorted.mockResolvedValue([]);
-      
+
       await renderPage("fr");
 
       // ✅ Vérifier les textes EXACTS qui apparaissent dans le DOM d'après les logs
@@ -104,7 +104,7 @@ describe("ContactPage Integration", () => {
     it("should render the hero with next market details in French", async () => {
       mockedGetNextUpcomingMarket.mockResolvedValue(mockSingleMarket);
       mockedGetAllMarketsSorted.mockResolvedValue([mockSingleMarket]);
-      
+
       await renderPage("fr");
 
       // ✅ Vérifier les textes EXACTS qui apparaissent dans le DOM
@@ -112,7 +112,7 @@ describe("ContactPage Integration", () => {
         // D'après les logs, le texte affiché est "Prochain marché" et non l'interpolation
         expect(screen.getByRole("heading", { name: /Prochain marché/i })).toBeInTheDocument();
         expect(screen.getByText("Retrouvez-nous bientôt")).toBeInTheDocument();
-        
+
         // Vérifier que le bouton CTA est présent
         expect(screen.getByText("Voir tous les marchés")).toBeInTheDocument();
       });
@@ -123,7 +123,7 @@ describe("ContactPage Integration", () => {
     it("should render all static sections correctly in French", async () => {
       mockedGetNextUpcomingMarket.mockResolvedValue(null);
       mockedGetAllMarketsSorted.mockResolvedValue([]);
-      
+
       await renderPage("fr");
 
       // ✅ Vérifier seulement les sections qui existent réellement dans le DOM
@@ -143,18 +143,18 @@ describe("ContactPage Integration", () => {
     it("should render contact information correctly", async () => {
       mockedGetNextUpcomingMarket.mockResolvedValue(null);
       mockedGetAllMarketsSorted.mockResolvedValue([]);
-      
+
       await renderPage("fr");
 
       // ✅ Tests plus granulaires pour ce qui est visible
       await waitFor(() => {
         // Vérifier les liens de contact
         expect(screen.getByRole("link", { name: /envoyer un email/i })).toHaveAttribute(
-          "href", 
+          "href",
           "mailto:inherbisveritas@gmail.com"
         );
         expect(screen.getByRole("link", { name: /appeler/i })).toHaveAttribute(
-          "href", 
+          "href",
           "tel:+33638895324"
         );
       });
@@ -165,7 +165,7 @@ describe("ContactPage Integration", () => {
     it("should handle different locales correctly", async () => {
       mockedGetNextUpcomingMarket.mockResolvedValue(null);
       mockedGetAllMarketsSorted.mockResolvedValue([]);
-      
+
       // Test de la locale française (prioritaire)
       await renderPage("fr");
 
@@ -175,13 +175,13 @@ describe("ContactPage Integration", () => {
     });
 
     it("should handle loading states gracefully", async () => {
-      mockedGetNextUpcomingMarket.mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve(null), 100))
+      mockedGetNextUpcomingMarket.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve(null), 100))
       );
-      mockedGetAllMarketsSorted.mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve([]), 100))
+      mockedGetAllMarketsSorted.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
       );
-      
+
       // Test avec délai en français
       await renderPage("fr");
 
@@ -195,7 +195,7 @@ describe("ContactPage Integration", () => {
     it("should render without crashing when data is present", async () => {
       mockedGetNextUpcomingMarket.mockResolvedValue(mockSingleMarket);
       mockedGetAllMarketsSorted.mockResolvedValue([mockSingleMarket]);
-      
+
       await renderPage("fr");
 
       // ✅ Test basique pour s'assurer que le composant se rend sans erreur

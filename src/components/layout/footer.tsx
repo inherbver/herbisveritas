@@ -1,24 +1,24 @@
 "use client";
 
-import { useRef } from 'react';
-import { Instagram, Facebook, Twitter } from 'lucide-react';
-import Link from 'next/link';
-import { motion, useInView } from 'framer-motion';
+import { useRef } from "react";
+import { Instagram, Facebook } from "lucide-react";
+import Link from "next/link";
+import { motion, useInView } from "framer-motion";
 
 const socialLinks = [
   {
-    name: 'Instagram',
-    href: 'https://www.instagram.com/in_herbis_veritas/?utm_source=ig_web_button_share_sheet',
+    name: "Instagram",
+    href: "https://www.instagram.com/in_herbis_veritas/?utm_source=ig_web_button_share_sheet",
     icon: Instagram,
   },
-  { name: 'Facebook', href: 'https://www.facebook.com/in.herbis.veritas', icon: Facebook },
+  { name: "Facebook", href: "https://www.facebook.com/in.herbis.veritas", icon: Facebook },
 ];
 
 const navigationLinks = [
-  { name: 'À propos', href: '/about' },
-  { name: 'Contact', href: '/contact' },
-  { name: 'Conditions d’utilisation', href: '/terms' },
-  { name: 'Politique de confidentialité', href: '/privacy' },
+  { name: "À propos", href: "/about" },
+  { name: "Contact", href: "/contact" },
+  { name: "Conditions d’utilisation", href: "/terms" },
+  { name: "Politique de confidentialité", href: "/privacy" },
 ];
 
 export function Footer() {
@@ -31,9 +31,9 @@ export function Footer() {
   };
 
   const supportLinks = [
-    { name: 'FAQ', href: '/faq' },
-    { name: 'Livraison', href: '/shipping' },
-    { name: 'Retours', href: '/returns' },
+    { name: "FAQ", href: "/faq" },
+    { name: "Livraison", href: "/shipping" },
+    { name: "Retours", href: "/returns" },
   ];
 
   return (
@@ -41,9 +41,9 @@ export function Footer() {
       ref={ref}
       variants={footerVariants}
       initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
+      animate={isInView ? "visible" : "hidden"}
       transition={{ duration: 0.6, delay: 0.1 }}
-      className="relative isolate mt-24 overflow-hidden bg-background after:absolute after:inset-0 after:-z-20 after:bg-[url('/grain.svg')] after:bg-repeat after:bg-[length:200px_200px] after:opacity-5"
+      className="relative isolate mt-24 overflow-hidden bg-background after:absolute after:inset-0 after:-z-20 after:bg-[url('/grain.svg')] after:bg-[length:200px_200px] after:bg-repeat after:opacity-5"
     >
       {/* Accent Bar */}
       <div className="h-[3px] w-full bg-accent" />
@@ -51,7 +51,7 @@ export function Footer() {
       {/* Watermark SVG */}
       <svg
         aria-hidden
-        className="absolute right-0 top-0 -z-10 hidden h-72 w-72 translate-x-1/3 -translate-y-1/3 text-secondary/10 sm:block"
+        className="text-secondary/10 absolute right-0 top-0 -z-10 hidden h-72 w-72 -translate-y-1/3 translate-x-1/3 sm:block"
       >
         <use href="/leaf.svg#leaf" />
       </svg>
@@ -60,12 +60,10 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-y-10 md:grid-cols-3 md:gap-x-8">
           {/* Brand & Description Column */}
           <div className="space-y-4">
-            <h2 className="font-serif text-2xl font-medium text-primary">
-              In Herbis Veritas
-            </h2>
-            <p className="text-sm text-foreground/80">
-              Des tisanes biologiques d'exception, cultivées avec passion pour
-              votre bien-être au quotidien.
+            <h2 className="font-serif text-2xl font-medium text-primary">In Herbis Veritas</h2>
+            <p className="text-foreground/80 text-sm">
+              Des tisanes biologiques d'exception, cultivées avec passion pour votre bien-être au
+              quotidien.
             </p>
           </div>
 
@@ -78,7 +76,7 @@ export function Footer() {
                   <li key={item.name}>
                     <Link
                       href={item.href}
-                      className="text-sm text-foreground/80 hover:text-primary"
+                      className="text-foreground/80 text-sm hover:text-primary"
                     >
                       {item.name}
                     </Link>
@@ -93,7 +91,7 @@ export function Footer() {
                   <li key={item.name}>
                     <Link
                       href={item.href}
-                      className="text-sm text-foreground/80 hover:text-primary"
+                      className="text-foreground/80 text-sm hover:text-primary"
                     >
                       {item.name}
                     </Link>
@@ -106,12 +104,9 @@ export function Footer() {
           {/* Newsletter & Social Column */}
           <div className="space-y-8 md:col-span-1">
             <div>
-              <h3 className="font-semibold text-foreground">
-                Restons en contact
-              </h3>
-              <p className="mt-2 text-sm text-foreground/80">
-                Inscrivez-vous à notre newsletter pour des offres exclusives et
-                nos nouveautés.
+              <h3 className="font-semibold text-foreground">Restons en contact</h3>
+              <p className="text-foreground/80 mt-2 text-sm">
+                Inscrivez-vous à notre newsletter pour des offres exclusives et nos nouveautés.
               </p>
               <form className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <label htmlFor="email-address" className="sr-only">
@@ -123,12 +118,12 @@ export function Footer() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="flex-1 rounded-md border-border bg-background-muted px-3.5 py-2 text-foreground shadow-sm ring-1 ring-inset ring-border focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                  className="bg-background-muted flex-1 rounded-md border-border px-3.5 py-2 text-foreground shadow-sm ring-1 ring-inset ring-border focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
                   placeholder="votre.email@example.com"
                 />
                 <button
                   type="submit"
-                  className="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+                  className="hover:bg-primary/90 focus-visible:ring-primary/40 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm focus-visible:outline-primary focus-visible:ring-2"
                 >
                   S'inscrire
                 </button>
@@ -152,8 +147,8 @@ export function Footer() {
         </div>
 
         {/* Copyright Bar */}
-        <div className="mt-16 border-t border-border/20 pt-8">
-          <p className="text-xs text-foreground/70">
+        <div className="border-border/20 mt-16 border-t pt-8">
+          <p className="text-foreground/70 text-xs">
             © {new Date().getFullYear()} In Herbis Veritas. Tous droits réservés.
           </p>
         </div>

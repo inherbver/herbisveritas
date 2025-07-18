@@ -1,13 +1,12 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCart } from "@/lib/cartReader";
 import { PostgrestError } from "@supabase/supabase-js";
 
-import { redirect } from 'next/navigation';
-import { getMessages, getTranslations } from 'next-intl/server';
-import CheckoutClientPage from '@/components/domain/checkout/CheckoutClientPage';
-import { Address, ShippingMethod } from '@/types'; // ✅ Supprimer Cart qui n'existe pas
-import { CartDataFromServer, ServerCartItem } from '@/types/cart'; // ✅ Importer les bons types
-import { Metadata } from 'next';
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import CheckoutClientPage from "@/components/domain/checkout/CheckoutClientPage";
+import { Address, ShippingMethod } from "@/types";
+import { Metadata } from "next";
 
 interface CheckoutPageProps {
   params: Promise<{
@@ -50,15 +49,15 @@ interface AddressDB {
 
 export async function generateMetadata({ params }: CheckoutPageProps): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'CheckoutPage' });
+  const t = await getTranslations({ locale, namespace: "CheckoutPage" });
   return {
-    title: t('title'),
+    title: t("title"),
   };
 }
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'CheckoutPage' });
+  const t = await getTranslations({ locale, namespace: "CheckoutPage" });
   const supabase = await createSupabaseServerClient();
 
   const cartResult = await getCart();
@@ -69,15 +68,21 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const cartData = cartResult.data;
   // ✅ Pas besoin de transformer, passer directement cartData (CartDataFromServer)
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const fetchUserAddresses = async (): Promise<{ shippingAddress: Address | null; billingAddress: Address | null; error: PostgrestError | null }> => {
+  const fetchUserAddresses = async (): Promise<{
+    shippingAddress: Address | null;
+    billingAddress: Address | null;
+    error: PostgrestError | null;
+  }> => {
     if (!user) return { shippingAddress: null, billingAddress: null, error: null };
-    
+
     const { data, error } = await supabase
-      .from('addresses')
-      .select('*')
-      .eq('user_id', user.id)
+      .from("addresses")
+      .select("*")
+      .eq("user_id", user.id)
       .returns<AddressDB[]>();
 
     if (error) {
@@ -87,12 +92,12 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     // ✅ Transformer AddressDB vers Address avec gestion des null/undefined
     const transformAddress = (addr: AddressDB): Address => ({
       ...addr,
-      address_type: addr.address_type as 'shipping' | 'billing', // Cast sécurisé
+      address_type: addr.address_type as "shipping" | "billing", // Cast sécurisé
       email: addr.email || undefined, // ✅ Convertir null vers undefined
     });
 
-    const shippingAddressDB = data?.find(addr => addr.address_type === 'shipping') || null;
-    const billingAddressDB = data?.find(addr => addr.address_type === 'billing') || null;
+    const shippingAddressDB = data?.find((addr) => addr.address_type === "shipping") || null;
+    const billingAddressDB = data?.find((addr) => addr.address_type === "billing") || null;
 
     const shippingAddress = shippingAddressDB ? transformAddress(shippingAddressDB) : null;
     const billingAddress = billingAddressDB ? transformAddress(billingAddressDB) : null;
@@ -100,22 +105,25 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     return { shippingAddress, billingAddress, error: null };
   };
 
-  const fetchShippingMethods = async (): Promise<{ data: ShippingMethod[]; error: PostgrestError | null }> => {
+  const fetchShippingMethods = async (): Promise<{
+    data: ShippingMethod[];
+    error: PostgrestError | null;
+  }> => {
     const { data, error } = await supabase
-      .from('shipping_methods')
-      .select('*')
+      .from("shipping_methods")
+      .select("*")
       .returns<ShippingMethodDB[]>();
-    
+
     if (error) {
-      console.warn('[CHECKOUT] shipping_methods table does not exist. Using default data.');
+      console.warn("[CHECKOUT] shipping_methods table does not exist. Using default data.");
       return {
         data: [
           {
-            id: 'default-1',
-            name: 'Livraison standard',
-            description: 'Livraison sous 3-5 jours ouvrés',
-            price: '4.95',
-            carrier: 'Standard', // ✅ String non null pour le fallback
+            id: "default-1",
+            name: "Livraison standard",
+            description: "Livraison sous 3-5 jours ouvrés",
+            price: "4.95",
+            carrier: "Standard", // ✅ String non null pour le fallback
             is_active: true,
           },
         ],
@@ -124,12 +132,12 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     }
 
     // ✅ Transformer ShippingMethodDB vers ShippingMethod
-    const transformedMethods: ShippingMethod[] = (data || []).map(method => ({
+    const transformedMethods: ShippingMethod[] = (data || []).map((method) => ({
       id: method.id,
       name: method.name,
-      description: method.description || '',
+      description: method.description || "",
       price: method.price.toString(), // Convertir number vers string
-      carrier: method.carrier || 'Standard', // ✅ Fournir une valeur par défaut pour null
+      carrier: method.carrier || "Standard", // ✅ Fournir une valeur par défaut pour null
       is_active: method.is_active,
     }));
 
@@ -142,15 +150,15 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   ]);
 
   if (userAddressesResult.error) {
-    console.error('Error fetching addresses:', userAddressesResult.error);
+    console.error("Error fetching addresses:", userAddressesResult.error);
   }
   if (shippingMethodsResult.error) {
-    console.error('Error fetching shipping methods:', shippingMethodsResult.error);
+    console.error("Error fetching shipping methods:", shippingMethodsResult.error);
   }
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8 text-center">{t('title')}</h1>
+      <h1 className="mb-8 text-center text-3xl font-bold">{t("title")}</h1>
       <CheckoutClientPage
         // ✅ Passer CartDataFromServer directement
         cart={cartData}

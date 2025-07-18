@@ -3,10 +3,9 @@
 import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { getCart } from "@/lib/cartReader";
-import { createSupabaseServerClient } from '@/lib/supabase/server'
-import Stripe from 'stripe';
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import Stripe from "stripe";
 import { Address } from "@/types";
-import type { ServerCartItem } from "@/types/cart"; // ✅ Importer le type correct
 
 interface Product {
   id: string;
@@ -62,7 +61,9 @@ export async function createStripeCheckoutSession(
     return { success: false, error: "Votre panier est vide." };
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_URL is not set.");
@@ -72,13 +73,16 @@ export async function createStripeCheckoutSession(
     let finalShippingAddressId: string | null = null;
     let finalBillingAddressId: string | null = null;
 
-    const processAddress = async (address: Address, type: 'shipping' | 'billing'): Promise<string | null> => {
-      if ('id' in address && !address.id.startsWith('temp-')) {
+    const processAddress = async (
+      address: Address,
+      type: "shipping" | "billing"
+    ): Promise<string | null> => {
+      if ("id" in address && !address.id.startsWith("temp-")) {
         return address.id;
       }
       if (user) {
         const { data: newAddress, error: insertError } = await supabase
-          .from('addresses')
+          .from("addresses")
           .insert({ ...address, id: undefined, user_id: user.id, address_type: type })
           .select()
           .single();
@@ -92,10 +96,10 @@ export async function createStripeCheckoutSession(
     };
 
     try {
-      finalShippingAddressId = await processAddress(shippingAddress, 'shipping');
-      finalBillingAddressId = await processAddress(billingAddress, 'billing');
-    } catch (e: any) {
-      return { success: false, error: e.message };
+      finalShippingAddressId = await processAddress(shippingAddress, "shipping");
+      finalBillingAddressId = await processAddress(billingAddress, "billing");
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
     }
 
     // ✅ Valider les produits avec le bon type
@@ -141,18 +145,18 @@ export async function createStripeCheckoutSession(
 
     // Créer la session Stripe
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      payment_method_types: ['card', 'paypal'],
-      mode: 'payment',
+      payment_method_types: ["card", "paypal"],
+      mode: "payment",
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/${locale}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/${locale}/checkout`,
       line_items: lineItems,
       shipping_options: [
         {
           shipping_rate_data: {
-            type: 'fixed_amount',
+            type: "fixed_amount",
             fixed_amount: {
               amount: shippingMethod.price * 100,
-              currency: 'eur',
+              currency: "eur",
             },
             display_name: shippingMethod.name,
             // ✅ Supprimer delivery_estimate qui utilisait des colonnes inexistantes
@@ -161,13 +165,13 @@ export async function createStripeCheckoutSession(
         },
       ],
       shipping_address_collection: {
-        allowed_countries: ['FR', 'GB', 'DE', 'ES', 'IT', 'US', 'CA', 'BE', 'CH', 'LU'],
+        allowed_countries: ["FR", "GB", "DE", "ES", "IT", "US", "CA", "BE", "CH", "LU"],
       },
       metadata: {
         cartId: cart.id,
-        userId: user?.id || 'guest',
-        shippingAddressId: finalShippingAddressId || 'guest_address',
-        billingAddressId: finalBillingAddressId || 'guest_address',
+        userId: user?.id || "guest",
+        shippingAddressId: finalShippingAddressId || "guest_address",
+        billingAddressId: finalBillingAddressId || "guest_address",
         shippingMethodId: shippingMethodId,
       },
     };
@@ -177,7 +181,7 @@ export async function createStripeCheckoutSession(
       // Si vous voulez cette fonctionnalité, ajoutez cette colonne à la table profiles
       // Pour l'instant, on commente cette partie ou on utilise l'email uniquement
       sessionParams.customer_email = user.email;
-      
+
       // TODO: Ajouter stripe_customer_id à la table profiles si nécessaire
       // const { data: profile } = await supabase
       //   .from('profiles')
@@ -187,9 +191,9 @@ export async function createStripeCheckoutSession(
       // sessionParams.customer = profile?.stripe_customer_id || undefined;
     } else {
       // Pour les utilisateurs invités, laisser Stripe créer un client.
-      sessionParams.customer_creation = 'always';
+      sessionParams.customer_creation = "always";
       sessionParams.customer_email = billingAddress.email;
-      sessionParams.billing_address_collection = 'required';
+      sessionParams.billing_address_collection = "required";
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
@@ -199,10 +203,10 @@ export async function createStripeCheckoutSession(
     }
 
     return { success: true, sessionId: session.id, url: session.url };
-
   } catch (error) {
     console.error("[STRIPE_ACTION_ERROR]", error);
-    const errorMessage = error instanceof Error ? error.message : "Une erreur interne est survenue.";
+    const errorMessage =
+      error instanceof Error ? error.message : "Une erreur interne est survenue.";
     return { success: false, error: errorMessage };
   }
 }

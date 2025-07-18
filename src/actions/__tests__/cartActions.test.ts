@@ -2,7 +2,7 @@ import { revalidateTag } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
 import { isSuccessResult, createSuccessResult } from "@/lib/cart-helpers";
-import { CartDataFromServer, ServerCartItem } from "@/types/cart";
+import type { CartDataFromServer } from "@/types/cart";
 
 // Mock des modules externes
 jest.mock("next/cache", () => ({
@@ -220,9 +220,9 @@ describe("Server Action: addItemToCart", () => {
     mockGetCart.mockResolvedValue(createSuccessResult(null)); // No existing cart
     mockGetActiveUserId.mockResolvedValue(VALID_AUTH_USER_ID);
 
-    const mockSupabase = createCompleteSupabaseMock({ 
+    const mockSupabase = createCompleteSupabaseMock({
       authCartData: null, // No existing cart
-      newCartId: "new-cart-id" 
+      newCartId: "new-cart-id",
     });
     mockedCreateSupabaseServerClient.mockResolvedValue(mockSupabase);
 
@@ -260,7 +260,7 @@ describe("Server Action: addItemToCart", () => {
 
   it("should return a general error if getActiveUserId fails", async () => {
     mockGetActiveUserId.mockResolvedValue(null);
-    
+
     const formData = createFormData({
       productId: VALID_PRODUCT_ID,
       quantity: "1",
@@ -279,7 +279,7 @@ describe("Server Action: addItemToCart", () => {
 });
 
 describe("Server Action: migrateAndGetCart", () => {
-  let mockAdminClient: any;
+  let mockAdminClient: { auth: { admin: { getUserById: jest.Mock; deleteUser: jest.Mock } } };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -302,7 +302,16 @@ describe("Server Action: migrateAndGetCart", () => {
     const guestCartData = createTestCartData({
       id: "guest-cart-id",
       user_id: VALID_GUEST_USER_ID,
-      cart_items: [{ id: "test-item-2", product_id: VALID_PRODUCT_ID, quantity: 1, name: "Test", price: 10, image_url: "img.jpg" }],
+      cart_items: [
+        {
+          id: "test-item-2",
+          product_id: VALID_PRODUCT_ID,
+          quantity: 1,
+          name: "Test",
+          price: 10,
+          image_url: "img.jpg",
+        },
+      ],
     });
 
     const authCartData = createTestCartData({
@@ -344,7 +353,16 @@ describe("Server Action: migrateAndGetCart", () => {
     const guestCartData = createTestCartData({
       id: "guest-cart-id-2",
       user_id: VALID_GUEST_USER_ID,
-      cart_items: [{ id: "test-item-3", product_id: VALID_PRODUCT_ID, quantity: 3, name: "Test 2", price: 20, image_url: "img2.jpg" }],
+      cart_items: [
+        {
+          id: "test-item-3",
+          product_id: VALID_PRODUCT_ID,
+          quantity: 3,
+          name: "Test 2",
+          price: 20,
+          image_url: "img2.jpg",
+        },
+      ],
     });
 
     const mockSupabase = createCompleteSupabaseMock({
@@ -355,11 +373,13 @@ describe("Server Action: migrateAndGetCart", () => {
     mockedCreateSupabaseServerClient.mockResolvedValue(mockSupabase);
     mockGetActiveUserId.mockResolvedValue(VALID_AUTH_USER_ID);
 
-    mockGetCart.mockResolvedValue(createSuccessResult({ 
-      id: guestCartData.id, 
-      user_id: VALID_AUTH_USER_ID, 
-      items: guestCartData.cart_items 
-    }));
+    mockGetCart.mockResolvedValue(
+      createSuccessResult({
+        id: guestCartData.id,
+        user_id: VALID_AUTH_USER_ID,
+        items: guestCartData.cart_items,
+      })
+    );
 
     const result = await migrateAndGetCart({ guestUserId: VALID_GUEST_USER_ID });
 
