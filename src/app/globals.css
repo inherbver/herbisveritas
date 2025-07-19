@@ -353,7 +353,7 @@
 
 .line-clamp-3.is-clamped::after {
   content: "… Lire plus";
-  color: var(--primary);      /* lavande */
+  color: var(--primary); /* lavande */
   font-weight: 500;
   position: absolute;
   bottom: 0;

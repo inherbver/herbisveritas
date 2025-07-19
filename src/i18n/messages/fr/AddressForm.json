@@ -3,6 +3,19 @@
   "recipientSectionTitle": "Destinataire",
   "addressSectionTitle": "Adresse",
   "contactSectionTitle": "Contact",
+  "labels": {
+    "first_name": "Prénom",
+    "last_name": "Nom de famille",
+    "email": "Adresse e-mail (facultatif)",
+    "company_name": "Entreprise (facultatif)",
+    "address_line1": "Adresse (ligne 1)",
+    "address_line2": "Appartement, suite, etc. (facultatif)",
+    "postal_code": "Code postal",
+    "city": "Ville",
+    "country_code": "Pays/Région",
+    "state_province_region": "État / Province / Région",
+    "phoneNumber": "Numéro de téléphone (facultatif)"
+  },
   "fieldLabels": {
     "first_name": "Prénom",
     "last_name": "Nom de famille",
@@ -39,5 +52,9 @@
     "validationError": "La validation a échoué. Veuillez vérifier les champs du formulaire.",
     "success": "Adresse enregistrée avec succès.",
     "error": "Une erreur est survenue lors de l'enregistrement de l'adresse. Veuillez réessayer."
-  }
+  },
+  "addSuccess": "Adresse ajoutée avec succès.",
+  "updateSuccess": "Adresse mise à jour avec succès.",
+  "genericError": "Une erreur est survenue. Veuillez réessayer.",
+  "addressLoading": "Chargement des suggestions d'adresses..."
 }

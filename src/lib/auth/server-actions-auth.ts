@@ -8,7 +8,7 @@ import type { AppPermission } from "@/config/permissions";
  * @param action The Server Action to secure.
  * @returns A new function that includes the permission check before executing the original action.
  */
-export function withPermission<T extends any[], R>(
+export function withPermission<T extends unknown[], R>(
   permission: AppPermission,
   action: (...args: T) => Promise<R>
 ) {
@@ -17,7 +17,7 @@ export function withPermission<T extends any[], R>(
 
     if (!isAuthorized) {
       // We throw an error that can be caught in a try/catch block on the client.
-      throw new Error(`Unauthorized: ${error || 'Insufficient permissions'}`);
+      throw new Error(`Unauthorized: ${error || "Insufficient permissions"}`);
     }
 
     return action(...args);
@@ -28,13 +28,15 @@ export function withPermission<T extends any[], R>(
  * A typed result for Server Actions, useful for handling success and error states in the UI
  * without relying on try/catch blocks.
  */
-type ActionResult<T> = {
-  success: true;
-  data: T;
-} | {
-  success: false;
-  error: string;
-};
+type ActionResult<T> =
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
 /**
  * Higher-order function to secure Server Actions, returning a typed result object instead of throwing an error.
@@ -43,7 +45,7 @@ type ActionResult<T> = {
  * @param action The Server Action to secure.
  * @returns A new function that returns a result object { success: boolean, data?: T, error?: string }.
  */
-export function withPermissionSafe<T extends any[], R>(
+export function withPermissionSafe<T extends unknown[], R>(
   permission: AppPermission,
   action: (...args: T) => Promise<R>
 ) {
@@ -54,7 +56,7 @@ export function withPermissionSafe<T extends any[], R>(
       if (!isAuthorized) {
         return {
           success: false,
-          error: error || 'Insufficient permissions',
+          error: error || "Insufficient permissions",
         };
       }
 
@@ -63,7 +65,7 @@ export function withPermissionSafe<T extends any[], R>(
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        error: error instanceof Error ? error.message : "An unknown error occurred",
       };
     }
   };

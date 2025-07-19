@@ -78,12 +78,7 @@ export function ImageUploadField<T extends FieldValues>({
                   }}
                   disabled={isUploading}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isUploading}
-                >
+                <Button type="button" variant="outline" size="sm" disabled={isUploading}>
                   {isUploading ? t("uploading") : t("uploadButton")}
                 </Button>
               </div>

@@ -7,7 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ActivityLogItem } from "@/lib/admin/dashboard";
+import { Badge } from "@/components/ui/badge";
+import type { ActivityLogItem, EventSeverity } from "@/lib/admin/dashboard";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -15,6 +16,38 @@ interface ActivityLogProps {
   logs: ActivityLogItem[];
   title: string;
   description: string;
+}
+
+function getSeverityVariant(
+  severity: EventSeverity
+): "default" | "secondary" | "destructive" | "outline" {
+  switch (severity) {
+    case "INFO":
+      return "default";
+    case "WARNING":
+      return "secondary";
+    case "ERROR":
+      return "destructive";
+    case "CRITICAL":
+      return "destructive";
+    default:
+      return "outline";
+  }
+}
+
+function getSeverityColor(severity: EventSeverity): string {
+  switch (severity) {
+    case "INFO":
+      return "text-blue-600";
+    case "WARNING":
+      return "text-orange-600";
+    case "ERROR":
+      return "text-red-600";
+    case "CRITICAL":
+      return "text-red-800";
+    default:
+      return "text-gray-600";
+  }
 }
 
 export function ActivityLog({ logs, title, description }: ActivityLogProps) {
@@ -29,6 +62,7 @@ export function ActivityLog({ logs, title, description }: ActivityLogProps) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Niveau</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Utilisateur</TableHead>
                 <TableHead>Date</TableHead>
@@ -37,6 +71,14 @@ export function ActivityLog({ logs, title, description }: ActivityLogProps) {
             <TableBody>
               {logs.map((log) => (
                 <TableRow key={log.id}>
+                  <TableCell>
+                    <Badge
+                      variant={getSeverityVariant(log.severity)}
+                      className={getSeverityColor(log.severity)}
+                    >
+                      {log.severity}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="font-medium">{log.description}</TableCell>
                   <TableCell>{log.user_email}</TableCell>
                   <TableCell>

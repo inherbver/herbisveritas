@@ -8,10 +8,7 @@ import {
   type Locale,
 } from "./i18n-config";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { type AppRole } from "@/config/permissions";
-import { hasPermission, clearSupabaseCookies } from "@/lib/auth/utils";
-import { isAuthorizedAdmin } from "@/config/admin";
-import { logSecurityEvent } from "@/lib/admin/monitoring-service";
+import { clearSupabaseCookies } from "@/lib/auth/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 const handleI18n = createMiddleware({
@@ -149,40 +146,50 @@ export async function middleware(request: NextRequest) {
     }
     // Si l'utilisateur est authentifié, l'accès est autorisé pour les pages de profil.
   }
-  // Protéger les routes admin (utilisation de 'else if' si /profile et /admin sont mutuellement exclusifs au niveau racine)
+  // Protéger les routes admin avec le nouveau système basé sur la base de données
   else if (pathToCheck.startsWith("/admin")) {
     if (!user) {
       // Utilisateur non authentifié : redirection vers la page de connexion avec redirectUrl
-      // Puisque localePrefix est 'always', le chemin de redirection inclura toujours la locale.
       const loginRedirectPath = `/${currentLocale}/login?redirectUrl=${encodeURIComponent(request.nextUrl.pathname)}`;
       return NextResponse.redirect(new URL(loginRedirectPath, request.nextUrl.origin));
     }
 
-    // Utilisateur authentifié : vérifier le rôle à partir du JWT
-    const userRole = user.app_metadata.role as AppRole | undefined;
+    // Vérification admin via la base de données (nouveau système unifié)
+    try {
+      // Import dynamique pour éviter les problèmes de dépendance circulaire
+      const { checkAdminRole, logSecurityEvent } = await import("@/lib/auth/admin-service");
 
-    if (!userRole || !hasPermission(userRole, "admin:access")) {
+      const adminCheck = await checkAdminRole(user.id);
+
+      if (!adminCheck.isAdmin) {
+        // Logger l'événement de sécurité
+        await logSecurityEvent({
+          type: "unauthorized_admin_access",
+          userId: user.id,
+          details: {
+            adminEmail: user.email || "N/A",
+            message: `Tentative d'accès admin non autorisée - Rôle actuel: ${adminCheck.role}`,
+            path: pathToCheck,
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+        const unauthorizedUrl = new URL(`/${currentLocale}/unauthorized`, request.url);
+        return NextResponse.redirect(unauthorizedUrl);
+      }
+
+      // Utilisateur admin vérifié : accès autorisé
+      console.log(
+        `Admin access granted for user ${user.id} (role: ${adminCheck.role}) to ${pathToCheck}`
+      );
+    } catch (error) {
+      console.error("Error checking admin role in middleware:", error);
+
+      // En cas d'erreur critique, rediriger vers unauthorized par sécurité
+      console.warn(`Admin check failed for user ${user.id} due to system error`);
       const unauthorizedUrl = new URL(`/${currentLocale}/unauthorized`, request.url);
       return NextResponse.redirect(unauthorizedUrl);
     }
-
-    // Vérification supplémentaire : l'ID de l'utilisateur est-il dans la liste blanche ?
-    if (!isAuthorizedAdmin(user.id)) {
-      // Logger l'événement de sécurité
-      await logSecurityEvent({
-        type: "unauthorized_access",
-        userId: user.id,
-        details: {
-          adminEmail: user.email || "N/A",
-          message: "Tentative d'accès à une route admin protégée.",
-          path: pathToCheck,
-        },
-      });
-
-      const unauthorizedUrl = new URL(`/${currentLocale}/unauthorized`, request.url);
-      return NextResponse.redirect(unauthorizedUrl);
-    }
-    // Utilisateur admin : accès autorisé, continuer avec la réponse de i18n
   }
 
   // 5. Renvoyer la réponse (modifiée par i18n, Supabase cookies, et potentiellement admin redirect)

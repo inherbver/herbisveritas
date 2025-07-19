@@ -3,6 +3,19 @@
   "recipientSectionTitle": "Recipient",
   "addressSectionTitle": "Address",
   "contactSectionTitle": "Contact",
+  "labels": {
+    "first_name": "First name",
+    "last_name": "Last name",
+    "email": "Email address (optional)",
+    "company_name": "Company (optional)",
+    "address_line1": "Address (line 1)",
+    "address_line2": "Apartment, suite, etc. (optional)",
+    "postal_code": "Postal code",
+    "city": "City",
+    "country_code": "Country/Region",
+    "state_province_region": "State / Province / Region",
+    "phoneNumber": "Phone number (optional)"
+  },
   "fieldLabels": {
     "first_name": "First name",
     "last_name": "Last name",
@@ -39,5 +52,9 @@
     "validationError": "Validation failed. Please check the form fields.",
     "success": "Address saved successfully.",
     "error": "An error occurred while saving the address. Please try again."
-  }
+  },
+  "addSuccess": "Address added successfully.",
+  "updateSuccess": "Address updated successfully.",
+  "genericError": "An error occurred. Please try again.",
+  "addressLoading": "Loading address suggestions..."
 }

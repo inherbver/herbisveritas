@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { AdminHeader } from './admin-header';
+import { ReactNode } from "react";
+import { AdminHeader } from "./admin-header";
 
 interface DashboardShellProps {
   children: ReactNode;

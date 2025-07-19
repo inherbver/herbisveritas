@@ -7,7 +7,7 @@ import { Locale } from "@/i18n-config";
 import { createClient } from "@/lib/supabase/client";
 import { redirect } from "next/navigation";
 import AddressForm from "@/components/domain/profile/address-form";
-import { AddressFormData, AddressFormTranslations } from "@/lib/validators/address.validator";
+import { AddressFormData } from "@/lib/validators/address.validator";
 import { countries } from "@/lib/countries";
 
 interface Address {
@@ -81,7 +81,6 @@ export default function AddressesPage({ params }: Props) {
   const { locale } = use(params);
   const supabase = createClient();
   const t = useTranslations("AddressesPage");
-  const tForm = useTranslations("AddressForm");
 
   const [shippingAddress, setShippingAddress] = useState<Address | null>(null);
   const [billingAddress, setBillingAddress] = useState<Address | null>(null);
@@ -167,57 +166,6 @@ export default function AddressesPage({ params }: Props) {
     return <div className="py-20 text-center">{t("loading")}</div>;
   }
 
-  const formTitle = (addressType: "shipping" | "billing", isEditing: boolean) => {
-    if (isEditing) {
-      return t(addressType === "shipping" ? "editShippingAddressTitle" : "editBillingAddressTitle");
-    }
-    return t(addressType === "shipping" ? "addShippingAddressTitle" : "addBillingAddressTitle");
-  };
-
-  const translations: AddressFormTranslations = {
-    formTitle: (addressType, isEditing) => formTitle(addressType, isEditing),
-    recipientSectionTitle: tForm("recipientSectionTitle"),
-    addressSectionTitle: tForm("addressSectionTitle"),
-    contactSectionTitle: tForm("contactSectionTitle"),
-    fieldLabels: {
-      first_name: tForm("labels.first_name"),
-      last_name: tForm("labels.last_name"),
-      email: tForm("labels.email"),
-      company_name: tForm("labels.company_name"),
-      address_line1: tForm("labels.address_line1"),
-      address_line2: tForm("labels.address_line2"),
-      postal_code: tForm("labels.postal_code"),
-      city: tForm("labels.city"),
-      country_code: tForm("labels.country_code"),
-      state_province_region: tForm("labels.state_province_region"),
-      phoneNumber: tForm("labels.phoneNumber"),
-    },
-    placeholders: {
-      first_name: tForm("placeholders.first_name"),
-      last_name: tForm("placeholders.last_name"),
-      email: tForm("placeholders.email"),
-      company_name: tForm("placeholders.company_name"),
-      address_line1: tForm("placeholders.address_line1"),
-      address_line2: tForm("placeholders.address_line2"),
-      postal_code: tForm("placeholders.postal_code"),
-      city: tForm("placeholders.city"),
-      country_code: tForm("placeholders.country_code"),
-      state_province_region: tForm("placeholders.state_province_region"),
-      phoneNumber: tForm("placeholders.phoneNumber"),
-    },
-    buttons: {
-      save: tForm("buttons.save"),
-      saving: tForm("buttons.saving"),
-      cancel: tForm("buttons.cancel"),
-      showOptionalFields: tForm("buttons.showOptionalFields"),
-    },
-    serverActions: {
-      validationError: tForm("serverActions.validationError"),
-      success: tForm("serverActions.success"),
-      error: tForm("serverActions.error"),
-    },
-  };
-
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
       <header className="mb-10 text-center">
@@ -227,7 +175,6 @@ export default function AddressesPage({ params }: Props) {
       {showForm && formAddressType && (
         <div className="mb-10 rounded-lg bg-gray-50 p-6 shadow-lg">
           <AddressForm
-            translations={translations}
             addressType={formAddressType}
             existingAddress={editingAddress}
             onCancel={handleCloseForm}

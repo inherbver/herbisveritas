@@ -5,6 +5,8 @@
   "shippingAndBillingAddressTitle": "Adresse de Livraison et de Facturation",
   "editShippingAddressTitle": "Modifier l'adresse de livraison",
   "editBillingAddressTitle": "Modifier l'adresse de facturation",
+  "addShippingAddressTitle": "Ajouter une adresse de livraison",
+  "addBillingAddressTitle": "Ajouter une adresse de facturation",
   "addAddressButton": "Ajouter une Adresse",
   "addSeparateBillingAddressButton": "Ajouter une adresse de facturation distincte",
   "editAddressButton": "Modifier",

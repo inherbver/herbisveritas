@@ -1,28 +1,35 @@
 import dotenv from "dotenv";
-import { auditRoleConsistency } from "../src/lib/admin/monitoring-service-jwt";
+import { checkForUnauthorizedAdmins } from "../src/lib/admin/monitoring-service";
 
 // Charge les variables d'environnement depuis le fichier .env
 dotenv.config();
 
 async function main() {
-  console.log("--- Lancement de l'audit de cohérence des rôles JWT vs DB ---");
+  console.log("--- Lancement de l'audit des rôles administrateurs ---");
   try {
-    const { consistent, inconsistent } = await auditRoleConsistency();
+    const unauthorizedAdmins = await checkForUnauthorizedAdmins();
 
-    console.log(`
-✅ Utilisateurs cohérents: ${consistent.length}`);
-    console.log(`⚠️  Incohérences détectées: ${inconsistent.length}`);
-
-    if (inconsistent.length > 0) {
-      console.log("\n--- Tableau des incohérences ---");
+    if (unauthorizedAdmins.length === 0) {
+      console.log("✅ Aucun administrateur non autorisé détecté.");
+    } else {
+      console.log(`⚠️  ${unauthorizedAdmins.length} administrateur(s) non autorisé(s) détecté(s):`);
+      console.log("\n--- Tableau des administrateurs non autorisés ---");
       console.table(
-        inconsistent.map((u) => ({
-          ID: u.id,
-          Email: u.email,
-          "Rôle JWT": u.role,
-          "Rôle Profile": u.profile_role,
+        unauthorizedAdmins.map((admin) => ({
+          ID: admin.id,
+          Email: admin.email,
+          Rôle: admin.role,
+          "Créé le": new Date(admin.created_at).toLocaleDateString("fr-FR"),
+          "Dernière connexion": admin.last_sign_in_at
+            ? new Date(admin.last_sign_in_at).toLocaleDateString("fr-FR")
+            : "Jamais",
         }))
       );
+
+      console.log("\n⚠️  Actions recommandées:");
+      console.log("1. Vérifiez l'origine de ces comptes administrateurs");
+      console.log("2. Révoquez les accès non autorisés via l'interface Supabase");
+      console.log("3. Examinez les logs d'audit pour détecter d'éventuelles activités suspectes");
     }
   } catch (error) {
     console.error("\n❌ Erreur critique pendant l'audit:", error);

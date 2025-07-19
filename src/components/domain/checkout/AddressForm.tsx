@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React from 'react';
-import SharedAddressForm from '@/components/shared/address-form';
-import type { AddressFormData } from '@/lib/validators/address.validator';
-import type { Address } from '@/types';
+import React from "react";
+import SharedAddressForm from "@/components/shared/address-form";
+import type { AddressFormData } from "@/lib/validators/address.validator";
+import type { Address } from "@/types";
 
 interface CheckoutAddressFormProps {
-  addressType: 'shipping' | 'billing';
+  addressType: "shipping" | "billing";
   onSubmit: (data: AddressFormData) => void;
   onCancel?: () => void;
   isSubmitting?: boolean;
@@ -21,7 +21,7 @@ const CheckoutAddressForm: React.FC<CheckoutAddressFormProps> = ({
   existingAddress,
 }) => {
   return (
-        <SharedAddressForm
+    <SharedAddressForm
       addressType={addressType}
       onSubmit={onSubmit}
       onCancel={onCancel}

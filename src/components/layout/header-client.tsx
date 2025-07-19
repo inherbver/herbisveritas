@@ -116,7 +116,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
       className={cn(
         "sticky top-0 z-50 w-full transition-colors duration-300",
         scrolled
-          ? "border-border/40 bg-background/80 shadow-md backdrop-blur-md dark:bg-background/90 dark:border-foreground/10"
+          ? "border-border/40 bg-background/80 dark:bg-background/90 dark:border-foreground/10 shadow-md backdrop-blur-md"
           : "border-b border-transparent"
       )}
     >

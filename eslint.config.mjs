@@ -14,14 +14,14 @@ const eslintConfig = [
   {
     rules: {
       "react/no-unescaped-entities": "off", // Disable to allow unescaped apostrophes in French text
-      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }], // Relax to warning and ignore variables starting with _
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }], // Relax to warning and ignore variables starting with _
       "@typescript-eslint/no-explicit-any": "warn", // Relax to warning instead of error
       "@typescript-eslint/no-empty-object-type": "warn", // Relax to warning to reduce blocking errors
       // Add more rules as needed, or consider a broader override if husky still blocks commits
       // Temporary broad override to unblock commits - adjust specific rules as warnings
-      "*": "warn" // This is a placeholder to indicate intent; actual broad override may need manual preset adjustment
-    }
-  }
+      "*": "warn", // This is a placeholder to indicate intent; actual broad override may need manual preset adjustment
+    },
+  },
 ];
 
 export default eslintConfig;

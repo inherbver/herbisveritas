@@ -33,7 +33,6 @@ Pour lancer le projet en local, suivez ces étapes :
     ```
 
 3.  **Configurer les variables d'environnement :**
-
     - Copiez le fichier d'exemple : `cp .env.example .env.local`
     - Remplissez les variables dans `.env.local` avec vos clés Supabase (URL du projet et clé `anon`).
 
@@ -61,6 +60,9 @@ Ce projet est accompagné d'une documentation technique détaillée pour facilit
 
 - **[ARCHITECTURE DE SÉCURITÉ](./doc/SECURITY.md)**
   _Décrit les différentes couches de sécurité, de la base de données au client._
+
+- **[GESTION DES RÔLES ADMIN](./doc/ADMIN_ROLE_MANAGEMENT.md)** 🆕
+  _Documentation complète du système de gestion des rôles et permissions administrateur._
 
 - **[GESTION DU PANIER](./doc/CART.md)**
   _Présente la logique de gestion du panier pour les utilisateurs invités et authentifiés._

@@ -18,8 +18,7 @@ type AuthResult = {
  * @param permission The permission to check for.
  * @returns An object containing authorization status, user info, and role.
  */
-export const checkUserPermission = cache(
-  async (permission: AppPermission): Promise<AuthResult> => {
+export const checkUserPermission = cache(async (permission: AppPermission): Promise<AuthResult> => {
   try {
     const supabase = await createSupabaseServerClient();
 
@@ -61,14 +60,17 @@ export const checkUserPermission = cache(
     const isAuthorized = hasPermission(userRole, permission);
 
     if (!isAuthorized) {
-      console.warn(`[Security] Permission '${permission}' denied for role '${userRole}' (User ID: ${user.id})`);
+      console.warn(
+        `[Security] Permission '${permission}' denied for role '${userRole}' (User ID: ${user.id})`
+      );
       return { isAuthorized: false, user, role: userRole, error: "Insufficient privileges" };
     }
 
     // 4. Success - log for audit
-    console.info(`[Security] Permission '${permission}' granted for role '${userRole}' (User ID: ${user.id})`);
+    console.info(
+      `[Security] Permission '${permission}' granted for role '${userRole}' (User ID: ${user.id})`
+    );
     return { isAuthorized: true, user, role: userRole };
-
   } catch (error) {
     console.error(`[Security] Unexpected error during permission check:`, error);
     return { isAuthorized: false, error: "System error" };

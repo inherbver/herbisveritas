@@ -12,7 +12,7 @@ export default async function AdminProductsPage() {
   const products = await getProductsForAdmin();
 
   return (
-    <DashboardShell 
+    <DashboardShell
       title="Gestion des Produits"
       headerAction={
         <Link href="/admin/products/new">

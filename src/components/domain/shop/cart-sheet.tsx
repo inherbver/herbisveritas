@@ -35,7 +35,7 @@ export function CartSheet() {
             <span
               className={cn(
                 "absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground",
-                "animate-in fade-in zoom-in duration-300"
+                "duration-300 animate-in fade-in zoom-in"
               )}
               aria-label={tGlobal("Cart.itemCount", { count: totalItems })}
             >

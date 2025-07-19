@@ -5,6 +5,10 @@ import { DashboardShell } from "@/components/admin/dashboard-shell";
 import { ActivityLog } from "@/components/admin/ActivityLog";
 import { getRecentActivityLogs } from "@/lib/admin/dashboard";
 
+// Disable caching to ensure real-time event updates
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface AdminPageProps {
   params: { locale: Locale };
 }

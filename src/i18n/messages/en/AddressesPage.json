@@ -5,6 +5,8 @@
   "shippingAndBillingAddressTitle": "Shipping and Billing Address",
   "editShippingAddressTitle": "Edit Shipping Address",
   "editBillingAddressTitle": "Edit Billing Address",
+  "addShippingAddressTitle": "Add Shipping Address",
+  "addBillingAddressTitle": "Add Billing Address",
   "addAddressButton": "Add Address",
   "addSeparateBillingAddressButton": "Add separate billing address",
   "editAddressButton": "Edit",

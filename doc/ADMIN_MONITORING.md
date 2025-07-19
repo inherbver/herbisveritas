@@ -1,6 +1,23 @@
-# Stratégie de Surveillance Administrative Temps Réel
+# ⚠️ DOCUMENTATION OBSOLÈTE
 
-Ce document décrit l'architecture et la feuille de route pour l'implémentation d'un système de surveillance des rôles administrateur en temps réel.
+**Ce fichier a été remplacé par :** [ADMIN_ROLE_MANAGEMENT.md](./ADMIN_ROLE_MANAGEMENT.md)
+
+**Raison :** Le système de surveillance admin a été intégré dans le nouveau système de gestion des rôles unifié. Les fonctionnalités décrites ici sont maintenant implémentées et opérationnelles.
+
+**Nouvelles fonctionnalités disponibles :**
+
+- ✅ Script d'audit automatisé (`npm run audit-roles`)
+- ✅ Monitoring temps réel via `/admin/security-test`
+- ✅ Logs de sécurité centralisés dans `audit_logs`
+- ✅ Alertes automatiques pour admins non autorisés
+
+**Veuillez consulter :** [ADMIN_ROLE_MANAGEMENT.md](./ADMIN_ROLE_MANAGEMENT.md) section "Monitoring et Surveillance"
+
+---
+
+# ~~Stratégie de Surveillance Administrative Temps Réel~~ [OBSOLÈTE]
+
+~~Ce document décrit l'architecture et la feuille de route pour l'implémentation d'un système de surveillance des rôles administrateur en temps réel.~~
 
 ## Phase 1 : API de Base (Polling Périodique)
 

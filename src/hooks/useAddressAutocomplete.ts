@@ -78,14 +78,15 @@ export const useAddressAutocomplete = (
 
   const fetchAddressSuggestions = useCallback(
     async (query: string, country: string) => {
-      if (country !== "FR" || !query || query.length < 3) {
+      const trimmedQuery = query.trim();
+      if (country !== "FR" || !trimmedQuery || trimmedQuery.length < 3) {
         setSuggestions([]);
         setError(null);
         return;
       }
 
-      if (cacheRef.current.has(query)) {
-        setSuggestions(cacheRef.current.get(query)!);
+      if (cacheRef.current.has(trimmedQuery)) {
+        setSuggestions(cacheRef.current.get(trimmedQuery)!);
         return;
       }
 
@@ -95,41 +96,42 @@ export const useAddressAutocomplete = (
       setError(null);
 
       try {
-        const response = await fetch(
-          `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&type=housenumber&autocomplete=1&postcode=${countryCode}`,
-          {
-            signal: abortControllerRef.current.signal,
-          }
-        );
+        const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(trimmedQuery)}&limit=5&type=housenumber&autocomplete=1`;
+
+        const response = await fetch(url, {
+          signal: abortControllerRef.current.signal,
+        });
 
         if (!response.ok) {
-          throw new Error("Failed to fetch address suggestions.");
+          throw new Error(`Failed to fetch address suggestions. Status: ${response.status}`);
         }
 
         const data: BanApiResponse = await response.json();
-        cacheRef.current.set(query, data.features);
+        cacheRef.current.set(trimmedQuery, data.features);
         setSuggestions(data.features);
       } catch (err: unknown) {
         if (err instanceof Error && err.name !== "AbortError") {
           setError("An error occurred while fetching addresses.");
-          console.error(err);
+          console.error("Error fetching address suggestions:", err);
         }
       } finally {
         setIsLoading(false);
       }
     },
-    [abortPendingRequest, countryCode]
+    [abortPendingRequest]
   );
 
   useEffect(() => {
     clearPendingTimeout();
 
-    if (addressQuery && addressQuery.length >= 3) {
+    const trimmedQuery = addressQuery?.trim() || "";
+    if (trimmedQuery && trimmedQuery.length >= 3) {
       timeoutIdRef.current = setTimeout(() => {
-        fetchAddressSuggestions(addressQuery, countryCode);
+        fetchAddressSuggestions(trimmedQuery, countryCode);
       }, 300); // 300ms debounce delay
     } else {
       setSuggestions([]);
+      setError(null);
       abortPendingRequest();
     }
 

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
 
 // --- Centralized Supabase Client Type ---
@@ -14,26 +14,27 @@ export type SupabaseClientType = SupabaseClient<Database>;
  * @template T - The name of the table.
  * @example type ProductRow = Table<'products'>;
  */
-export type Table<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
+export type Table<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"];
 
 /**
  * A utility type for the insert (creation) payload of a table in the 'public' schema.
  * @template T - The name of the table.
  */
-export type Insert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
+export type Insert<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Insert"];
 
 /**
  * A utility type for the update payload of a table in the 'public' schema.
  * @template T - The name of the table.
  */
-export type Update<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
+export type Update<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Update"];
 
 // --- Specific Table Types ---
 // Provides clear, reusable type definitions for commonly used tables.
-export type Product = Table<'products'>;
-export type Cart = Table<'carts'>;
-export type CartItem = Table<'cart_items'>;
-export type Profile = Table<'profiles'>;
-export type Address = Table<'addresses'>;
-
-
+export type Product = Table<"products">;
+export type Cart = Table<"carts">;
+export type CartItem = Table<"cart_items">;
+export type Profile = Table<"profiles">;
+export type Address = Table<"addresses">;

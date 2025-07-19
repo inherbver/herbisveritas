@@ -27,12 +27,13 @@ export function UpdateRoleDialog({ user, children }: UpdateRoleDialogProps) {
         <DialogHeader>
           <DialogTitle>Modifier le rôle de {user.full_name || user.email}</DialogTitle>
           <DialogDescription>
-            Sélectionnez un nouveau rôle pour l'utilisateur. La modification sera enregistrée dans les journaux d'audit.
+            Sélectionnez un nouveau rôle pour l'utilisateur. La modification sera enregistrée dans
+            les journaux d'audit.
           </DialogDescription>
         </DialogHeader>
         <RoleManager
           userId={user.id}
-          initialRole={user.role || 'user'}
+          initialRole={user.role || "user"}
           onRoleUpdated={() => setIsOpen(false)} // Close dialog on success
         />
       </DialogContent>

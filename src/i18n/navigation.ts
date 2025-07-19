@@ -63,24 +63,23 @@ export const pathnames = {
     en: "/register",
     fr: "/inscription",
   },
-  // --- START: Profile Pages ---
-  "/profile/account": {
-    en: "/profile/account",
-    fr: "/profil/compte",
-  },
-  "/profile/addresses": {
-    en: "/profile/addresses",
-    fr: "/profil/adresses",
-  },
-  "/profile/orders": {
-    en: "/profile/orders",
-    fr: "/profil/commandes",
-  },
-  "/profile/password": {
-    en: "/profile/password",
-    fr: "/profil/mot-de-passe",
-  },
-  // --- END: Profile Pages ---
+  // --- Profile Pages: Keeping same URLs for both languages for consistency ---
+  // "/profile/account": {
+  //   en: "/profile/account",
+  //   fr: "/profil/compte",
+  // },
+  // "/profile/addresses": {
+  //   en: "/profile/addresses",
+  //   fr: "/profil/adresses",
+  // },
+  // "/profile/orders": {
+  //   en: "/profile/orders",
+  //   fr: "/profil/commandes",
+  // },
+  // "/profile/password": {
+  //   en: "/profile/password",
+  //   fr: "/profil/mot-de-passe",
+  // },
   // Ajoutez d'autres chemins ici...
 } as const;
 

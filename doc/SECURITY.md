@@ -39,9 +39,24 @@ C'est la couche de sécurité la plus critique, car elle est appliquée directem
 
 ### 3.1. Source de Vérité des Rôles
 
-Le rôle d'un utilisateur (`admin`, `dev`, `user`) est déterminé **uniquement** par le claim `app_metadata.role` présent dans son jeton JWT Supabase. La colonne `role` dans la table `profiles` n'est plus utilisée comme source de vérité pour les permissions.
+**⚠️ INFORMATION OBSOLÈTE :** Cette section décrit l'ancien système.
+
+**Nouveau système (2025) :** Le rôle d'un utilisateur est maintenant stocké dans la colonne `role` de la table `profiles` en base de données, avec un système de cache intelligent pour les performances. Voir [ADMIN_ROLE_MANAGEMENT.md](./ADMIN_ROLE_MANAGEMENT.md) pour les détails complets.
+
+~~Le rôle d'un utilisateur (`admin`, `dev`, `user`) est déterminé **uniquement** par le claim `app_metadata.role` présent dans son jeton JWT Supabase. La colonne `role` dans la table `profiles` n'est plus utilisée comme source de vérité pour les permissions.~~
 
 ### 3.2. Niveaux d'Accès
+
+**📋 MISE À JOUR 2025-01-19 :** Le système de rôles a été entièrement refactorisé. Pour la documentation complète du nouveau système, voir [ADMIN_ROLE_MANAGEMENT.md](./ADMIN_ROLE_MANAGEMENT.md).
+
+**Résumé des changements :**
+
+- ✅ Système unifié basé sur la base de données (au lieu de JWT)
+- ✅ Cache intelligent pour les performances
+- ✅ Types centralisés et permissions granulaires
+- ✅ Audit et monitoring intégrés
+
+Les niveaux d'accès ci-dessous restent conceptuellement valides mais l'implémentation a changé :
 
 - **`anon` (Invité)**
   - **Permissions :**
@@ -125,7 +140,121 @@ Ce flux garantit que les informations de paiement sont sécurisées par Stripe, 
 
 ## 5. Mesures Spécifiques
 
-- **Gestion des Secrets :** Toutes les clés d'API, secrets de JWT et autres informations sensibles sont gérés via des variables d'environnement et les secrets de Supabase. Ils ne sont jamais exposés côté client.
+### 5.1. Gestion Sécurisée des Secrets
+
+**⚠️ MISE À JOUR CRITIQUE - JANVIER 2025**
+
+Suite à l'audit de sécurité, la gestion des secrets a été renforcée avec une nouvelle architecture :
+
+#### Structure des Variables d'Environnement
+
+- **Template de sécurité** : Utiliser `.env.example` comme template
+- **Fichier local** : `.env.local` (JAMAIS commité dans Git)
+- **Validation automatique** : `src/lib/config/env-validator.ts` vérifie la configuration au démarrage
+
+#### Variables Publiques vs. Privées
+
+```typescript
+// Variables publiques (exposées côté client)
+NEXT_PUBLIC_SUPABASE_URL; // ✅ Sûr
+NEXT_PUBLIC_SUPABASE_ANON_KEY; // ✅ Sûr
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; // ✅ Sûr
+
+// Variables privées (serveur uniquement)
+SUPABASE_SERVICE_ROLE_KEY; // 🚨 JAMAIS exposer côté client
+STRIPE_SECRET_KEY; // 🚨 JAMAIS exposer côté client
+STRIPE_WEBHOOK_SECRET; // 🚨 JAMAIS exposer côté client
+```
+
+#### Procédure en Cas d'Exposition
+
+1. **URGENCE** : Révoquer immédiatement toutes les clés exposées
+   - Supabase Dashboard → Settings → API → Regenerate
+   - Stripe Dashboard → Developers → API Keys → Créer nouvelles clés
+2. **Nettoyage** : Supprimer `.env.local` de l'historique Git si nécessaire
+3. **Validation** : Utiliser le nouveau système de validation des variables
+
+#### Configuration Production
+
+- **Vercel/Netlify** : Variables configurées dans le dashboard
+- **Monitoring** : Alertes activées sur tous les tableaux de bord
+- **Rotation** : Secrets renouvelés tous les 90 jours
+
+### 5.2. Headers de Sécurité
+
+L'application implémente des headers de sécurité modernes via `next.config.mjs` :
+
+```javascript
+headers: [
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: "default-src 'self'; script-src 'self' js.stripe.com; ...",
+  },
+];
+```
+
+### 5.3. Validation et Sanitisation
+
+- **Validation d'entrée** : Tous les inputs utilisent des schémas Zod stricts
+- **Sanitisation** : Aucun contenu utilisateur rendu directement sans échappement
+- **Protection XSS** : Headers CSP et validation côté serveur
+
+### 5.4. Autres Mesures
+
 - **Politique de Mots de Passe :** Les exigences de complexité des mots de passe sont gérées par Supabase Auth.
 - **Dépendances :** Les dépendances sont régulièrement auditées et mises à jour pour corriger les vulnérabilités connues.
-- **Réponse aux Incidents :** Une procédure est en place pour identifier, contrôler, corriger et notifier en cas de brèche de sécurité.
+- **Monitoring** : Logs de sécurité centralisés avec alertes automatiques
+- **Réponse aux Incidents :** Procédure documentée pour identifier, contrôler, corriger et notifier en cas de brèche de sécurité.
+
+---
+
+## 6. Guide de Configuration Sécurisée
+
+### 6.1. Installation Initiale
+
+```bash
+# 1. Copier le template
+cp .env.example .env.local
+
+# 2. Configurer les variables dans .env.local
+# (Voir .env.example pour la structure)
+
+# 3. Vérifier la configuration
+npm run dev
+# L'app refuse de démarrer si la config est invalide
+```
+
+### 6.2. Actions en Cas de Compromission
+
+**IMMÉDIAT** :
+
+1. STOPPER l'application
+2. RÉVOQUER toutes les clés exposées
+3. ANALYSER les logs d'accès
+4. NOTIFIER l'équipe et les services tiers
+
+**SUIVI** :
+
+1. RÉGÉNÉRER avec de nouvelles clés
+2. AUDITER le code pour d'autres vulnérabilités
+3. RENFORCER les procédures de déploiement
+4. DOCUMENTER l'incident pour apprentissage
+
+### 6.3. Contacts d'Urgence
+
+- **Stripe Security** : https://stripe.com/docs/security
+- **Supabase Security** : security@supabase.io
+- **Équipe Développement** : [À compléter]
+
+---
+
+**Dernière mise à jour sécurité** : 2025-01-19  
+**Prochaine révision** : 2025-04-19

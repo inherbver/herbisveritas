@@ -32,7 +32,7 @@ export function hasPermission(
   }
 
   // 2. Wildcard permission check (e.g., 'products:*' grants 'products:create')
-  const permissionParts = permission.split(':');
+  const permissionParts = permission.split(":");
   const wildcardPermission = `${permissionParts[0]}:*` as AppPermission;
   if (userPermissionsAndRoles.includes(wildcardPermission)) {
     return true;
@@ -101,10 +101,7 @@ export function hasRole(
  * @param request The incoming NextRequest from the middleware.
  * @param response The outgoing NextResponse that will be sent to the client.
  */
-export function clearSupabaseCookies(
-  request: NextRequest,
-  response: NextResponse
-) {
+export function clearSupabaseCookies(request: NextRequest, response: NextResponse) {
   const cookieOptions = {
     path: "/",
     maxAge: 0,

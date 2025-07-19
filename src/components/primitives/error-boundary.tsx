@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from '@/components/ui/button'; // Pour un bouton de rafraîchissement
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Button } from "@/components/ui/button"; // Pour un bouton de rafraîchissement
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -27,7 +27,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Vous pouvez également enregistrer l'erreur dans un service de reporting d'erreurs
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
     // Exemple: logErrorToMyService(error, errorInfo);
   }
 
@@ -36,7 +36,7 @@ class ErrorBoundary extends Component<Props, State> {
     // selon la cause de l'erreur (ex: recharger la page, effacer le state, etc.)
     this.setState({ hasError: false, error: undefined });
     // Optionnellement, forcer un rechargement
-    // window.location.reload(); 
+    // window.location.reload();
   };
 
   public render() {
@@ -52,11 +52,9 @@ class ErrorBoundary extends Component<Props, State> {
             <AlertTitle>Oups ! Une erreur est survenue.</AlertTitle>
             <AlertDescription>
               <p>Quelque chose s&apos;est mal passé. Veuillez réessayer.</p>
-              {/* Affiche l'erreur en développement pour faciliter le débogage */} 
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <pre className="mt-2 whitespace-pre-wrap text-xs">
-                  {this.state.error.message}
-                </pre>
+              {/* Affiche l'erreur en développement pour faciliter le débogage */}
+              {process.env.NODE_ENV === "development" && this.state.error && (
+                <pre className="mt-2 whitespace-pre-wrap text-xs">{this.state.error.message}</pre>
               )}
               <Button onClick={this.handleReset} variant="secondary" size="sm" className="mt-4">
                 Réessayer

@@ -1,8 +1,6 @@
 import type { SupabaseClientType } from "@/lib/supabase/types";
 
-export async function getActiveUserId(
-  supabase: SupabaseClientType
-): Promise<string | null> {
+export async function getActiveUserId(supabase: SupabaseClientType): Promise<string | null> {
   const {
     data: { user },
     error: getUserError,

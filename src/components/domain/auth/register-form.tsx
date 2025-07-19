@@ -189,7 +189,7 @@ export function RegisterForm() {
               type="submit"
               size="lg"
               variant="secondary"
-              className="mt-6 w-full shadow-md transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95"
+              className="mt-6 w-full shadow-md transition-transform duration-200 ease-in-out active:scale-95 hover:scale-105"
               disabled={isLoading}
             >
               {isLoading ? tGlobal("loading") : tAuth("submitButton")}

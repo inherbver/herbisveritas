@@ -39,11 +39,11 @@ export const pathnames = {
     fr: "/contact",
   },
 
-  // Exemple pour d'autres pages
-  "/profile": {
-    en: "/profile",
-    fr: "/profil",
-  },
+  // Profile pages - keeping same URL for both languages for consistency
+  // "/profile": {
+  //   en: "/profile",
+  //   fr: "/profil",
+  // },
 };
 
 export const localeDetection = true; // Activer/désactiver la détection automatique

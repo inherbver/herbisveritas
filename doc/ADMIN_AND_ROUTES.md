@@ -1,6 +1,16 @@
-# Plan d'Implémentation : Dashboard Admin et RBAC
+# ⚠️ DOCUMENTATION OBSOLÈTE
 
-**Objectif Principal :** Mettre en place une section `/admin` sécurisée, accessible uniquement aux utilisateurs ayant le rôle 'admin', et commencer à y intégrer des fonctionnalités d'administration, en commençant par la gestion des utilisateurs.
+**Ce fichier a été remplacé par :** [ADMIN_ROLE_MANAGEMENT.md](./ADMIN_ROLE_MANAGEMENT.md)
+
+**Raison :** Le système de gestion des rôles admin a été entièrement refactorisé en janvier 2025. Cette documentation décrit l'ancien système basé sur JWT qui n'est plus utilisé.
+
+**Veuillez consulter :** [ADMIN_ROLE_MANAGEMENT.md](./ADMIN_ROLE_MANAGEMENT.md) pour la documentation à jour du nouveau système unifié.
+
+---
+
+# ~~Plan d'Implémentation : Dashboard Admin et RBAC~~ [OBSOLÈTE]
+
+~~**Objectif Principal :** Mettre en place une section `/admin` sécurisée, accessible uniquement aux utilisateurs ayant le rôle 'admin', et commencer à y intégrer des fonctionnalités d'administration, en commençant par la gestion des utilisateurs.~~
 
 ---
 

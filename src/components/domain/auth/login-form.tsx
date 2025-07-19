@@ -32,7 +32,7 @@ function SubmitButton() {
       type="submit"
       size="lg"
       variant="secondary"
-      className="w-full shadow-md transition-transform duration-200 ease-in-out hover:scale-105 active:scale-95"
+      className="w-full shadow-md transition-transform duration-200 ease-in-out active:scale-95 hover:scale-105"
       disabled={pending}
     >
       {pending ? t("loading") : t("submitButton")}

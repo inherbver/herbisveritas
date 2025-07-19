@@ -76,8 +76,7 @@ export function ProductCard({
     message: undefined,
   };
 
-
-        const [isClamped, setIsClamped] = useState(false);
+  const [isClamped, setIsClamped] = useState(false);
 
   const [state, formAction, isPending] = useActionState<
     CartActionResult<CartData | null>,
@@ -95,7 +94,7 @@ export function ProductCard({
     }
   }, [state, t, tGlobal]);
 
-                // Utilisation d'une callback ref pour une gestion robuste du DOM
+  // Utilisation d'une callback ref pour une gestion robuste du DOM
   const descriptionRef = useCallback((node: HTMLParagraphElement | null) => {
     if (node) {
       const observer = new ResizeObserver(() => {
@@ -121,7 +120,7 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm transition-shadow duration-300 hover:shadow-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/40",
+        "focus-within:ring-primary/40 group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm transition-shadow duration-300 focus-within:outline-none focus-within:ring-2 hover:shadow-lg",
         isOutOfStock && "opacity-70",
         className
       )}
@@ -149,7 +148,7 @@ export function ProductCard({
         {is_on_promotion && (
           <Badge
             variant="secondary"
-            className="rounded-full bg-accent/90 px-2 py-0.5 text-[10px] font-medium uppercase text-accent-foreground"
+            className="bg-accent/90 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase text-accent-foreground"
             aria-label={t("promoLabel")}
           >
             {t("promoLabel")}
@@ -186,7 +185,7 @@ export function ProductCard({
                 <p
                   ref={descriptionRef}
                   className={cn(
-                    "line-clamp-3 select-none text-sm text-foreground/70",
+                    "text-foreground/70 line-clamp-3 select-none text-sm",
                     isClamped && "is-clamped"
                   )}
                 >
@@ -215,7 +214,9 @@ export function ProductCard({
             <meta itemProp="priceCurrency" content="EUR" />
             <meta
               itemProp="availability"
-              content={isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"}
+              content={
+                isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
+              }
             />
           </section>
 

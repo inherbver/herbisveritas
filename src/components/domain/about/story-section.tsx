@@ -13,7 +13,7 @@ export const StorySection = () => {
       <div className="container mx-auto px-4">
         <div className="grid items-center md:grid-cols-12 md:gap-x-12 lg:gap-x-16">
           {/* Colonne Texte */}
-          <article className="prose prose-lg dark:prose-invert max-w-none md:col-span-7 lg:col-span-6">
+          <article className="prose prose-lg max-w-none dark:prose-invert md:col-span-7 lg:col-span-6">
             {" "}
             {/* Utilisation de Tailwind Typography pour un style de texte agréable */}
             <h2 className="mb-6 text-3xl font-bold !leading-tight text-primary md:text-4xl">

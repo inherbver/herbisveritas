@@ -360,10 +360,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       <FormItem>
                         <FormLabel>{t("usageInstructionsLabel")}</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="Appliquer sur peau humide..."
-                            {...field}
-                          />
+                          <Textarea placeholder="Appliquer sur peau humide..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -376,10 +373,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       <FormItem>
                         <FormLabel>{t("propertiesLabel")}</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="Hydratant, nourrissant..."
-                            {...field}
-                          />
+                          <Textarea placeholder="Hydratant, nourrissant..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -392,10 +386,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       <FormItem>
                         <FormLabel>{t("compositionTextLabel")}</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="Composition détaillée du produit..."
-                            {...field}
-                          />
+                          <Textarea placeholder="Composition détaillée du produit..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

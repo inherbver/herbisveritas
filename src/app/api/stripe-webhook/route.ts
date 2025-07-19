@@ -95,7 +95,9 @@ export async function POST(req: Request) {
       const shippingAmount = session.shipping_cost ? session.shipping_cost.amount_total / 100 : 0;
 
       if (!shippingAddressId || !shippingMethodId) {
-        console.error(`[STRIPE_WEBHOOK] Missing shipping information in metadata for session ${session.id}`);
+        console.error(
+          `[STRIPE_WEBHOOK] Missing shipping information in metadata for session ${session.id}`
+        );
         // Vous pourriez choisir de lever une erreur ici si la livraison est toujours obligatoire
       }
 

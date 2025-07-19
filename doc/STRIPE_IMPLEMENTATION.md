@@ -11,7 +11,6 @@ Ce document détaille la stratégie et les étapes de développement qui ont ét
 **Statut :** ✅ **Terminé**
 
 1.  **Installation & Configuration**
-
     - [x] Installer les SDK `stripe`, `@stripe/stripe-js`, `@stripe/react-stripe-js`.
     - [x] Configurer les variables d'environnement : `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_BASE_URL`.
 
@@ -26,7 +25,6 @@ Ce document détaille la stratégie et les étapes de développement qui ont ét
 **Statut :** ✅ **Terminé**
 
 1.  **Server Action `createStripeCheckoutSession`**
-
     - [x] Fichier `src/actions/stripeActions.ts` créé.
     - [x] La fonction récupère le panier côté serveur (`getCart()`).
     - [x] **Sécurité :** Pour chaque article, le prix est validé côté serveur en se basant sur la table `products` de Supabase.
@@ -48,12 +46,10 @@ Ce document détaille la stratégie et les étapes de développement qui ont ét
 **Statut :** ✅ **Terminé**
 
 1.  **Bouton de Paiement**
-
     - [x] Composant `CheckoutButton` créé dans `src/components/domain/shop/checkout-button.tsx`.
     - [x] Le bouton gère un état de chargement (`useTransition`).
 
 2.  **Déclenchement et Redirection**
-
     - [x] Le bouton appelle la Server Action `createStripeCheckoutSession`.
     - [x] Les erreurs sont gérées et affichées via des notifications toast (Sonner).
     - [x] En cas de succès, le client est redirigé vers la page de paiement Stripe via `stripe.redirectToCheckout()`.
@@ -72,7 +68,6 @@ Ce document détaille la stratégie et les étapes de développement qui ont ét
 _Objectif : S'assurer que la nouvelle fonctionnalité est bien documentée et testée._
 
 1.  **Tests**
-
     - [ ] Tester le flux de paiement de bout en bout en environnement de développement (avec la CLI Stripe).
     - [ ] Tester les cas d'erreur (paiement refusé, webhook invalide, etc.).
 

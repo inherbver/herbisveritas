@@ -32,9 +32,7 @@ export function CheckoutButton({ onClose }: CheckoutButtonProps) {
       disabled={isRedirecting}
       aria-disabled={isRedirecting}
     >
-      {isRedirecting ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      ) : null}
+      {isRedirecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
       {t("checkout")}
     </Button>
   );

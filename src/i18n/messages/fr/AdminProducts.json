@@ -24,6 +24,7 @@
   "compositionTextLabel": "Texte de composition",
   "addTranslation": "Ajouter une traduction",
 
+  "imageLabel": "Image",
   "imageUrlLabel": "Image principale",
   "imageUrlDescription": "Uploadez une image et nommez-la. L'URL sera générée automatiquement.",
   "errorNoFileSelected": "Veuillez sélectionner un fichier.",

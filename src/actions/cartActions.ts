@@ -52,7 +52,10 @@ export async function addItemToCart(
     const supabase = await createSupabaseServerClient();
     const activeUserId = await getActiveUserId(supabase);
     if (!activeUserId) {
-      return createGeneralErrorResult("User identification failed", "Impossible d'identifier l'utilisateur.");
+      return createGeneralErrorResult(
+        "User identification failed",
+        "Impossible d'identifier l'utilisateur."
+      );
     }
 
     const { data: existingCart, error: findCartError } = await supabase
@@ -125,13 +128,13 @@ export async function removeItemFromCart(
     const supabase = await createSupabaseServerClient();
     const activeUserId = await getActiveUserId(supabase);
     if (!activeUserId) {
-      return createGeneralErrorResult("User not authenticated.", "Impossible d'identifier l'utilisateur.");
+      return createGeneralErrorResult(
+        "User not authenticated.",
+        "Impossible d'identifier l'utilisateur."
+      );
     }
 
-    const { error: deleteError } = await supabase
-      .from("cart_items")
-      .delete()
-      .eq("id", cartItemId);
+    const { error: deleteError } = await supabase.from("cart_items").delete().eq("id", cartItemId);
 
     if (deleteError) {
       console.error("Supabase Delete Error:", deleteError);
@@ -180,7 +183,10 @@ export async function updateCartItemQuantity(
     const supabase = await createSupabaseServerClient();
     const activeUserId = await getActiveUserId(supabase);
     if (!activeUserId) {
-      return createGeneralErrorResult("User not authenticated.", "Impossible d'identifier l'utilisateur.");
+      return createGeneralErrorResult(
+        "User not authenticated.",
+        "Impossible d'identifier l'utilisateur."
+      );
     }
 
     const { error: updateError } = await supabase
@@ -220,7 +226,7 @@ export async function removeItemFromCartFormAction(
   formData: FormData
 ): Promise<CartActionResult<CartData | null>> {
   const cartItemId = formData.get("cartItemId") as string;
-  
+
   if (!cartItemId) {
     return createValidationErrorResult(
       { cartItemId: ["L'ID de l'article est requis"] },
@@ -237,7 +243,7 @@ export async function updateCartItemQuantityFormAction(
 ): Promise<CartActionResult<CartData | null>> {
   const cartItemId = formData.get("cartItemId") as string;
   const quantityStr = formData.get("quantity") as string;
-  
+
   if (!cartItemId) {
     return createValidationErrorResult(
       { cartItemId: ["L'ID de l'article est requis"] },
@@ -269,7 +275,10 @@ export async function migrateAndGetCart(
     console.log(`[Migration ${migrationId}] Starting...`);
     const validatedFields = MigrateCartInputSchema.safeParse(input);
     if (!validatedFields.success) {
-      return createValidationErrorResult(validatedFields.error.flatten().fieldErrors, "ID invité invalide.");
+      return createValidationErrorResult(
+        validatedFields.error.flatten().fieldErrors,
+        "ID invité invalide."
+      );
     }
     const { guestUserId } = validatedFields.data;
 
@@ -277,7 +286,10 @@ export async function migrateAndGetCart(
     const authenticatedUserId = await getActiveUserId(supabase);
 
     if (!authenticatedUserId) {
-      return createGeneralErrorResult("Authenticated user not found.", "Utilisateur authentifié non trouvé.");
+      return createGeneralErrorResult(
+        "Authenticated user not found.",
+        "Utilisateur authentifié non trouvé."
+      );
     }
 
     if (authenticatedUserId === guestUserId) {
@@ -300,7 +312,9 @@ export async function migrateAndGetCart(
       return getCart();
     }
 
-    console.log(`[Migration ${migrationId}] Guest cart found: ${guestCart.id}. Finding auth user cart...`);
+    console.log(
+      `[Migration ${migrationId}] Guest cart found: ${guestCart.id}. Finding auth user cart...`
+    );
     const { data: authCart, error: authCartError } = await supabase
       .from("carts")
       .select("id")
@@ -334,7 +348,6 @@ export async function migrateAndGetCart(
 
     console.log(`[Migration ${migrationId}] Fetching final cart state...`);
     return getCart();
-
   } catch (error: unknown) {
     const errorMessage = (error as Error).message;
     console.error(`[Migration ${migrationId}] EXCEPTION:`, error);
@@ -347,7 +360,9 @@ export async function migrateAndGetCart(
           const { guestUserId } = validatedFields.data;
           const supabaseAdmin = createSupabaseAdminClient();
           await supabaseAdmin.auth.admin.deleteUser(guestUserId);
-          console.log(`[Migration ${migrationId}] Guest user cleanup successful for ${guestUserId}.`);
+          console.log(
+            `[Migration ${migrationId}] Guest user cleanup successful for ${guestUserId}.`
+          );
         }
       } catch (cleanupError) {
         console.warn(`[Migration ${migrationId}] Guest user cleanup failed.`, cleanupError);
@@ -363,7 +378,10 @@ export async function clearCartAction(
   const activeUserId = await getActiveUserId(supabase);
 
   if (!activeUserId) {
-    return createGeneralErrorResult("User not authenticated.", "Impossible d'identifier l'utilisateur.");
+    return createGeneralErrorResult(
+      "User not authenticated.",
+      "Impossible d'identifier l'utilisateur."
+    );
   }
 
   try {

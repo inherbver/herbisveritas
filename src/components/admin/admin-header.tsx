@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { MobileSidebar } from './mobile-sidebar';
+import { ReactNode } from "react";
+import { MobileSidebar } from "./mobile-sidebar";
 
 interface AdminHeaderProps {
   title: string;

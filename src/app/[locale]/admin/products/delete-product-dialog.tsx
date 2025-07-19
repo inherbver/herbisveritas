@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useTransition, ReactNode } from 'react';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { useState, useTransition, ReactNode } from "react";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -14,8 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { deleteProduct } from '@/actions/productActions';
+} from "@/components/ui/alert-dialog";
+import { deleteProduct } from "@/actions/productActions";
 
 interface DeleteProductDialogProps {
   productId: string;
@@ -23,7 +23,11 @@ interface DeleteProductDialogProps {
   children: ReactNode; // The trigger element, e.g., a DropdownMenuItem
 }
 
-export function DeleteProductDialog({ productId, productName, children }: DeleteProductDialogProps) {
+export function DeleteProductDialog({
+  productId,
+  productName,
+  children,
+}: DeleteProductDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -39,11 +43,11 @@ export function DeleteProductDialog({ productId, productName, children }: Delete
           toast.success(actionResult.message);
           setIsOpen(false); // Fermer la boîte de dialogue en cas de succès
         } else {
-          toast.error(actionResult.message || 'La suppression a échoué.');
+          toast.error(actionResult.message || "La suppression a échoué.");
         }
       } else {
         // Erreur de permission
-        toast.error(result.error || 'Action non autorisée.');
+        toast.error(result.error || "Action non autorisée.");
       }
     });
   };
@@ -55,7 +59,8 @@ export function DeleteProductDialog({ productId, productName, children }: Delete
         <AlertDialogHeader>
           <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer ce produit ?</AlertDialogTitle>
           <AlertDialogDescription>
-            Cette action est irréversible. Le produit "<strong>{productName}</strong>" sera définitivement supprimé.
+            Cette action est irréversible. Le produit "<strong>{productName}</strong>" sera
+            définitivement supprimé.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -63,7 +68,7 @@ export function DeleteProductDialog({ productId, productName, children }: Delete
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isPending}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="hover:bg-destructive/90 bg-destructive text-destructive-foreground"
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Supprimer

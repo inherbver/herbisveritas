@@ -96,7 +96,7 @@ export async function loginAction(
         errorDetails = `Erreurs de validation: ${JSON.stringify(migrationResult.errors)}`;
       }
       console.warn(
-        `loginAction: La migration du panier pour l'invité ${guestUserId} a échoué. ${errorDetails}. Message: ${migrationResult.message || 'Aucun message'}`
+        `loginAction: La migration du panier pour l'invité ${guestUserId} a échoué. ${errorDetails}. Message: ${migrationResult.message || "Aucun message"}`
       );
       // Ne pas bloquer la redirection, la connexion a réussi.
     } else {
@@ -187,13 +187,15 @@ export async function signUpAction(
   if (data.user) {
     const { error: auditError } = await supabase.from("audit_logs").insert({
       user_id: data.user.id, // ✅ Utiliser user_id au lieu de actor_id
-      event_type: "USER_SIGNUP", // ✅ Utiliser event_type au lieu de action
-      data: { // ✅ Utiliser le champ data pour stocker les métadonnées
-        target_table: "auth.users",
-        target_id: data.user.id,
+      event_type: "USER_REGISTERED", // ✅ Utiliser le bon type d'événement
+      data: {
+        // ✅ Utiliser le champ data pour stocker les métadonnées
+        email: data.user.email,
+        user_id: data.user.id,
         status: "SUCCESS",
-        justification: "User self-registration",
+        registration_method: "email_password",
       },
+      severity: "INFO",
     });
 
     if (auditError) {

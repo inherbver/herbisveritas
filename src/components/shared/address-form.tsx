@@ -94,6 +94,7 @@ const AddressForm: FC<AddressFormProps> = ({
     suggestions: addressSuggestions,
     isLoading: isAddressLoading,
     setSuggestions: setAddressSuggestions,
+    error: addressError,
   } = useAddressAutocomplete(addressLine1Value, watchedCountry);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
@@ -197,6 +198,7 @@ const AddressForm: FC<AddressFormProps> = ({
                 {isAddressLoading && (
                   <p className="text-sm text-muted-foreground">{t("addressLoading")}</p>
                 )}
+                {addressError && <p className="text-sm text-red-600">{addressError}</p>}
                 {addressSuggestions.length > 0 && (
                   <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-background shadow-lg">
                     {addressSuggestions.map((feature: BanFeature) => (

@@ -33,10 +33,7 @@ export function ProductGrid({
 }: ProductGridProps) {
   const t = useTranslations("ProductGrid");
 
-  const gridClasses = cn(
-    "grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-    className
-  );
+  const gridClasses = cn("grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4", className);
 
   if (isLoading) {
     return (

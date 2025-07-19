@@ -14,7 +14,9 @@ export const setUserRole = withPermissionSafe(
   async ({ userId, newRole, reason }: SetUserRoleParams): Promise<{ error: string | null }> => {
     try {
       const supabaseServer = await createSupabaseServerClient();
-      const { data: { user: caller } } = await supabaseServer.auth.getUser();
+      const {
+        data: { user: caller },
+      } = await supabaseServer.auth.getUser();
 
       if (!caller) {
         throw new Error("Utilisateur non authentifié.");
@@ -36,7 +38,9 @@ export const setUserRole = withPermissionSafe(
 
       if (error) {
         console.error("Error invoking set-user-role function:", error);
-        throw new Error(error.message || "Une erreur est survenue lors de l'appel à la fonction Edge.");
+        throw new Error(
+          error.message || "Une erreur est survenue lors de l'appel à la fonction Edge."
+        );
       }
 
       return { error: null };
@@ -45,5 +49,5 @@ export const setUserRole = withPermissionSafe(
       console.error("Unexpected error in setUserRole:", error.message);
       return { error: "Une erreur inattendue est survenue." };
     }
-  },
+  }
 );

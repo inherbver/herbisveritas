@@ -100,11 +100,11 @@ const AccountDisplayAddress = ({
 };
 
 interface AccountPageProps {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
 export async function generateMetadata({ params }: AccountPageProps): Promise<Metadata> {
-  const { locale } = params;
+  const { locale } = await params;
   const t = await getTranslations({
     locale,
     namespace: "AccountPage",
@@ -156,7 +156,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
       </section>
     );
   }
-  
+
   if (addressesError) {
     console.error("Error fetching user addresses:", addressesError);
     // You might want to show a less disruptive error if only addresses fail
@@ -164,24 +164,24 @@ export default async function AccountPage({ params }: AccountPageProps) {
 
   // FIX: Utiliser 'is_default' au lieu de 'is_default_shipping' et 'is_default_billing'
   // et filtrer par address_type pour déterminer les adresses par défaut
-  const defaultShippingAddress = userAddresses?.find((addr) => 
-    addr.is_default && addr.address_type === 'shipping'
-  ) ?? null;
-  const defaultBillingAddress = userAddresses?.find((addr) => 
-    addr.is_default && addr.address_type === 'billing'
-  ) ?? null;
-  
+  const defaultShippingAddress =
+    userAddresses?.find((addr) => addr.is_default && addr.address_type === "shipping") ?? null;
+  const defaultBillingAddress =
+    userAddresses?.find((addr) => addr.is_default && addr.address_type === "billing") ?? null;
+
   // Determine the display addresses based on defaults and types
-  const shippingAddress = defaultShippingAddress ?? userAddresses?.find(addr => addr.address_type === 'shipping') ?? null;
-  const billingAddress = defaultBillingAddress ?? userAddresses?.find(addr => addr.address_type === 'billing') ?? null;
+  const shippingAddress =
+    defaultShippingAddress ??
+    userAddresses?.find((addr) => addr.address_type === "shipping") ??
+    null;
+  const billingAddress =
+    defaultBillingAddress ?? userAddresses?.find((addr) => addr.address_type === "billing") ?? null;
 
   // FIX: Construire le nom complet et l'email à partir des données disponibles
   const fullName =
-    profile?.first_name && profile?.last_name
-      ? `${profile.first_name} ${profile.last_name}`
-      : ""; 
-  
-  const email = user.email || ''; // L'email vient de l'objet user, pas du profil
+    profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : "";
+
+  const email = user.email || ""; // L'email vient de l'objet user, pas du profil
 
   return (
     <section className="flex flex-col gap-8">
@@ -189,11 +189,9 @@ export default async function AccountPage({ params }: AccountPageProps) {
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">
-              {t("generalInfo.title")}
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground">{t("generalInfo.title")}</h2>
             <Link
-              href={`/${currentLocale}/profile/edit-info`}
+              href={`/${currentLocale}/profile/account/edit`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {tGlobal("edit")}
@@ -294,9 +292,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
             <h2 className="text-xl font-semibold text-foreground">{t("logout.sectionTitle")}</h2>
             <LogoutButton />
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("logout.description")}
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("logout.description")}</p>
         </div>
       </article>
     </section>

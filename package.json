@@ -10,7 +10,8 @@
     "lint": "next lint",
     "test": "jest",
     "prepare": "husky",
-    "audit-roles": "tsx scripts/audit-roles.ts"
+    "audit-roles": "tsx scripts/audit-roles.ts",
+    "fix-admin-role": "tsx scripts/fix-admin-role.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
