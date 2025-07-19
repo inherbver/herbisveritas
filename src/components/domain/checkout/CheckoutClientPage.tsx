@@ -10,7 +10,7 @@ import {
 } from "@/actions/cartActions";
 import { createStripeCheckoutSession } from "@/actions/stripeActions";
 import type { ShippingMethod, Address } from "@/types";
-import type { CartItem, CartData, ServerCartItem } from "@/types/cart";
+import type { CartItem, CartData } from "@/types/cart";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { Button } from "@/components/ui/button";
@@ -51,23 +51,6 @@ const DisplayAddress = ({ address }: { address: Address | AddressFormData }) => 
   </div>
 );
 
-// ✅ CORRECTION: Fonction utilitaire pour transformer ServerCartItem vers CartItem avec IDs uniques
-const transformServerItemsToCartItems = (
-  serverItems: ServerCartItem[],
-  cartId: string
-): CartItem[] => {
-  return serverItems.map((serverItem, index) => ({
-    // ✅ CORRECTION: Utiliser un ID unique et fiable
-    id: serverItem.id || `${cartId}-${serverItem.product_id || index}`,
-    productId: serverItem.product_id || `unknown-${index}`,
-    name: serverItem.name || "Produit inconnu",
-    price: serverItem.price || 0,
-    quantity: serverItem.quantity || 1,
-    image: serverItem.image_url || undefined,
-    slug: undefined, // Pas de slug disponible côté serveur
-  }));
-};
-
 export default function CheckoutClientPage({
   cart,
   shippingAddress: initialShippingAddress,
@@ -99,10 +82,9 @@ export default function CheckoutClientPage({
   );
 
   useEffect(() => {
-    // ✅ CORRECTION: Utiliser la fonction utilitaire pour transformer les données
-    if (cart?.items && cart.id) {
-      const clientCartItems = transformServerItemsToCartItems(cart.items, cart.id);
-      useCartStore.getState()._setItems(clientCartItems);
+    // Les données cart.items sont déjà transformées par cartReader.ts
+    if (cart?.items) {
+      useCartStore.getState()._setItems(cart.items);
     }
 
     if (isUserAuthenticated && !initialShippingAddress) {
@@ -139,9 +121,7 @@ export default function CheckoutClientPage({
     if (isSuccessResult(result)) {
       toast.success(result.message || tCart("itemRemovedSuccess"));
       if (result.data?.items && result.data.id) {
-        // ✅ CORRECTION: Utiliser la fonction utilitaire
-        const clientCartItems = transformServerItemsToCartItems(result.data.items, result.data.id);
-        _setItems(clientCartItems);
+        _setItems(result.data.items);
       }
     } else {
       toast.error(result.message || tGlobal("genericError"));
@@ -171,9 +151,8 @@ export default function CheckoutClientPage({
     );
 
     if (isSuccessResult(result) && result.data?.items && result.data.id) {
-      // ✅ CORRECTION: Utiliser la fonction utilitaire
-      const clientCartItems = transformServerItemsToCartItems(result.data.items, result.data.id);
-      _setItems(clientCartItems);
+      // Les données result.data.items sont déjà transformées
+      _setItems(result.data.items);
     } else {
       toast.error(result.message || tGlobal("genericError"));
       _setItems(previousState); // Rollback on error

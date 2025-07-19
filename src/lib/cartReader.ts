@@ -6,6 +6,22 @@ import {
   createSuccessResult,
 } from "@/lib/cart-helpers";
 import type { CartData, CartItem } from "@/types/cart";
+
+// Types représentant la structure des données brutes de Supabase
+export type ServerProduct = {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string | null;
+  slug: string;
+};
+
+export type ServerCartItem = {
+  id: string;
+  product_id: string;
+  quantity: number;
+  products: ServerProduct | null;
+};
 import { getActiveUserId } from "./authUtils";
 
 export async function getCart(): Promise<CartActionResult<CartData | null>> {
@@ -28,14 +44,17 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
       query = query.eq("id", guestCartId).is("user_id", null);
     }
 
-    const { data: cartData, error: queryError } = await query.maybeSingle();
+    const { data: cartData, error: queryError } = await query.maybeSingle<{
+      id: string;
+      user_id: string | null;
+      created_at: string;
+      updated_at: string;
+      cart_items: ServerCartItem[];
+    }>();
 
     if (queryError) {
       console.error("Supabase query error in getCart:", queryError);
-      return createGeneralErrorResult(
-        queryError.message,
-        `Erreur Supabase: ${queryError.message}`,
-      );
+      return createGeneralErrorResult(queryError.message, `Erreur Supabase: ${queryError.message}`);
     }
 
     if (!cartData) {
@@ -43,7 +62,7 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
     }
 
     const transformedCartItems: CartItem[] = (cartData.cart_items || [])
-      .map((item: any): CartItem | null => {
+      .map((item: ServerCartItem): CartItem | null => {
         const productData = item.products;
         if (!productData) {
           console.error(`Données produit manquantes pour l'article ID: ${item.id}`);
@@ -54,8 +73,7 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
         if (imageUrl && imageUrl.startsWith("/")) {
           const filename = imageUrl.split("/").pop();
           if (filename) {
-            const supabaseStorageBaseUrl =
-              process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+            const supabaseStorageBaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
             // Note: Assumes images are in a 'products' bucket.
             imageUrl = `${supabaseStorageBaseUrl}/storage/v1/object/public/products/${filename}`;
           }
@@ -74,15 +92,16 @@ export async function getCart(): Promise<CartActionResult<CartData | null>> {
       .filter((item): item is CartItem => item !== null)
       .sort((a, b) => (a.id ?? "").localeCompare(b.id ?? "")); // Tri pour la cohérence
 
-    const finalCartData: CartData = { ...cartData, items: transformedCartItems };
+    const { cart_items: _, ...restOfCartData } = cartData;
+    const finalCartData: CartData = {
+      ...restOfCartData,
+      items: transformedCartItems,
+    };
 
     return createSuccessResult(finalCartData, "Panier récupéré.");
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : "Unknown server error";
     console.error("Unexpected error in getCart:", errorMessage);
-    return createGeneralErrorResult(
-      errorMessage,
-      "Une erreur serveur inattendue est survenue.",
-    );
+    return createGeneralErrorResult(errorMessage, "Une erreur serveur inattendue est survenue.");
   }
 }

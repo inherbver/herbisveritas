@@ -42,7 +42,7 @@ export interface CartData {
   user_id?: string | null; // ✅ Permettre undefined pour la compatibilité
   created_at: string;
   updated_at: string;
-  items: ServerCartItem[];
+  items: CartItem[]; // ✅ Utilise CartItem[] car les données sont transformées
 }
 
 // --- Server-Side Types (for compatibility) ---
@@ -84,7 +84,7 @@ export interface CartState {
  * Defines the actions available in the cart store.
  */
 export interface CartActions {
-  addItem: (itemDetails: Omit<CartItem, 'quantity'>, quantityToAdd?: number) => void;
+  addItem: (itemDetails: Omit<CartItem, "quantity">, quantityToAdd?: number) => void;
   removeItem: (cartItemId: string) => void;
   updateItemQuantity: (cartItemId: string, newQuantity: number) => void;
   clearCart: () => void;

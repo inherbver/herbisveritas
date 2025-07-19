@@ -15,7 +15,6 @@ import {
   isValidationErrorResult, // ✅ Corriger les noms d'imports
 } from "@/lib/cart-helpers";
 import type { CartDataFromServer } from "@/types/cart"; // ✅ Import depuis le bon fichier
-import type { CartItem } from "@/types/cart"; // ✅ Import pour la transformation
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import useCartStore from "@/stores/cartStore";
@@ -60,18 +59,9 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
 
     if (isSuccessResult(state)) {
       toast.success(state.message || t("ProductDetailModal.itemAddedSuccess"));
-      // ✅ Transformer ServerCartItem vers CartItem avant de passer au store
+      // Les données state.data.items sont déjà de type CartItem[]
       if (state.data?.items) {
-        const clientCartItems: CartItem[] = state.data.items.map((serverItem) => ({
-          id: `${state.data!.id}-${serverItem.product_id}`,
-          productId: serverItem.product_id,
-          name: serverItem.name,
-          price: serverItem.price,
-          quantity: serverItem.quantity,
-          image: serverItem.image_url || undefined,
-          slug: undefined,
-        }));
-        _setItems(clientCartItems);
+        _setItems(state.data.items);
       }
     } else if (state.success === false) {
       let errorMessage: string | undefined;

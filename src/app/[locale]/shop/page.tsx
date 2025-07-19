@@ -139,7 +139,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
       ctaLabel:
         tHero("ctaLabel", { productName: featuredHeroItem.productName }) ||
         tHero("defaultCtaLabel"),
-      ctaLink: `/product/${featuredHeroItem.productSlug}` as string,
+      ctaLink: `/products/${featuredHeroItem.productSlug}`,
     };
   } else {
     heroPropsForComponent = {

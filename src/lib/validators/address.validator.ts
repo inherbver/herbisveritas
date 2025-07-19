@@ -101,7 +101,7 @@ export interface AddressFormTranslations {
     city: string;
     country_code: string;
     state_province_region: string;
-    phone_number: string;
+    phoneNumber: string;
   };
   placeholders: {
     first_name?: string;
@@ -114,7 +114,7 @@ export interface AddressFormTranslations {
     city?: string;
     country_code?: string;
     state_province_region?: string;
-    phone_number?: string;
+    phoneNumber?: string;
   };
   buttons: {
     save: string;

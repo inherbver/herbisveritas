@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { Json } from "@/types/supabase";
 import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
 import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
 import { revalidateProductPages } from "@/utils/revalidation";
@@ -135,7 +136,7 @@ export const updateProduct = withPermissionSafe(
       p_is_active: productData.is_active,
       p_is_new: productData.is_new,
       p_is_on_promotion: productData.is_on_promotion,
-      p_translations: translations as any, // Cast vers Json pour Supabase RPC
+      p_translations: translations as Json, // Cast vers Json pour Supabase RPC
     };
 
     const { error } = await supabase.rpc("update_product_with_translations", params);

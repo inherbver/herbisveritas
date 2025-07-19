@@ -26,7 +26,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { addAddress, updateAddress } from "@/actions/addressActions";
-import { useAddressAutocomplete, BanAddressProperties, BanFeature } from "@/hooks/useAddressAutocomplete";
+import { useAddressAutocomplete, BanFeature } from "@/hooks/useAddressAutocomplete";
 import { useLocale, useTranslations } from "next-intl";
 import { countries } from "@/lib/countries";
 import type { Address } from "@/types";
@@ -34,11 +34,15 @@ import { AddressFormData, addressSchema } from "@/lib/validators/address.validat
 
 interface AddressFormProps {
   addressType: "shipping" | "billing";
-  existingAddress?: Address | null;
+  existingAddress?: Address | Partial<AddressFormData & { id?: string }> | null; // ✅ Support des deux types
   onCancel?: () => void;
   onSuccess?: () => void; // For server action success
   onSubmit?: (data: AddressFormData) => void; // For custom checkout submission
   isSubmitting?: boolean; // To control loading state from parent
+  // ✅ Propriétés optionnelles pour la page de profil
+  translations?: ReturnType<typeof useTranslations>;
+  locale?: string;
+  countries?: Record<string, Array<{ code: string; name: string }>>;
 }
 
 const AddressForm: FC<AddressFormProps> = ({
@@ -48,10 +52,17 @@ const AddressForm: FC<AddressFormProps> = ({
   onSuccess,
   onSubmit: customOnSubmit,
   isSubmitting = false,
+  // ✅ Propriétés optionnelles pour la page de profil
+  translations: externalTranslations,
+  locale: externalLocale,
+  countries: _externalCountries,
 }) => {
-  const t = useTranslations("AddressForm");
-  const locale = useLocale();
-    const [isPending, startTransition] = useTransition();
+  // ✅ Utiliser les traductions externes si fournies, sinon les hooks par défaut
+  const defaultT = useTranslations("AddressForm");
+  const defaultLocale = useLocale();
+  const t = externalTranslations || defaultT;
+  const locale = externalLocale || defaultLocale;
+  const [isPending, startTransition] = useTransition();
   const isLoading = isSubmitting || isPending;
   const isEditing = !!existingAddress?.id;
   const [showAddressLine2, setShowAddressLine2] = useState(!!existingAddress?.address_line2);
@@ -79,10 +90,10 @@ const AddressForm: FC<AddressFormProps> = ({
   const countryList = countries[locale.toUpperCase() as keyof typeof countries] || countries.EN;
   const addressLine1Value = watch("address_line1");
   const watchedCountry = watch("country_code");
-  const { 
-    suggestions: addressSuggestions, 
-    isLoading: isAddressLoading, 
-    setSuggestions: setAddressSuggestions 
+  const {
+    suggestions: addressSuggestions,
+    isLoading: isAddressLoading,
+    setSuggestions: setAddressSuggestions,
   } = useAddressAutocomplete(addressLine1Value, watchedCountry);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
@@ -96,26 +107,29 @@ const AddressForm: FC<AddressFormProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setAddressSuggestions]);
 
-  const handleSelectAddress = (address: BanAddressProperties) => {
-    setValue("address_line1", `${address.housenumber || ""} ${address.street}`.trim(), { shouldValidate: true });
+  const handleSelectAddress = (address: BanFeature["properties"]) => {
+    setValue("address_line1", `${address.housenumber || ""} ${address.street}`.trim(), {
+      shouldValidate: true,
+    });
     setValue("postal_code", address.postcode, { shouldValidate: true });
     setValue("city", address.city, { shouldValidate: true });
     setAddressSuggestions([]);
   };
 
-    const processSubmit = (data: AddressFormData) => {
+  const processSubmit = (data: AddressFormData) => {
     if (customOnSubmit) {
       customOnSubmit(data);
       return;
     }
 
-        startTransition(async () => {
-      const result = isEditing
-        ? await updateAddress(existingAddress!.id, data, locale)
-        : await addAddress(data, locale);
+    startTransition(async () => {
+      const result =
+        isEditing && existingAddress?.id
+          ? await updateAddress(existingAddress.id, data, locale)
+          : await addAddress(data, locale);
 
       if (result.success) {
-        toast.success(t(isEditing ? 'updateSuccess' : 'addSuccess'));
+        toast.success(t(isEditing ? "updateSuccess" : "addSuccess"));
         onSuccess?.();
         form.reset();
       } else {
@@ -127,24 +141,24 @@ const AddressForm: FC<AddressFormProps> = ({
             });
           });
         } else {
-          toast.error(result.error?.message || t('genericError'));
+          toast.error(result.error?.message || t("genericError"));
         }
       }
-        });
+    });
   };
 
   return (
     <Form {...form}>
-            <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField
             control={control}
             name="first_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('fieldLabels.first_name')}</FormLabel>
+                <FormLabel>{t("fieldLabels.first_name")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder={t('placeholders.first_name')} />
+                  <Input {...field} placeholder={t("placeholders.first_name")} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -155,9 +169,9 @@ const AddressForm: FC<AddressFormProps> = ({
             name="last_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('fieldLabels.last_name')}</FormLabel>
+                <FormLabel>{t("fieldLabels.last_name")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder={t('placeholders.last_name')} />
+                  <Input {...field} placeholder={t("placeholders.last_name")} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -171,19 +185,25 @@ const AddressForm: FC<AddressFormProps> = ({
           render={({ field }) => (
             <FormItem>
               <div ref={suggestionsRef} className="relative">
-                <FormLabel>{t('fieldLabels.address_line1')}</FormLabel>
+                <FormLabel>{t("fieldLabels.address_line1")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder={t('placeholders.address_line1')} autoComplete="off" />
+                  <Input
+                    {...field}
+                    placeholder={t("placeholders.address_line1")}
+                    autoComplete="off"
+                  />
                 </FormControl>
                 <FormMessage />
-                {isAddressLoading && <p className="text-sm text-muted-foreground">{t('addressLoading')}</p>}
+                {isAddressLoading && (
+                  <p className="text-sm text-muted-foreground">{t("addressLoading")}</p>
+                )}
                 {addressSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full bg-background border border-border rounded-md mt-1 shadow-lg">
-                                        {addressSuggestions.map((feature: BanFeature) => (
+                  <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-background shadow-lg">
+                    {addressSuggestions.map((feature: BanFeature) => (
                       <button
                         key={feature.properties.id}
                         type="button"
-                        className="w-full text-left p-2 hover:bg-accent"
+                        className="w-full p-2 text-left hover:bg-accent"
                         onClick={() => handleSelectAddress(feature.properties)}
                       >
                         {feature.properties.label}
@@ -195,7 +215,7 @@ const AddressForm: FC<AddressFormProps> = ({
             </FormItem>
           )}
         />
-        
+
         <div className="flex items-center space-x-2">
           <Checkbox
             id="show_address_line2_checkbox"
@@ -207,7 +227,7 @@ const AddressForm: FC<AddressFormProps> = ({
             checked={showAddressLine2}
           />
           <Label htmlFor="show_address_line2_checkbox" className="cursor-pointer">
-            {t('fieldLabels.address_line2')}
+            {t("fieldLabels.address_line2")}
           </Label>
         </div>
 
@@ -217,9 +237,13 @@ const AddressForm: FC<AddressFormProps> = ({
             name="address_line2"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('fieldLabels.address_line2')}</FormLabel>
+                <FormLabel>{t("fieldLabels.address_line2")}</FormLabel>
                 <FormControl>
-                                    <Input {...field} value={field.value ?? ''} placeholder={t('placeholders.address_line2')} />
+                  <Input
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder={t("placeholders.address_line2")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -233,9 +257,9 @@ const AddressForm: FC<AddressFormProps> = ({
             name="postal_code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('fieldLabels.postal_code')}</FormLabel>
+                <FormLabel>{t("fieldLabels.postal_code")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder={t('placeholders.postal_code')} />
+                  <Input {...field} placeholder={t("placeholders.postal_code")} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -246,9 +270,9 @@ const AddressForm: FC<AddressFormProps> = ({
             name="city"
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel>{t('fieldLabels.city')}</FormLabel>
+                <FormLabel>{t("fieldLabels.city")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder={t('placeholders.city')} />
+                  <Input {...field} placeholder={t("placeholders.city")} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -261,11 +285,11 @@ const AddressForm: FC<AddressFormProps> = ({
           name="country_code"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('fieldLabels.country_code')}</FormLabel>
+              <FormLabel>{t("fieldLabels.country_code")}</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('placeholders.country_code')} />
+                    <SelectValue placeholder={t("placeholders.country_code")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -284,14 +308,12 @@ const AddressForm: FC<AddressFormProps> = ({
         <div className="flex items-center justify-end space-x-4">
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-              {t('buttons.cancel')}
+              {t("buttons.cancel")}
             </Button>
           )}
-                    <Button type="submit" disabled={isLoading || isAddressLoading}>
-                        {(isLoading || isAddressLoading) && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            {isEditing ? t('buttons.save') : t('buttons.save')}
+          <Button type="submit" disabled={isLoading || isAddressLoading}>
+            {(isLoading || isAddressLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditing ? t("buttons.save") : t("buttons.save")}
           </Button>
         </div>
       </form>

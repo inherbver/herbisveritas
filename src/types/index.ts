@@ -1,10 +1,10 @@
-export * from './cart';
-export * from './shipping';
+export * from "./cart";
+export * from "./shipping";
 
 export interface Address {
   id: string;
   user_id: string;
-  address_type: 'shipping' | 'billing';
+  address_type: "shipping" | "billing";
   is_default: boolean;
   company_name?: string | null;
   first_name?: string | null;
@@ -17,7 +17,7 @@ export interface Address {
   state?: string;
   state_province_region?: string | null;
   phone_number?: string | null;
-  email?: string;
+  email?: string | null; // ✅ Harmonisé avec la DB qui peut retourner null
   created_at: string;
   updated_at: string;
 }

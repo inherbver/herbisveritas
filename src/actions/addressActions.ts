@@ -51,7 +51,9 @@ export async function addAddress(data: AddressFormData, locale: string): Promise
       return { success: false, error: { message: t("addError") } };
     }
 
+    // ✅ Revalider les pages de profil et checkout pour synchroniser
     revalidatePath(`/${locale}/profile/addresses`);
+    revalidatePath(`/${locale}/checkout`);
     return { success: true, message: t("addSuccess") };
   } catch (error) {
     console.error("Error adding address:", error);
@@ -98,7 +100,9 @@ export async function updateAddress(
       return { success: false, error: { message: t("updateError") } };
     }
 
+    // ✅ Revalider les pages de profil et checkout pour synchroniser
     revalidatePath(`/${locale}/profile/addresses`);
+    revalidatePath(`/${locale}/checkout`);
     return { success: true, message: t("updateSuccess") };
   } catch (error) {
     console.error("Error updating address:", error);

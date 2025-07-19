@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { stripe } from "@/lib/stripe";
 import { getCart } from "@/lib/cartReader";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -98,12 +99,18 @@ export async function createStripeCheckoutSession(
     try {
       finalShippingAddressId = await processAddress(shippingAddress, "shipping");
       finalBillingAddressId = await processAddress(billingAddress, "billing");
+
+      // ✅ Revalider les pages de profil pour synchroniser les nouvelles adresses
+      if (finalShippingAddressId || finalBillingAddressId) {
+        revalidatePath("/[locale]/profile/addresses");
+        revalidatePath("/[locale]/checkout");
+      }
     } catch (e) {
       return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
     }
 
     // ✅ Valider les produits avec le bon type
-    const productIds = cart.items.map((item) => item.product_id); // ✅ Utiliser product_id selon le schéma
+    const productIds = cart.items.map((item) => item.productId); // ✅ Utiliser productId selon le type CartItem
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("id, name, price, image_url")
@@ -128,8 +135,8 @@ export async function createStripeCheckoutSession(
 
     // ✅ Construire les line_items avec le bon type
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cart.items.map((item) => {
-      const product = productPriceMap.get(item.product_id); // ✅ Utiliser product_id
-      if (!product) throw new Error(`Produit ${item.product_id} non trouvé.`);
+      const product = productPriceMap.get(item.productId); // ✅ Utiliser productId
+      if (!product) throw new Error(`Produit ${item.productId} non trouvé.`);
       return {
         price_data: {
           currency: "eur",
@@ -192,7 +199,7 @@ export async function createStripeCheckoutSession(
     } else {
       // Pour les utilisateurs invités, laisser Stripe créer un client.
       sessionParams.customer_creation = "always";
-      sessionParams.customer_email = billingAddress.email;
+      sessionParams.customer_email = billingAddress.email || undefined; // ✅ Convertir null vers undefined
       sessionParams.billing_address_collection = "required";
     }
 

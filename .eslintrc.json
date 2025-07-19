@@ -21,6 +21,7 @@
     "plugin:react-hooks/recommended",
     "plugin:jsx-a11y/recommended",
     "plugin:import/typescript",
+    "next",
     "next/core-web-vitals",
     "plugin:prettier/recommended"
   ],
@@ -61,6 +62,7 @@
     "public/",
     "*.config.js",
     "*.config.mjs",
-    "supabase/functions/"
+    "supabase/functions/",
+    "src/types/supabase.ts"
   ]
 }

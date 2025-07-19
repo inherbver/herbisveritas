@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { Profile } from "@/lib/supabase/types";
 import { checkUserPermission } from "@/lib/auth/server-auth";
 import { z, type ZodIssue as _ZodIssue } from "zod";
 
@@ -32,7 +33,6 @@ export interface UpdatePasswordResult {
   } | null;
 }
 
-
 // Generic type for profile action results for consistent return shapes
 type ProfileActionResult<T> = {
   success: boolean;
@@ -40,14 +40,10 @@ type ProfileActionResult<T> = {
   data?: T;
 };
 
-export async function updateProfile(
-  formData: FormData
-): Promise<ProfileActionResult<any>> {
+export async function updateProfile(formData: FormData): Promise<ProfileActionResult<Profile>> {
   // For profile actions, a manual check is often clearer,
   // especially when the user ID is needed for the query.
-  const { isAuthorized, user, error: permError } = await checkUserPermission(
-    "profile:update:own"
-  );
+  const { isAuthorized, user, error: permError } = await checkUserPermission("profile:update:own");
 
   if (!isAuthorized || !user) {
     return {

@@ -25,11 +25,11 @@ interface ShippingMethodDB {
   created_at: string;
 }
 
-// ✅ Type pour Address avec address_type flexible
+// ✅ Type pour Address harmonisé avec le type global
 interface AddressDB {
   id: string;
   user_id: string;
-  address_type: string; // Plus flexible que 'shipping' | 'billing'
+  address_type: "shipping" | "billing"; // ✅ Harmonisé avec le type global
   is_default: boolean;
   company_name?: string | null;
   first_name?: string | null;
@@ -39,8 +39,7 @@ interface AddressDB {
   postal_code: string;
   city: string;
   country_code: string;
-  state?: string;
-  state_province_region?: string | null;
+  state_province_region?: string | null; // ✅ Nom unifié
   phone_number?: string | null;
   email?: string | null;
   created_at: string;
@@ -92,7 +91,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
     // ✅ Transformer AddressDB vers Address avec gestion des null/undefined
     const transformAddress = (addr: AddressDB): Address => ({
       ...addr,
-      address_type: addr.address_type as "shipping" | "billing", // Cast sécurisé
+      // Plus besoin de cast, les types sont maintenant harmonisés
       email: addr.email || undefined, // ✅ Convertir null vers undefined
     });
 

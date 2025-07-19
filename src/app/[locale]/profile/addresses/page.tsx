@@ -190,7 +190,7 @@ export default function AddressesPage({ params }: Props) {
       city: tForm("labels.city"),
       country_code: tForm("labels.country_code"),
       state_province_region: tForm("labels.state_province_region"),
-      phone_number: tForm("labels.phone_number"),
+      phoneNumber: tForm("labels.phoneNumber"),
     },
     placeholders: {
       first_name: tForm("placeholders.first_name"),
@@ -203,7 +203,7 @@ export default function AddressesPage({ params }: Props) {
       city: tForm("placeholders.city"),
       country_code: tForm("placeholders.country_code"),
       state_province_region: tForm("placeholders.state_province_region"),
-      phone_number: tForm("placeholders.phone_number"),
+      phoneNumber: tForm("placeholders.phoneNumber"),
     },
     buttons: {
       save: tForm("buttons.save"),

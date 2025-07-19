@@ -14,7 +14,7 @@
     "city": "City",
     "country_code": "Country/Region",
     "state_province_region": "State / Province / Region",
-    "phone_number": "Phone number (optional)"
+    "phoneNumber": "Phone number (optional)"
   },
   "placeholders": {
     "first_name": "First name",
@@ -27,7 +27,7 @@
     "city": "City",
     "country_code": "Select a country",
     "state_province_region": "State / Province / Region",
-    "phone_number": "Your phone number"
+    "phoneNumber": "Your phone number"
   },
   "buttons": {
     "save": "Save",

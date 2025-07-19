@@ -1,24 +1,37 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+"use client";
 
-// --- Types for French Address API ---
-export interface BanAddressProperties {
-  label: string;
-  city: string;
-  postcode: string;
-  street: string;
-  housenumber?: string;
-  id: string;
-}
+import { useState, useEffect, useCallback, useRef } from "react";
 
+// Types pour l'API BAN (Base Adresse Nationale)
 export interface BanFeature {
-  properties: BanAddressProperties;
+  type: string;
+  geometry: {
+    type: string;
+    coordinates: [number, number];
+  };
+  properties: {
+    label: string;
+    score: number;
+    housenumber: string;
+    id: string;
+    name: string;
+    postcode: string;
+    citycode: string;
+    x: number;
+    y: number;
+    city: string;
+    context: string;
+    type: string;
+    importance: number;
+    street: string;
+  };
 }
 
-interface BanApiResponse {
+export interface BanApiResponse {
   features: BanFeature[];
 }
 
-// --- Hook Return Type ---
+// Type pour la valeur de retour du hook
 export interface UseAddressAutocompleteReturn {
   suggestions: BanFeature[];
   isLoading: boolean;
@@ -29,7 +42,7 @@ export interface UseAddressAutocompleteReturn {
 /**
  * Custom hook to fetch address suggestions from the French Government's API.
  * Optimized with debouncing, caching, and error handling.
- * 
+ *
  * @param addressQuery The search query string.
  * @param countryCode The country code (currently only supports 'FR').
  * @returns An object with suggestions, loading state, and a setter for suggestions.
@@ -41,7 +54,7 @@ export const useAddressAutocomplete = (
   const [suggestions, setSuggestions] = useState<BanFeature[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Refs pour la gestion du debounce et cache
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
   const cacheRef = useRef<Map<string, BanFeature[]>>(new Map());
@@ -63,46 +76,50 @@ export const useAddressAutocomplete = (
     }
   }, []);
 
-    const fetchAddressSuggestions = useCallback(async (query: string, country: string) => {
-    if (country !== 'FR' || !query || query.length < 3) {
-      setSuggestions([]);
+  const fetchAddressSuggestions = useCallback(
+    async (query: string, country: string) => {
+      if (country !== "FR" || !query || query.length < 3) {
+        setSuggestions([]);
+        setError(null);
+        return;
+      }
+
+      if (cacheRef.current.has(query)) {
+        setSuggestions(cacheRef.current.get(query)!);
+        return;
+      }
+
+      abortPendingRequest();
+      abortControllerRef.current = new AbortController();
+      setIsLoading(true);
       setError(null);
-      return;
-    }
 
-    if (cacheRef.current.has(query)) {
-      setSuggestions(cacheRef.current.get(query)!);
-      return;
-    }
+      try {
+        const response = await fetch(
+          `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&type=housenumber&autocomplete=1&postcode=${countryCode}`,
+          {
+            signal: abortControllerRef.current.signal,
+          }
+        );
 
-    abortPendingRequest();
-    abortControllerRef.current = new AbortController();
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`,
-        {
-          signal: abortControllerRef.current.signal,
+        if (!response.ok) {
+          throw new Error("Failed to fetch address suggestions.");
         }
-      );
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch address suggestions.');
+        const data: BanApiResponse = await response.json();
+        cacheRef.current.set(query, data.features);
+        setSuggestions(data.features);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          setError("An error occurred while fetching addresses.");
+          console.error(err);
+        }
+      } finally {
+        setIsLoading(false);
       }
-
-      const data: BanApiResponse = await response.json();
-      cacheRef.current.set(query, data.features);
-      setSuggestions(data.features);
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        setError('An error occurred while fetching addresses.');
-        console.error(err);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [abortPendingRequest]);
+    },
+    [abortPendingRequest, countryCode]
+  );
 
   useEffect(() => {
     clearPendingTimeout();
@@ -120,7 +137,13 @@ export const useAddressAutocomplete = (
       clearPendingTimeout();
       abortPendingRequest();
     };
-  }, [addressQuery, countryCode, clearPendingTimeout, abortPendingRequest, fetchAddressSuggestions]);
+  }, [
+    addressQuery,
+    countryCode,
+    clearPendingTimeout,
+    abortPendingRequest,
+    fetchAddressSuggestions,
+  ]);
 
-    return { suggestions, isLoading, setSuggestions, error };
+  return { suggestions, isLoading, setSuggestions, error };
 };
