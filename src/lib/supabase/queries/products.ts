@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Locale } from "@/i18n-config";
 import { type Database } from "@/types/supabase";
 import { cache } from "react";
+import { ProductFilters } from "@/types/product-filters";
 
 // --- NEW TYPE for getAllProducts query result ---
 // Includes only fields needed for the shop page grid + translations
@@ -140,13 +141,55 @@ export type ProductWithTranslations = Database["public"]["Tables"]["products"]["
 };
 
 // --- NEW FUNCTION for Admin Panel ---
-export async function getProductsForAdmin(): Promise<ProductWithTranslations[]> {
+export async function getProductsForAdmin(
+  filters?: ProductFilters
+): Promise<ProductWithTranslations[]> {
   const supabase = await createSupabaseServerClient();
 
-  const { data, error } = await supabase.from("products").select(`
+  let query = supabase.from("products").select(`
       *,
       product_translations (*)
     `);
+
+  // Appliquer les filtres si fournis
+  if (filters) {
+    // Filtrage par status
+    if (filters.status.length > 0) {
+      query = query.in("status", filters.status);
+    }
+
+    // Filtrage par catégories
+    if (filters.categories.length > 0) {
+      query = query.in("category", filters.categories);
+    }
+
+    // Filtrage par recherche textuelle
+    if (filters.search.trim()) {
+      query = query.ilike("name", `%${filters.search.trim()}%`);
+    }
+
+    // Filtrage par prix
+    if (filters.priceRange) {
+      query = query.gte("price", filters.priceRange.min);
+      if (filters.priceRange.max !== Infinity) {
+        query = query.lte("price", filters.priceRange.max);
+      }
+    }
+
+    // Filtrage par stock
+    if (filters.inStock === true) {
+      query = query.gt("stock", 0);
+    } else if (filters.inStock === false) {
+      query = query.eq("stock", 0);
+    }
+
+    // Filtrage par tags/labels
+    if (filters.tags.length > 0) {
+      query = query.overlaps("labels", filters.tags);
+    }
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching products for admin:", error.message);

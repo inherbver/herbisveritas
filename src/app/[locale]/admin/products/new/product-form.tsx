@@ -2,7 +2,11 @@
 
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
+import {
+  productSchema,
+  type ProductFormValues,
+  getDefaultProductValues,
+} from "@/lib/validators/product-validator";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,15 +20,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
+import { PRODUCT_STATUS_GROUPS, ProductStatus } from "@/types/product-filters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrashIcon } from "@radix-ui/react-icons";
+import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createProduct, updateProduct } from "@/actions/productActions";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { type ProductWithTranslations } from "@/lib/supabase/queries/products";
+import { type Database } from "@/types/supabase";
 
 interface ProductFormProps {
   initialData?: ProductWithTranslations | null;
@@ -47,20 +61,23 @@ export function ProductForm({ initialData }: ProductFormProps) {
           unit: initialData.unit ?? "",
           image_url: initialData.image_url ?? "",
           inci_list: initialData.inci_list ?? [],
+          status: (initialData.status as ProductStatus) || "active",
           is_active: initialData.is_active,
           is_new: initialData.is_new,
           is_on_promotion: initialData.is_on_promotion,
           translations:
             initialData.product_translations.length > 0
-              ? initialData.product_translations.map((t) => ({
-                  locale: t.locale,
-                  name: t.name,
-                  short_description: t.short_description || "",
-                  description_long: t.description_long || "",
-                  usage_instructions: t.usage_instructions || "",
-                  properties: t.properties || "",
-                  composition_text: t.composition_text || "",
-                }))
+              ? initialData.product_translations.map(
+                  (t: Database["public"]["Tables"]["product_translations"]["Row"]) => ({
+                    locale: t.locale,
+                    name: t.name,
+                    short_description: t.short_description || "",
+                    description_long: t.description_long || "",
+                    usage_instructions: t.usage_instructions || "",
+                    properties: t.properties || "",
+                    composition_text: t.composition_text || "",
+                  })
+                )
               : [
                   {
                     locale: "fr",
@@ -73,29 +90,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   },
                 ],
         }
-      : {
-          id: crypto.randomUUID(),
-          slug: "",
-          price: 0,
-          stock: 0,
-          unit: "",
-          image_url: "",
-          inci_list: [],
-          is_active: true,
-          is_new: false,
-          is_on_promotion: false,
-          translations: [
-            {
-              locale: "fr",
-              name: "",
-              short_description: "",
-              description_long: "",
-              usage_instructions: "",
-              properties: "",
-              composition_text: "",
-            },
-          ],
-        },
+      : getDefaultProductValues(),
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -103,11 +98,26 @@ export function ProductForm({ initialData }: ProductFormProps) {
     name: "translations",
   });
 
+  const {
+    fields: inciFields,
+    append: appendInci,
+    remove: removeInci,
+  } = useFieldArray({
+    control: form.control,
+    name: "inci_list" as never,
+  });
+
   const onSubmit = (data: ProductFormValues) => {
     startTransition(async () => {
       try {
+        // Synchroniser status et is_active pour la compatibilité
+        const dataWithSync = {
+          ...data,
+          is_active: data.status === "active",
+        };
+
         const action = isEditMode ? updateProduct : createProduct;
-        const result = await action(data);
+        const result = await action(dataWithSync);
 
         if (result.success) {
           const actionResult = result.data;
@@ -232,23 +242,101 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   </FormItem>
                 )}
               />
-              <ImageUploadField control={form.control} name="image_url" />
-              <div className="flex items-center space-x-4">
-                <FormField
-                  control={form.control}
-                  name="is_active"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>{t("activeLabel")}</FormLabel>
-                        <FormDescription>{t("activeDescription")}</FormDescription>
+
+              {/* Liste INCI */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-base font-medium">Liste INCI</FormLabel>
+                  <Button type="button" variant="outline" size="sm" onClick={() => appendInci("")}>
+                    Ajouter un ingrédient
+                  </Button>
+                </div>
+                <FormDescription>
+                  Liste des ingrédients selon la nomenclature INCI (International Nomenclature of
+                  Cosmetic Ingredients).
+                </FormDescription>
+                {inciFields.length > 0 ? (
+                  <div className="space-y-2">
+                    {inciFields.map((field, index) => (
+                      <div key={field.id} className="flex items-center gap-2">
+                        <FormField
+                          control={form.control}
+                          name={`inci_list.${index}`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormControl>
+                                <Input placeholder="Aqua, Sodium chloride..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeInci(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </FormItem>
-                  )}
-                />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+                    Aucun ingrédient ajouté. Cliquez sur "Ajouter un ingrédient" pour commencer.
+                  </div>
+                )}
+              </div>
+
+              <ImageUploadField control={form.control} name="image_url" />
+
+              {/* Sélecteur de statut */}
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Statut du produit</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un statut" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {PRODUCT_STATUS_GROUPS.map((statusGroup) => (
+                          <SelectItem key={statusGroup.id} value={statusGroup.id}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`h-2 w-2 rounded-full ${
+                                  statusGroup.color === "green"
+                                    ? "bg-green-500"
+                                    : statusGroup.color === "orange"
+                                      ? "bg-orange-500"
+                                      : "bg-gray-500"
+                                }`}
+                              />
+                              <span>{statusGroup.label}</span>
+                              <span className="text-xs text-muted-foreground">
+                                - {statusGroup.description}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Définit la visibilité et l'état du produit dans l'administration et la
+                      boutique.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex items-center space-x-4">
                 <FormField
                   control={form.control}
                   name="is_new"

@@ -5,7 +5,7 @@ import { Hero } from "@/components/shared/hero"; // Utiliser le Hero partagé av
 import { StorySection } from "@/components/domain/about/story-section"; // Import de la nouvelle section
 import { PhotoGallerySection } from "@/components/domain/about/photo-gallery-section"; // Import de la nouvelle section
 
-export async function generateMetadata({ params }: { params: { locale: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const tPage = await getTranslations({ locale, namespace: "AboutPage" });
   console.log(

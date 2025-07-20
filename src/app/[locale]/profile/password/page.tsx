@@ -6,12 +6,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LOGIN_REDIRECT_URL } from "@/lib/constants";
 
 interface PasswordPageProps {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
 export async function generateMetadata(props: PasswordPageProps): Promise<Metadata> {
-  const { locale } = await props.params; // Correction: params est un objet direct
-  // const locale = props.params.locale; // Original line commented out
+  const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "PasswordPage" });
   return {
     title: t("metadata.title"),
@@ -20,8 +19,7 @@ export async function generateMetadata(props: PasswordPageProps): Promise<Metada
 }
 
 export default async function PasswordPage(props: PasswordPageProps) {
-  const { locale } = await props.params; // Correction: params est un objet direct
-  // const locale = props.params.locale; // Original line commented out
+  const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "PasswordPage" });
 
   const supabase = await createSupabaseServerClient();

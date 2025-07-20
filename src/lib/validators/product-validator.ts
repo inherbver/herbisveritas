@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProductStatus } from "@/types/product-filters";
 
 // Schéma pour une seule traduction de produit
 export const productTranslationSchema = z.object({
@@ -33,7 +34,10 @@ export const productSchema = z.object({
   // Arrays
   inci_list: z.array(z.string()),
 
-  // Booléens
+  // Statut du produit
+  status: z.enum(["active", "inactive", "draft"] as const),
+
+  // Booléens (maintenu pour compatibilité)
   is_active: z.boolean(),
   is_new: z.boolean(),
   is_on_promotion: z.boolean(),
@@ -42,6 +46,11 @@ export const productSchema = z.object({
   translations: z
     .array(productTranslationSchema)
     .min(1, { message: "Au moins une traduction est requise." }),
+});
+
+// Schéma pour les defaultValues avec status requis mais avec default
+export const productFormSchema = productSchema.extend({
+  status: z.enum(["active", "inactive", "draft"] as const).default("active"),
 });
 
 // Types inférés
@@ -57,6 +66,7 @@ export const getDefaultProductValues = (): ProductFormValues => ({
   unit: "",
   image_url: "",
   inci_list: [],
+  status: "active" as ProductStatus,
   is_active: true,
   is_new: false,
   is_on_promotion: false,

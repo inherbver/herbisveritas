@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
 import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
-import type { Json } from "@/types/supabase";
 import type { Product } from "@/lib/supabase/types";
 
 export const createProduct = withPermissionSafe(
@@ -135,7 +134,7 @@ export const updateProduct = withPermissionSafe(
       p_is_active: productData.is_active,
       p_is_new: productData.is_new,
       p_is_on_promotion: productData.is_on_promotion,
-      p_translations: translations as Json, // ✅ Cast pour le type Json de Supabase
+      p_translations: translations as unknown, // ✅ Cast pour le type unknown de Supabase
     };
 
     // 3. Call the RPC function

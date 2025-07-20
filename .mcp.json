@@ -5,13 +5,17 @@
       "args": [
         "/c",
         "npx",
-        "-y",
         "@supabase/mcp-server-supabase@latest",
-        "--project-ref=esgirafriwoildqcwtjm"
+        "--project-ref",
+        "esgirafriwoildqcwtjm"
       ],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_c0015eac48d678672dd3e5fa6a529b97745ae02c"
+        "SUPABASE_ACCESS_TOKEN": "sbp_1a042e5b67c7b4267b3cf441845b5d300018de08"
       }
+    },
+    "context7": {
+      "command": "cmd",
+      "args": ["/c", "npx", "@upstash/context7-mcp@latest"]
     }
   }
 }

@@ -1,7 +1,6 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Json } from "@/types/supabase";
 import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
 import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
 import { revalidateProductPages } from "@/utils/revalidation";
@@ -30,7 +29,7 @@ const imageUploadSchema = z.object({
 
 const updateProductStatusSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
-  status: z.enum(["active", "inactive", "discontinued"]),
+  status: z.enum(["active", "inactive", "draft"]),
 });
 
 // ===== CREATE PRODUCT =====
@@ -70,6 +69,10 @@ export const createProduct = withPermissionSafe(
     const productData = {
       ...productDataWithoutName,
       name: defaultTranslation.name,
+      // Maintenir la compatibilité: convertir status vers is_active
+      is_active: productDataWithoutName.status === "active",
+      // Inclure le status dans les données de création
+      status: productDataWithoutName.status,
     };
 
     // Utilisation de la nouvelle fonction v2 corrigée
@@ -133,10 +136,11 @@ export const updateProduct = withPermissionSafe(
       p_unit: productData.unit,
       p_image_url: productData.image_url,
       p_inci_list: productData.inci_list,
-      p_is_active: productData.is_active,
+      p_status: productData.status, // Nouveau paramètre status
+      p_is_active: productData.status === "active", // Convertir status vers is_active pour compatibilité
       p_is_new: productData.is_new,
       p_is_on_promotion: productData.is_on_promotion,
-      p_translations: translations as Json, // Cast vers Json pour Supabase RPC
+      p_translations: translations as unknown, // Cast vers unknown pour Supabase RPC
     };
 
     const { error } = await supabase.rpc("update_product_with_translations", params);
@@ -231,35 +235,11 @@ export const updateProductStatus = withPermissionSafe(
 
     const { productId, status } = validation.data;
 
-    // ✅ Logique métier: Vérification des commandes en attente
-    if (status === "discontinued") {
-      const { data: pendingOrders, error: orderError } = await supabase
-        .from("order_items")
-        .select("id")
-        .eq("product_id", productId)
-        .limit(1);
-
-      if (orderError) {
-        console.error("Error checking pending orders:", orderError);
-        return {
-          success: false,
-          message: "Impossible de vérifier les commandes en attente.",
-        };
-      }
-
-      if (pendingOrders && pendingOrders.length > 0) {
-        return {
-          success: false,
-          message: "Impossible d'arrêter un produit avec des commandes en attente.",
-        };
-      }
-    }
-
     const { data: updatedProduct, error } = await supabase
       .from("products")
       .update({
-        is_active: status === "active",
-        // Vous pouvez ajouter d'autres champs selon votre logique
+        status: status,
+        is_active: status === "active", // Maintenir la compatibilité
       })
       .eq("id", productId)
       .select()
