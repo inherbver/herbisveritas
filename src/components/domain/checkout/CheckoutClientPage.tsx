@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
 import useCartStore, { selectCartItems, selectCartSubtotal } from "@/stores/cartStore";
 import {
@@ -12,6 +12,7 @@ import { createStripeCheckoutSession } from "@/actions/stripeActions";
 import type { ShippingMethod, Address } from "@/types";
 import type { CartItem, CartData } from "@/types/cart";
 import type { CartActionResult } from "@/lib/cart-helpers";
+import type { AddressFormData } from "@/lib/validators/address.validator";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +62,7 @@ export default function CheckoutClientPage({
   const t = useTranslations("CheckoutPage");
   const tCart = useTranslations("CartDisplay");
   const tGlobal = useTranslations("Global");
+  const locale = useLocale();
   const [isPending, startTransition] = useTransition();
 
   // Cart state from Zustand store
@@ -99,14 +101,42 @@ export default function CheckoutClientPage({
   const shippingCost = selectedShippingMethod?.price ? Number(selectedShippingMethod.price) : 0;
   const totalAmount = subtotal + shippingCost;
 
-  const handleAddressFormSubmit = (data: AddressFormData) => {
-    if (editingAddressType === "shipping") {
-      setShippingAddress(data);
-    } else if (editingAddressType === "billing") {
-      setBillingAddress(data);
+  const handleAddressFormSubmit = async (data: AddressFormData) => {
+    // Import des Server Actions pour persister en base
+    const { addAddress, updateAddress } = await import("@/actions/addressActions");
+
+    try {
+      // 1. Persister l'adresse en base de données d'abord
+      const existingAddressId =
+        editingAddressType === "shipping"
+          ? shippingAddress && "id" in shippingAddress
+            ? shippingAddress.id
+            : undefined
+          : billingAddress && "id" in billingAddress
+            ? billingAddress.id
+            : undefined;
+
+      const result = existingAddressId
+        ? await updateAddress(existingAddressId, data, locale)
+        : await addAddress(data, locale);
+
+      if (result.success) {
+        // 2. Mettre à jour l'état local après succès de la persistence
+        if (editingAddressType === "shipping") {
+          setShippingAddress(data);
+        } else if (editingAddressType === "billing") {
+          setBillingAddress(data);
+        }
+        toast.success(t("toast.addressSaved"));
+      } else {
+        toast.error(result.error?.message || "Erreur lors de la sauvegarde");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde de l'adresse:", error);
+      toast.error("Erreur lors de la sauvegarde");
     }
+
     setEditingAddressType(null);
-    toast.success(t("toast.addressSaved"));
   };
 
   const handleRemoveItem = async (cartItemId: string) => {

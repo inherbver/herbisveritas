@@ -54,6 +54,13 @@ export async function addAddress(data: AddressFormData, locale: string): Promise
     // ✅ Revalider les pages de profil et checkout pour synchroniser
     revalidatePath(`/${locale}/profile/addresses`);
     revalidatePath(`/${locale}/checkout`);
+    // Force refresh du cache router pour les Client Components
+    revalidatePath("/");
+
+    // ✅ Synchroniser le flag billing_address_is_different
+    const { syncProfileAddressFlag } = await import("./profileActions");
+    await syncProfileAddressFlag(locale, user.id);
+
     return { success: true, message: t("addSuccess") };
   } catch (error) {
     console.error("Error adding address:", error);
@@ -103,6 +110,13 @@ export async function updateAddress(
     // ✅ Revalider les pages de profil et checkout pour synchroniser
     revalidatePath(`/${locale}/profile/addresses`);
     revalidatePath(`/${locale}/checkout`);
+    // Force refresh du cache router pour les Client Components
+    revalidatePath("/");
+
+    // ✅ Synchroniser le flag billing_address_is_different
+    const { syncProfileAddressFlag } = await import("./profileActions");
+    await syncProfileAddressFlag(locale, user.id);
+
     return { success: true, message: t("updateSuccess") };
   } catch (error) {
     console.error("Error updating address:", error);

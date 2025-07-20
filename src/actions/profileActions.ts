@@ -178,3 +178,101 @@ export async function updatePassword(
 
   return { success: true };
 }
+
+/**
+ * Synchronise le champ billing_address_is_different dans le profil utilisateur
+ * en comparant les adresses de livraison et facturation par défaut
+ */
+export async function syncProfileAddressFlag(
+  locale: string,
+  userId?: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+
+  // Récupère l'utilisateur actuel si userId n'est pas fourni
+  let targetUserId = userId;
+  if (!targetUserId) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "User not authenticated." };
+    }
+    targetUserId = user.id;
+  }
+
+  try {
+    // Récupère toutes les adresses de l'utilisateur (même logique que dans page.tsx)
+    const { data: userAddresses, error: addressesError } = await supabase
+      .from("addresses")
+      .select("*")
+      .eq("user_id", targetUserId);
+
+    if (addressesError) {
+      console.error("Error fetching addresses:", addressesError);
+      return { success: false, error: "Failed to fetch user addresses" };
+    }
+
+    // Utilise la même logique que dans la page account (lignes 167-178)
+    const defaultShippingAddress =
+      userAddresses?.find((addr) => addr.is_default && addr.address_type === "shipping") ?? null;
+    const defaultBillingAddress =
+      userAddresses?.find((addr) => addr.is_default && addr.address_type === "billing") ?? null;
+
+    // Détermine les adresses effectives (par défaut ou première du type)
+    const effectiveShipping =
+      defaultShippingAddress ??
+      userAddresses?.find((addr) => addr.address_type === "shipping") ??
+      null;
+    const effectiveBilling =
+      defaultBillingAddress ??
+      userAddresses?.find((addr) => addr.address_type === "billing") ??
+      null;
+
+    // Détermine si les adresses sont différentes
+    let billingAddressIsDifferent = false;
+
+    if (effectiveShipping && effectiveBilling) {
+      // Compare les champs importants des adresses
+      billingAddressIsDifferent = !(
+        effectiveShipping.address_line1 === effectiveBilling.address_line1 &&
+        effectiveShipping.address_line2 === effectiveBilling.address_line2 &&
+        effectiveShipping.city === effectiveBilling.city &&
+        effectiveShipping.postal_code === effectiveBilling.postal_code &&
+        effectiveShipping.country_code === effectiveBilling.country_code &&
+        effectiveShipping.state_province_region === effectiveBilling.state_province_region
+      );
+    } else if (effectiveBilling && !effectiveShipping) {
+      // Si seule l'adresse de facturation existe, elles sont différentes
+      billingAddressIsDifferent = true;
+    }
+    // Si seule l'adresse de livraison existe ou aucune des deux, billing_address_is_different = false
+
+    // Met à jour le profil
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        billing_address_is_different: billingAddressIsDifferent,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", targetUserId);
+
+    if (updateError) {
+      console.error("Error updating profile:", updateError);
+      return { success: false, error: "Failed to update profile" };
+    }
+
+    // Revalide les pages concernées
+    revalidatePath(`/${locale}/profile/account`);
+    revalidatePath(`/${locale}/profile/addresses`);
+    revalidatePath(`/${locale}/checkout`);
+
+    return {
+      success: true,
+      message: `Profile address flag updated: ${billingAddressIsDifferent}`,
+    };
+  } catch (error) {
+    console.error("Error in syncProfileAddressFlag:", error);
+    return { success: false, error: "Internal server error" };
+  }
+}

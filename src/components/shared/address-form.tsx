@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -63,9 +64,12 @@ const AddressForm: FC<AddressFormProps> = ({
   const t = externalTranslations || defaultT;
   const locale = externalLocale || defaultLocale;
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const isLoading = isSubmitting || isPending;
   const isEditing = !!existingAddress?.id;
   const [showAddressLine2, setShowAddressLine2] = useState(!!existingAddress?.address_line2);
+  const [isSelectingAddress, setIsSelectingAddress] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
@@ -95,7 +99,10 @@ const AddressForm: FC<AddressFormProps> = ({
     isLoading: isAddressLoading,
     setSuggestions: setAddressSuggestions,
     error: addressError,
-  } = useAddressAutocomplete(addressLine1Value, watchedCountry);
+  } = useAddressAutocomplete(
+    isSelectingAddress || !hasUserInteracted ? "" : addressLine1Value,
+    watchedCountry
+  );
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,12 +116,18 @@ const AddressForm: FC<AddressFormProps> = ({
   }, [setAddressSuggestions]);
 
   const handleSelectAddress = (address: BanFeature["properties"]) => {
+    setIsSelectingAddress(true);
     setValue("address_line1", `${address.housenumber || ""} ${address.street}`.trim(), {
       shouldValidate: true,
     });
     setValue("postal_code", address.postcode, { shouldValidate: true });
     setValue("city", address.city, { shouldValidate: true });
+    // Fermer immédiatement les suggestions
     setAddressSuggestions([]);
+    // Réactiver l'autocomplétion après un délai
+    setTimeout(() => {
+      setIsSelectingAddress(false);
+    }, 500);
   };
 
   const processSubmit = (data: AddressFormData) => {
@@ -131,6 +144,8 @@ const AddressForm: FC<AddressFormProps> = ({
 
       if (result.success) {
         toast.success(t(isEditing ? "updateSuccess" : "addSuccess"));
+        // Force refresh des données pour synchroniser checkout et profile
+        router.refresh();
         onSuccess?.();
         form.reset();
       } else {
@@ -192,6 +207,11 @@ const AddressForm: FC<AddressFormProps> = ({
                     {...field}
                     placeholder={t("placeholders.address_line1")}
                     autoComplete="off"
+                    onFocus={() => setHasUserInteracted(true)}
+                    onChange={(e) => {
+                      setHasUserInteracted(true);
+                      field.onChange(e);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -206,6 +226,9 @@ const AddressForm: FC<AddressFormProps> = ({
                         key={feature.properties.id}
                         type="button"
                         className="w-full p-2 text-left hover:bg-accent"
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // Empêche le mousedown de déclencher handleClickOutside
+                        }}
                         onClick={() => handleSelectAddress(feature.properties)}
                       >
                         {feature.properties.label}

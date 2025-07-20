@@ -96,7 +96,7 @@ export const useAddressAutocomplete = (
       setError(null);
 
       try {
-        const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(trimmedQuery)}&limit=5&type=housenumber&autocomplete=1`;
+        const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(trimmedQuery)}&limit=5&autocomplete=1`;
 
         const response = await fetch(url, {
           signal: abortControllerRef.current.signal,
