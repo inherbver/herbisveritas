@@ -81,17 +81,19 @@ Gère toutes les opérations sur le panier. Ces actions sont conçues pour les u
 
 ## 4. Actions des Adresses (`src/actions/addressActions.ts`)
 
-Gère l'ajout et la mise à jour des adresses de livraison des utilisateurs.
+Gère l'ajout et la mise à jour des adresses de livraison et facturation des utilisateurs.
 
 - **`addAddress(data, locale)`**
-  - **Description :** Ajoute une nouvelle adresse au profil de l'utilisateur authentifié.
+  - **Description :** Ajoute une nouvelle adresse au profil de l'utilisateur authentifié. Synchronise automatiquement le flag `billing_address_is_different` dans le profil.
   - **Paramètres :** `data` (objet `AddressFormData` contenant les détails de l'adresse), `locale` (chaîne de caractères pour les traductions).
   - **Retourne :** `ActionResult` indiquant le succès ou l'échec.
+  - **Comportement :** Revalide les chemins `/profile/addresses` et `/checkout`, puis appelle `syncProfileAddressFlag`.
 
 - **`updateAddress(addressId, data, locale)`**
-  - **Description :** Met à jour une adresse existante. La politique RLS et la requête (`.eq("user_id", user.id)`) garantissent que l'utilisateur ne peut modifier que ses propres adresses.
+  - **Description :** Met à jour une adresse existante. La politique RLS et la requête (`.eq("user_id", user.id)`) garantissent que l'utilisateur ne peut modifier que ses propres adresses. Synchronise automatiquement le flag `billing_address_is_different`.
   - **Paramètres :** `addressId` (UUID de l'adresse à modifier), `data` (objet `AddressFormData`), `locale`.
   - **Retourne :** `ActionResult` indiquant le succès ou l'échec.
+  - **Comportement :** Revalide les chemins `/profile/addresses` et `/checkout`, puis appelle `syncProfileAddressFlag`.
 
 ---
 
@@ -100,19 +102,21 @@ Gère l'ajout et la mise à jour des adresses de livraison des utilisateurs.
 Gère la mise à jour des informations du profil utilisateur.
 
 - **`updateUserProfile(prevState, formData)`**
-  - **Description :** Met à jour les informations de base du profil de l'utilisateur (prénom, nom, numéro de téléphone). Ne gère pas le mot de passe ni les adresses.
-  - **Paramètres :** `formData` contenant `first_name`, `last_name`, `phone_number`.
-  - **Retourne :** `UpdateProfileFormState` avec un message de succès/erreur et les erreurs de validation éventuelles.
-
-- **`syncProfileAddressFlag(locale, userId?)`**
-  - **Description :** Action interne qui met à jour le champ `billing_address_is_different` sur le profil de l'utilisateur. Elle vérifie si une adresse de facturation par défaut existe et si elle est différente de l'adresse de livraison par défaut.
-  - **Paramètres :** `locale`, `userId` (optionnel).
-  - **Retourne :** Un objet indiquant le succès ou l'échec de la synchronisation.
+  - **Description :** Met à jour les informations de base du profil de l'utilisateur (prénom, nom, numéro de téléphone). Ne gère pas le mot de passe ni les adresses. Utilise le schéma de validation `accountInfoSchema`.
+  - **Paramètres :** `prevState` (`UpdateProfileFormState`), `formData` contenant `first_name`, `last_name`, `phone_number`, `locale`.
+  - **Retourne :** `UpdateProfileFormState` avec un message de succès/erreur, les erreurs de validation éventuelles, et une `resetKey` pour le reset du formulaire.
+  - **Comportement :** Effectue un upsert dans la table `profiles` et revalide les chemins `/profile/account` et `/profile/account/edit`.
 
 - **`updatePassword(values)`**
-  - **Description :** Met à jour le mot de passe de l'utilisateur. Note : une fonction similaire (`updatePasswordAction`) existe dans `authActions.ts` et est plus intégrée avec les formulaires.
-  - **Paramètres :** `values` (objet contenant `newPassword`).
-  - **Retourne :** `UpdatePasswordResult` indiquant le succès ou l'échec.
+  - **Description :** Met à jour le mot de passe de l'utilisateur via `supabase.auth.updateUser()`. Valide le nouveau mot de passe avec `passwordUpdateSchema` (minimum 8 caractères).
+  - **Paramètres :** `values` (objet contenant `newPassword` et optionnellement `currentPassword`).
+  - **Retourne :** `UpdatePasswordResult` indiquant le succès ou l'échec avec codes d'erreur.
+
+- **`syncProfileAddressFlag(locale, userId?)`**
+  - **Description :** Action utilitaire qui met à jour le champ `billing_address_is_different` sur le profil de l'utilisateur. Compare les adresses de livraison et facturation par défaut pour déterminer si elles sont différentes.
+  - **Paramètres :** `locale`, `userId` (optionnel, utilise l'utilisateur courant si non fourni).
+  - **Retourne :** Un objet avec `success`, `message` ou `error`.
+  - **Comportement :** Récupère toutes les adresses utilisateur, compare les adresses effectives, met à jour le profil et revalide les chemins concernés.
 
 ---
 
@@ -147,7 +151,33 @@ Gère le cycle de vie complet des produits. **Toutes ces actions sont réservée
 
 ---
 
-## 7. Actions de Paiement (Stripe) (`src/actions/stripeActions.ts`)
+## 6. Actions d'Administration (`src/actions/adminActions.ts`)
+
+Gère les actions spécifiques aux administrateurs pour la gestion des utilisateurs. **Toutes ces actions sont protégées par le wrapper `withPermissionSafe`** qui vérifie les permissions de l'utilisateur.
+
+- **`setUserRole({ userId, newRole, reason })`**
+  - **Description :** Modifie le rôle d'un utilisateur via une Edge Function Supabase. Cette action est hautement sécurisée et utilise un secret interne pour l'authentification avec la fonction Edge.
+  - **Permission requise :** `users:update:role`
+  - **Paramètres :** Objet `SetUserRoleParams` contenant `userId` (UUID de l'utilisateur), `newRole` ("user", "dev", ou "admin"), `reason` (justification du changement).
+  - **Retourne :** Objet avec `error: string | null`.
+  - **Comportement :** Appelle la fonction Edge `set-user-role` avec un header d'autorisation interne et les données du changement de rôle.
+
+---
+
+## 7. Actions de Gestion des Utilisateurs (`src/actions/userActions.ts`)
+
+Fournit des fonctionnalités de lecture des données utilisateur pour l'administration.
+
+- **`getUsers()`**
+  - **Description :** Récupère la liste complète de tous les utilisateurs du système avec leurs informations de profil. Combine les données d'`auth.users` et de `public.profiles`.
+  - **Permission requise :** `users:read:all`
+  - **Paramètres :** Aucun.
+  - **Retourne :** Tableau d'objets `UserForAdminPanel` contenant `id`, `email`, `full_name`, `role`, `created_at`, `last_sign_in_at`.
+  - **Comportement :** Utilise le client admin Supabase pour accéder à `auth.users`, récupère les profils correspondants, et combine les données en priorisant le rôle JWT sur le rôle de profil.
+
+---
+
+## 8. Actions de Paiement (Stripe) (`src/actions/stripeActions.ts`)
 
 Gère l'interaction avec l'API Stripe pour le processus de paiement.
 
@@ -158,64 +188,41 @@ Gère l'interaction avec l'API Stripe pour le processus de paiement.
 
 ---
 
-## 4. Actions du Profil Utilisateur (`src/actions/profileActions.ts`)
+## 9. Fonctions RPC Utilisées par les Actions
 
-Gère la mise à jour des informations du profil utilisateur, qui sont stockées dans la table [`public.profiles`](./DATABASE.md#table-publicprofiles).
+Les Server Actions s'appuient sur plusieurs fonctions RPC (Remote Procedure Call) Postgres pour effectuer des opérations complexes côté base de données :
 
-- **`updateUserProfile(prevState, formData)`**
-  - **Description :** Met à jour les informations de base de l'utilisateur (prénom, nom, etc.).
-  - **Paramètres :** `formData` contenant les champs du profil.
-  - **Retourne :** `ActionResult` indiquant le succès ou l'échec.
+### Fonctions de Gestion du Panier
 
-- **`updatePassword(prevState, formData)`**
-  - **Description :** Met à jour le mot de passe de l'utilisateur. Ce flux est sécurisé et nécessite la vérification de l'ancien mot de passe.
-  - **Paramètres :** `formData` contenant `currentPassword`, `newPassword`, `confirmNewPassword`.
-  - **Retourne :** `ActionResult`.
+- **`add_or_update_cart_item(p_cart_id UUID, p_product_id UUID, p_quantity INTEGER)`**
+  - Utilisée par `addItemToCart` pour ajouter ou mettre à jour la quantité d'un produit dans un panier.
+- **`merge_carts(p_guest_cart_id UUID, p_user_cart_id UUID)`**
+  - Utilisée par `migrateAndGetCart` pour fusionner le contenu de deux paniers lors de la connexion d'un utilisateur.
 
----
+### Fonctions de Gestion des Produits
 
-## 5. Actions des Adresses (`src/actions/addressActions.ts`)
+- **`create_product_with_translations_v2(...)`**
+  - Utilisée par `createProduct` pour créer un produit avec ses traductions dans une transaction atomique.
+- **`update_product_with_translations(...)`**
+  - Utilisée par `updateProduct` pour mettre à jour un produit et ses traductions simultanément.
 
-Gère les adresses de livraison et de facturation de l'utilisateur, stockées dans la table [`public.addresses`](./DATABASE.md#table-publicaddresses).
+### Fonctions de Gestion des Commandes
 
-- **`addAddress(prevState, formData)`**
-  - **Description :** Ajoute une nouvelle adresse au profil de l'utilisateur.
-  - **Paramètres :** `formData` avec les détails de l'adresse.
-  - **Retourne :** `ActionResult`.
+- **`create_order_from_cart_rpc(...)`**
+  - Fonction utilisée pour créer une commande à partir du contenu d'un panier (utilisée dans le processus Stripe).
 
-- **`updateAddress(prevState, formData)`**
-  - **Description :** Met à jour une adresse existante.
-  - **Paramètres :** `formData` avec les détails de l'adresse, incluant l'`id` de l'adresse à modifier.
-  - **Retourne :** `ActionResult`.
+### Fonctions Utilitaires et de Sécurité
 
-- **`deleteAddress(addressId)`**
-  - **Description :** Supprime une adresse.
-  - **Paramètres :** `addressId` (UUID de l'adresse).
-  - **Retourne :** `ActionResult`.
+- **`get_my_custom_role()`**
+  - Récupère le rôle de l'utilisateur courant pour les vérifications de permissions.
+- **`is_current_user_admin()`, `is_current_user_dev()`, `is_service_context()`**
+  - Fonctions helper pour les politiques RLS et les vérifications de permissions.
 
----
+### Fonctions de Nettoyage et Maintenance
 
-## 6. Actions de Revalidation (`src/actions/revalidationActions.ts`)
+- **`cleanup_old_anonymous_users()`, `run_weekly_anonymous_cleanup()`**
+  - Fonctions automatiques de nettoyage des utilisateurs anonymes expirés.
+- **`log_event()`, `log_auth_event()`, `log_profile_events()`**
+  - Fonctions de logging pour l'audit et le monitoring des événements système.
 
-Contient des actions spécifiques pour invalider le cache de Next.js.
-
-- **`revalidateTags(tags)`**
-  - **Description :** Invalide le cache pour un ou plusieurs tags. Utilisé après des mutations de données pour s'assurer que les vues sont à jour.
-  - **Paramètres :** `tags` (tableau de chaînes de caractères).
-  - **Retourne :** `Promise<void>`.
-
-- **`revalidatePaths(paths)`**
-  - **Description :** Invalide le cache pour un ou plusieurs chemins (routes).
-  - **Paramètres :** `paths` (tableau de chaînes de caractères).
-  - **Retourne :** `Promise<void>`.
-
----
-
-## 7. Actions de Paiement Stripe (`src/actions/stripeActions.ts`)
-
-Gère la création de sessions de paiement avec Stripe.
-
-- **`createStripeCheckoutSession()`**
-  - **Description :** Crée une session de checkout Stripe pour le panier de l'utilisateur. Cette action sécurisée côté serveur récupère le panier, valide les prix des produits en base de données pour éviter toute manipulation, et initialise la session de paiement. Elle est conçue pour être appelée par un composant client, qui redirige ensuite l'utilisateur vers la page de paiement hébergée par Stripe.
-  - **Paramètres :** Aucun.
-  - **Retourne :** `Promise<ActionResult>` contenant le `sessionId` en cas de succès, ou un message d'erreur.
+Ces fonctions RPC permettent d'encapsuler la logique métier complexe côté base de données tout en maintenant l'intégrité des données et les performances.

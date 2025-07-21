@@ -1,6 +1,11 @@
 {
   "permissions": {
-    "allow": ["mcp__supabase__list_tables", "mcp__supabase__list_migrations", "Bash(find:*)"]
+    "allow": [
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_migrations",
+      "Bash(find:*)",
+      "mcp__supabase__execute_sql"
+    ]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": ["supabase"]

@@ -807,17 +807,7 @@ supabase functions deploy # Déployer Edge Functions
 
 - **Admin principal** : Défini par `ADMIN_PRINCIPAL_ID`
 - **Email alertes** : Défini par `ADMIN_EMAIL`
-- **Équipe technique** : Via les channels de communication internes
 
 ---
 
-**✅ Système opérationnel depuis** : Janvier 2025  
-**🔄 Dernière mise à jour système** : Juillet 2025  
-**📊 Prochaine révision** : Octobre 2025
-
-**Note** : Cette documentation remplace et consolide :
-
-- ~~`ADMIN_PANEL_IMPLEMENTATION.md`~~ (obsolète partiel)
-- ~~`ADMIN_ROLE_MANAGEMENT.md`~~ (fusionné ici)
-- ~~`ADMIN_MONITORING.md`~~ (obsolète)
-- ~~`ADMIN_AND_ROUTES.md`~~ (obsolète)
+**🔄 Dernière mise à jour système** : Juillet 2025
