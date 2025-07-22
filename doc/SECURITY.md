@@ -1,260 +1,336 @@
-# Politiques et Architecture de Sécurité
+# Architecture et Politiques de Sécurité
 
 ## 1. Principes Fondamentaux
 
-La sécurité de HerbisVeritas est basée sur une approche de **défense en profondeur**, où plusieurs couches de sécurité indépendantes se superposent pour protéger l'application et les données des utilisateurs. La source de vérité pour l'identité est **Supabase Auth**, et les permissions sont contrôlées au plus près de la donnée via les **Row Level Security (RLS)** de PostgreSQL.
+La sécurité de HerbisVeritas repose sur une architecture de **défense en profondeur** avec plusieurs couches de protection indépendantes. L'identité est gérée par **Supabase Auth**, les permissions par un système **RBAC (Role-Based Access Control)** centralisé, et la sécurité des données par **Row Level Security (RLS)** PostgreSQL.
+
+### 1.1. Principes de Base
+
+- **Zero Trust** : Aucune confiance implicite, vérification à chaque couche
+- **Principe du Moindre Privilège** : Permissions minimales nécessaires
+- **Sécurité par Défaut** : Accès refusé sauf autorisation explicite
+- **Audit Trail** : Traçabilité complète des actions sensibles
 
 ---
 
-## 2. Couches de Sécurité (Défense en Profondeur)
+## 2. Architecture de Sécurité Multi-Couches
 
-### Couche 1 : Middleware Next.js
+### Couche 1 : Middleware Next.js (`src/middleware.ts`)
 
-Le middleware (`src/middleware.ts`) est la première ligne de défense applicative.
+**Premier point de contrôle** pour la protection des routes.
 
-- **Rôle :** Protéger les routes et valider la présence d'une session utilisateur valide pour les pages qui le nécessitent.
-- **Fonctionnement :** Il intercepte les requêtes entrantes, vérifie la session avec Supabase, et redirige les utilisateurs non authentifiés vers la page de connexion si nécessaire.
-- **Documentation :** Pour plus de détails, voir le [flux de gestion des sessions](./AUTHFLOW.md#31-protection-des-routes-middleware).
+- **Routes Protégées :**
+  - `/profile/*` : Utilisateurs authentifiés uniquement
+  - `/admin/*` : Vérification admin via base de données + cache
+- **Gestion des Sessions :** Validation continue des tokens Supabase
+- **Redirections Sécurisées :** Nettoyage automatique des cookies corrompus
+- **Logging de Sécurité :** Événements d'accès non autorisé dans `audit_logs`
 
-### Couche 2 : Server Actions & Logique Métier
+### Couche 2 : Server Actions (`src/actions/`)
 
-Toute la logique métier est encapsulée dans des **Server Actions** (`src/actions/`).
+**Protection de la logique métier** avec validation stricte.
 
-- **Validation Stricte des Entrées :** Chaque action valide systématiquement ses données d'entrée avec **Zod**. Cela prévient les injections de données malformées.
-- **Vérification de Session Côté Serveur :** Chaque action qui nécessite une authentification re-vérifie l'identité de l'utilisateur en appelant `supabase.auth.getUser()` côté serveur.
-- **Protection CSRF :** Les Server Actions de Next.js intègrent une protection automatique contre les attaques de type Cross-Site Request Forgery (CSRF).
-- **Documentation :** Voir la [documentation des actions](./ACTIONS.md).
+- **Validation Zod** : Tous les inputs validés avec des schémas stricts
+- **Wrapper de Permissions** : `withPermissionSafe()` pour les actions sensibles
+- **Vérification de Session** : Re-vérification `auth.getUser()` à chaque action
+- **Protection CSRF** : Intégrée par Next.js Server Actions
 
-### Couche 3 : Rôles et Permissions (Row Level Security)
+### Couche 3 : Authentification et Autorisations (`src/lib/auth/`)
 
-C'est la couche de sécurité la plus critique, car elle est appliquée directement au niveau de la base de données.
+**Système centralisé de gestion des rôles et permissions.**
 
-- **Source de Vérité :** Les permissions sont basées sur le rôle de l'utilisateur, qui est stocké dans le **claim `app_metadata.role` du jeton JWT**.
-- **Politiques RLS :** Des politiques RLS sont définies sur chaque table sensible. Elles filtrent les données pour s'assurer que les utilisateurs ne peuvent voir et modifier que les données auxquelles ils ont droit.
-- **Documentation :** Les stratégies RLS sont détaillées dans le [guide de la base de données](./DATABASE.md#schéma-des-tables).
+#### 3.1. Service Admin (`admin-service.ts`)
 
----
+- **Cache Intelligent** : Mise en cache des permissions (5min TTL)
+- **Vérification DB** : Source de vérité dans `profiles.role`
+- **Fonctions Clés :**
+  - `checkAdminRole(userId)` : Vérification avec cache
+  - `hasPermission(userId, permission)` : Contrôle granulaire
+  - `logSecurityEvent(event)` : Audit automatique
 
-## 3. Rôles d'Accès
+#### 3.2. Système RBAC (`types.ts`)
 
-### 3.1. Source de Vérité des Rôles
+```typescript
+// Rôles disponibles
+type UserRole = "user" | "editor" | "admin";
 
-**⚠️ INFORMATION OBSOLÈTE :** Cette section décrit l'ancien système.
+// Permissions granulaires (20+ permissions)
+type AppPermission =
+  | "admin:access"
+  | "admin:read"
+  | "admin:write"
+  | "products:read"
+  | "products:create"
+  | "products:update"
+  | "products:delete"
+  | "users:read:all"
+  | "users:update:role"
+  | "users:manage"
+  | "orders:read:all"
+  | "orders:update:status";
+// ... et plus
+```
 
-**Nouveau système (2025) :** Le rôle d'un utilisateur est maintenant stocké dans la colonne `role` de la table `profiles` en base de données, avec un système de cache intelligent pour les performances. Voir [ADMIN_ROLE_MANAGEMENT.md](./ADMIN_ROLE_MANAGEMENT.md) pour les détails complets.
+#### 3.3. Niveaux d'Accès
 
-~~Le rôle d'un utilisateur (`admin`, `dev`, `user`) est déterminé **uniquement** par le claim `app_metadata.role` présent dans son jeton JWT Supabase. La colonne `role` dans la table `profiles` n'est plus utilisée comme source de vérité pour les permissions.~~
+| Rôle         | Permissions                               | Description                     |
+| ------------ | ----------------------------------------- | ------------------------------- |
+| **`user`**   | `orders:read:own`, `profile:*:own`        | Utilisateur standard            |
+| **`editor`** | `admin:access`, `products:*`, `content:*` | Gestion produits/contenu        |
+| **`admin`**  | Toutes sauf `users:delete`                | Contrôle total de l'application |
 
-### 3.2. Niveaux d'Accès
+### Couche 4 : Row Level Security (RLS) PostgreSQL
 
-**📋 MISE À JOUR 2025-01-19 :** Le système de rôles a été entièrement refactorisé. Pour la documentation complète du nouveau système, voir [ADMIN_ROLE_MANAGEMENT.md](./ADMIN_ROLE_MANAGEMENT.md).
+**Protection au niveau des données** avec plus de 80 politiques actives.
 
-**Résumé des changements :**
+#### 4.1. Fonctions RLS Utilitaires
 
-- ✅ Système unifié basé sur la base de données (au lieu de JWT)
-- ✅ Cache intelligent pour les performances
-- ✅ Types centralisés et permissions granulaires
-- ✅ Audit et monitoring intégrés
+```sql
+-- Fonctions d'identification
+current_user_id()           -- auth.uid() avec fallback
+get_my_custom_role()        -- Rôle depuis profiles.role
+is_current_user_admin()     -- Vérification admin
+is_current_user_dev()       -- Vérification dev (obsolète)
+is_service_context()        -- Contexte service/système
+```
 
-Les niveaux d'accès ci-dessous restent conceptuellement valides mais l'implémentation a changé :
+#### 4.2. Politiques par Table
 
-- **`anon` (Invité)**
-  - **Permissions :**
-    - Parcourir le site et consulter les produits.
-    - Créer et gérer un panier.
-  - **Mécanisme de Sécurité du Panier Invité (Session Anonyme) :**
-    - Le système **utilise les sessions anonymes de Supabase**. Chaque visiteur reçoit un `auth.uid()` unique dès sa première visite.
-    - Le panier est toujours lié à cet `auth.uid()`. Il n'y a pas de gestion manuelle d'ID invité.
-    - La sécurité est assurée par les **politiques RLS** qui vérifient que `auth.uid() = carts.user_id`.
-    - Les Server Actions n'ont pas besoin de s'exécuter avec des privilèges élevés (`service_role`) pour gérer le panier, ce qui renforce la sécurité.
-  - **Restrictions :**
-    - Ne peut pas accéder aux pages de profil ou de commande.
-    - Doit s'inscrire ou se connecter pour finaliser une commande, ce qui déclenche un [flux de fusion de panier](./CART.md#32-flux-de-connexion-et-fusion).
+**Profiles :**
 
-- **`authenticated` (Utilisateur)**
-  - **Permissions :**
-    - Toutes les permissions de l'invité.
-    - Accéder à son profil, gérer ses adresses, voir son historique de commandes.
-    - Finaliser une commande.
-  - **Restrictions :**
-    - Ne peut voir et gérer que ses propres données (son profil, ses adresses, ses commandes, son panier).
+- Users : SELECT/UPDATE propre profil uniquement
+- Admins : Full CRUD sur tous les profils
 
-- **`dev` (Développeur)**
-  - **Permissions :**
-    - Accès étendu en lecture/écriture sur la plupart des tables via les politiques RLS pour faciliter le débogage et la maintenance.
-  - **Restrictions :**
-    - N'a pas accès aux opérations les plus critiques réservées aux administrateurs.
+**Products :**
 
-- **`admin` (Administrateur)**
-  - **Permissions :**
-    - Accès complet à toutes les données de l'application.
-    - Peut gérer les produits, les commandes de tous les utilisateurs, et les contenus du site.
-  - **Utilisation :** Ce rôle est réservé aux opérations de gestion via une interface d'administration dédiée (non implémentée actuellement).
+- Public : SELECT produits actifs uniquement
+- Admins : Full CRUD sur tous les produits
+- Editors : Full CRUD sur tous les produits
 
----
+**Carts & Cart Items :**
 
-## 4. Flux de Paiement Sécurisé (Stripe Integration)
+- Authenticated : Full CRUD sur panier propre (`user_id = auth.uid()`)
+- Guests : Full CRUD sur panier propre (`guest_id` via JWT)
+- Admins/Devs : Full access tous paniers
 
-Le processus de paiement est une partie critique de l'application et a été conçu pour être aussi sécurisé que possible, en déléguant la gestion des informations de carte bancaire à Stripe et en protégeant chaque étape du flux.
+**Orders & Order Items :**
 
-### 4.1. Étape 1 : Création de la Session de Paiement (Côté Client -> Action Serveur)
+- Users : SELECT commandes propres uniquement
+- Service Role : Full CRUD (pour webhook Stripe)
+- Admins implicite via service role
 
-1.  **Initiation Client :** L'utilisateur clique sur "Payer" dans son panier.
-2.  **Appel à l'Action Serveur :** Le client appelle la `Server Action` **`createStripeCheckoutSession`**.
-3.  **Validation Côté Serveur :**
-    - L'action vérifie que l'utilisateur est bien **authentifié**.
-    - Elle récupère le panier de l'utilisateur depuis la base de données.
-    - **Crucial :** Pour éviter toute manipulation de prix côté client, l'action **ignore les prix venant du panier** et récupère les prix actuels des produits directement depuis la table `products` de la base de données.
-    - Elle construit les `line_items` pour Stripe avec ces prix validés.
-4.  **Création de la Session Stripe :** L'action communique avec l'API Stripe en utilisant la clé secrète (jamais exposée au client) pour créer une session de paiement.
-    - Le `cart.id` est passé dans le champ `client_reference_id` pour pouvoir réconcilier la commande plus tard.
-5.  **Redirection :** L'action retourne le `sessionId` au client, qui l'utilise pour rediriger l'utilisateur vers la page de paiement hébergée par Stripe. **Aucune donnée sensible ne transite par le client.**
+**Addresses :**
 
-### 4.2. Étape 2 : Traitement du Paiement (Webhook Stripe -> Edge Function Supabase)
-
-1.  **Paiement Réussi :** L'utilisateur complète son paiement sur la page Stripe.
-2.  **Notification Webhook :** Stripe envoie un événement `checkout.session.completed` à notre **Edge Function** Supabase (`/supabase/functions/stripe-webhook`).
-3.  **Vérification de la Signature :**
-    - La première étape de la fonction est de **vérifier la signature de l'événement** avec le secret du webhook (`STRIPE_WEBHOOK_SECRET`). Cela garantit que la requête provient bien de Stripe et n'a pas été falsifiée. Toute requête sans signature valide est immédiatement rejetée.
-4.  **Appel à la Fonction RPC :**
-    - Une fois l'événement validé, la fonction extrait le `client_reference_id` (qui est notre `cart_id`) et l'ID de l'utilisateur de la session Stripe.
-    - Elle appelle ensuite la fonction PostgreSQL **`create_order_from_cart(cart_id)`**.
-
-### 4.3. Étape 3 : Création de la Commande (Base de Données PostgreSQL)
-
-1.  **Exécution de la RPC :** La fonction `create_order_from_cart` s'exécute dans la base de données.
-2.  **Sécurité de la Fonction :**
-    - Elle est définie avec `SECURITY DEFINER` pour s'exécuter avec les privilèges du créateur (un rôle de confiance), mais avec un `SET search_path = ''` pour prévenir les attaques de type "hijacking".
-    - Le rôle `postgres` a reçu explicitement la permission `SELECT` sur `auth.users` pour pouvoir lier la commande à l'utilisateur, sans pour autant exposer d'autres permissions.
-3.  **Logique Transactionnelle :**
-    - La fonction lit les articles du panier spécifié.
-    - Elle crée une nouvelle entrée dans la table `orders`.
-    - Elle insère les articles correspondants dans la table `order_items`, en utilisant les prix actuels des produits pour une dernière validation.
-    - Elle supprime le panier (`cart`) une fois la commande créée.
-    - Toutes ces opérations sont implicitement transactionnelles au sein de la fonction.
-4.  **Contrôle d'Accès Final :** Les nouvelles lignes dans `orders` et `order_items` sont immédiatement protégées par les politiques **RLS**, garantissant que seul l'utilisateur propriétaire pourra les consulter par la suite.
-
-Ce flux garantit que les informations de paiement sont sécurisées par Stripe, que les prix ne peuvent pas être modifiés par l'utilisateur, que les notifications de paiement sont authentiques, et que la création de la commande est atomique et sécurisée au plus bas niveau.
+- Users : Full CRUD adresses propres (`user_id = auth.uid()`)
+- Admins : Full CRUD toutes adresses
 
 ---
 
-## 5. Mesures Spécifiques
+## 3. Gestion des Sessions et Identité
+
+### 3.1. Utilisateurs Authentifiés
+
+- **Identification** : `auth.uid()` de Supabase Auth
+- **Session Management** : Tokens JWT avec refresh automatique
+- **Profil Lié** : Création automatique dans `profiles` via trigger
+
+### 3.2. Utilisateurs Invités
+
+- **Identification Hybride** :
+  - Cookie `herbis-cart-id` côté client
+  - Champ `guest_id` dans `carts` côté serveur
+- **Limitations** : Accès panier uniquement, pas de profil
+- **Migration** : Fusion automatique panier à la connexion
+
+### 3.3. Fusion de Paniers
+
+Processus sécurisé orchestré par `migrateAndGetCart()` :
+
+1. Récupération paniers invité/authentifié
+2. Fusion transactionnelle via RPC `merge_carts()`
+3. Suppression utilisateur invité anonyme
+4. Log de sécurité de l'opération
+
+---
+
+## 4. Flux de Paiement Sécurisé (Stripe)
+
+### 4.1. Création Session (Server Action)
+
+1. **Validation Utilisateur** : Vérification authentification
+2. **Récupération Panier** : Source de vérité base de données
+3. **Validation Prix** : Re-vérification prix depuis `products`
+4. **Session Stripe** : Création avec `cart.id` en référence
+5. **Aucune Donnée Sensible** : Jamais transitée côté client
+
+### 4.2. Webhook Stripe (Edge Function)
+
+1. **Vérification Signature** : `STRIPE_WEBHOOK_SECRET` obligatoire
+2. **Extraction Données** : `client_reference_id` = `cart.id`
+3. **RPC Sécurisée** : `create_order_from_cart_rpc()` transactionnelle
+4. **Service Role** : Privilèges élevés pour création commande
+
+### 4.3. Création Commande (PostgreSQL)
+
+```sql
+-- Fonction sécurisée avec SECURITY DEFINER
+CREATE OR REPLACE FUNCTION create_order_from_cart_rpc(p_cart_id UUID)
+RETURNS jsonb
+SECURITY DEFINER  -- Exécution avec privilèges créateur
+SET search_path = '' -- Protection contre hijacking
+```
+
+---
+
+## 5. Mesures de Sécurité Spécifiques
 
 ### 5.1. Gestion Sécurisée des Secrets
 
-**⚠️ MISE À JOUR CRITIQUE - JANVIER 2025**
+#### Variables d'Environnement
 
-Suite à l'audit de sécurité, la gestion des secrets a été renforcée avec une nouvelle architecture :
+```bash
+# Variables publiques (exposées côté client)
+NEXT_PUBLIC_SUPABASE_URL=           # ✅ Sûr
+NEXT_PUBLIC_SUPABASE_ANON_KEY=      # ✅ Sûr
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY= # ✅ Sûr
 
-#### Structure des Variables d'Environnement
-
-- **Template de sécurité** : Utiliser `.env.example` comme template
-- **Fichier local** : `.env.local` (JAMAIS commité dans Git)
-- **Validation automatique** : `src/lib/config/env-validator.ts` vérifie la configuration au démarrage
-
-#### Variables Publiques vs. Privées
-
-```typescript
-// Variables publiques (exposées côté client)
-NEXT_PUBLIC_SUPABASE_URL; // ✅ Sûr
-NEXT_PUBLIC_SUPABASE_ANON_KEY; // ✅ Sûr
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; // ✅ Sûr
-
-// Variables privées (serveur uniquement)
-SUPABASE_SERVICE_ROLE_KEY; // 🚨 JAMAIS exposer côté client
-STRIPE_SECRET_KEY; // 🚨 JAMAIS exposer côté client
-STRIPE_WEBHOOK_SECRET; // 🚨 JAMAIS exposer côté client
+# Variables privées (serveur uniquement)
+SUPABASE_SERVICE_ROLE_KEY=          # 🚨 JAMAIS côté client
+STRIPE_SECRET_KEY=                  # 🚨 JAMAIS côté client
+STRIPE_WEBHOOK_SECRET=              # 🚨 JAMAIS côté client
+ADMIN_PRINCIPAL_ID=                 # 🚨 UUID admin principal
 ```
 
-#### Procédure en Cas d'Exposition
+#### Validation Automatique
 
-1. **URGENCE** : Révoquer immédiatement toutes les clés exposées
-   - Supabase Dashboard → Settings → API → Regenerate
-   - Stripe Dashboard → Developers → API Keys → Créer nouvelles clés
-2. **Nettoyage** : Supprimer `.env.local` de l'historique Git si nécessaire
-3. **Validation** : Utiliser le nouveau système de validation des variables
+- **Validateur Env** : `src/lib/config/env-validator.ts`
+- **Vérification Démarrage** : Application refuse de démarrer si config invalide
+- **Template Sécurisé** : `.env.example` comme référence
 
-#### Configuration Production
-
-- **Vercel/Netlify** : Variables configurées dans le dashboard
-- **Monitoring** : Alertes activées sur tous les tableaux de bord
-- **Rotation** : Secrets renouvelés tous les 90 jours
-
-### 5.2. Headers de Sécurité
-
-L'application implémente des headers de sécurité modernes via `next.config.mjs` :
+### 5.2. Headers de Sécurité (`next.config.mjs`)
 
 ```javascript
 headers: [
-  {
-    key: "X-Content-Type-Options",
-    value: "nosniff",
-  },
-  {
-    key: "X-Frame-Options",
-    value: "DENY",
-  },
-  {
-    key: "Content-Security-Policy",
-    value: "default-src 'self'; script-src 'self' js.stripe.com; ...",
-  },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-XSS-Protection", value: "1; mode=block" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Content-Security-Policy", value: "default-src 'self'; ..." },
 ];
 ```
 
-### 5.3. Validation et Sanitisation
+### 5.3. Audit et Monitoring
 
-- **Validation d'entrée** : Tous les inputs utilisent des schémas Zod stricts
-- **Sanitisation** : Aucun contenu utilisateur rendu directement sans échappement
-- **Protection XSS** : Headers CSP et validation côté serveur
+#### Table d'Audit (`audit_logs`)
 
-### 5.4. Autres Mesures
+```sql
+-- Événements tracés automatiquement
+- unauthorized_admin_access  -- Tentative accès admin non autorisé
+- successful_admin_login     -- Connexion admin réussie
+- admin_action              -- Actions administratives
+- role_change               -- Modifications de rôles
+- auth_events               -- Événements d'authentification
+```
 
-- **Politique de Mots de Passe :** Les exigences de complexité des mots de passe sont gérées par Supabase Auth.
-- **Dépendances :** Les dépendances sont régulièrement auditées et mises à jour pour corriger les vulnérabilités connues.
-- **Monitoring** : Logs de sécurité centralisés avec alertes automatiques
-- **Réponse aux Incidents :** Procédure documentée pour identifier, contrôler, corriger et notifier en cas de brèche de sécurité.
+#### Logs de Sécurité
+
+- **Console Logs** : Actions sensibles loggées avec niveau approprié
+- **Base de Données** : Événements persistés dans `audit_logs`
+- **Fallback** : Console si DB indisponible
+
+### 5.4. Protection Contre les Vulnérabilités
+
+#### Injection SQL
+
+- **Parameterized Queries** : Toujours via Supabase client
+- **RLS** : Filtrage automatique au niveau DB
+- **Validation Zod** : Sanitisation stricte des inputs
+
+#### XSS (Cross-Site Scripting)
+
+- **CSP Headers** : Content Security Policy restrictive
+- **Échappement React** : Automatique pour tous les contenus
+- **Validation Inputs** : Tous les contenus utilisateur validés
+
+#### CSRF (Cross-Site Request Forgery)
+
+- **Server Actions** : Protection intégrée Next.js
+- **SameSite Cookies** : Configuration sécurisée par défaut
+- **Tokens CSRF** : Gérés automatiquement par Supabase
+
+#### Injection de Dépendances
+
+- **Lock Files** : `package-lock.json` committé
+- **Audit Dépendances** : `npm audit` en CI/CD
+- **Mise à jour** : Dépendances critiques mises à jour rapidement
 
 ---
 
-## 6. Guide de Configuration Sécurisée
+## 6. Procédures de Sécurité
 
-### 6.1. Installation Initiale
+### 6.1. Configuration Initiale Sécurisée
 
 ```bash
 # 1. Copier le template
 cp .env.example .env.local
 
-# 2. Configurer les variables dans .env.local
-# (Voir .env.example pour la structure)
-
-# 3. Vérifier la configuration
-npm run dev
-# L'app refuse de démarrer si la config est invalide
+# 2. Configurer les variables (voir .env.example)
+# 3. Valider la configuration
+npm run dev  # Échec si configuration invalide
 ```
 
-### 6.2. Actions en Cas de Compromission
+### 6.2. Gestion des Incidents
 
-**IMMÉDIAT** :
+#### Procédure d'Urgence
 
-1. STOPPER l'application
-2. RÉVOQUER toutes les clés exposées
-3. ANALYSER les logs d'accès
-4. NOTIFIER l'équipe et les services tiers
+1. **STOPPER** immédiatement l'application
+2. **RÉVOQUER** toutes les clés API exposées
+3. **ANALYSER** les logs d'accès et audit_logs
+4. **NOTIFIER** équipe et services tiers (Stripe, Supabase)
 
-**SUIVI** :
+#### Récupération
 
-1. RÉGÉNÉRER avec de nouvelles clés
-2. AUDITER le code pour d'autres vulnérabilités
-3. RENFORCER les procédures de déploiement
-4. DOCUMENTER l'incident pour apprentissage
+1. **RÉGÉNÉRER** nouvelles clés API
+2. **AUDITER** codebase pour autres vulnérabilités
+3. **TESTER** configuration sécurisée
+4. **REDÉPLOYER** avec nouvelles clés
+5. **DOCUMENTER** incident et leçons apprises
 
-### 6.3. Contacts d'Urgence
+### 6.3. Maintenance Sécurité
 
-- **Stripe Security** : https://stripe.com/docs/security
-- **Supabase Security** : security@supabase.io
-- **Équipe Développement** : [À compléter]
+#### Tâches Périodiques
+
+- **Rotation Secrets** : Tous les 90 jours
+- **Audit Permissions** : `npm run audit-roles` mensuel
+- **Review Logs** : Analyse `audit_logs` hebdomadaire
+- **Mise à jour Deps** : Patches sécurité immédiatement
+
+#### Monitoring Continu
+
+- **Dashboard Supabase** : Alertes activées
+- **Dashboard Stripe** : Monitoring des webhooks
+- **Logs Next.js** : Surveillance erreurs et warnings
+- **Cache Admin** : Monitoring performance et hits
 
 ---
 
-**Dernière mise à jour sécurité** : 2025-01-19  
-**Prochaine révision** : 2025-04-19
+## 7. Architecture de Déploiement Sécurisé
+
+### 7.1. Environnements
+
+- **Development** : `.env.local` avec clés de test
+- **Staging** : Variables d'environnement Vercel/Netlify
+- **Production** : Variables chiffrées, rotation automatique
+
+### 7.2. CI/CD Sécurisé
+
+- **Audit de Code** : ESLint avec règles de sécurité
+- **Scan Vulnérabilités** : `npm audit` obligatoire
+- **Test Sécurité** : Tests automatisés des permissions
+- **Variables Secrets** : Jamais dans les logs de build
+
+---
+
+**Dernière mise à jour sécurité** : 2025-01-21  
+**Prochaine révision** : 2025-04-21
+**Responsable Sécurité** : Équipe Développement

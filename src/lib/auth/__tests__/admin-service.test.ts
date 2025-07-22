@@ -10,12 +10,12 @@ import {
   UserRoleService,
   createUserRoleService,
 } from "../admin-service";
-import { createServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { UserRole } from "../types";
 
 // Mock du client Supabase
 jest.mock("@/lib/supabase/server", () => ({
-  createServerClient: jest.fn(),
+  createSupabaseServerClient: jest.fn(),
 }));
 
 jest.mock("@/lib/config/env-validator", () => ({
@@ -29,15 +29,17 @@ const mockSupabaseClient = {
   from: jest.fn(),
 };
 
-const mockCreateServerClient = createServerClient as jest.MockedFunction<typeof createServerClient>;
+const mockCreateSupabaseServerClient = createSupabaseServerClient as jest.MockedFunction<
+  typeof createSupabaseServerClient
+>;
 
 describe("Admin Service - Système Unifié", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     invalidateAllCache(); // Nettoyer le cache entre les tests
 
-    mockCreateServerClient.mockReturnValue(
-      mockSupabaseClient as ReturnType<typeof createServerClient>
+    mockCreateSupabaseServerClient.mockReturnValue(
+      mockSupabaseClient as ReturnType<typeof createSupabaseServerClient>
     );
   });
 
@@ -64,7 +66,29 @@ describe("Admin Service - Système Unifié", () => {
 
       expect(result.isAdmin).toBe(true);
       expect(result.role).toBe("admin");
-      expect(result.permissions).toEqual(["*"]);
+      expect(result.permissions).toEqual([
+        "admin:access",
+        "admin:read",
+        "admin:write",
+        "settings:view",
+        "settings:update",
+        "products:read",
+        "products:create",
+        "products:update",
+        "products:delete",
+        "orders:read:all",
+        "orders:read:own",
+        "orders:update:status",
+        "profile:read:own",
+        "profile:update:own",
+        "users:read:all",
+        "users:update:role",
+        "users:manage",
+        "content:read",
+        "content:create",
+        "content:update",
+        "content:delete",
+      ]);
       expect(result.userId).toBe("admin-user-id");
     });
 
@@ -286,10 +310,10 @@ describe("Admin Service - Système Unifié", () => {
       expect(mockSupabaseClient.from).toHaveBeenCalledWith("profiles");
     });
 
-    it("should assign permissions successfully", async () => {
+    it("should throw error when assigning permissions (not implemented)", async () => {
       await expect(
         userRoleService.assignPermissions("target-user-id", ["products:read", "products:write"])
-      ).resolves.not.toThrow();
+      ).rejects.toThrow("Permission management not implemented: no permissions column in database");
     });
   });
 

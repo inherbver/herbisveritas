@@ -16,6 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 
+- Foreach new feature you've to build tests
+- Those tests have to passed before commiting
 - Jest is configured for unit tests in `__tests__` directories
 - Run specific test: `npm test -- --testPathPattern=filename`
 - MSW (Mock Service Worker) is available for API mocking
