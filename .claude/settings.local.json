@@ -14,7 +14,9 @@
       "Bash(npx next:*)",
       "Bash(curl:*)",
       "Bash(/dev/null)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
