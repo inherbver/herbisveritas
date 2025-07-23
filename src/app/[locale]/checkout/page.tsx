@@ -34,6 +34,7 @@ interface AddressDB {
   company_name?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  street_number?: string | null; // ✅ Ajout du champ manquant
   address_line1: string;
   address_line2?: string | null;
   postal_code: string;

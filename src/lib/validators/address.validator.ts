@@ -34,14 +34,20 @@ export const addressSchema = z.object({
     .optional()
     .or(z.literal("")), // Permet une chaîne vide
 
+  street_number: z
+    .string()
+    .max(20, "Le numéro de rue ne doit pas dépasser 20 caractères.")
+    .optional()
+    .nullable(),
+
   address_line1: z
     .string()
-    .min(1, requiredFieldMessage("L'adresse (ligne 1)"))
-    .max(200, "L'adresse (ligne 1) ne doit pas dépasser 200 caractères."),
+    .min(1, requiredFieldMessage("Le nom de rue"))
+    .max(200, "Le nom de rue ne doit pas dépasser 200 caractères."),
 
   address_line2: z
     .string()
-    .max(200, "L'adresse (ligne 2) ne doit pas dépasser 200 caractères.")
+    .max(200, "Le complément d'adresse ne doit pas dépasser 200 caractères.")
     .optional()
     .nullable(),
 
@@ -95,6 +101,7 @@ export interface AddressFormTranslations {
     last_name: string;
     email: string;
     company_name: string;
+    street_number: string;
     address_line1: string;
     address_line2: string;
     postal_code: string;
@@ -108,6 +115,7 @@ export interface AddressFormTranslations {
     last_name?: string;
     email?: string;
     company_name?: string;
+    street_number?: string;
     address_line1?: string;
     address_line2?: string;
     postal_code?: string;

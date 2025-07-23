@@ -79,6 +79,7 @@ const AddressForm: FC<AddressFormProps> = ({
       last_name: existingAddress?.last_name || "",
       email: existingAddress?.email || "",
       company_name: existingAddress?.company_name || "",
+      street_number: existingAddress?.street_number || "",
       address_line1: existingAddress?.address_line1 || "",
       address_line2: existingAddress?.address_line2 || "",
       postal_code: existingAddress?.postal_code || "",
@@ -93,6 +94,7 @@ const AddressForm: FC<AddressFormProps> = ({
 
   const countryList = countries[locale.toUpperCase() as keyof typeof countries] || countries.EN;
   const addressLine1Value = watch("address_line1");
+  const streetNumberValue = watch("street_number"); // 👈 Surveiller le numéro de rue existant
   const watchedCountry = watch("country_code");
   const {
     suggestions: addressSuggestions,
@@ -117,11 +119,52 @@ const AddressForm: FC<AddressFormProps> = ({
 
   const handleSelectAddress = (address: BanFeature["properties"]) => {
     setIsSelectingAddress(true);
-    setValue("address_line1", `${address.housenumber || ""} ${address.street}`.trim(), {
+
+    // 🚀 LOGIQUE AMÉLIORÉE : Préserver le numéro existant si déjà saisi
+    const currentStreetNumber = streetNumberValue?.trim();
+    let apiStreetNumber = address.housenumber?.trim();
+
+    // 🔍 Si pas de housenumber, essayer d'extraire depuis le label ou name
+    if (!apiStreetNumber && (address.label || address.name)) {
+      const labelToCheck = address.label || address.name || "";
+      // Regex pour extraire le numéro au début du label (ex: "123 Rue de la Paix")
+      const numberMatch = labelToCheck.match(/^(\d+(?:\s*[a-zA-Z])?)\s+/);
+      if (numberMatch) {
+        apiStreetNumber = numberMatch[1].trim();
+      }
+    }
+
+    // Utiliser le numéro existant S'IL EXISTE, sinon utiliser celui extrait de l'API
+    const finalStreetNumber =
+      currentStreetNumber && currentStreetNumber !== ""
+        ? currentStreetNumber
+        : apiStreetNumber || "";
+
+    // ✅ S'assurer que le numéro de rue est bien défini
+    setValue("street_number", finalStreetNumber, {
       shouldValidate: true,
+      shouldDirty: true,
     });
-    setValue("postal_code", address.postcode, { shouldValidate: true });
-    setValue("city", address.city, { shouldValidate: true });
+
+    // 🔍 Pour address_line1, utiliser street ou name, mais retirer le numéro s'il était au début
+    let streetName = address.street || address.name || "";
+    if (apiStreetNumber && streetName.startsWith(apiStreetNumber)) {
+      streetName = streetName.replace(new RegExp(`^${apiStreetNumber}\\s+`), "").trim();
+    }
+
+    setValue("address_line1", streetName, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setValue("postal_code", address.postcode, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setValue("city", address.city, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
     // Fermer immédiatement les suggestions
     setAddressSuggestions([]);
     // Réactiver l'autocomplétion après un délai
@@ -195,51 +238,70 @@ const AddressForm: FC<AddressFormProps> = ({
           />
         </div>
 
-        <FormField
-          control={control}
-          name="address_line1"
-          render={({ field }) => (
-            <FormItem>
-              <div ref={suggestionsRef} className="relative">
-                <FormLabel>{t("fieldLabels.address_line1")}</FormLabel>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <FormField
+            control={control}
+            name="street_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fieldLabels.street_number")}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    placeholder={t("placeholders.address_line1")}
-                    autoComplete="off"
-                    onFocus={() => setHasUserInteracted(true)}
-                    onChange={(e) => {
-                      setHasUserInteracted(true);
-                      field.onChange(e);
-                    }}
+                    value={field.value ?? ""}
+                    placeholder={t("placeholders.street_number")}
                   />
                 </FormControl>
                 <FormMessage />
-                {isAddressLoading && (
-                  <p className="text-sm text-muted-foreground">{t("addressLoading")}</p>
-                )}
-                {addressError && <p className="text-sm text-red-600">{addressError}</p>}
-                {addressSuggestions.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-background shadow-lg">
-                    {addressSuggestions.map((feature: BanFeature) => (
-                      <button
-                        key={feature.properties.id}
-                        type="button"
-                        className="w-full p-2 text-left hover:bg-accent"
-                        onMouseDown={(e) => {
-                          e.preventDefault(); // Empêche le mousedown de déclencher handleClickOutside
-                        }}
-                        onClick={() => handleSelectAddress(feature.properties)}
-                      >
-                        {feature.properties.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </FormItem>
-          )}
-        />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="address_line1"
+            render={({ field }) => (
+              <FormItem className="md:col-span-3">
+                <div ref={suggestionsRef} className="relative">
+                  <FormLabel>{t("fieldLabels.address_line1")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder={t("placeholders.address_line1")}
+                      autoComplete="off"
+                      onFocus={() => setHasUserInteracted(true)}
+                      onChange={(e) => {
+                        setHasUserInteracted(true);
+                        field.onChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  {isAddressLoading && (
+                    <p className="text-sm text-muted-foreground">{t("addressLoading")}</p>
+                  )}
+                  {addressError && <p className="text-sm text-red-600">{addressError}</p>}
+                  {addressSuggestions.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-background shadow-lg">
+                      {addressSuggestions.map((feature: BanFeature) => (
+                        <button
+                          key={feature.properties.id}
+                          type="button"
+                          className="w-full p-2 text-left hover:bg-accent"
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // Empêche le mousedown de déclencher handleClickOutside
+                          }}
+                          onClick={() => handleSelectAddress(feature.properties)}
+                        >
+                          {feature.properties.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="flex items-center space-x-2">
           <Checkbox

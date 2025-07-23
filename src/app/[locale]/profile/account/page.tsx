@@ -6,6 +6,7 @@ import { LOGIN_REDIRECT_URL } from "@/lib/constants";
 import type { Tables } from "@/types/supabase";
 import { Metadata } from "next";
 import { LogoutButton } from "@/components/domain/profile/logout-button";
+import BillingAddressToggle from "@/components/domain/profile/billing-address-toggle";
 
 // Use the generated type for addresses to ensure it's always in sync with the DB schema.
 type Address = Tables<"addresses">;
@@ -52,7 +53,10 @@ const AccountDisplayAddress = ({
         )}
         <div className="sm:col-span-2">
           <dt className="text-sm font-medium text-muted-foreground">{t("addressFields.line1")}</dt>
-          <dd className="mt-1 text-base text-foreground">{address.address_line1}</dd>
+          <dd className="mt-1 text-base text-foreground">
+            {address.street_number && `${address.street_number} `}
+            {address.address_line1}
+          </dd>
         </div>
         {address.address_line2 && (
           <div className="sm:col-span-2">
@@ -226,6 +230,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
               {tGlobal("manage")}
             </Link>
           </div>
+          <BillingAddressToggle initialIsSame={!profile.billing_address_is_different} />
           <AccountDisplayAddress
             address={shippingAddress}
             title={

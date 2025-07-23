@@ -18,6 +18,7 @@ interface Address {
   last_name: string;
   email?: string | null;
   company_name?: string | null;
+  street_number?: string | null; // ✅ Ajout du champ manquant
   address_line1: string;
   address_line2?: string | null;
   postal_code: string;
@@ -50,7 +51,10 @@ const DisplayAddress = ({
         <p className="text-lg font-semibold">{`${address.first_name} ${address.last_name}`}</p>
       )}
       {address.company_name && <p>{address.company_name}</p>}
-      <p>{address.address_line1}</p>
+      <p>
+        {address.street_number && `${address.street_number} `}
+        {address.address_line1}
+      </p>
       {address.address_line2 && <p>{address.address_line2}</p>}
       <p>{`${address.postal_code} ${address.city}`}</p>
       <p>

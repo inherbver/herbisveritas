@@ -276,3 +276,103 @@ export async function syncProfileAddressFlag(
     return { success: false, error: "Internal server error" };
   }
 }
+
+/**
+ * Met à jour le flag billing_address_is_different dans le profil utilisateur
+ */
+export async function setBillingAddressSameAsShipping(
+  isSame: boolean,
+  locale: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "User not authenticated." };
+    }
+
+    // Mettre à jour le flag dans le profil
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        billing_address_is_different: !isSame,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (updateError) {
+      console.error("Error updating billing address flag:", updateError);
+      return { success: false, error: "Failed to update profile." };
+    }
+
+    // Si l'utilisateur indique que les adresses sont identiques,
+    // copier l'adresse de livraison vers l'adresse de facturation
+    if (isSame) {
+      // Récupérer l'adresse de livraison par défaut
+      const { data: shippingAddress, error: shippingError } = await supabase
+        .from("addresses")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("address_type", "shipping")
+        .eq("is_default", true)
+        .single();
+
+      if (shippingError && shippingError.code !== "PGRST116") {
+        console.error("Error fetching shipping address:", shippingError);
+        return { success: false, error: "Failed to fetch shipping address." };
+      }
+
+      if (shippingAddress) {
+        // Supprimer l'ancienne adresse de facturation par défaut
+        await supabase
+          .from("addresses")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("address_type", "billing");
+
+        // Créer une nouvelle adresse de facturation basée sur l'adresse de livraison
+        const { error: insertError } = await supabase.from("addresses").insert({
+          user_id: user.id,
+          address_type: "billing",
+          is_default: true,
+          company_name: shippingAddress.company_name,
+          first_name: shippingAddress.first_name,
+          last_name: shippingAddress.last_name,
+          street_number: shippingAddress.street_number,
+          address_line1: shippingAddress.address_line1,
+          address_line2: shippingAddress.address_line2,
+          postal_code: shippingAddress.postal_code,
+          city: shippingAddress.city,
+          country_code: shippingAddress.country_code,
+          state_province_region: shippingAddress.state_province_region,
+          phone_number: shippingAddress.phone_number,
+          email: shippingAddress.email,
+        });
+
+        if (insertError) {
+          console.error("Error creating billing address:", insertError);
+          return { success: false, error: "Failed to synchronize addresses." };
+        }
+      }
+    }
+
+    // Revalider les pages concernées
+    revalidatePath(`/${locale}/profile/account`);
+    revalidatePath(`/${locale}/profile/addresses`);
+    revalidatePath(`/${locale}/checkout`);
+
+    return {
+      success: true,
+      message: isSame
+        ? "Billing address synchronized with shipping address."
+        : "Billing address set as different from shipping address.",
+    };
+  } catch (error) {
+    console.error("Error in setBillingAddressSameAsShipping:", error);
+    return { success: false, error: "Internal server error" };
+  }
+}

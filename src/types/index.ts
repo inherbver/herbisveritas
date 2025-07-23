@@ -9,8 +9,9 @@ export interface Address {
   company_name?: string | null;
   first_name?: string | null;
   last_name?: string | null;
-  address_line1: string;
-  address_line2?: string | null;
+  street_number?: string | null; // Nouveau champ pour le numéro de rue (optionnel)
+  address_line1: string; // Maintenant utilisé pour "Rue" (obligatoire)
+  address_line2?: string | null; // Maintenant "Complément d'adresse"
   postal_code: string;
   city: string;
   country_code: string;

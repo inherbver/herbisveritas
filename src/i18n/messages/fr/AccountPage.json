@@ -1,6 +1,11 @@
 {
   "addresses": {
-    "title": "Mes Adresses"
+    "title": "Mes Adresses",
+    "billingSameAsShipping": "Mon adresse de facturation est identique à mon adresse de livraison",
+    "syncSuccess": "Adresse de facturation synchronisée avec l'adresse de livraison",
+    "separateSuccess": "Adresse de facturation définie comme différente de l'adresse de livraison",
+    "updateError": "Erreur lors de la mise à jour des paramètres d'adresse",
+    "updating": "Mise à jour..."
   },
   "addressNotProvided": "Aucun détail d'adresse n'est disponible.",
   "addressFields": {

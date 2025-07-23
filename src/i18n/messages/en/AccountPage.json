@@ -1,6 +1,11 @@
 {
   "addresses": {
-    "title": "My Addresses"
+    "title": "My Addresses",
+    "billingSameAsShipping": "My billing address is the same as my shipping address",
+    "syncSuccess": "Billing address synchronized with shipping address",
+    "separateSuccess": "Billing address set as different from shipping address",
+    "updateError": "Error updating address settings",
+    "updating": "Updating..."
   },
   "addressNotProvided": "No address details are available.",
   "addressFields": {

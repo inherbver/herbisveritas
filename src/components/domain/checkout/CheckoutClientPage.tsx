@@ -44,7 +44,10 @@ const DisplayAddress = ({ address }: { address: Address | AddressFormData }) => 
     <p className="font-semibold">
       {address.first_name} {address.last_name}
     </p>
-    <p>{address.address_line1}</p>
+    <p>
+      {address.street_number && `${address.street_number} `}
+      {address.address_line1}
+    </p>
     {address.address_line2 && <p>{address.address_line2}</p>}
     <p>
       {address.postal_code} {address.city}
