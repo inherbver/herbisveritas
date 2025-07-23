@@ -16,7 +16,8 @@
       "Bash(/dev/null)",
       "Bash(rm:*)",
       "Bash(cp:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(cat:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
