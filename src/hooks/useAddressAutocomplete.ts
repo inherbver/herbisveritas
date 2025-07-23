@@ -98,9 +98,16 @@ export const useAddressAutocomplete = (
       try {
         const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(trimmedQuery)}&limit=5&autocomplete=1`;
 
-        const response = await fetch(url, {
+        // Ajouter un timeout de 5 secondes pour éviter les blocages
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Request timeout")), 5000)
+        );
+
+        const fetchPromise = fetch(url, {
           signal: abortControllerRef.current.signal,
         });
+
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch address suggestions. Status: ${response.status}`);
@@ -111,8 +118,15 @@ export const useAddressAutocomplete = (
         setSuggestions(data.features);
       } catch (err: unknown) {
         if (err instanceof Error && err.name !== "AbortError") {
-          setError("An error occurred while fetching addresses.");
-          console.error("Error fetching address suggestions:", err);
+          // Distinction entre timeout et autres erreurs réseau
+          if (err.message === "Request timeout" || err.message.includes("Failed to fetch")) {
+            console.warn("Address API timeout/network error - continuing silently:", err.message);
+            // Ne pas afficher d'erreur à l'utilisateur pour les problèmes réseau temporaires
+            setError(null);
+          } else {
+            setError("An error occurred while fetching addresses.");
+            console.error("Error fetching address suggestions:", err);
+          }
         }
       } finally {
         setIsLoading(false);

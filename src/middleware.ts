@@ -74,10 +74,26 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Gestion plus robuste de la récupération de l'utilisateur
+  // Gestion plus robuste de la récupération de l'utilisateur avec timeout et retry
   let user = null;
+
+  // Fonction helper pour les appels Supabase avec timeout
+  const supabaseCallWithTimeout = async <T>(
+    promise: Promise<T>,
+    timeoutMs: number = 3000
+  ): Promise<T> => {
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Supabase_Timeout")), timeoutMs)
+    );
+
+    return Promise.race([promise, timeoutPromise]);
+  };
+
   try {
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await supabaseCallWithTimeout(
+      supabase.auth.getUser(),
+      2000 // Timeout de 2 secondes pour ne pas bloquer la navigation
+    );
 
     if (error) {
       console.warn("Supabase auth warning in middleware:", error.message);
@@ -98,9 +114,25 @@ export async function middleware(request: NextRequest) {
       user = data.user;
     }
   } catch (e) {
-    // Gérer les erreurs inattendues lors de l'appel à getUser
-    console.error("Unexpected error during supabase.auth.getUser() in middleware:", e);
-    user = null;
+    if (e instanceof Error && e.message === "Supabase_Timeout") {
+      console.warn("Supabase auth timeout in middleware. Continuing without blocking navigation.");
+      user = null;
+    } else if (
+      e instanceof Error &&
+      (e.message.includes("fetch") ||
+        e.message.includes("network") ||
+        e.message.includes("Failed to fetch"))
+    ) {
+      console.warn(
+        "Network error during auth check in middleware. Continuing without blocking navigation:",
+        e.message
+      );
+      user = null;
+    } else {
+      // Gérer les erreurs inattendues lors de l'appel à getUser
+      console.error("Unexpected error during supabase.auth.getUser() in middleware:", e);
+      user = null;
+    }
   }
 
   // Logique de protection des routes Admin et extraction de la locale

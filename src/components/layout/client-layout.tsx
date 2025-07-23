@@ -37,14 +37,60 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
     }
   }, []);
 
-  // Fonction pour valider la session de manière asynchrone
+  // Fonction helper pour les appels Supabase avec timeout et retry
+  const supabaseCallWithTimeout = useCallback(
+    async (promise: Promise<unknown>, timeoutMs = 3000, maxRetries = 2) => {
+      let lastError: Error;
+
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Supabase_Timeout")), timeoutMs)
+          );
+
+          return await Promise.race([promise, timeoutPromise]);
+        } catch (error) {
+          lastError = error as Error;
+
+          // Si c'est un timeout ou erreur réseau et qu'on a encore des tentatives
+          if (
+            attempt < maxRetries &&
+            (lastError.message === "Supabase_Timeout" ||
+              lastError.message.includes("fetch") ||
+              lastError.message.includes("network") ||
+              lastError.message.includes("Failed to fetch"))
+          ) {
+            console.warn(
+              `ClientLayout: Retry attempt ${attempt + 1}/${maxRetries + 1} after error:`,
+              lastError.message
+            );
+            // Délai exponentiel entre les tentatives (500ms, 1s)
+            await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+            continue;
+          }
+
+          // Relancer l'erreur si pas de retry ou retry épuisé
+          throw lastError;
+        }
+      }
+
+      throw lastError!;
+    },
+    []
+  );
+
+  // Fonction pour valider la session de manière asynchrone avec timeout et retry
   const validateSession = useCallback(async () => {
     try {
       // Utilise getUser() pour une validation côté serveur, plus sécurisée
       const {
         data: { user },
         error: userError,
-      } = await supabase.auth.getUser();
+      } = await supabaseCallWithTimeout(
+        supabase.auth.getUser(),
+        2500, // Timeout de 2.5 secondes
+        1 // 1 retry seulement pour ne pas trop ralentir
+      );
 
       if (userError || !user) {
         // Pas d'utilisateur authentifié côté serveur
@@ -54,13 +100,30 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
       // Si l'utilisateur est validé, on peut récupérer la session locale en toute confiance
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await supabaseCallWithTimeout(
+        supabase.auth.getSession(),
+        2000, // Timeout plus court pour getSession
+        1
+      );
       return session;
     } catch (error) {
-      console.error("ClientLayout: Exception during session validation:", error);
+      if (
+        error instanceof Error &&
+        (error.message === "Supabase_Timeout" ||
+          error.message.includes("fetch") ||
+          error.message.includes("network") ||
+          error.message.includes("Failed to fetch"))
+      ) {
+        console.warn(
+          "ClientLayout: Network/timeout error during session validation. Continuing gracefully:",
+          error.message
+        );
+      } else {
+        console.error("ClientLayout: Exception during session validation:", error);
+      }
       return null;
     }
-  }, []);
+  }, [supabaseCallWithTimeout]);
 
   // useEffect to check for 'logged_out' URL parameter on mount or when searchParams change
   useEffect(() => {
@@ -126,12 +189,20 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
             if (!session) {
               clearCartSafely("Initial session - no session found");
             } else {
-              // Double vérification pour éviter les sessions "fantômes"
+              // Double vérification pour éviter les sessions "fantômes" avec gestion d'erreur
               setTimeout(async () => {
-                const validatedSession = await validateSession();
-                if (!validatedSession && session) {
-                  console.log("ClientLayout: Session validation failed, clearing cart");
-                  clearCartSafely("Session validation failed after initial session");
+                try {
+                  const validatedSession = await validateSession();
+                  if (!validatedSession && session) {
+                    console.log("ClientLayout: Session validation failed, clearing cart");
+                    clearCartSafely("Session validation failed after initial session");
+                  }
+                } catch (error) {
+                  console.warn(
+                    "ClientLayout: Error during delayed session validation, ignoring:",
+                    error
+                  );
+                  // Ne pas bloquer ou vider le panier sur erreur de validation différée
                 }
               }, 200);
             }

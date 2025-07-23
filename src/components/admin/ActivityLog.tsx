@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -17,6 +17,37 @@ import { fr } from "date-fns/locale";
 import { EventLogFilters } from "./EventLogFilters";
 import type { EventLogFilters as EventLogFiltersType } from "@/types/event-filters";
 import { DEFAULT_FILTERS } from "@/types/event-filters";
+
+// Composant pour éviter les erreurs d'hydratation avec les timestamps
+function TimeAgo({ timestamp }: { timestamp: string }) {
+  const [timeAgo, setTimeAgo] = useState<string>("");
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const updateTimeAgo = () => {
+      setTimeAgo(
+        formatDistanceToNow(new Date(timestamp), {
+          addSuffix: true,
+          locale: fr,
+        })
+      );
+    };
+
+    updateTimeAgo();
+    // Mettre à jour toutes les minutes
+    const interval = setInterval(updateTimeAgo, 60000);
+
+    return () => clearInterval(interval);
+  }, [timestamp]);
+
+  // Pendant l'hydratation, afficher la date fixe pour éviter les erreurs
+  if (!isClient) {
+    return <span>{new Date(timestamp).toLocaleDateString("fr-FR")}</span>;
+  }
+
+  return <span>{timeAgo}</span>;
+}
 
 interface ActivityLogProps {
   logs: ActivityLogItem[];
@@ -139,10 +170,7 @@ export function ActivityLog({ logs, title, description }: ActivityLogProps) {
                       <TableCell className="font-medium">{log.description}</TableCell>
                       <TableCell>{log.user_email}</TableCell>
                       <TableCell>
-                        {formatDistanceToNow(new Date(log.timestamp), {
-                          addSuffix: true,
-                          locale: fr,
-                        })}
+                        <TimeAgo timestamp={log.timestamp} />
                       </TableCell>
                     </TableRow>
                   ))}

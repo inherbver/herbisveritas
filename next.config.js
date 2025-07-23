@@ -29,6 +29,9 @@ const nextConfig = {
   // SÉCURITÉ (du .mjs) - CRITIQUE
   // ========================================
   async headers() {
+    // Headers de sécurité plus permissifs en développement
+    const isDev = process.env.NODE_ENV === "development";
+
     return [
       {
         source: "/:path*",
@@ -53,24 +56,30 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' js.stripe.com ws.colissimo.fr",
-              "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
-              "img-src 'self' data: https: blob:",
-              "font-src 'self' fonts.gstatic.com",
-              // Ajout des domaines nécessaires pour Next.js + nos services
-              "connect-src 'self' localhost:* 127.0.0.1:* esgirafriwoildqcwtjm.supabase.co api.stripe.com vitals.vercel-insights.com ws.colissimo.fr",
-              "frame-src js.stripe.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-            ].join("; "),
-          },
+          // Désactiver temporairement le CSP en développement pour debug
+          ...(isDev
+            ? []
+            : [
+                {
+                  key: "Content-Security-Policy",
+                  value: [
+                    // CSP strict en production seulement
+                    "default-src 'self'",
+                    "script-src 'self' 'unsafe-eval' 'unsafe-inline' js.stripe.com ws.colissimo.fr",
+                    "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
+                    "img-src 'self' data: https: blob:",
+                    "font-src 'self' fonts.gstatic.com",
+                    "connect-src 'self' https://*.supabase.co wss://*.supabase.co *.supabase.com esgirafriwoildqcwtjm.supabase.co api.stripe.com vitals.vercel-insights.com ws.colissimo.fr api-adresse.data.gouv.fr *.vercel.app",
+                    "frame-src js.stripe.com",
+                    "worker-src 'self' blob:",
+                    "object-src 'none'",
+                    "base-uri 'self'",
+                    "form-action 'self'",
+                    "frame-ancestors 'none'",
+                    "upgrade-insecure-requests",
+                  ].join("; "),
+                },
+              ]),
         ],
       },
     ];

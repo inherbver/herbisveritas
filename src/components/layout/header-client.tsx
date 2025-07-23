@@ -70,14 +70,38 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
 
   const refreshSession = useCallback(async () => {
     try {
+      // Ajouter un timeout pour éviter les blocages
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Session_Timeout")), 3000)
+      );
+
+      const sessionPromise = supabase.auth.getSession();
+
       const {
         data: { session: currentSession },
-      } = await supabase.auth.getSession();
+      } = await Promise.race([sessionPromise, timeoutPromise]);
+
       setAuthState((prev) => ({ ...prev, session: currentSession, isLoading: false }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-      console.error("Error refreshing session:", errorMessage);
-      setAuthState((prev) => ({ ...prev, session: null, isLoading: false, error: errorMessage }));
+
+      // Gestion silencieuse des erreurs réseau temporaires
+      if (
+        errorMessage === "Session_Timeout" ||
+        errorMessage.includes("Failed to fetch") ||
+        errorMessage.includes("fetch") ||
+        errorMessage.includes("network")
+      ) {
+        console.warn(
+          "HeaderClient: Network/timeout error during session refresh - continuing silently:",
+          errorMessage
+        );
+        // Ne pas afficher d'erreur, juste marquer comme pas loading
+        setAuthState((prev) => ({ ...prev, isLoading: false }));
+      } else {
+        console.error("Error refreshing session:", errorMessage);
+        setAuthState((prev) => ({ ...prev, session: null, isLoading: false, error: errorMessage }));
+      }
     }
   }, [supabase]);
 

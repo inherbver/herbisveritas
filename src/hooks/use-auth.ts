@@ -30,13 +30,38 @@ export function useAuth() {
     // Perform an initial check of the user's auth state when the hook mounts.
     const checkUser = async () => {
       try {
-        const { data } = await supabase.auth.getUser();
+        // Ajouter un timeout pour éviter les blocages
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Auth_Timeout")), 3000)
+        );
+
+        const userPromise = supabase.auth.getUser();
+        const { data } = await Promise.race([userPromise, timeoutPromise]);
+
         setUser(data.user);
         setRole((data.user?.user_metadata?.role as AppRole) || null);
       } catch (error) {
-        console.error("Error fetching user:", error);
-        setUser(null);
-        setRole(null);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+        // Gestion silencieuse des erreurs réseau temporaires
+        if (
+          errorMessage === "Auth_Timeout" ||
+          errorMessage.includes("Failed to fetch") ||
+          errorMessage.includes("fetch") ||
+          errorMessage.includes("network")
+        ) {
+          console.warn(
+            "useAuth: Network/timeout error during user check - continuing silently:",
+            errorMessage
+          );
+          // Ne pas bloquer, juste continuer sans utilisateur
+          setUser(null);
+          setRole(null);
+        } else {
+          console.error("Error fetching user:", error);
+          setUser(null);
+          setRole(null);
+        }
       } finally {
         setIsLoading(false);
       }
