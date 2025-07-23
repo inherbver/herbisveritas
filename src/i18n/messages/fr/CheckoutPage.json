@@ -26,7 +26,8 @@
     "selectAddressError": "Veuillez sélectionner ou enregistrer une adresse de livraison.",
     "selectBillingAddressError": "Veuillez sélectionner ou enregistrer une adresse de facturation.",
     "addressSaved": "Adresse enregistrée avec succès.",
-    "paymentError": "Une erreur est survenue lors du paiement."
+    "paymentError": "Une erreur est survenue lors du paiement.",
+    "paymentErrorTitle": "Erreur de paiement"
   },
   "form": {
     "recipientLabel": "Nom du destinataire",

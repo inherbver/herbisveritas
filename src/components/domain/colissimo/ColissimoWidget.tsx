@@ -59,8 +59,8 @@ const loadColissimoScript = (src: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Vérifier si le script est déjà chargé et si le plugin est disponible
     const existingScript = document.querySelector(`script[src="${src}"]`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (existingScript && ($ as any).fn.frameColissimoOpen) {
-      // eslint-disable-line @typescript-eslint/no-explicit-any
       console.log("Script Colissimo déjà chargé et plugin disponible");
       resolve();
       return;
@@ -70,11 +70,13 @@ const loadColissimoScript = (src: string): Promise<void> => {
     document.querySelectorAll('script[src*="colissimo"]').forEach((script) => script.remove());
 
     // S'assurer que jQuery est disponible globalement
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof (window as any).jQuery === "undefined") {
-      // eslint-disable-line @typescript-eslint/no-explicit-any
       console.log("jQuery non disponible globalement, exposition...");
-      (window as any).jQuery = $; // eslint-disable-line @typescript-eslint/no-explicit-any
-      (window as any).$ = $; // eslint-disable-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).jQuery = $;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).$ = $;
     }
 
     console.log("Chargement du script Colissimo...");
@@ -148,8 +150,8 @@ export default function ColissimoWidget({
         );
 
         // Vérification finale que le plugin est bien disponible
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (!$ || !($ as any).fn.frameColissimoOpen) {
-          // eslint-disable-line @typescript-eslint/no-explicit-any
           throw new Error("Le plugin jQuery Colissimo n'est pas disponible après chargement");
         }
 
@@ -177,15 +179,15 @@ export default function ColissimoWidget({
         console.log("Configuration du widget Colissimo:", widgetOptions);
 
         // Définir la callback globale unique pour cette instance
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any)[callbackId.current] = (point: PointRetrait) => {
-          // eslint-disable-line @typescript-eslint/no-explicit-any
           console.log("Point de retrait sélectionné:", point);
           onSelect(point);
 
           // Fermer le widget après sélection
           try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (($ as any).fn.frameColissimoClose) {
-              // eslint-disable-line @typescript-eslint/no-explicit-any
               container.frameColissimoClose();
             }
           } catch (closeError) {
@@ -214,9 +216,10 @@ export default function ColissimoWidget({
     return () => {
       // Nettoyer la callback globale
       const currentCallbackId = callbackId.current; // Copy to avoid ref issues
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((window as any)[currentCallbackId]) {
-        // eslint-disable-line @typescript-eslint/no-explicit-any
-        delete (window as any)[currentCallbackId]; // eslint-disable-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (window as any)[currentCallbackId];
       }
 
       // Fermer le widget s'il est ouvert

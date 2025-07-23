@@ -140,8 +140,8 @@ describe("Colissimo Types", () => {
   });
 
   describe("Type Guards and Validation Helpers", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const isValidPointRetrait = (obj: any): obj is PointRetrait => {
-      // eslint-disable-line @typescript-eslint/no-explicit-any
       return (
         obj &&
         typeof obj.id === "string" &&
@@ -244,8 +244,8 @@ describe("Colissimo Types", () => {
       };
 
       // Transformation function
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformApiResponse = (apiData: any): PointRetrait => ({
-        // eslint-disable-line @typescript-eslint/no-explicit-any
         id: apiData.pointId,
         name: apiData.pointName,
         address: apiData.pointAddress,
@@ -278,8 +278,8 @@ describe("Colissimo Types", () => {
         distanceInMeters: 200,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformMinimal = (apiData: any): PointRetrait => ({
-        // eslint-disable-line @typescript-eslint/no-explicit-any
         id: apiData.pointId,
         name: apiData.pointName,
         address: apiData.pointAddress,
