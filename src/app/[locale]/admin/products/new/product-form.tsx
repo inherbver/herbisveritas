@@ -229,65 +229,66 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   )}
                 />
               </div>
-              <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("unitLabel")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ml, g, pièce..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Liste INCI */}
+              {/* Unité avec valeur numérique et sélecteur d'unité */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-base font-medium">Liste INCI</FormLabel>
-                  <Button type="button" variant="outline" size="sm" onClick={() => appendInci("")}>
-                    Ajouter un ingrédient
-                  </Button>
+                <FormLabel className="text-base font-medium">{t("unitLabel")}</FormLabel>
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="unit"
+                    render={({ field }) => {
+                      // Extraire la valeur numérique et l'unité depuis le champ existant
+                      const unitValue = field.value || "";
+                      const numericMatch = unitValue.match(/^(\d+(?:\.\d+)?)/);
+                      const unitMatch = unitValue.match(/([a-zA-Z()]+)$/);
+
+                      const numericValue = numericMatch ? numericMatch[1] : "";
+                      const unitType = unitMatch ? unitMatch[1] : "unité(s)";
+
+                      return (
+                        <>
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                placeholder="0"
+                                value={numericValue}
+                                onChange={(e) => {
+                                  const newValue = e.target.value;
+                                  field.onChange(newValue ? `${newValue} ${unitType}` : "");
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                          <FormItem className="w-32">
+                            <FormControl>
+                              <Select
+                                value={unitType}
+                                onValueChange={(newUnitType) => {
+                                  field.onChange(
+                                    numericValue ? `${numericValue} ${newUnitType}` : ""
+                                  );
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="gr">gr</SelectItem>
+                                  <SelectItem value="ml">ml</SelectItem>
+                                  <SelectItem value="unité(s)">unité(s)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                          </FormItem>
+                        </>
+                      );
+                    }}
+                  />
                 </div>
-                <FormDescription>
-                  Liste des ingrédients selon la nomenclature INCI (International Nomenclature of
-                  Cosmetic Ingredients).
-                </FormDescription>
-                {inciFields.length > 0 ? (
-                  <div className="space-y-2">
-                    {inciFields.map((field, index) => (
-                      <div key={field.id} className="flex items-center gap-2">
-                        <FormField
-                          control={form.control}
-                          name={`inci_list.${index}`}
-                          render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormControl>
-                                <Input placeholder="Aqua, Sodium chloride..." {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeInci(index)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-                    Aucun ingrédient ajouté. Cliquez sur "Ajouter un ingrédient" pour commencer.
-                  </div>
-                )}
               </div>
 
               <ImageUploadField control={form.control} name="image_url" />
@@ -480,6 +481,61 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       </FormItem>
                     )}
                   />
+
+                  {/* Liste INCI - affichée seulement pour la première traduction */}
+                  {index === 0 && (
+                    <div className="bg-muted/20 mt-6 space-y-4 rounded-lg border p-4">
+                      <div className="flex items-center justify-between">
+                        <FormLabel className="text-base font-medium">Liste INCI</FormLabel>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => appendInci("")}
+                        >
+                          Ajouter un ingrédient
+                        </Button>
+                      </div>
+                      <FormDescription className="text-sm text-muted-foreground">
+                        Liste des ingrédients selon la nomenclature INCI (International Nomenclature
+                        of Cosmetic Ingredients).
+                      </FormDescription>
+                      {inciFields.length > 0 ? (
+                        <div className="space-y-2">
+                          {inciFields.map((field, inciIndex) => (
+                            <div key={field.id} className="flex items-center gap-2">
+                              <FormField
+                                control={form.control}
+                                name={`inci_list.${inciIndex}`}
+                                render={({ field }) => (
+                                  <FormItem className="flex-1">
+                                    <FormControl>
+                                      <Input placeholder="Aqua, Sodium chloride..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeInci(inciIndex)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+                          Aucun ingrédient ajouté. Cliquez sur "Ajouter un ingrédient" pour
+                          commencer.
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {fields.length > 1 && (
                     <Button
                       type="button"
