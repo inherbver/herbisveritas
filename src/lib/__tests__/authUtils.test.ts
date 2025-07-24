@@ -1,4 +1,4 @@
-import { getActiveUserId } from "../authUtils";
+import { getActiveUserId } from "@/utils/authUtils";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 // Mock de l'utilisateur Supabase

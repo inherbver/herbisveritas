@@ -6,6 +6,7 @@ import {
   createSuccessResult,
 } from "@/lib/cart-helpers";
 import type { CartData, CartItem } from "@/types/cart";
+import { getActiveUserId } from "@/utils/authUtils";
 
 // Types représentant la structure des données brutes de Supabase
 export type ServerProduct = {
@@ -22,7 +23,6 @@ export type ServerCartItem = {
   quantity: number;
   products: ServerProduct | null;
 };
-import { getActiveUserId } from "./authUtils";
 
 export async function getCart(): Promise<CartActionResult<CartData | null>> {
   const supabase = await createSupabaseServerClient();

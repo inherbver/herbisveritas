@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 
-import { getActiveUserId } from "@/lib/authUtils";
+import { getActiveUserId } from "@/utils/authUtils";
 import {
   createGeneralErrorResult,
   createSuccessResult,

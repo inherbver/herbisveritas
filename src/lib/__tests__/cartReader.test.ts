@@ -1,7 +1,7 @@
 import { getCart, type ServerProduct } from "../cartReader";
 import { type SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getActiveUserId } from "../authUtils";
+import { getActiveUserId } from "@/utils/authUtils";
 import { isSuccessResult, isGeneralErrorResult } from "../cart-helpers";
 import { cookies } from "next/headers";
 

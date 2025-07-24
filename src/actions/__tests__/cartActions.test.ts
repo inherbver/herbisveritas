@@ -11,12 +11,12 @@ jest.mock("next/cache", () => ({
 jest.mock("@/lib/supabase/server");
 jest.mock("@/lib/supabase/server-admin");
 jest.mock("@/lib/cartReader");
-jest.mock("@/lib/authUtils");
+jest.mock("@/utils/authUtils");
 
 // Import des fonctions à tester
 import { addItemToCart, migrateAndGetCart } from "../cartActions";
 import { getCart } from "@/lib/cartReader";
-import { getActiveUserId } from "@/lib/authUtils";
+import { getActiveUserId } from "@/utils/authUtils";
 
 // Mocks typés
 const mockGetCart = getCart as jest.Mock;
