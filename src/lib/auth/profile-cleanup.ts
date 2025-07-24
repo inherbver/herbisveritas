@@ -9,7 +9,7 @@ export class ProfileCleanupService {
    */
   async findDuplicateProfiles() {
     const supabase = await createSupabaseServerClient();
-    
+
     const { data: duplicates, error } = await supabase
       .from("profiles")
       .select("id, created_at")
@@ -26,8 +26,9 @@ export class ProfileCleanupService {
     duplicates?.forEach((profile: { id: string; created_at: string }) => {
       const count = duplicateMap.get(profile.id) || 0;
       duplicateMap.set(profile.id, count + 1);
-      
-      if (count === 1) { // Second occurrence
+
+      if (count === 1) {
+        // Second occurrence
         duplicateUsers.push(profile.id);
       }
     });
@@ -40,7 +41,7 @@ export class ProfileCleanupService {
    */
   async getProfileCount(userId: string) {
     const supabase = await createSupabaseServerClient();
-    
+
     const { count, error } = await supabase
       .from("profiles")
       .select("*", { count: "exact", head: true })
@@ -61,7 +62,7 @@ export class ProfileCleanupService {
   async cleanupUserDuplicates(userId: string) {
     try {
       const supabase = await createSupabaseServerClient();
-      
+
       // Get all profiles for this user, ordered by creation date
       const { data: profiles, error: fetchError } = await supabase
         .from("profiles")
@@ -80,7 +81,7 @@ export class ProfileCleanupService {
 
       // Keep the first (oldest) profile, delete the rest
       const profilesToDelete = profiles.slice(1);
-      
+
       const { error: deleteError } = await supabase
         .from("profiles")
         .delete()
@@ -92,11 +93,10 @@ export class ProfileCleanupService {
         return { success: false, error: deleteError.message };
       }
 
-      return { 
-        success: true, 
-        message: `Removed ${profilesToDelete.length} duplicate profile(s)` 
+      return {
+        success: true,
+        message: `Removed ${profilesToDelete.length} duplicate profile(s)`,
       };
-
     } catch (error) {
       console.error(`Unexpected error cleaning up profiles for user ${userId}:`, error);
       return { success: false, error: "Unexpected error occurred" };
@@ -107,21 +107,19 @@ export class ProfileCleanupService {
    * Ensure a user has exactly one profile
    * Creates one if missing, cleans up if duplicates exist
    */
-  async ensureSingleProfile(userId: string, userEmail?: string) {
+  async ensureSingleProfile(userId: string, _userEmail?: string) {
     const profileCount = await this.getProfileCount(userId);
 
     if (profileCount === 0) {
       const supabase = await createSupabaseServerClient();
-      
+
       // Create missing profile
-      const { error } = await supabase
-        .from("profiles")
-        .insert({
-          id: userId,
-          role: "user",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+      const { error } = await supabase.from("profiles").insert({
+        id: userId,
+        role: "user",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
       if (error) {
         console.error(`Error creating profile for user ${userId}:`, error);
