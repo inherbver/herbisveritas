@@ -70,6 +70,7 @@ export async function getAllProducts(locale: Locale): Promise<ProductForShopQuer
       )
     `
     )
+    .eq("is_active", true) // ✅ Filtrer uniquement les produits actifs
     .or(`locale.eq.${locale},locale.is.null`, {
       foreignTable: "product_translations",
     });
@@ -117,6 +118,7 @@ export const getProductBySlug = cache(
       `
       )
       .eq("slug", slug)
+      .eq("is_active", true) // ✅ Filtrer uniquement les produits actifs
       // The filter is now on the left join, not a hard requirement on the query
       .or(`locale.eq.${locale},locale.is.null`, {
         foreignTable: "product_translations",

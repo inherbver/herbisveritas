@@ -17,7 +17,8 @@
       "Bash(rm:*)",
       "Bash(cp:*)",
       "Bash(mv:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npm run lint:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

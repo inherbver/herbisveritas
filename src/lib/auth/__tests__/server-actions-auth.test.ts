@@ -1,3 +1,6 @@
+// Désactiver le mock global pour ce test
+jest.unmock("@/lib/auth/server-actions-auth");
+
 import { withPermission, withPermissionSafe } from "../server-actions-auth";
 import { checkUserPermission } from "../server-auth";
 import type { AppPermission } from "@/config/permissions";
@@ -40,7 +43,7 @@ describe("Server Action HOFs", () => {
       // ✅ Utiliser une permission valide du type AppPermission
       const securedAction = withPermission("products:read" as AppPermission, mockAction);
 
-      await expect(securedAction("hello", 123)).rejects.toThrow("Permission denied");
+      await expect(securedAction("hello", 123)).rejects.toThrow("Unauthorized: Permission denied");
       expect(mockAction).not.toHaveBeenCalled();
     });
   });

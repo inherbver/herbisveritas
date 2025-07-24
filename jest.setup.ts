@@ -2,10 +2,22 @@
 import React from "react";
 import "@testing-library/jest-dom";
 
+// Polyfills pour Node.js
+import { TextEncoder, TextDecoder } from "util";
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
 // Variables d'environnement pour les tests
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://esgirafriwoildqcwtjm.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
+
+// Mock Next.js cache et revalidation functions
+jest.mock("next/cache", () => ({
+  revalidatePath: jest.fn(),
+  revalidateTag: jest.fn(),
+  unstable_cache: jest.fn((fn) => fn),
+}));
 
 // =====================================
 // MOCKS NEXT-INTL
@@ -22,7 +34,7 @@ const mockRouter = {
 
 const MockLink = React.forwardRef<
   HTMLAnchorElement,
-  { children: React.ReactNode; href?: string; locale?: string; [key: string]: any }
+  { children: React.ReactNode; href?: string; locale?: string; [key: string]: unknown }
 >(({ children, href, locale, ...props }, ref) => {
   return React.createElement(
     "a",
@@ -53,9 +65,9 @@ jest.mock("next-intl", () => ({
   useNow: jest.fn(() => new Date("2024-01-01")),
   useTimeZone: jest.fn(() => "UTC"),
   useFormatter: jest.fn(() => ({
-    dateTime: (date: Date) => `formatted_${date.toISOString().split("T")[0]}_en-US`,
+    dateTime: (_date: Date) => `formatted_${_date.toISOString().split("T")[0]}_en-US`,
     number: (num: number) => num.toString(),
-    relativeTime: (date: Date) => "relative time",
+    relativeTime: (_date: Date) => "relative time",
   })),
   useRouter: jest.fn(() => mockRouter),
   usePathname: jest.fn(() => "/"),
@@ -174,6 +186,10 @@ const createMockSupabaseClient = () => ({
   from: jest.fn(() => ({
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    ilike: jest.fn().mockReturnThis(),
+    overlaps: jest.fn().mockReturnThis(),
+    or: jest.fn().mockReturnThis(),
     single: jest.fn().mockResolvedValue({ data: null, error: null }),
     maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
     insert: jest.fn().mockReturnThis(),
@@ -220,10 +236,10 @@ jest.mock("@/lib/supabase/server-admin", () => ({
 
 // Mock Next.js redirect
 jest.mock("next/navigation", () => ({
-  redirect: jest.fn((url: string) => {
+  redirect: jest.fn((_url: string) => {
     // Ne rien faire dans le test, juste enregistrer l'appel
   }),
-  permanentRedirect: jest.fn((url: string) => {
+  permanentRedirect: jest.fn((_url: string) => {
     // Ne rien faire
   }),
   useRouter: jest.fn(() => mockRouter),
@@ -255,7 +271,7 @@ jest.mock("next/headers", () => ({
 jest.mock("date-fns", () => ({
   ...jest.requireActual("date-fns"), // Import du vrai module pour garder les vraies fonctions
   // Optionnel: override de certaines fonctions pour les tests
-  format: jest.fn((date: Date, formatStr: string, options?: any) => {
+  format: jest.fn((date: Date, _formatStr: string, _options?: unknown) => {
     // Garder la vraie fonction mais avec un format prévisible pour les tests
     return `formatted_${date.toISOString().split("T")[0]}_en-US`;
   }),
@@ -271,13 +287,33 @@ jest.mock("date-fns/locale/en-US", () => ({
 }));
 
 // =====================================
+// MOCKS AUTH ET UTILS
+// =====================================
+
+// Mock auth server actions pour les tests productActions seulement
+jest.mock("@/lib/auth/server-actions-auth", () => ({
+  withPermissionSafe: jest.fn((permission, callback) => callback),
+  withPermission: jest.fn((permission, callback) => callback),
+}));
+
+// Mock revalidation utils
+jest.mock("@/utils/revalidation", () => ({
+  revalidateProductPages: jest.fn(),
+}));
+
+// Mock slugify
+jest.mock("@/utils/slugify", () => ({
+  slugify: jest.fn((str: string) => str.toLowerCase().replace(/\s+/g, "-")),
+}));
+
+// =====================================
 // AUTRES MOCKS
 // =====================================
 
 // Supprimer les warnings React act()
 const originalError = console.error;
 beforeAll(() => {
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     if (
       typeof args[0] === "string" &&
       (args[0].includes("Warning: An update to") ||

@@ -214,7 +214,9 @@ export default async function SecurityTestPage() {
                   Show details
                 </summary>
                 <pre className="mt-2 overflow-auto rounded bg-gray-100 p-2 text-xs">
-                  {JSON.stringify(result.details, null, 2)}
+                  {typeof result.details === "string"
+                    ? result.details
+                    : JSON.stringify(result.details, null, 2)}
                 </pre>
               </details>
             )}
