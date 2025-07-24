@@ -42,7 +42,7 @@ export const checkUserPermission = cache(async (permission: AppPermission): Prom
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       console.warn(`[Security] Profile query error for user ${user.id}: ${profileError.message}`);

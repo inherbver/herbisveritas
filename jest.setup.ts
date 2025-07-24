@@ -5,7 +5,7 @@ import "@testing-library/jest-dom";
 // Polyfills pour Node.js
 import { TextEncoder, TextDecoder } from "util";
 global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+global.TextDecoder = TextDecoder as any;
 
 // Variables d'environnement pour les tests
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://esgirafriwoildqcwtjm.supabase.co";
@@ -34,7 +34,7 @@ const mockRouter = {
 
 const MockLink = React.forwardRef<
   HTMLAnchorElement,
-  { children: React.ReactNode; href?: string; locale?: string; [key: string]: unknown }
+  { children: React.ReactNode; href?: string; locale?: string; [key: string]: any }
 >(({ children, href, locale, ...props }, ref) => {
   return React.createElement(
     "a",
@@ -45,7 +45,7 @@ const MockLink = React.forwardRef<
       "data-locale": locale,
       ...props,
     },
-    children
+    children as React.ReactNode
   );
 });
 

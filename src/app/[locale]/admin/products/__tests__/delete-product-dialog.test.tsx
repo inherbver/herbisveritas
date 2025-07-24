@@ -339,7 +339,7 @@ describe("DeleteProductDialog Component", () => {
     }
 
     await waitFor(() => {
-      expect(mockDeleteProduct).toHaveBeenCalledWith("test-product-id");
+      expect(mockProductActions.deleteProduct).toHaveBeenCalledWith("test-product-id");
       // Vérifier que l'erreur réseau est gérée
       expect(mockOnDelete).not.toHaveBeenCalled();
     });
@@ -370,11 +370,10 @@ describe("DeleteProductDialog Component", () => {
     const user = userEvent.setup();
 
     // Test avec succès
-    const mockDeleteProductSuccess = jest.fn().mockResolvedValue({
+    mockProductActions.deleteProduct.mockResolvedValue({
       success: true,
       message: "Deleted successfully",
-    });
-    (productActions.deleteProduct as jest.Mock).mockImplementation(mockDeleteProductSuccess);
+    } as never);
 
     const { rerender } = render(
       <DeleteProductDialog
@@ -395,11 +394,10 @@ describe("DeleteProductDialog Component", () => {
     jest.clearAllMocks();
 
     // Test avec échec
-    const mockDeleteProductFailure = jest.fn().mockResolvedValue({
+    mockProductActions.deleteProduct.mockResolvedValue({
       success: false,
       message: "Deletion failed",
-    });
-    (productActions.deleteProduct as jest.Mock).mockImplementation(mockDeleteProductFailure);
+    } as never);
 
     rerender(
       <DeleteProductDialog

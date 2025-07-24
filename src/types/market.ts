@@ -28,4 +28,5 @@ export interface RecurringMarketInfo {
   description?: string;
   gpsLink: string;
   heroImage?: string;
+  image?: string;
 }

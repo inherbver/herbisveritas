@@ -208,7 +208,7 @@ export default async function SecurityTestPage() {
               </span>
             </div>
             <p className="mb-2 text-gray-700">{result.message}</p>
-            {result.details && (
+            {result.details ? (
               <details className="mt-2">
                 <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
                   Show details
@@ -219,7 +219,7 @@ export default async function SecurityTestPage() {
                     : JSON.stringify(result.details, null, 2)}
                 </pre>
               </details>
-            )}
+            ) : null}
           </div>
         ))}
       </div>

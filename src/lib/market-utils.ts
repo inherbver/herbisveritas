@@ -36,6 +36,7 @@ function generateMarketInstances(): MarketInfo[] {
           description: recurringMarket.description,
           gpsLink: recurringMarket.gpsLink,
           heroImage: recurringMarket.heroImage,
+          image: recurringMarket.image,
         });
       }
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);

@@ -133,8 +133,8 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
         </div>
 
         {/* Info Column */}
-        <div className="mt-8 flex flex-col pt-4 md:mt-0 md:w-1/2 lg:pt-6">
-          <div className="flex-grow space-y-4">
+        <div className="mt-6 flex flex-col pt-4 md:mt-0 md:w-1/2 lg:pt-6">
+          <header className="flex-grow space-y-3 sm:space-y-4">
             <h1 className="mb-1 font-serif text-3xl font-bold leading-tight text-gray-900 lg:text-4xl dark:text-white">
               {product.name}
             </h1>
@@ -146,11 +146,12 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             </p>
 
             {/* Price & Action Box */}
-            <div className="my-6 rounded-xl bg-background p-6 shadow-lg">
+            <section className="my-4 rounded-xl bg-background p-4 shadow-lg sm:my-6 sm:p-6" aria-labelledby="product-purchase">
+              <h2 id="product-purchase" className="sr-only">Achat du produit</h2>
               <form action={formAction}>
                 <input type="hidden" name="productId" value={product.id} />
                 <input type="hidden" name="quantity" value={quantity} />
-                <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <Price
                       value={product.price}
@@ -159,7 +160,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                     />
                     <p className="text-xs text-muted-foreground">{t("Global.TTC")}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
                     <QuantityInput
                       id="product-quantity"
                       value={quantity}
@@ -171,18 +172,18 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                   </div>
                 </div>
               </form>
-            </div>
-          </div>
+            </section>
+          </header>
 
           {/* Tabs Navigation (at the bottom of the column) */}
           <nav className="mt-auto w-full border-b pt-6" aria-label="Tabs">
-            <div className="flex space-x-8">
+            <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide sm:space-x-6 lg:space-x-8">
               {tabs.map((tab) => (
                 <a
                   key={tab.id}
                   href={`#${tab.id}`}
                   className={clsx(
-                    "whitespace-nowrap border-b-2 px-1 pb-2 font-serif text-lg font-medium transition-colors duration-200",
+                    "flex-shrink-0 whitespace-nowrap border-b-2 px-1 pb-2 font-serif text-sm font-medium transition-colors duration-200 sm:text-base lg:text-lg",
                     {
                       "border-primary text-primary": activeTab === tab.id,
                       "hover:border-primary/70 border-transparent text-muted-foreground hover:text-primary":
@@ -247,7 +248,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             {t("ProductDetailModal.inciList")}
           </h4>
           {product.inciList && product.inciList.length > 0 ? (
-            <ul className="grid grid-cols-1 gap-x-6 gap-y-1 text-base text-muted-foreground sm:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-x-4 gap-y-1 text-base text-muted-foreground md:grid-cols-2 lg:gap-x-6">
               {product.inciList.map((item, index) => (
                 <li key={index}>{item}</li>
               ))}
