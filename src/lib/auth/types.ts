@@ -43,6 +43,8 @@ export type AppPermission =
   | "content:create" // Créer du contenu
   | "content:update" // Modifier du contenu
   | "content:delete" // Supprimer du contenu
+  | "content:publish" // Publier du contenu
+  | "content:unpublish" // Dépublier du contenu
 
   // --- Paramètres Système ---
   | "settings:view" // Voir les paramètres système
@@ -68,6 +70,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, AppPermission[]> = {
     "content:create",
     "content:update",
     "content:delete",
+    "content:publish",
+    "content:unpublish",
   ],
 
   // Admin : contrôle total sauf suppression d'utilisateurs
@@ -93,6 +97,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, AppPermission[]> = {
     "content:create",
     "content:update",
     "content:delete",
+    "content:publish",
+    "content:unpublish",
   ],
 };
 

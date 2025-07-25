@@ -1,0 +1,71 @@
+{
+  "title": "Gestion du Magazine",
+  "description": "Interface d'administration pour gérer les articles, catégories et tags du magazine",
+  "navigation": {
+    "articles": "Articles",
+    "categories": "Catégories", 
+    "tags": "Tags",
+    "settings": "Paramètres"
+  },
+  "articles": {
+    "title": "Articles",
+    "new": "Nouvel article",
+    "edit": "Modifier l'article",
+    "list": "Liste des articles",
+    "draft": "Brouillon",
+    "published": "Publié",
+    "archived": "Archivé",
+    "publish": "Publier",
+    "unpublish": "Dépublier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  },
+  "form": {
+    "title": "Titre",
+    "slug": "Slug",
+    "excerpt": "Extrait",
+    "content": "Contenu",
+    "category": "Catégorie",
+    "tags": "Tags",
+    "featuredImage": "Image à la une",
+    "seoTitle": "Titre SEO",
+    "seoDescription": "Description SEO",
+    "status": "Statut",
+    "publishedAt": "Date de publication"
+  },
+  "categories": {
+    "title": "Catégories",
+    "new": "Nouvelle catégorie",
+    "edit": "Modifier la catégorie",
+    "name": "Nom",
+    "description": "Description",
+    "color": "Couleur"
+  },
+  "tags": {
+    "title": "Tags",
+    "new": "Nouveau tag",
+    "edit": "Modifier le tag",
+    "name": "Nom"
+  },
+  "upload": {
+    "uploading": "Téléversement...",
+    "uploadButton": "Téléverser",
+    "dragAndDrop": "Glisser-déposer ou cliquer pour sélectionner une image",
+    "supportedFormats": "Formats supportés: JPEG, PNG, WebP, GIF (max 4MB)",
+    "preview": "Aperçu",
+    "remove": "Supprimer",
+    "error": "Erreur lors du téléversement",
+    "success": "Image téléversée avec succès"
+  },
+  "messages": {
+    "articleCreated": "Article créé avec succès",
+    "articleUpdated": "Article mis à jour avec succès",
+    "articleDeleted": "Article supprimé avec succès",
+    "articlePublished": "Article publié avec succès",
+    "categoryCreated": "Catégorie créée avec succès",
+    "tagCreated": "Tag créé avec succès",
+    "error": "Une erreur s'est produite",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément ?"
+  }
+}

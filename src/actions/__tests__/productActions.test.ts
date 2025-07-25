@@ -20,6 +20,26 @@ jest.mock("@/utils/slugify", () => ({
   slugify: jest.fn((str: string) => str.toLowerCase().replace(/\s+/g, "-")),
 }));
 
+// Types pour les mocks Supabase
+type MockSupabaseResponse<T = unknown> = {
+  data: T | null;
+  error: { message: string; code?: string } | null;
+};
+
+type MockProductData = {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  description: string;
+  category: string;
+  is_active: boolean;
+  stock: number;
+  image_url: string | null;
+  labels: string[];
+  unit: string;
+};
+
 // Mock chainable Supabase plus réaliste
 const createMockSupabaseQuery = () => {
   const mockQuery = {
@@ -36,8 +56,8 @@ const createMockSupabaseQuery = () => {
     lte: jest.fn().mockReturnThis(),
     gt: jest.fn().mockReturnThis(),
     lt: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue({ data: null, error: null }),
-    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+    single: jest.fn().mockResolvedValue({ data: null, error: null } as MockSupabaseResponse),
+    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null } as MockSupabaseResponse),
   };
   return mockQuery;
 };
@@ -60,7 +80,7 @@ const mockSupabase = {
 
 // Mock data
 const testUUID = "550e8400-e29b-41d4-a716-446655440000";
-const mockProductData = {
+const mockProductData: MockProductData = {
   id: testUUID,
   name: "Test Product",
   slug: "test-product",
@@ -106,7 +126,7 @@ describe("Product Actions", () => {
     mockSupabase.from = jest.fn(() => createMockSupabaseQuery());
     mockSupabase.rpc = jest.fn();
     // Mock the server client to return our local mock
-    jest.mocked(supabaseServer.createSupabaseServerClient).mockResolvedValue(mockSupabase as never);
+    jest.mocked(supabaseServer.createSupabaseServerClient).mockResolvedValue(mockSupabase as unknown as ReturnType<typeof supabaseServer.createSupabaseServerClient>);
   });
 
   describe("createProduct", () => {

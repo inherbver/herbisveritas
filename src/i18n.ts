@@ -13,6 +13,7 @@ const namespaces = [
   "AddressesPage",
   "AdminDashboard",
   "AdminLayout",
+  "AdminMagazine",
   "AdminProducts",
   "Auth",
   "AuthCallback",

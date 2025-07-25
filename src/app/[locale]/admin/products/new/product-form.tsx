@@ -50,7 +50,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [isPending, startTransition] = useTransition();
   const isEditMode = !!initialData;
 
-  const form = useForm<ProductFormValues>({
+  const form = useForm({
     resolver: zodResolver(productSchema),
     defaultValues: initialData
       ? {
@@ -63,8 +63,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
           inci_list: initialData.inci_list ?? [],
           status: (initialData.status as ProductStatus) || "active",
           is_active: initialData.is_active,
-          is_new: initialData.is_new,
-          is_on_promotion: initialData.is_on_promotion,
+          is_new: initialData.is_new ?? false,
+          is_on_promotion: initialData.is_on_promotion ?? false,
           translations:
             initialData.product_translations.length > 0
               ? initialData.product_translations.map(

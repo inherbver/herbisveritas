@@ -127,6 +127,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
 
   const navLinks = [
     { href: "/shop", label: tGlobal("Header.home") },
+    { href: "/magazine", label: "Magazine" },
     { href: "/contact", label: tGlobal("Header.findUs") },
     { href: "/about", label: tGlobal("Header.aboutLink") },
   ];
@@ -259,6 +260,14 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                   className="text-foreground/80 rounded-md px-3 py-3 text-base font-medium transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
                 >
                   {tGlobal("Header.home")}
+                </Link>
+              </SheetClose>
+              <SheetClose asChild>
+                <Link
+                  href="/magazine"
+                  className="text-foreground/80 rounded-md px-3 py-3 text-base font-medium transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
+                >
+                  Magazine
                 </Link>
               </SheetClose>
               <SheetClose asChild>

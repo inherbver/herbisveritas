@@ -3,14 +3,14 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LOGIN_REDIRECT_URL } from "@/lib/constants";
-import type { Tables } from "@/types/supabase";
+import type { Database } from "@/types/supabase";
 import { Metadata } from "next";
 import { LogoutButton } from "@/components/domain/profile/logout-button";
 import BillingAddressToggle from "@/components/domain/profile/billing-address-toggle";
 
 // Use the generated type for addresses to ensure it's always in sync with the DB schema.
-type Address = Tables<"addresses">;
-type Profile = Tables<"profiles">;
+type Address = Database["public"]["Tables"]["addresses"]["Row"];
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 // Helper component to display an address. This could be moved to a separate file.
 const AccountDisplayAddress = ({
@@ -143,7 +143,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single<Profile>();
+    .maybeSingle<Profile>();
 
   const { data: userAddresses, error: addressesError } = await supabase
     .from("addresses")
@@ -159,6 +159,49 @@ export default async function AccountPage({ params }: AccountPageProps) {
         <p className="text-destructive">{t("errors.userProfileNotFound")}</p>
       </section>
     );
+  }
+
+  if (!profile) {
+    console.error("No profile found for user:", user.id);
+    
+    // Tenter de créer un profil de base pour l'utilisateur
+    try {
+      const { data: newProfile, error: createError } = await supabase
+        .from("profiles")
+        .insert({
+          id: user.id,
+          first_name: user.user_metadata?.first_name || null,
+          last_name: user.user_metadata?.last_name || null,
+          billing_address_is_different: false,
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Error creating profile:", createError);
+        return (
+          <section className="container mx-auto px-4 py-8">
+            <h1 className="mb-6 text-3xl font-bold text-foreground">{t("title")}</h1>
+            <p className="text-destructive">{t("errors.userProfileNotFound")}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Erreur lors de la création du profil. Veuillez contacter le support.
+            </p>
+          </section>
+        );
+      }
+
+      console.log("Profile created successfully for user:", user.id);
+      // Rediriger pour recharger la page avec le nouveau profil
+      redirect(`/${currentLocale}/profile/account`);
+    } catch (error) {
+      console.error("Unexpected error creating profile:", error);
+      return (
+        <section className="container mx-auto px-4 py-8">
+          <h1 className="mb-6 text-3xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-destructive">{t("errors.userProfileNotFound")}</p>
+        </section>
+      );
+    }
   }
 
   if (addressesError) {
