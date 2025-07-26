@@ -34,7 +34,9 @@
       "mcp__playwright__browser_file_upload",
       "mcp__playwright__browser_navigate_back",
       "mcp__playwright__browser_close",
-      "mcp__playwright__browser_type"
+      "mcp__playwright__browser_type",
+      "Bash(pkill:*)",
+      "mcp__playwright__browser_press_key"
     ]
   },
   "enableAllProjectMcpServers": true,

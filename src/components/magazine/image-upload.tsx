@@ -147,19 +147,36 @@ export function ImageUpload({
 
   // Gestion du changement de fichier
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("📁 [ImageUpload] handleFileChange déclenché");
     const file = event.target.files?.[0];
-    if (!file) return;
+
+    if (!file) {
+      console.log("⚠️ [ImageUpload] Aucun fichier sélectionné");
+      return;
+    }
+
+    console.log("📄 [ImageUpload] Fichier sélectionné:", {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    });
+
+    // Reset l'input pour permettre de sélectionner le même fichier à nouveau
+    event.target.value = "";
 
     const validationError = validateFile(file);
     if (validationError) {
+      console.error("❌ [ImageUpload] Erreur de validation:", validationError);
       setError(validationError);
       return;
     }
 
+    console.log("✅ [ImageUpload] Fichier validé, début upload");
     try {
       await uploadFile(file);
+      console.log("🎉 [ImageUpload] Upload terminé avec succès");
     } catch (error) {
-      console.error("Erreur d'upload:", error);
+      console.error("💥 [ImageUpload] Erreur d'upload:", error);
     }
   };
 
@@ -260,8 +277,15 @@ export function ImageUpload({
             <div
               onDrop={handleDrop}
               onDragOver={handleDragOver}
+              onClick={(e) => {
+                // Seulement déclencher si le clic n'est pas sur le bouton
+                if (e.target === e.currentTarget && !isUploading && !uploadedImage) {
+                  console.log("🖱️ [ImageUpload] Clic sur la zone de drop");
+                  fileInputRef.current?.click();
+                }
+              }}
               className={cn(
-                "rounded-lg border-2 border-dashed p-8 text-center transition-colors",
+                "cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors",
                 "hover:border-gray-400 hover:bg-gray-50",
                 isUploading && "pointer-events-none opacity-50"
               )}
@@ -278,8 +302,52 @@ export function ImageUpload({
                   <Button
                     variant="outline"
                     className="mt-4"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🖱️ [ImageUpload] Bouton "Choisir un fichier" cliqué');
+                      console.log("📂 [ImageUpload] fileInputRef.current:", fileInputRef.current);
+
+                      // Essayer plusieurs approches pour ouvrir le file chooser
+                      if (fileInputRef.current) {
+                        try {
+                          // Approche 1: click direct
+                          fileInputRef.current.click();
+                          console.log("✅ [ImageUpload] fileInputRef.current.click() appelé");
+                        } catch (error) {
+                          console.error("❌ [ImageUpload] Erreur avec click():", error);
+                          // Approche 2: dispatch event
+                          try {
+                            const event = new MouseEvent("click", {
+                              view: window,
+                              bubbles: true,
+                              cancelable: true,
+                            });
+                            fileInputRef.current.dispatchEvent(event);
+                            console.log("✅ [ImageUpload] dispatchEvent utilisé");
+                          } catch (dispatchError) {
+                            console.error(
+                              "❌ [ImageUpload] Erreur avec dispatchEvent:",
+                              dispatchError
+                            );
+                          }
+                        }
+                      } else {
+                        console.error("❌ [ImageUpload] fileInputRef.current est null");
+                        // Approche 3: chercher l'input dans le DOM
+                        const input = document.querySelector(
+                          'input[type="file"]'
+                        ) as HTMLInputElement;
+                        if (input) {
+                          input.click();
+                          console.log("✅ [ImageUpload] input trouvé via querySelector et cliqué");
+                        } else {
+                          console.error("❌ [ImageUpload] Aucun input file trouvé");
+                        }
+                      }
+                    }}
                     disabled={isUploading}
+                    type="button"
                   >
                     Choisir un fichier
                   </Button>
