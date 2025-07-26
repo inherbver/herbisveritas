@@ -120,11 +120,21 @@ src/
 - Admin routes require database role verification
 - Security events logged for unauthorized access attempts
 
+### Image Upload System
+
+- **Centralized image upload**: Use functions from `@/lib/storage/image-upload`
+- **uploadProductImageCore**: For product images (bucket: `products`, permission: `products:update`)
+- **uploadMagazineImageCore**: For magazine images (bucket: `magazine`, permission: `content:create`)
+- **Validation**: 4MB max, formats JPEG/PNG/WebP/GIF
+- **File naming**: Automatic sanitization with `slugify()` and timestamp
+- **Permissions**: Integrated with role-based authorization system
+
 ### Testing
 
 - Unit tests in `__tests__` directories alongside source files
 - Mock Supabase calls using MSW handlers in `/src/mocks`
 - Test authentication flows with mocked user sessions
+- Image upload functions tested in `productActions.test.ts` and `lib/storage/__tests__/`
 
 ### Performance
 

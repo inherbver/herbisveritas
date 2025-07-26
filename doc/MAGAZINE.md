@@ -68,6 +68,7 @@ Le système s'appuie sur le système de rôles existant avec les permissions sui
 - **`admin`** : Gestion complète + suppression d'articles
 
 **Politiques RLS configurées** :
+
 - Articles publiés visibles par tous
 - Brouillons/archivés visibles uniquement par les éditeurs/admins
 - Seuls les éditeurs/admins peuvent créer/modifier (`content:create`, `content:update`)
@@ -103,7 +104,7 @@ export interface Article {
 // ✨ NOUVEAUX TYPES POUR LES COMPOSANTS UI
 export interface ArticleCardProps {
   article: ArticleDisplay;
-  variant?: 'default' | 'compact' | 'featured';
+  variant?: "default" | "compact" | "featured";
 }
 
 export interface ArticleMetadataProps {
@@ -112,13 +113,13 @@ export interface ArticleMetadataProps {
   readingTime?: number | null;
   viewCount?: number | null;
   className?: string;
-  variant?: 'default' | 'compact';
+  variant?: "default" | "compact";
 }
 
 export interface TagListProps {
   tags: Tag[];
   maxVisible?: number;
-  variant?: 'default' | 'compact' | 'badges';
+  variant?: "default" | "compact" | "badges";
   onTagClick?: (tag: Tag) => void;
   className?: string;
 }
@@ -169,14 +170,17 @@ export interface ArticleDisplay extends Article {
    - `createCategory(data)` - Création de catégories
    - `createTag(data)` - Création de tags
 
-4. **✨ Upload d'images** (Janvier 2025) :
-   - `uploadMagazineImage(formData: FormData)` - Upload d'images avec validation
-   - Support des formats JPEG, PNG, WebP, GIF (max 4MB)
-   - Stockage dans le bucket Supabase "magazine" avec politiques RLS
-   - Génération automatique d'URLs publiques
-   - Validation des permissions `content:create`
+4. **⚡ Upload d'images** (Janvier 2025 - **FACTORISÉ**) :
+   - `uploadMagazineImage(formData: FormData)` - Upload d'images via système centralisé
+   - **Architecture :** Utilise `uploadMagazineImageCore` de `@/lib/storage/image-upload`
+   - **Validation :** 4MB max, formats JPEG/PNG/WebP/GIF, noms sanitisés avec `slugify()`
+   - **Stockage :** Bucket Supabase "magazine" avec politiques RLS
+   - **Permissions :** `content:create` avec vérification stricte `AppPermission`
+   - **Fonctionnalités :** Génération automatique d'URLs publiques, gestion d'erreurs unifiée
+   - **Évolution :** Fonction centralisée partagée avec le système produits (factorisation 01/2025)
 
 **Fonctionnalités intégrées** :
+
 - Génération automatique des slugs avec normalisation Unicode
 - Calcul automatique du temps de lecture (200 mots/min)
 - Conversion automatique JSON TipTap → HTML
@@ -188,6 +192,7 @@ export interface ArticleDisplay extends Article {
 ### Requêtes optimisées (`/src/lib/magazine/queries.ts`)
 
 **Fonctions de lecture implementées** :
+
 - `getArticles(filters, page, limit)` - Liste paginée avec filtres avancés
 - `getArticleBySlug(slug)` - Article individuel avec toutes relations
 - `getArticleById(id)` - Article par ID avec relations
@@ -197,6 +202,7 @@ export interface ArticleDisplay extends Article {
 - `getArticleStats()` - Statistiques complètes du contenu
 
 **Optimisations implementées** :
+
 - Requêtes avec relations pré-chargées via `select()`
 - Pagination intégrée avec comptage précis
 - Filtres avancés (statut, catégorie, recherche full-text, tags, auteur)
@@ -370,6 +376,7 @@ const hasPublishPermission = await checkUserPermission("content:publish");
 ```
 
 **Permissions utilisées** :
+
 - `content:create` - Création d'articles/catégories/tags
 - `content:update` - Modification, accès aux brouillons
 - `content:delete` - Suppression d'articles
@@ -379,6 +386,7 @@ const hasPublishPermission = await checkUserPermission("content:publish");
 ### ✅ Interface d'administration
 
 Intégration parfaite dans le dashboard admin existant :
+
 - Route `/admin/magazine` ajoutée au menu de navigation
 - Utilisation des composants shadcn/ui existants
 - Cohérence avec le design system Herbis Veritas
@@ -386,6 +394,7 @@ Intégration parfaite dans le dashboard admin existant :
 ### ✅ Internationalisation
 
 Compatible avec le système next-intl existant :
+
 - Traductions dans `/src/i18n/messages/[locale]/MagazinePage.json`
 - Routes localisées : `/{locale}/magazine`
 - Interface admin multilingue avec `getTranslations()`
@@ -402,6 +411,7 @@ Compatible avec le système next-intl existant :
 ### ✅ Migrations appliquées
 
 Les tables et politiques RLS sont opérationnelles :
+
 - Tables : `articles`, `categories`, `tags`, `article_tags`
 - Index : Sur `slug`, `status`, `published_at`, etc.
 - Contraintes : Validation des statuts, unicité des slugs
@@ -414,9 +424,11 @@ Types synchronisés avec la base de données via Supabase CLI.
 ### ✅ Données de test
 
 Catégories créées par défaut :
+
 - Actualités, Tutoriels, Opinion, Lifestyle avec couleurs distinctes
 
 Tags créés par défaut :
+
 - Développement, Design, Web, Mobile, etc.
 
 ## Utilisation
@@ -424,7 +436,7 @@ Tags créés par défaut :
 ### Création d'un article
 
 ```typescript
-import { createArticle } from '@/actions/magazineActions';
+import { createArticle } from "@/actions/magazineActions";
 
 const formData: ArticleFormData = {
   title: "Guide complet des huiles essentielles",
@@ -436,7 +448,8 @@ const formData: ArticleFormData = {
   category_id: "uuid-actualites",
   tag_ids: ["uuid-bien-etre", "uuid-naturel"],
   seo_title: "Guide huiles essentielles - Herbis Veritas",
-  seo_description: "Tout savoir sur les huiles essentielles : propriétés, usages et conseils d'utilisation."
+  seo_description:
+    "Tout savoir sur les huiles essentielles : propriétés, usages et conseils d'utilisation.",
 };
 
 const result = await createArticle(formData);
@@ -450,14 +463,14 @@ if (result.success) {
 ### Récupération d'articles
 
 ```typescript
-import { getArticles, getArticleBySlug } from '@/lib/magazine/queries';
+import { getArticles, getArticleBySlug } from "@/lib/magazine/queries";
 
 // Liste paginée avec filtres
 const result = await getArticles(
-  { 
-    status: 'published', 
-    category_id: 'uuid-actualites',
-    search: 'huiles essentielles'
+  {
+    status: "published",
+    category_id: "uuid-actualites",
+    search: "huiles essentielles",
   },
   1, // page
   10 // limite
@@ -465,24 +478,24 @@ const result = await getArticles(
 // result: { articles: ArticleDisplay[], pagination: ArticlePagination }
 
 // Article individuel
-const article = await getArticleBySlug('guide-huiles-essentielles');
+const article = await getArticleBySlug("guide-huiles-essentielles");
 // Article complet avec author, category, tags
 ```
 
 ### Workflow de publication
 
 ```typescript
-import { changeArticleStatus } from '@/actions/magazineActions';
+import { changeArticleStatus } from "@/actions/magazineActions";
 
 // Publication d'un article
-const result = await changeArticleStatus('article-id', 'published');
+const result = await changeArticleStatus("article-id", "published");
 if (result.success) {
   console.log(result.message); // "L'article a été publié avec succès."
 }
 
 // Validation automatique avant publication
 // - Titre présent
-// - Contenu présent  
+// - Contenu présent
 // - Slug valide (format: a-z0-9-)
 // - Permissions utilisateur
 ```
@@ -492,12 +505,14 @@ if (result.success) {
 ### ✅ **ENTIÈREMENT IMPLÉMENTÉ ET FONCTIONNEL**
 
 **Phase 1 : Fondations** ✅
+
 - [x] Structure de base de données avec RLS
 - [x] Types TypeScript complets
 - [x] Server Actions avec validation
 - [x] Requêtes optimisées avec relations
 
 **Phase 2 : Éditeur TipTap** ✅
+
 - [x] Installation et configuration TipTap
 - [x] Composant éditeur complet (`TipTapEditor`)
 - [x] Composant visualiseur (`TipTapViewer`)
@@ -505,6 +520,7 @@ if (result.success) {
 - [x] Sauvegarde automatique (`AutoSaveEditor`)
 
 **Phase 3 : Interface d'administration** ✅
+
 - [x] Dashboard magazine avec statistiques
 - [x] Liste des articles avec filtres
 - [x] Formulaires création/modification
@@ -512,6 +528,7 @@ if (result.success) {
 - [x] Actions en lot
 
 **Phase 4 : Pages publiques** ✅
+
 - [x] Page listing des articles avec pagination
 - [x] Page détail d'article optimisée SEO
 - [x] Navigation par catégories et tags
@@ -519,6 +536,7 @@ if (result.success) {
 - [x] Données structurées JSON-LD
 
 **Phase 5 : Fonctionnalités avancées** ✅
+
 - [x] Statistiques et analytics de base
 - [x] SEO complet (métadonnées, Open Graph, Twitter)
 - [x] Performance optimisée (Suspense, lazy loading)
@@ -526,6 +544,7 @@ if (result.success) {
 - [x] Internationalisation
 
 **✨ Phase 6 : Refactoring et amélioration UI** ✅ **(Janvier 2025)**
+
 - [x] **Analyse du design** moderne via Playwright sur [lesvilainescuriosites.fr](https://www.lesvilainescuriosites.fr)
 - [x] **Types TypeScript stricts** - Élimination de tous les `any` dans la page magazine
 - [x] **Composants modulaires** - `ArticleCard`, `ArticleMetadata`, `TagList`, `MagazineHero`
@@ -539,6 +558,7 @@ if (result.success) {
 ## Prochaines améliorations possibles
 
 ### Futures phases (non critiques)
+
 - [ ] Commentaires avec modération
 - [ ] Partage social avancé
 - [ ] Newsletter intégrée
@@ -551,18 +571,21 @@ if (result.success) {
 ## Notes techniques
 
 ### Performance
+
 - **Index DB** : Sur `status`, `published_at`, `author_id`, `category_id`, `slug`
 - **Requêtes** : Relations pré-chargées, pagination côté serveur
 - **Cache** : Revalidation automatique avec `revalidatePath()`
 - **Images** : Optimisation Next.js Image avec lazy loading
 
 ### Sécurité
+
 - **RLS** : Toutes les tables protégées par des politiques
-- **Permissions** : Validation granulaire sur chaque action  
+- **Permissions** : Validation granulaire sur chaque action
 - **Sanitisation** : Slugs automatiquement nettoyés
 - **Audit** : Actions loggées via la table `audit_logs` existante
 
 ### Maintenance
+
 - **Triggers** : `updated_at` automatique
 - **Contraintes** : Validation au niveau base de données
 - **Types** : Synchronisation automatique Supabase ↔ TypeScript
@@ -577,23 +600,27 @@ if (result.success) {
 ## ✨ **Nouveautés Version 3.0 (Janvier 2025)**
 
 ### Architecture modernisée
+
 - **Types TypeScript stricts** - Remplacement de tous les `any` par des types spécifiques
 - **Composants modulaires** - Architecture component-first réutilisable
 - **Performance optimisée** - Skeletons et Suspense boundaries adaptés
 
 ### Design inspiré de références modernes
+
 - **Hero section** élégante avec navigation intégrée
 - **Cards d'articles** avec variants (`default`, `compact`, `featured`)
 - **Micro-interactions** subtiles (hover effects, transitions)
 - **Responsive design** adapté mobile-first
 
 ### Système d'upload d'images complet
+
 - **Intégration éditeur** - Upload direct dans TipTap avec `MagazineImageUploadField`
 - **Validation robuste** - Types, taille (4MB), formats (JPEG/PNG/WebP/GIF)
 - **Stockage sécurisé** - Bucket Supabase avec politiques RLS appropriées
 - **Interface utilisateur** - Drag & drop, preview, gestion d'erreurs
 
 ### Composants réutilisables
+
 - **`ArticleCard`** - Card moderne avec variants et métadonnées intégrées
 - **`ArticleMetadata`** - Affichage cohérent auteur/date/lecture/vues
 - **`TagList`** - Liste intelligente avec compteur et variants

@@ -5,26 +5,14 @@ import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
 import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
 import { revalidateProductPages } from "@/utils/revalidation";
 import { z } from "zod";
-import { slugify } from "../utils/slugify"; // Helper for sanitizing filenames
+import {
+  uploadProductImageCore,
+  UploadImageResult as CoreUploadImageResult,
+} from "@/lib/storage/image-upload";
 
 // ✅ Schémas de validation pour les autres actions
 const deleteProductSchema = z.object({
   id: z.string().min(1, "Product ID is required"),
-});
-
-const imageUploadSchema = z.object({
-  file: z
-    .instanceof(File)
-    .refine((file) => file.size > 0, "Le fichier ne peut pas être vide.")
-    .refine(
-      (file) => file.size < 4 * 1024 * 1024, // 4MB max
-      "Le fichier ne doit pas dépasser 4Mo."
-    )
-    .refine(
-      (file) => ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type),
-      "Le format du fichier doit être JPEG, PNG, WEBP ou GIF."
-    ),
-  fileName: z.string().min(3, "Le nom du fichier doit contenir au moins 3 caractères."),
 });
 
 const updateProductStatusSchema = z.object({
@@ -270,61 +258,7 @@ export const updateProductStatus = withPermissionSafe(
 // ===== UPLOAD PRODUCT IMAGE =====
 
 // Définit le type de retour pour une meilleure inférence côté client
-export type UploadImageResult =
-  | { success: true; data: { url: string }; message: string }
-  | { success: false; message: string; errors?: { file?: string[]; fileName?: string[] } };
+export type UploadImageResult = CoreUploadImageResult;
 
-export const uploadProductImage = withPermissionSafe(
-  "products:update",
-  async (formData: FormData): Promise<UploadImageResult> => {
-    const supabase = await createSupabaseServerClient();
-
-    const file = formData.get("file") as File;
-    const fileName = formData.get("fileName") as string;
-
-    const validationResult = imageUploadSchema.safeParse({ file, fileName });
-
-    if (!validationResult.success) {
-      return {
-        success: false,
-        message: "Validation échouée",
-        errors: validationResult.error.flatten().fieldErrors,
-      };
-    }
-
-    const { file: validatedFile, fileName: validatedFileName } = validationResult.data;
-
-    const fileExtension = validatedFile.name.split(".").pop();
-    const sanitizedFileName = slugify(validatedFileName);
-    const filePath = `${sanitizedFileName}.${fileExtension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("products")
-      .upload(filePath, validatedFile, {
-        upsert: true, // Overwrite file if it exists
-      });
-
-    if (uploadError) {
-      console.error("Supabase upload error:", uploadError);
-      return {
-        success: false,
-        message: `Erreur lors de l'upload: ${uploadError.message}`,
-      };
-    }
-
-    const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(filePath);
-
-    if (!publicUrlData || !publicUrlData.publicUrl) {
-      return {
-        success: false,
-        message: "Impossible de récupérer l'URL publique après l'upload.",
-      };
-    }
-
-    return {
-      success: true,
-      message: "Image téléversée avec succès !",
-      data: { url: publicUrlData.publicUrl },
-    };
-  }
-);
+// Migration vers la fonction centralisée
+export const uploadProductImage = uploadProductImageCore;

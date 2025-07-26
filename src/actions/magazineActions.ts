@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkUserPermission } from "@/lib/auth/server-auth";
-import { slugify } from "@/utils/slugify";
+import {
+  uploadMagazineImageCore,
+  UploadImageResult as CoreUploadImageResult,
+} from "@/lib/storage/image-upload";
 import {
   ArticleInsert,
   ArticleUpdate,
@@ -498,92 +500,8 @@ export async function createTag(data: Omit<TagInsert, "id">) {
 
 /* ==================== UPLOAD D'IMAGES ==================== */
 
-// Schema de validation pour l'upload d'images
-const imageUploadSchema = z.object({
-  file: z
-    .instanceof(File)
-    .refine((file) => file.size > 0, "Le fichier ne peut pas être vide.")
-    .refine(
-      (file) => file.size < 4 * 1024 * 1024, // 4MB max
-      "Le fichier ne doit pas dépasser 4Mo."
-    )
-    .refine(
-      (file) => ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type),
-      "Le format du fichier doit être JPEG, PNG, WEBP ou GIF."
-    ),
-  fileName: z.string().min(3, "Le nom du fichier doit contenir au moins 3 caractères."),
-});
+// Type pour le résultat de l'upload (rétrocompatibilité)
+export type UploadImageResult = CoreUploadImageResult;
 
-// Type pour le résultat de l'upload
-type UploadImageResult =
-  | { success: true; message: string; data: { url: string } }
-  | { success: false; message: string; errors?: { file?: string[]; fileName?: string[] } };
-
-export async function uploadMagazineImage(formData: FormData): Promise<UploadImageResult> {
-  try {
-    const supabase = await createSupabaseServerClient();
-
-    // Vérifier les permissions
-    const permissionResult = await checkUserPermission("content:create");
-    if (!permissionResult.isAuthorized) {
-      return {
-        success: false,
-        message: "Permission refusée pour l'upload d'images.",
-      };
-    }
-
-    const file = formData.get("file") as File;
-    const fileName = formData.get("fileName") as string;
-
-    const validationResult = imageUploadSchema.safeParse({ file, fileName });
-
-    if (!validationResult.success) {
-      return {
-        success: false,
-        message: "Validation échouée",
-        errors: validationResult.error.flatten().fieldErrors,
-      };
-    }
-
-    const { file: validatedFile, fileName: validatedFileName } = validationResult.data;
-
-    const fileExtension = validatedFile.name.split(".").pop();
-    const sanitizedFileName = slugify(validatedFileName);
-    const filePath = `${sanitizedFileName}.${fileExtension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("magazine")
-      .upload(filePath, validatedFile, {
-        upsert: true, // Overwrite file if it exists
-      });
-
-    if (uploadError) {
-      console.error("Supabase upload error:", uploadError);
-      return {
-        success: false,
-        message: `Erreur lors de l'upload: ${uploadError.message}`,
-      };
-    }
-
-    const { data: publicUrlData } = supabase.storage.from("magazine").getPublicUrl(filePath);
-
-    if (!publicUrlData || !publicUrlData.publicUrl) {
-      return {
-        success: false,
-        message: "Impossible de récupérer l'URL publique après l'upload.",
-      };
-    }
-
-    return {
-      success: true,
-      message: "Image téléversée avec succès !",
-      data: { url: publicUrlData.publicUrl },
-    };
-  } catch (error) {
-    console.error("Erreur lors de l'upload d'image:", error);
-    return {
-      success: false,
-      message: "Erreur interne du serveur.",
-    };
-  }
-}
+// Migration vers la fonction centralisée
+export const uploadMagazineImage = uploadMagazineImageCore;

@@ -144,14 +144,60 @@ Gère le cycle de vie complet des produits. **Toutes ces actions sont réservée
   - **Paramètres :** `data` (objet contenant `productId` et `status`).
   - **Retourne :** Un objet indiquant le succès ou l'échec.
 
-- **`uploadProductImage(formData)`**
-  - **Description :** Téléverse une image dans le bucket de stockage Supabase `products` et retourne son URL publique.
+- **`uploadProductImage(formData)`** ⚡ **FACTORISÉ**
+  - **Description :** Téléverse une image dans le bucket de stockage Supabase `products` et retourne son URL publique. Utilise désormais le système centralisé d'upload (`@/lib/storage/image-upload`).
   - **Paramètres :** `formData` contenant le `file` et le `fileName`.
+  - **Validation :** 4MB max, formats JPEG/PNG/WebP/GIF, noms de fichiers sanitisés.
+  - **Permissions :** `products:update` via `withPermissionSafe`.
   - **Retourne :** `UploadImageResult` avec l'URL de l'image ou une erreur.
 
 ---
 
-## 6. Actions d'Administration (`src/actions/adminActions.ts`)
+## 6. Système d'Upload d'Images Centralisé ⚡ **NOUVEAU**
+
+**Localisation :** `src/lib/storage/image-upload.ts`
+
+### Architecture unifiée
+
+Depuis la factorisation de janvier 2025, le système d'upload d'images utilise une fonction centralisée qui élimine la duplication de code entre les uploads de produits et du magazine.
+
+### Fonction core
+
+- **`uploadImageCore(formData, config)`** (interne)
+  - **Description :** Fonction centralisée qui gère l'upload pour tous les buckets.
+  - **Configuration :** Objet `BucketConfig` avec `bucket`, `permission`, et `usePermissionSafe`.
+  - **Validation :** Schéma Zod unifié (4MB max, JPEG/PNG/WebP/GIF).
+  - **Sécurité :** Vérification de permissions via `checkUserPermission` ou `withPermissionSafe`.
+  - **Fonctionnalités :** Sanitisation des noms de fichiers avec `slugify()`, génération d'URLs publiques.
+
+### Exports publics
+
+- **`uploadProductImageCore(formData)`**
+  - **Bucket :** `products`
+  - **Permission :** `products:update` (via `withPermissionSafe`)
+  - **Usage :** Wrapper pour les images de produits e-commerce
+
+- **`uploadMagazineImageCore(formData)`**
+  - **Bucket :** `magazine`
+  - **Permission :** `content:create` (vérification manuelle)
+  - **Usage :** Wrapper pour les images d'articles de blog
+
+### Avantages de la factorisation
+
+- ✅ **-70 lignes de code dupliqué** éliminées
+- ✅ **Maintenance centralisée** des validations et contraintes
+- ✅ **Cohérence garantie** entre tous les types d'upload
+- ✅ **Évolutivité** facilitée pour de nouveaux buckets
+- ✅ **Type safety** avec `AppPermission` strict
+
+### Tests
+
+- Tests unitaires dans `src/lib/storage/__tests__/image-upload.test.ts`
+- Tests d'intégration préservés dans `src/actions/__tests__/productActions.test.ts`
+
+---
+
+## 7. Actions d'Administration (`src/actions/adminActions.ts`)
 
 Gère les actions spécifiques aux administrateurs pour la gestion des utilisateurs. **Toutes ces actions sont protégées par le wrapper `withPermissionSafe`** qui vérifie les permissions de l'utilisateur.
 
