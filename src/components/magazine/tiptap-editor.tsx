@@ -10,6 +10,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
+import FileHandler from "@tiptap/extension-file-handler";
 import { generateHTML } from "@tiptap/html";
 
 import { Button } from "@/components/ui/button";
@@ -52,15 +53,27 @@ import {
 
 import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { TipTapContent } from "@/types/magazine";
 import { ImageUpload } from "./image-upload";
+import { uploadMagazineImage } from "@/actions/magazineActions";
 
 interface TipTapEditorProps {
-  content?: any;
-  onChange?: (content: any) => void;
+  content?: TipTapContent;
+  onChange?: (content: TipTapContent) => void;
   placeholder?: string;
   className?: string;
   editable?: boolean;
 }
+
+// Fonction utilitaire pour convertir un blob en base64
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
 
 export function TipTapEditor({
   content,
@@ -72,6 +85,75 @@ export function TipTapEditor({
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
 
+  // Fonction pour gérer l'upload d'images via drag/drop ou paste
+  const handleFileUpload = useCallback(async (files: FileList) => {
+    const file = files[0];
+    console.log('🔄 [TipTap] handleFileUpload appelé avec:', { fileName: file?.name, fileType: file?.type });
+    
+    if (!file || !file.type.startsWith('image/')) {
+      console.warn('⚠️ [TipTap] Fichier invalide ou pas une image');
+      return;
+    }
+
+    if (!editor) {
+      console.error('❌ [TipTap] Editor non disponible');
+      return;
+    }
+
+    try {
+      // Upload direct vers le serveur sans base64 temporaire
+      console.log('☁️ [TipTap] Upload direct vers serveur');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name.split('.')[0]);
+      
+      const result = await uploadMagazineImage(formData);
+      console.log('✅ [TipTap] Résultat upload serveur:', result);
+      
+      if (result.success && result.data?.url) {
+        console.log('📝 [TipTap] Insertion image avec URL serveur:', result.data.url);
+        
+        // Insérer directement l'image avec l'URL du serveur
+        editor.chain().focus().setImage({ 
+          src: result.data.url,
+          alt: file.name.split('.')[0],
+          title: file.name.split('.')[0]
+        }).run();
+        
+        // Forcer la synchronisation avec un délai minimal
+        setTimeout(() => {
+          if (editor && onChange) {
+            const currentContent = editor.getJSON();
+            console.log('💾 [TipTap] Contenu final après upload:', JSON.stringify(currentContent, null, 2));
+            onChange(currentContent);
+          }
+        }, 100);
+      } else {
+        console.error('❌ [TipTap] Échec upload serveur:', result);
+        // En cas d'erreur, on peut optionnellement afficher l'image en base64
+        const base64 = await blobToBase64(file);
+        editor.chain().focus().setImage({ 
+          src: base64,
+          alt: file.name.split('.')[0] + ' (erreur upload)',
+          title: 'Image non sauvegardée - réessayez'
+        }).run();
+      }
+    } catch (error) {
+      console.error('💥 [TipTap] Erreur lors de l\'upload d\'image:', error);
+      // En cas d'erreur, afficher en base64 avec indication d'erreur
+      try {
+        const base64 = await blobToBase64(file);
+        editor.chain().focus().setImage({ 
+          src: base64,
+          alt: file.name.split('.')[0] + ' (erreur upload)',
+          title: 'Image non sauvegardée - réessayez'
+        }).run();
+      } catch {
+        console.error('❌ [TipTap] Impossible de traiter l\'image');
+      }
+    }
+  }, [editor, onChange]);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -80,11 +162,44 @@ export function TipTapEditor({
         },
         // Désactiver les extensions que nous redéfinissons
         link: false,
-        // Underline n'est pas dans StarterKit par défaut, donc pas besoin de le désactiver
       }),
       Image.configure({
         HTMLAttributes: {
-          class: "rounded-lg max-w-full h-auto",
+          class: "rounded-lg max-w-full h-auto shadow-sm my-4",
+        },
+        allowBase64: true,
+        inline: false,
+        // Ensure all attributes are preserved
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            src: {
+              default: null,
+              parseHTML: element => element.getAttribute('src'),
+              renderHTML: attributes => ({ src: attributes.src }),
+            },
+            alt: {
+              default: '',
+              parseHTML: element => element.getAttribute('alt'),
+              renderHTML: attributes => ({ alt: attributes.alt }),
+            },
+            title: {
+              default: '',
+              parseHTML: element => element.getAttribute('title'),
+              renderHTML: attributes => ({ title: attributes.title }),
+            },
+          }
+        },
+      }),
+      FileHandler.configure({
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
+        onDrop: (_currentEditor, files, _pos) => {
+          console.log('🎯 [TipTap] FileHandler onDrop déclenché');
+          handleFileUpload(files);
+        },
+        onPaste: (_currentEditor, files, _event) => {
+          console.log('📋 [TipTap] FileHandler onPaste déclenché');
+          handleFileUpload(files);
         },
       }),
       Link.configure({
@@ -112,8 +227,11 @@ export function TipTapEditor({
     editable,
     immediatelyRender: false, // Fix SSR hydration issues
     onUpdate: ({ editor }) => {
+      const currentContent = editor.getJSON();
+      console.log('🔄 [TipTap] onUpdate déclenché, contenu:', JSON.stringify(currentContent, null, 2));
       if (onChange) {
-        onChange(editor.getJSON());
+        console.log('📤 [TipTap] Appel onChange depuis onUpdate');
+        onChange(currentContent);
       }
     },
     editorProps: {
@@ -134,6 +252,7 @@ export function TipTapEditor({
           className
         ),
       },
+      // Removed custom paste handler to avoid conflicts with FileHandler
     },
   });
 
@@ -142,7 +261,7 @@ export function TipTapEditor({
     if (!editor || !onChange) return;
 
     const saveInterval = setInterval(() => {
-      const content = editor.getJSON();
+      const _content = editor.getJSON();
       // Here you could implement auto-save to localStorage or server
       // localStorage.setItem('article-draft', JSON.stringify(content));
     }, 30000); // Save every 30 seconds
@@ -167,10 +286,32 @@ export function TipTapEditor({
   }, [editor, linkUrl]);
 
   const handleImageSelect = useCallback((imageUrl: string, altText?: string) => {
+    console.log('🖼️ [TipTap] handleImageSelect appelé avec URL:', imageUrl);
     if (editor && imageUrl) {
-      editor.chain().focus().setImage({ src: imageUrl, alt: altText || "" }).run();
+      // S'assurer que l'editor a le focus et insérer l'image avec tous les attributs
+      console.log('📝 [TipTap] Insertion image via handleImageSelect');
+      editor
+        .chain()
+        .focus()
+        .setImage({ 
+          src: imageUrl, 
+          alt: altText || "",
+          title: altText || "",
+          // Ajouter des attributs par défaut pour s'assurer qu'ils sont présents
+          class: "rounded-lg max-w-full h-auto shadow-sm my-4"
+        })
+        .run();
+      
+      // Forcer la synchronisation du contenu après l'insertion d'image
+      setTimeout(() => {
+        if (onChange && editor) {
+          const updatedContent = editor.getJSON();
+          console.log('💾 [TipTap] handleImageSelect - déclenchement onChange:', JSON.stringify(updatedContent, null, 2));
+          onChange(updatedContent);
+        }
+      }, 100);
     }
-  }, [editor]);
+  }, [editor, onChange]);
 
   const removeLink = useCallback(() => {
     if (editor) {
@@ -482,7 +623,7 @@ export function TipTapEditor({
 }
 
 // Utility function to generate HTML from TipTap JSON
-export function generateHTMLFromJSON(json: any): string {
+export function generateHTMLFromJSON(json: TipTapContent): string {
   return generateHTML(json, [
     StarterKit,
     Image,
@@ -492,14 +633,15 @@ export function generateHTMLFromJSON(json: any): string {
     Underline,
     Subscript,
     Superscript,
+    FileHandler,
   ]);
 }
 
 // Utility function to get plain text from TipTap JSON
-export function getPlainTextFromJSON(json: any): string {
+export function getPlainTextFromJSON(json: TipTapContent): string {
   if (!json || !json.content) return "";
 
-  const extractText = (node: any): string => {
+  const extractText = (node: TipTapContent): string => {
     if (node.text) return node.text;
     if (node.content) return node.content.map(extractText).join(" ");
     return "";

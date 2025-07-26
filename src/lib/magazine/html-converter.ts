@@ -1,4 +1,3 @@
-import { generateHTML } from "@tiptap/html/server";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -6,9 +5,10 @@ import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
+import { TipTapContent } from "@/types/magazine";
 
 // Extensions compatibles serveur (sans TextAlign qui pose problème)
-const extensions = [
+const _extensions = [
   StarterKit.configure({
     heading: {
       levels: [1, 2, 3],
@@ -43,7 +43,7 @@ const extensions = [
  * Convertit le JSON TipTap en HTML
  * Utilisable côté serveur dans les Server Actions
  */
-export function convertTipTapToHTML(content: any): string {
+export function convertTipTapToHTML(content: TipTapContent): string {
   if (!content || !content.content) return "";
   
   // Utilisation temporaire du fallback pour éviter les erreurs d'extensions serveur
@@ -70,16 +70,16 @@ export function convertTipTapToHTML(content: any): string {
 /**
  * Conversion basique en cas d'erreur avec TipTap
  */
-function convertToBasicHTML(content: any): string {
+function convertToBasicHTML(content: TipTapContent): string {
   if (!content || !content.content) return "";
   
-  const renderNode = (node: any): string => {
+  const renderNode = (node: TipTapContent): string => {
     if (node.text) {
       let text = node.text;
       
       // Application des marques (formatage)
       if (node.marks) {
-        node.marks.forEach((mark: any) => {
+        node.marks?.forEach((mark) => {
           switch (mark.type) {
             case "bold":
               text = `<strong>${text}</strong>`;
@@ -99,10 +99,11 @@ function convertToBasicHTML(content: any): string {
             case "highlight":
               text = `<mark class="bg-yellow-200 px-1 rounded">${text}</mark>`;
               break;
-            case "link":
+            case "link": {
               const href = mark.attrs?.href || "#";
               text = `<a href="${href}" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
               break;
+            }
           }
         });
       }
@@ -113,16 +114,18 @@ function convertToBasicHTML(content: any): string {
     const innerContent = node.content ? node.content.map(renderNode).join("") : "";
     
     switch (node.type) {
-      case "paragraph":
+      case "paragraph": {
         const alignment = node.attrs?.textAlign;
         const alignClass = alignment ? ` style="text-align: ${alignment}"` : "";
         return `<p${alignClass}>${innerContent}</p>`;
+      }
         
-      case "heading":
+      case "heading": {
         const level = node.attrs?.level || 1;
         const headingAlign = node.attrs?.textAlign;
         const headingAlignClass = headingAlign ? ` style="text-align: ${headingAlign}"` : "";
         return `<h${level}${headingAlignClass}>${innerContent}</h${level}>`;
+      }
         
       case "bulletList":
         return `<ul>${innerContent}</ul>`;
@@ -145,10 +148,19 @@ function convertToBasicHTML(content: any): string {
       case "horizontalRule":
         return '<hr class="border-gray-300 my-8">';
         
-      case "image":
+      case "image": {
         const src = node.attrs?.src || "";
         const alt = node.attrs?.alt || "";
-        return `<img src="${src}" alt="${alt}" class="rounded-lg max-w-full h-auto shadow-sm my-4">`;
+        const title = node.attrs?.title || "";
+        
+        // Skip empty images without src
+        if (!src) {
+          console.warn('⚠️ [HTML Converter] Image node without src found, skipping');
+          return "";
+        }
+        
+        return `<img src="${src}" alt="${alt}" title="${title}" class="rounded-lg max-w-full h-auto shadow-sm my-4">`;
+      }
         
       default:
         return innerContent;
@@ -161,10 +173,10 @@ function convertToBasicHTML(content: any): string {
 /**
  * Extrait le texte brut du JSON TipTap
  */
-export function extractPlainText(content: any): string {
+export function extractPlainText(content: TipTapContent): string {
   if (!content || !content.content) return "";
   
-  const extractText = (node: any): string => {
+  const extractText = (node: TipTapContent): string => {
     if (node.text) return node.text;
     if (node.content) return node.content.map(extractText).join(" ");
     return "";
@@ -176,7 +188,7 @@ export function extractPlainText(content: any): string {
 /**
  * Calcule le temps de lecture depuis le JSON TipTap
  */
-export function calculateReadingTime(content: any, wordsPerMinute: number = 200): number {
+export function calculateReadingTime(content: TipTapContent, wordsPerMinute: number = 200): number {
   const text = extractPlainText(content);
   const words = text.split(/\s+/).filter(word => word.length > 0).length;
   return Math.max(1, Math.ceil(words / wordsPerMinute));
@@ -185,7 +197,7 @@ export function calculateReadingTime(content: any, wordsPerMinute: number = 200)
 /**
  * Extrait un résumé depuis le JSON TipTap
  */
-export function extractExcerpt(content: any, maxLength: number = 160): string {
+export function extractExcerpt(content: TipTapContent, maxLength: number = 160): string {
   const plainText = extractPlainText(content);
   
   if (plainText.length <= maxLength) {

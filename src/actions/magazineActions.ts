@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkUserPermission } from "@/lib/auth/server-auth";
@@ -12,7 +11,7 @@ import {
   ArticleFormData, 
   CategoryInsert, 
   TagInsert,
-  ArticleFilters 
+  TipTapContent
 } from "@/types/magazine";
 
 import { 
@@ -20,6 +19,59 @@ import {
   calculateReadingTime as calcReadingTime,
   extractExcerpt 
 } from "@/lib/magazine/html-converter";
+
+// Fonction utilitaire pour nettoyer le contenu TipTap avant sauvegarde
+function sanitizeTipTapContent(content: unknown): TipTapContent {
+  console.log('🧹 [MagazineActions] sanitizeTipTapContent reçu:', JSON.stringify(content, null, 2));
+  
+  if (!content || typeof content !== 'object') {
+    console.log('⚠️ [MagazineActions] Contenu invalide, retour contenu vide');
+    return { type: 'doc', content: [] };
+  }
+  
+  // Assurer que le contenu est un objet TipTap valide
+  const tipTapContent = content as TipTapContent;
+  
+  if (!tipTapContent.type) {
+    console.log('⚠️ [MagazineActions] Pas de type TipTap, retour contenu vide');
+    return { type: 'doc', content: [] };
+  }
+  
+  // Nettoyer récursivement le contenu pour s'assurer qu'il n'y a pas de références circulaires
+  // et supprimer les nœuds image vides
+  const cleanContent = (node: TipTapContent): TipTapContent | null => {
+    // Si c'est un nœud image sans src, le supprimer
+    if (node.type === 'image' && (!node.attrs?.src || node.attrs.src === '')) {
+      console.log('🗑️ [MagazineActions] Suppression nœud image vide');
+      return null;
+    }
+    
+    // Si le nœud a du contenu, le nettoyer récursivement
+    if (node.content && Array.isArray(node.content)) {
+      const cleanedContent = node.content
+        .map(cleanContent)
+        .filter((item): item is TipTapContent => item !== null);
+      
+      return {
+        ...node,
+        content: cleanedContent
+      };
+    }
+    
+    return node;
+  };
+  
+  const sanitizedContent = cleanContent(tipTapContent);
+  if (!sanitizedContent) {
+    console.log('⚠️ [MagazineActions] Contenu entièrement nettoyé, retour contenu vide');
+    return { type: 'doc', content: [] };
+  }
+  
+  // Nettoyer les références circulaires
+  const finalContent = JSON.parse(JSON.stringify(sanitizedContent));
+  console.log('✅ [MagazineActions] Contenu nettoyé:', JSON.stringify(finalContent, null, 2));
+  return finalContent;
+}
 
 import { 
   canPerformPublicationAction, 
@@ -71,18 +123,21 @@ export async function createArticle(formData: ArticleFormData) {
       return { success: false, error: "Un article avec ce slug existe déjà" };
     }
 
+    // Nettoyage et validation du contenu TipTap
+    const cleanedContent = sanitizeTipTapContent(formData.content);
+    
     // Préparation des données
     const articleData: ArticleInsert = {
       title: formData.title,
       slug,
-      excerpt: formData.excerpt || extractExcerpt(formData.content),
-      content: formData.content,
-      content_html: convertTipTapToHTML(formData.content),
+      excerpt: formData.excerpt || extractExcerpt(cleanedContent),
+      content: cleanedContent,
+      content_html: convertTipTapToHTML(cleanedContent),
       featured_image: formData.featured_image || null,
       status: formData.status || "draft",
       author_id: user.id,
       category_id: formData.category_id || null,
-      reading_time: calcReadingTime(formData.content),
+      reading_time: calcReadingTime(cleanedContent),
       seo_title: formData.seo_title || null,
       seo_description: formData.seo_description || null,
       published_at: (formData.status || "draft") === "published" && !formData.published_at 
@@ -123,13 +178,16 @@ export async function createArticle(formData: ArticleFormData) {
     revalidatePath("/magazine");
     
     return { success: true, data: article };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, error: "Erreur inattendue lors de la création" };
   }
 }
 
 export async function updateArticle(id: string, formData: ArticleFormData) {
   try {
+    console.log('📝 [MagazineActions] updateArticle appelé pour ID:', id);
+    console.log('📄 [MagazineActions] formData reçu:', JSON.stringify(formData, null, 2));
+    
     const supabase = await createSupabaseServerClient();
     
     // Vérification des permissions
@@ -153,17 +211,21 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
       return { success: false, error: "Un autre article avec ce slug existe déjà" };
     }
 
+    // Nettoyage et validation du contenu TipTap
+    console.log('📄 [MagazineActions] Contenu TipTap reçu avant nettoyage:', JSON.stringify(formData.content, null, 2));
+    const cleanedContent = sanitizeTipTapContent(formData.content);
+    
     // Préparation des données de mise à jour
     const updateData: ArticleUpdate = {
       title: formData.title,
       slug,
-      excerpt: formData.excerpt || extractExcerpt(formData.content),
-      content: formData.content,
-      content_html: convertTipTapToHTML(formData.content),
+      excerpt: formData.excerpt || extractExcerpt(cleanedContent),
+      content: cleanedContent,
+      content_html: convertTipTapToHTML(cleanedContent),
       featured_image: formData.featured_image || null,
       status: formData.status || "draft",
       category_id: formData.category_id || null,
-      reading_time: calcReadingTime(formData.content),
+      reading_time: calcReadingTime(cleanedContent),
       seo_title: formData.seo_title || null,
       seo_description: formData.seo_description || null,
       published_at: (formData.status || "draft") === "published" && !formData.published_at 
@@ -215,7 +277,7 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
     revalidatePath(`/magazine/${article.slug}`);
     
     return { success: true, data: article };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, error: "Erreur inattendue lors de la mise à jour" };
   }
 }
@@ -243,7 +305,7 @@ export async function deleteArticle(id: string) {
     revalidatePath("/magazine");
     
     return { success: true };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, error: "Erreur lors de la suppression" };
   }
 }
@@ -271,7 +333,7 @@ export async function createCategory(data: Omit<CategoryInsert, 'id'>) {
 
     revalidatePath("/admin/magazine");
     return { success: true, data: category };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, error: "Erreur lors de la création de la catégorie" };
   }
 }
@@ -321,7 +383,7 @@ export async function changeArticleStatus(
     }
 
     // Mise à jour du statut
-    const updateData: any = { 
+    const updateData: Partial<ArticleUpdate> = { 
       status: newStatus,
       updated_at: new Date().toISOString()
     };
@@ -375,7 +437,7 @@ export async function bulkChangeArticleStatus(
     }
 
     // Mise à jour en lot
-    const updateData: any = { 
+    const updateData: Partial<ArticleUpdate> = { 
       status: newStatus,
       updated_at: new Date().toISOString()
     };
@@ -430,7 +492,7 @@ export async function createTag(data: Omit<TagInsert, 'id'>) {
 
     revalidatePath("/admin/magazine");
     return { success: true, data: tag };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, error: "Erreur lors de la création du tag" };
   }
 }
