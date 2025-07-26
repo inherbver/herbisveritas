@@ -1,47 +1,49 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import { getArticleBySlug, getPublishedArticles } from "@/lib/magazine/queries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TipTapViewer } from "@/components/magazine/tiptap-viewer";
-import { Calendar, User, Clock, Eye, ArrowLeft, Share2, Facebook, Twitter, Linkedin } from "lucide-react";
+import { ArticleDisplay, Tag } from "@/types/magazine";
+import { Calendar, User, Clock, Eye, ArrowLeft, Facebook, Twitter, Linkedin } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
 
 // Génération des données structurées JSON-LD pour le SEO
-function generateStructuredData(article: any, baseUrl: string) {
+function generateStructuredData(article: ArticleDisplay, baseUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Article",
-    "headline": article.title,
-    "description": article.seo_description || article.excerpt || undefined,
-    "image": article.featured_image ? [article.featured_image] : [],
-    "datePublished": article.published_at || article.created_at,
-    "dateModified": article.updated_at || article.created_at,
-    "author": article.author ? {
-      "@type": "Person",
-      "name": `${article.author.first_name || ''} ${article.author.last_name || ''}`.trim(),
-    } : undefined,
-    "publisher": {
+    headline: article.title,
+    description: article.seo_description || article.excerpt || undefined,
+    image: article.featured_image ? [article.featured_image] : [],
+    datePublished: article.published_at || article.created_at,
+    dateModified: article.updated_at || article.created_at,
+    author: article.author
+      ? {
+          "@type": "Person",
+          name: `${article.author.first_name || ""} ${article.author.last_name || ""}`.trim(),
+        }
+      : undefined,
+    publisher: {
       "@type": "Organization",
-      "name": "Herbis Veritas",
-      "logo": {
+      name: "Herbis Veritas",
+      logo: {
         "@type": "ImageObject",
-        "url": `${baseUrl}/logo.png`
-      }
+        url: `${baseUrl}/logo.png`,
+      },
     },
-    "mainEntityOfPage": {
+    mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `${baseUrl}/magazine/${article.slug}`
+      "@id": `${baseUrl}/magazine/${article.slug}`,
     },
-    "articleSection": article.category?.name || undefined,
-    "keywords": article.tags?.map((tag: any) => tag.name).join(", ") || undefined,
-    "wordCount": article.reading_time ? article.reading_time * 250 : undefined, // Estimation : 250 mots/minute
+    articleSection: article.category?.name || undefined,
+    keywords: article.tags?.map((tag: Tag) => tag.name).join(", ") || undefined,
+    wordCount: article.reading_time ? article.reading_time * 250 : undefined, // Estimation : 250 mots/minute
   };
 }
 
@@ -68,7 +70,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: article.seo_description || article.excerpt || undefined,
       type: "article",
       publishedTime: article.published_at || article.created_at || undefined,
-      authors: article.author ? [`${article.author.first_name || ''} ${article.author.last_name || ''}`] : [],
+      authors: article.author
+        ? [`${article.author.first_name || ""} ${article.author.last_name || ""}`]
+        : [],
       images: article.featured_image ? [article.featured_image] : [],
     },
     twitter: {
@@ -81,18 +85,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 // Composant pour les boutons de partage
-function ShareButtons({ article, currentUrl }: { article: any, currentUrl: string }) {
-  const shareText = `${article.title} - ${article.excerpt || ''}`;
-  
+function ShareButtons({ article, currentUrl }: { article: ArticleDisplay; currentUrl: string }) {
+  const shareText = `${article.title} - ${article.excerpt || ""}`;
+
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-600 mr-2">Partager :</span>
-      
-      <Button
-        variant="outline"
-        size="sm"
-        asChild
-      >
+      <span className="mr-2 text-sm text-gray-600">Partager :</span>
+
+      <Button variant="outline" size="sm" asChild>
         <a
           href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`}
           target="_blank"
@@ -103,11 +103,7 @@ function ShareButtons({ article, currentUrl }: { article: any, currentUrl: strin
         </a>
       </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        asChild
-      >
+      <Button variant="outline" size="sm" asChild>
         <a
           href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareText)}`}
           target="_blank"
@@ -118,11 +114,7 @@ function ShareButtons({ article, currentUrl }: { article: any, currentUrl: strin
         </a>
       </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        asChild
-      >
+      <Button variant="outline" size="sm" asChild>
         <a
           href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`}
           target="_blank"
@@ -139,22 +131,20 @@ function ShareButtons({ article, currentUrl }: { article: any, currentUrl: strin
 // Composant pour les articles connexes
 async function RelatedArticles({ currentArticleId }: { currentArticleId: string }) {
   const relatedArticles = await getPublishedArticles(3);
-  const filteredArticles = relatedArticles.filter(article => article.id !== currentArticleId);
+  const filteredArticles = relatedArticles.filter((article) => article.id !== currentArticleId);
 
   if (filteredArticles.length === 0) return null;
 
   return (
-    <section className="py-12 bg-gray-50">
+    <section className="bg-gray-50 py-12">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-          Articles connexes
-        </h2>
-        
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+        <h2 className="mb-8 text-center text-2xl font-bold text-gray-900">Articles connexes</h2>
+
+        <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredArticles.slice(0, 3).map((article) => (
-            <Card key={article.id} className="hover:shadow-lg transition-shadow">
+            <Card key={article.id} className="transition-shadow hover:shadow-lg">
               <Link href={`/magazine/${article.slug}`}>
-                <div className="aspect-[4/3] relative overflow-hidden rounded-t-lg">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
                   {article.featured_image ? (
                     <Image
                       src={article.featured_image}
@@ -163,31 +153,32 @@ async function RelatedArticles({ currentArticleId }: { currentArticleId: string 
                       className="object-cover transition-transform duration-300 hover:scale-105"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <span className="text-gray-400 text-sm">Pas d'image</span>
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                      <span className="text-sm text-gray-400">Pas d'image</span>
                     </div>
                   )}
                 </div>
-                
+
                 <CardContent className="p-4">
                   {article.category && (
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs mb-2"
-                      style={{ borderColor: article.category.color || undefined, color: article.category.color || undefined }}
+                    <Badge
+                      variant="outline"
+                      className="mb-2 text-xs"
+                      style={{
+                        borderColor: article.category.color || undefined,
+                        color: article.category.color || undefined,
+                      }}
                     >
                       {article.category.name}
                     </Badge>
                   )}
-                  
-                  <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors">
+
+                  <h3 className="mb-2 font-semibold text-gray-900 transition-colors hover:text-blue-600">
                     {article.title}
                   </h3>
-                  
+
                   {article.excerpt && (
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {article.excerpt}
-                    </p>
+                    <p className="line-clamp-2 text-sm text-gray-600">{article.excerpt}</p>
                   )}
                 </CardContent>
               </Link>
@@ -207,22 +198,22 @@ async function ArticleContent({ slug }: { slug: string }) {
     notFound();
   }
 
-  const publishedDate = article.published_at 
+  const publishedDate = article.published_at
     ? new Date(article.published_at).toLocaleDateString("fr-FR", {
         weekday: "long",
         day: "numeric",
-        month: "long", 
-        year: "numeric"
+        month: "long",
+        year: "numeric",
       })
-    : new Date(article.created_at || '').toLocaleDateString("fr-FR", {
+    : new Date(article.created_at || "").toLocaleDateString("fr-FR", {
         weekday: "long",
         day: "numeric",
         month: "long",
-        year: "numeric"
+        year: "numeric",
       });
 
-  const currentUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/magazine/${article.slug}`;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const currentUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/magazine/${article.slug}`;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const structuredData = generateStructuredData(article, baseUrl);
 
   return (
@@ -235,12 +226,16 @@ async function ArticleContent({ slug }: { slug: string }) {
         }}
       />
       {/* Breadcrumb et retour */}
-      <div className="bg-gray-50 border-b">
+      <div className="border-b bg-gray-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link href="/" className="hover:text-gray-900">Accueil</Link>
+            <Link href="/" className="hover:text-gray-900">
+              Accueil
+            </Link>
             <span>•</span>
-            <Link href="/magazine" className="hover:text-gray-900">Magazine</Link>
+            <Link href="/magazine" className="hover:text-gray-900">
+              Magazine
+            </Link>
             <span>•</span>
             <span className="text-gray-900">{article.title}</span>
           </div>
@@ -248,13 +243,13 @@ async function ArticleContent({ slug }: { slug: string }) {
       </div>
 
       {/* Contenu principal */}
-      <article className="container mx-auto px-4 py-8 max-w-4xl">
+      <article className="container mx-auto max-w-4xl px-4 py-8">
         {/* Header de l'article */}
         <header className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="mb-4 flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
               <Link href="/magazine">
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="mr-2 h-4 w-4" />
                 Retour au magazine
               </Link>
             </Button>
@@ -263,10 +258,13 @@ async function ArticleContent({ slug }: { slug: string }) {
           {/* Catégorie */}
           {article.category && (
             <Link href={`/magazine/category/${article.category.slug}`}>
-              <Badge 
-                variant="outline" 
-                className="mb-4 cursor-pointer hover:opacity-80 transition-opacity"
-                style={{ borderColor: article.category.color || undefined, color: article.category.color || undefined }}
+              <Badge
+                variant="outline"
+                className="mb-4 cursor-pointer transition-opacity hover:opacity-80"
+                style={{
+                  borderColor: article.category.color || undefined,
+                  color: article.category.color || undefined,
+                }}
               >
                 {article.category.name}
               </Badge>
@@ -274,26 +272,24 @@ async function ArticleContent({ slug }: { slug: string }) {
           )}
 
           {/* Titre */}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
+          <h1 className="mb-4 text-3xl font-bold leading-tight text-gray-900 md:text-4xl lg:text-5xl">
             {article.title}
           </h1>
 
           {/* Extrait */}
           {article.excerpt && (
-            <p className="text-xl text-gray-600 leading-relaxed mb-6">
-              {article.excerpt}
-            </p>
+            <p className="mb-6 text-xl leading-relaxed text-gray-600">{article.excerpt}</p>
           )}
 
           {/* Métadonnées */}
-          <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-6">
+          <div className="mb-6 flex flex-wrap items-center gap-6 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="font-medium">
                 {article.author?.first_name} {article.author?.last_name}
               </span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <time dateTime={article.published_at || article.created_at || undefined}>
@@ -316,10 +312,13 @@ async function ArticleContent({ slug }: { slug: string }) {
 
           {/* Tags */}
           {article.tags && article.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              {article.tags.map((tag: any) => (
+            <div className="mb-6 flex flex-wrap gap-2">
+              {article.tags?.map((tag: Tag) => (
                 <Link key={tag.id} href={`/magazine/tag/${tag.slug}`}>
-                  <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-gray-200 transition-colors">
+                  <Badge
+                    variant="secondary"
+                    className="cursor-pointer text-xs transition-colors hover:bg-gray-200"
+                  >
                     #{tag.name}
                   </Badge>
                 </Link>
@@ -333,7 +332,7 @@ async function ArticleContent({ slug }: { slug: string }) {
 
         {/* Image mise en avant */}
         {article.featured_image && (
-          <div className="relative aspect-[16/9] mb-8 overflow-hidden rounded-lg">
+          <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-lg">
             <Image
               src={article.featured_image}
               alt={article.title}
@@ -350,40 +349,48 @@ async function ArticleContent({ slug }: { slug: string }) {
         </div>
 
         {/* Footer de l'article */}
-        <footer className="mt-12 pt-8 border-t">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <footer className="mt-12 border-t pt-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="text-sm text-gray-500">
               Publié le {publishedDate}
-              {article.updated_at && article.created_at && new Date(article.updated_at).toDateString() !== new Date(article.created_at).toDateString() && (
-                <span> • Mis à jour le {new Date(article.updated_at).toLocaleDateString("fr-FR")}</span>
-              )}
+              {article.updated_at &&
+                article.created_at &&
+                new Date(article.updated_at).toDateString() !==
+                  new Date(article.created_at).toDateString() && (
+                  <span>
+                    {" "}
+                    • Mis à jour le {new Date(article.updated_at).toLocaleDateString("fr-FR")}
+                  </span>
+                )}
             </div>
-            
+
             <ShareButtons article={article} currentUrl={currentUrl} />
           </div>
         </footer>
       </article>
 
       {/* Articles connexes */}
-      <Suspense fallback={
-        <section className="py-12 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <Skeleton className="h-8 w-48 mx-auto mb-8" />
-            <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i}>
-                  <Skeleton className="aspect-[4/3] w-full rounded-t-lg" />
-                  <CardContent className="p-4 space-y-2">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </CardContent>
-                </Card>
-              ))}
+      <Suspense
+        fallback={
+          <section className="bg-gray-50 py-12">
+            <div className="container mx-auto px-4">
+              <Skeleton className="mx-auto mb-8 h-8 w-48" />
+              <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <Skeleton className="aspect-[4/3] w-full rounded-t-lg" />
+                    <CardContent className="space-y-2 p-4">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-5 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
-      }>
+          </section>
+        }
+      >
         <RelatedArticles currentArticleId={article.id} />
       </Suspense>
     </div>
@@ -395,27 +402,29 @@ export default async function ArticlePage({ params }: Props) {
   setRequestLocale(locale);
 
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <Skeleton className="h-12 w-32 mb-8" />
-          <Skeleton className="h-6 w-24 mb-4" />
-          <Skeleton className="h-12 w-full mb-4" />
-          <Skeleton className="h-6 w-3/4 mb-6" />
-          <div className="flex gap-4 mb-6">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-24" />
-          </div>
-          <Skeleton className="aspect-[16/9] w-full mb-8" />
-          <div className="space-y-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-full" />
-            ))}
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white">
+          <div className="container mx-auto max-w-4xl px-4 py-8">
+            <Skeleton className="mb-8 h-12 w-32" />
+            <Skeleton className="mb-4 h-6 w-24" />
+            <Skeleton className="mb-4 h-12 w-full" />
+            <Skeleton className="mb-6 h-6 w-3/4" />
+            <div className="mb-6 flex gap-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <Skeleton className="mb-8 aspect-[16/9] w-full" />
+            <div className="space-y-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-4 w-full" />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <ArticleContent slug={slug} />
     </Suspense>
   );

@@ -1,4 +1,5 @@
 // Types Supabase générés
+import { TipTapContent } from "./magazine";
 export interface Database {
   public: {
     Tables: {
@@ -9,7 +10,7 @@ export interface Database {
           title: string;
           slug: string;
           excerpt: string | null;
-          content: any; // JSON TipTap
+          content: TipTapContent; // JSON TipTap
           content_html: string | null;
           featured_image: string | null;
           status: string | null;
@@ -28,7 +29,7 @@ export interface Database {
           title: string;
           slug: string;
           excerpt?: string | null;
-          content: any;
+          content: TipTapContent;
           content_html?: string | null;
           featured_image?: string | null;
           status?: string | null;
@@ -46,7 +47,7 @@ export interface Database {
           title?: string;
           slug?: string;
           excerpt?: string | null;
-          content?: any;
+          content?: TipTapContent;
           content_html?: string | null;
           featured_image?: string | null;
           status?: string | null;

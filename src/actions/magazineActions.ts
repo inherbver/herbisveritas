@@ -5,78 +5,81 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkUserPermission } from "@/lib/auth/server-auth";
 import { slugify } from "@/utils/slugify";
-import { 
-  ArticleInsert, 
-  ArticleUpdate, 
-  ArticleFormData, 
-  CategoryInsert, 
+import {
+  ArticleInsert,
+  ArticleUpdate,
+  ArticleFormData,
+  CategoryInsert,
   TagInsert,
-  TipTapContent
+  TipTapContent,
 } from "@/types/magazine";
 
-import { 
-  convertTipTapToHTML, 
+import {
+  convertTipTapToHTML,
   calculateReadingTime as calcReadingTime,
-  extractExcerpt 
+  extractExcerpt,
 } from "@/lib/magazine/html-converter";
 
 // Fonction utilitaire pour nettoyer le contenu TipTap avant sauvegarde
 function sanitizeTipTapContent(content: unknown): TipTapContent {
-  console.log('🧹 [MagazineActions] sanitizeTipTapContent reçu:', JSON.stringify(content, null, 2));
-  
-  if (!content || typeof content !== 'object') {
-    console.log('⚠️ [MagazineActions] Contenu invalide, retour contenu vide');
-    return { type: 'doc', content: [] };
+  console.log("🧹 [MagazineActions] sanitizeTipTapContent reçu:", JSON.stringify(content, null, 2));
+
+  if (!content || typeof content !== "object") {
+    console.log("⚠️ [MagazineActions] Contenu invalide, retour contenu vide");
+    return { type: "doc", content: [] };
   }
-  
+
   // Assurer que le contenu est un objet TipTap valide
   const tipTapContent = content as TipTapContent;
-  
+
   if (!tipTapContent.type) {
-    console.log('⚠️ [MagazineActions] Pas de type TipTap, retour contenu vide');
-    return { type: 'doc', content: [] };
+    console.log("⚠️ [MagazineActions] Pas de type TipTap, retour contenu vide");
+    return { type: "doc", content: [] };
   }
-  
+
   // Nettoyer récursivement le contenu pour s'assurer qu'il n'y a pas de références circulaires
   // et supprimer les nœuds image vides
   const cleanContent = (node: TipTapContent): TipTapContent | null => {
     // Si c'est un nœud image sans src, le supprimer
-    if (node.type === 'image' && (!node.attrs?.src || node.attrs.src === '')) {
-      console.log('🗑️ [MagazineActions] Suppression nœud image vide');
+    if (node.type === "image" && (!node.attrs || !node.attrs.src || node.attrs.src === "")) {
+      console.log(
+        "🗑️ [MagazineActions] Suppression nœud image vide:",
+        JSON.stringify(node, null, 2)
+      );
       return null;
     }
-    
+
     // Si le nœud a du contenu, le nettoyer récursivement
     if (node.content && Array.isArray(node.content)) {
       const cleanedContent = node.content
         .map(cleanContent)
         .filter((item): item is TipTapContent => item !== null);
-      
+
       return {
         ...node,
-        content: cleanedContent
+        content: cleanedContent,
       };
     }
-    
+
     return node;
   };
-  
+
   const sanitizedContent = cleanContent(tipTapContent);
   if (!sanitizedContent) {
-    console.log('⚠️ [MagazineActions] Contenu entièrement nettoyé, retour contenu vide');
-    return { type: 'doc', content: [] };
+    console.log("⚠️ [MagazineActions] Contenu entièrement nettoyé, retour contenu vide");
+    return { type: "doc", content: [] };
   }
-  
+
   // Nettoyer les références circulaires
   const finalContent = JSON.parse(JSON.stringify(sanitizedContent));
-  console.log('✅ [MagazineActions] Contenu nettoyé:', JSON.stringify(finalContent, null, 2));
+  console.log("✅ [MagazineActions] Contenu nettoyé:", JSON.stringify(finalContent, null, 2));
   return finalContent;
 }
 
-import { 
-  canPerformPublicationAction, 
+import {
+  canPerformPublicationAction,
   validateArticleForPublication,
-  getPublicationActionMessage 
+  getPublicationActionMessage,
 } from "@/lib/magazine/publication-utils";
 
 // Fonction utilitaire pour générer un slug
@@ -96,7 +99,7 @@ function generateSlug(title: string): string {
 export async function createArticle(formData: ArticleFormData) {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     // Vérification des permissions
     const hasPermission = await checkUserPermission("content:create");
     if (!hasPermission) {
@@ -104,28 +107,31 @@ export async function createArticle(formData: ArticleFormData) {
     }
 
     // Récupération de l'utilisateur actuel
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
     if (userError || !user) {
       return { success: false, error: "Utilisateur non authentifié" };
     }
 
     // Génération du slug si non fourni
     const slug = formData.slug || generateSlug(formData.title);
-    
+
     // Vérification de l'unicité du slug
     const { data: existingArticle } = await supabase
       .from("articles")
       .select("id")
       .eq("slug", slug)
       .single();
-    
+
     if (existingArticle) {
       return { success: false, error: "Un article avec ce slug existe déjà" };
     }
 
     // Nettoyage et validation du contenu TipTap
     const cleanedContent = sanitizeTipTapContent(formData.content);
-    
+
     // Préparation des données
     const articleData: ArticleInsert = {
       title: formData.title,
@@ -140,11 +146,14 @@ export async function createArticle(formData: ArticleFormData) {
       reading_time: calcReadingTime(cleanedContent),
       seo_title: formData.seo_title || null,
       seo_description: formData.seo_description || null,
-      published_at: (formData.status || "draft") === "published" && !formData.published_at 
-        ? new Date().toISOString() 
-        : formData.published_at 
-          ? (typeof formData.published_at === 'string' ? formData.published_at : formData.published_at.toISOString())
-          : null,
+      published_at:
+        (formData.status || "draft") === "published" && !formData.published_at
+          ? new Date().toISOString()
+          : formData.published_at
+            ? typeof formData.published_at === "string"
+              ? formData.published_at
+              : formData.published_at.toISOString()
+            : null,
     };
 
     // Création de l'article
@@ -162,12 +171,10 @@ export async function createArticle(formData: ArticleFormData) {
     if (formData.tags && formData.tags.length > 0) {
       const tagRelations = formData.tags.map((tagId: string) => ({
         article_id: article.id,
-        tag_id: tagId
+        tag_id: tagId,
       }));
 
-      const { error: tagError } = await supabase
-        .from("article_tags")
-        .insert(tagRelations);
+      const { error: tagError } = await supabase.from("article_tags").insert(tagRelations);
 
       if (tagError) {
         console.error("Erreur lors de l'ajout des tags:", tagError);
@@ -176,7 +183,7 @@ export async function createArticle(formData: ArticleFormData) {
 
     revalidatePath("/admin/magazine");
     revalidatePath("/magazine");
-    
+
     return { success: true, data: article };
   } catch (_error) {
     return { success: false, error: "Erreur inattendue lors de la création" };
@@ -185,11 +192,11 @@ export async function createArticle(formData: ArticleFormData) {
 
 export async function updateArticle(id: string, formData: ArticleFormData) {
   try {
-    console.log('📝 [MagazineActions] updateArticle appelé pour ID:', id);
-    console.log('📄 [MagazineActions] formData reçu:', JSON.stringify(formData, null, 2));
-    
+    console.log("📝 [MagazineActions] updateArticle appelé pour ID:", id);
+    console.log("📄 [MagazineActions] formData reçu:", JSON.stringify(formData, null, 2));
+
     const supabase = await createSupabaseServerClient();
-    
+
     // Vérification des permissions
     const hasPermission = await checkUserPermission("content:update");
     if (!hasPermission) {
@@ -198,7 +205,7 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
 
     // Génération du slug si modifié
     const slug = formData.slug || generateSlug(formData.title);
-    
+
     // Vérification de l'unicité du slug (excluant l'article current)
     const { data: existingArticle } = await supabase
       .from("articles")
@@ -206,15 +213,18 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
       .eq("slug", slug)
       .neq("id", id)
       .single();
-    
+
     if (existingArticle) {
       return { success: false, error: "Un autre article avec ce slug existe déjà" };
     }
 
     // Nettoyage et validation du contenu TipTap
-    console.log('📄 [MagazineActions] Contenu TipTap reçu avant nettoyage:', JSON.stringify(formData.content, null, 2));
+    console.log(
+      "📄 [MagazineActions] Contenu TipTap reçu avant nettoyage:",
+      JSON.stringify(formData.content, null, 2)
+    );
     const cleanedContent = sanitizeTipTapContent(formData.content);
-    
+
     // Préparation des données de mise à jour
     const updateData: ArticleUpdate = {
       title: formData.title,
@@ -228,11 +238,14 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
       reading_time: calcReadingTime(cleanedContent),
       seo_title: formData.seo_title || null,
       seo_description: formData.seo_description || null,
-      published_at: (formData.status || "draft") === "published" && !formData.published_at 
-        ? new Date().toISOString() 
-        : formData.published_at 
-          ? (typeof formData.published_at === 'string' ? formData.published_at : formData.published_at.toISOString())
-          : null,
+      published_at:
+        (formData.status || "draft") === "published" && !formData.published_at
+          ? new Date().toISOString()
+          : formData.published_at
+            ? typeof formData.published_at === "string"
+              ? formData.published_at
+              : formData.published_at.toISOString()
+            : null,
     };
 
     // Mise à jour de l'article
@@ -250,21 +263,16 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
     // Mise à jour des tags
     if (formData.tags !== undefined) {
       // Suppression des anciennes relations
-      await supabase
-        .from("article_tags")
-        .delete()
-        .eq("article_id", id);
+      await supabase.from("article_tags").delete().eq("article_id", id);
 
       // Ajout des nouvelles relations
       if (formData.tags.length > 0) {
         const tagRelations = formData.tags.map((tagId: string) => ({
           article_id: id,
-          tag_id: tagId
+          tag_id: tagId,
         }));
 
-        const { error: tagError } = await supabase
-          .from("article_tags")
-          .insert(tagRelations);
+        const { error: tagError } = await supabase.from("article_tags").insert(tagRelations);
 
         if (tagError) {
           console.error("Erreur lors de la mise à jour des tags:", tagError);
@@ -275,7 +283,7 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
     revalidatePath("/admin/magazine");
     revalidatePath("/magazine");
     revalidatePath(`/magazine/${article.slug}`);
-    
+
     return { success: true, data: article };
   } catch (_error) {
     return { success: false, error: "Erreur inattendue lors de la mise à jour" };
@@ -285,17 +293,14 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
 export async function deleteArticle(id: string) {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     // Vérification des permissions
     const hasPermission = await checkUserPermission("content:delete");
     if (!hasPermission) {
       return { success: false, error: "Permission refusée" };
     }
 
-    const { error } = await supabase
-      .from("articles")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("articles").delete().eq("id", id);
 
     if (error) {
       return { success: false, error: error.message };
@@ -303,7 +308,7 @@ export async function deleteArticle(id: string) {
 
     revalidatePath("/admin/magazine");
     revalidatePath("/magazine");
-    
+
     return { success: true };
   } catch (_error) {
     return { success: false, error: "Erreur lors de la suppression" };
@@ -312,10 +317,10 @@ export async function deleteArticle(id: string) {
 
 /* ==================== CATÉGORIES ==================== */
 
-export async function createCategory(data: Omit<CategoryInsert, 'id'>) {
+export async function createCategory(data: Omit<CategoryInsert, "id">) {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     const hasPermission = await checkUserPermission("content:create");
     if (!hasPermission) {
       return { success: false, error: "Permission refusée" };
@@ -341,21 +346,21 @@ export async function createCategory(data: Omit<CategoryInsert, 'id'>) {
 /* ==================== WORKFLOW DE PUBLICATION ==================== */
 
 export async function changeArticleStatus(
-  articleId: string, 
-  newStatus: 'draft' | 'published' | 'archived'
+  articleId: string,
+  newStatus: "draft" | "published" | "archived"
 ) {
   try {
     const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions
-    const action = newStatus === 'published' ? 'publish' : 
-                  newStatus === 'archived' ? 'archive' : 'unpublish';
-    
+    const action =
+      newStatus === "published" ? "publish" : newStatus === "archived" ? "archive" : "unpublish";
+
     const canPerform = await canPerformPublicationAction(action);
     if (!canPerform) {
-      return { 
-        success: false, 
-        error: "Vous n'avez pas les permissions nécessaires pour cette action." 
+      return {
+        success: false,
+        error: "Vous n'avez pas les permissions nécessaires pour cette action.",
       };
     }
 
@@ -371,25 +376,25 @@ export async function changeArticleStatus(
     }
 
     // Validation pour la publication
-    if (newStatus === 'published') {
+    if (newStatus === "published") {
       const validation = validateArticleForPublication(currentArticle);
       if (!validation.isValid) {
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: "L'article ne peut pas être publié",
-          details: validation.errors
+          details: validation.errors,
         };
       }
     }
 
     // Mise à jour du statut
-    const updateData: Partial<ArticleUpdate> = { 
+    const updateData: Partial<ArticleUpdate> = {
       status: newStatus,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     // Si on publie, on met la date de publication
-    if (newStatus === 'published' && !currentArticle.published_at) {
+    if (newStatus === "published" && !currentArticle.published_at) {
       updateData.published_at = new Date().toISOString();
     }
 
@@ -406,11 +411,10 @@ export async function changeArticleStatus(
     revalidatePath("/magazine");
     revalidatePath(`/magazine/${currentArticle.slug}`);
 
-    return { 
-      success: true, 
-      message: getPublicationActionMessage(action, currentArticle.title)
+    return {
+      success: true,
+      message: getPublicationActionMessage(action, currentArticle.title),
     };
-
   } catch (error) {
     console.error("Erreur lors du changement de statut:", error);
     return { success: false, error: "Erreur interne du serveur." };
@@ -418,31 +422,31 @@ export async function changeArticleStatus(
 }
 
 export async function bulkChangeArticleStatus(
-  articleIds: string[], 
-  newStatus: 'draft' | 'published' | 'archived'
+  articleIds: string[],
+  newStatus: "draft" | "published" | "archived"
 ) {
   try {
     const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions
-    const action = newStatus === 'published' ? 'publish' : 
-                  newStatus === 'archived' ? 'archive' : 'unpublish';
-    
+    const action =
+      newStatus === "published" ? "publish" : newStatus === "archived" ? "archive" : "unpublish";
+
     const canPerform = await canPerformPublicationAction(action);
     if (!canPerform) {
-      return { 
-        success: false, 
-        error: "Vous n'avez pas les permissions nécessaires pour cette action." 
+      return {
+        success: false,
+        error: "Vous n'avez pas les permissions nécessaires pour cette action.",
       };
     }
 
     // Mise à jour en lot
-    const updateData: Partial<ArticleUpdate> = { 
+    const updateData: Partial<ArticleUpdate> = {
       status: newStatus,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
-    if (newStatus === 'published') {
+    if (newStatus === "published") {
       updateData.published_at = new Date().toISOString();
     }
 
@@ -458,11 +462,10 @@ export async function bulkChangeArticleStatus(
     revalidatePath("/admin/magazine");
     revalidatePath("/magazine");
 
-    return { 
-      success: true, 
-      message: `${articleIds.length} article(s) mis à jour avec le statut "${newStatus}".`
+    return {
+      success: true,
+      message: `${articleIds.length} article(s) mis à jour avec le statut "${newStatus}".`,
     };
-
   } catch (error) {
     console.error("Erreur lors du changement de statut en lot:", error);
     return { success: false, error: "Erreur interne du serveur." };
@@ -471,20 +474,16 @@ export async function bulkChangeArticleStatus(
 
 /* ==================== TAGS ==================== */
 
-export async function createTag(data: Omit<TagInsert, 'id'>) {
+export async function createTag(data: Omit<TagInsert, "id">) {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     const hasPermission = await checkUserPermission("content:create");
     if (!hasPermission) {
       return { success: false, error: "Permission refusée" };
     }
 
-    const { data: tag, error } = await supabase
-      .from("tags")
-      .insert(data)
-      .select()
-      .single();
+    const { data: tag, error } = await supabase.from("tags").insert(data).select().single();
 
     if (error) {
       return { success: false, error: error.message };
@@ -516,7 +515,7 @@ const imageUploadSchema = z.object({
 });
 
 // Type pour le résultat de l'upload
-type UploadImageResult = 
+type UploadImageResult =
   | { success: true; message: string; data: { url: string } }
   | { success: false; message: string; errors?: { file?: string[]; fileName?: string[] } };
 
@@ -580,7 +579,6 @@ export async function uploadMagazineImage(formData: FormData): Promise<UploadIma
       message: "Image téléversée avec succès !",
       data: { url: publicUrlData.publicUrl },
     };
-
   } catch (error) {
     console.error("Erreur lors de l'upload d'image:", error);
     return {

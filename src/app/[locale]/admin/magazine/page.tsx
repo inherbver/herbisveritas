@@ -15,14 +15,18 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-async function ArticlesList({ searchParams }: { searchParams: any }) {
+async function ArticlesList({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const page = parseInt(searchParams.page as string) || 1;
   const status = searchParams.status as string;
   const search = searchParams.search as string;
-  
+
   const filters: ArticleFilters = {};
-  if (status && ['draft', 'published', 'archived'].includes(status)) {
-    filters.status = status as any;
+  if (status && ["draft", "published", "archived"].includes(status)) {
+    filters.status = status as "draft" | "published" | "archived";
   }
   if (search) {
     filters.search = search;
@@ -34,17 +38,16 @@ async function ArticlesList({ searchParams }: { searchParams: any }) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="font-semibold text-lg mb-2">Aucun article trouvé</h3>
-          <p className="text-muted-foreground text-center mb-4">
-            {status || search 
+          <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
+          <h3 className="mb-2 text-lg font-semibold">Aucun article trouvé</h3>
+          <p className="mb-4 text-center text-muted-foreground">
+            {status || search
               ? "Aucun article ne correspond à vos critères de recherche."
-              : "Commencez par créer votre premier article."
-            }
+              : "Commencez par créer votre premier article."}
           </p>
           <Button asChild>
             <Link href="/admin/magazine/new">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Nouvel article
             </Link>
           </Button>
@@ -57,14 +60,16 @@ async function ArticlesList({ searchParams }: { searchParams: any }) {
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {articles.map((article) => (
-          <Card key={article.id} className="hover:shadow-md transition-shadow flex flex-col">
+          <Card key={article.id} className="flex flex-col transition-shadow hover:shadow-md">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <Badge
                   variant={
-                    article.status === "published" ? "default" :
-                    article.status === "draft" ? "secondary" :
-                    "outline"
+                    article.status === "published"
+                      ? "default"
+                      : article.status === "draft"
+                        ? "secondary"
+                        : "outline"
                   }
                   className="mb-2"
                 >
@@ -73,7 +78,7 @@ async function ArticlesList({ searchParams }: { searchParams: any }) {
                   {article.status === "archived" && "Archivé"}
                 </Badge>
                 <div className="flex items-center text-xs text-muted-foreground">
-                  <Eye className="h-3 w-3 mr-1" />
+                  <Eye className="mr-1 h-3 w-3" />
                   {article.view_count || 0}
                 </div>
               </div>
@@ -83,31 +88,28 @@ async function ArticlesList({ searchParams }: { searchParams: any }) {
               {/* Réservation d'espace pour l'excerpt pour maintenir l'alignement */}
               <div className="min-h-[2.5rem]">
                 {article.excerpt && (
-                  <CardDescription className="line-clamp-2">
-                    {article.excerpt}
-                  </CardDescription>
+                  <CardDescription className="line-clamp-2">{article.excerpt}</CardDescription>
                 )}
               </div>
             </CardHeader>
-            
+
             {/* CardContent avec flex-grow pour pousser les boutons vers le bas */}
-            <CardContent className="pt-0 flex flex-col flex-grow">
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+            <CardContent className="flex flex-grow flex-col pt-0">
+              <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center">
-                  <User className="h-3 w-3 mr-1" />
+                  <User className="mr-1 h-3 w-3" />
                   {article.author?.first_name} {article.author?.last_name}
                 </div>
                 <div className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {article.published_at 
-                    ? formatDate(article.published_at.split('T')[0])
-                    : formatDate(article.created_at!.split('T')[0])
-                  }
+                  <Calendar className="mr-1 h-3 w-3" />
+                  {article.published_at
+                    ? formatDate(article.published_at.split("T")[0])
+                    : formatDate(article.created_at!.split("T")[0])}
                 </div>
               </div>
-              
+
               {/* Conteneur avec hauteur fixe pour la catégorie */}
-              <div className="min-h-[2rem] mb-3 flex items-start">
+              <div className="mb-3 flex min-h-[2rem] items-start">
                 {article.category && (
                   <Badge
                     variant="outline"
@@ -122,11 +124,9 @@ async function ArticlesList({ searchParams }: { searchParams: any }) {
               <div className="flex-grow"></div>
 
               {/* Boutons toujours alignés en bas */}
-              <div className="flex gap-2 mt-auto">
+              <div className="mt-auto flex gap-2">
                 <Button variant="outline" size="sm" asChild className="flex-1">
-                  <Link href={`/admin/magazine/${article.id}/edit`}>
-                    Modifier
-                  </Link>
+                  <Link href={`/admin/magazine/${article.id}/edit`}>Modifier</Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href={`/magazine/${article.slug}`} target="_blank">
@@ -149,7 +149,9 @@ async function ArticlesList({ searchParams }: { searchParams: any }) {
               size="sm"
               asChild
             >
-              <Link href={`?page=${i + 1}${status ? `&status=${status}` : ''}${search ? `&search=${search}` : ''}`}>
+              <Link
+                href={`?page=${i + 1}${status ? `&status=${status}` : ""}${search ? `&search=${search}` : ""}`}
+              >
                 {i + 1}
               </Link>
             </Button>
@@ -230,16 +232,16 @@ function LoadingSkeleton() {
         {Array.from({ length: 6 }).map((_, i) => (
           <Card key={i}>
             <CardHeader>
-              <Skeleton className="h-4 w-16 mb-2" />
-              <Skeleton className="h-5 w-full mb-2" />
+              <Skeleton className="mb-2 h-4 w-16" />
+              <Skeleton className="mb-2 h-5 w-full" />
               <Skeleton className="h-4 w-3/4" />
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between mb-3">
+              <div className="mb-3 flex justify-between">
                 <Skeleton className="h-3 w-20" />
                 <Skeleton className="h-3 w-16" />
               </div>
-              <Skeleton className="h-3 w-12 mb-3" />
+              <Skeleton className="mb-3 h-3 w-12" />
               <div className="flex gap-2">
                 <Skeleton className="h-8 flex-1" />
                 <Skeleton className="h-8 w-8" />
@@ -257,7 +259,7 @@ export default async function AdminMagazinePage({ params, searchParams }: Props)
   const resolvedSearchParams = await searchParams;
   setRequestLocale(locale);
 
-  const t = await getTranslations({ locale, namespace: "AdminMagazine" });
+  const _t = await getTranslations({ locale, namespace: "AdminMagazine" });
 
   return (
     <div className="space-y-6">
@@ -265,13 +267,11 @@ export default async function AdminMagazinePage({ params, searchParams }: Props)
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Magazine</h1>
-          <p className="text-muted-foreground">
-            Gérez vos articles et contenus éditoriaux
-          </p>
+          <p className="text-muted-foreground">Gérez vos articles et contenus éditoriaux</p>
         </div>
         <Button asChild>
           <Link href="/admin/magazine/new">
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Nouvel article
           </Link>
         </Button>
@@ -279,11 +279,7 @@ export default async function AdminMagazinePage({ params, searchParams }: Props)
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant={!resolvedSearchParams.status ? "default" : "outline"}
-          size="sm"
-          asChild
-        >
+        <Button variant={!resolvedSearchParams.status ? "default" : "outline"} size="sm" asChild>
           <Link href="/admin/magazine">Tous</Link>
         </Button>
         <Button

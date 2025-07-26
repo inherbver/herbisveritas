@@ -163,10 +163,10 @@ export default async function AccountPage({ params }: AccountPageProps) {
 
   if (!profile) {
     console.error("No profile found for user:", user.id);
-    
+
     // Tenter de créer un profil de base pour l'utilisateur
     try {
-      const { data: newProfile, error: createError } = await supabase
+      const { data: _newProfile, error: createError } = await supabase
         .from("profiles")
         .insert({
           id: user.id,

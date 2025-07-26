@@ -103,6 +103,16 @@ src/
 - Tailwind CSS for styling (avoid `@apply` with non-existent classes)
 - Follow existing patterns for component structure and naming
 
+### ESLint & Code Quality
+
+- **NEVER use `any` type** - Always define proper TypeScript interfaces/types
+- **Unused variables/imports**: Remove completely or prefix with `_` if needed for future use
+- **Error handling**: Always use caught errors for logging or prefix with `_error`
+- **React Hooks**: Include all dependencies in dependency arrays, use proper cleanup
+- **Switch statements**: Wrap case declarations in `{}` blocks to avoid lexical declaration errors
+- **Translations**: Always use translation variables (`t`) or remove unused imports
+- **Run `npm run lint` before committing** - Zero ESLint errors policy
+
 ### Security Considerations
 
 - Never expose `service_role` key in client code

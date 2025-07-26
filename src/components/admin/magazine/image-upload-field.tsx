@@ -8,7 +8,7 @@ import { useState } from "react";
 import { uploadMagazineImage } from "@/actions/magazineActions";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { Upload, Link2, X, Loader2 } from "lucide-react";
+import { Upload, Link2, X } from "lucide-react";
 
 interface MagazineImageUploadFieldProps<T extends FieldValues> {
   control: Control<T>;
@@ -101,17 +101,17 @@ export function MagazineImageUploadField<T extends FieldValues>({
                       }
                     }}
                     disabled={isUploading}
-                    className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                    className="hover:file:bg-primary/90 file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground"
                   />
                 </div>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   disabled={isUploading}
                   className="shrink-0"
                 >
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="mr-2 h-4 w-4" />
                   {isUploading ? t("upload.uploading") : t("upload.uploadButton")}
                 </Button>
               </div>
@@ -119,17 +119,17 @@ export function MagazineImageUploadField<T extends FieldValues>({
               {/* Image Preview */}
               {field.value && (
                 <div className="mt-4">
-                  <div className="relative group inline-block">
+                  <div className="group relative inline-block">
                     <img
                       src={field.value}
                       alt="Aperçu de l'image"
-                      className="h-48 w-auto rounded-lg object-cover border border-border shadow-sm"
+                      className="h-48 w-auto rounded-lg border border-border object-cover shadow-sm"
                       onError={() => {
                         console.error("Erreur de chargement de l'image:", field.value);
                         toast.error("Impossible de charger l'image");
                       }}
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 opacity-0 transition-colors group-hover:bg-black/20 group-hover:opacity-100">
                       <Button
                         type="button"
                         variant="destructive"
@@ -137,21 +137,19 @@ export function MagazineImageUploadField<T extends FieldValues>({
                         onClick={() => field.onChange("")}
                         className="opacity-90"
                       >
-                        <X className="h-4 w-4 mr-1" />
+                        <X className="mr-1 h-4 w-4" />
                         {t("upload.remove")}
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {t("upload.supportedFormats")}
                   </p>
                 </div>
               )}
             </div>
           </FormControl>
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
           <FormMessage />
         </FormItem>
       )}

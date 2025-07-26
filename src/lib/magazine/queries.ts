@@ -1,28 +1,51 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { 
+import {
   ArticleDisplay,
-  ArticleFilters, 
+  ArticleFilters,
   ArticlePagination,
   ArticleListResponse,
   Category,
-  Tag
+  Tag,
+  TipTapContent,
 } from "@/types/magazine";
 import { checkUserPermission } from "@/lib/auth/server-auth";
+
+// Fonction utilitaire pour assurer que le contenu est un objet JSON valide
+function ensureContentIsObject(content: unknown): TipTapContent {
+  if (!content) {
+    return { type: "doc", content: [] };
+  }
+
+  // Si c'est déjà un objet, le retourner tel quel
+  if (typeof content === "object") {
+    return content as TipTapContent;
+  }
+
+  // Si c'est une chaîne, essayer de la parser
+  if (typeof content === "string") {
+    try {
+      return JSON.parse(content) as TipTapContent;
+    } catch (error) {
+      console.error("Erreur lors du parsing du contenu JSON:", error);
+      return { type: "doc", content: [] };
+    }
+  }
+
+  return { type: "doc", content: [] };
+}
 
 /* ==================== ARTICLES ==================== */
 
 export async function getArticles(
-  filters: ArticleFilters = {}, 
-  page: number = 1, 
+  filters: ArticleFilters = {},
+  page: number = 1,
   limit: number = 10
 ): Promise<ArticleListResponse> {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     // Construction de la requête avec les relations
-    let query = supabase
-      .from("articles")
-      .select(`
+    let query = supabase.from("articles").select(`
         *,
         author:profiles!articles_author_id_fkey(id, first_name, last_name),
         category:categories(id, name, slug, color),
@@ -55,9 +78,7 @@ export async function getArticles(
     }
 
     // Count total pour la pagination - déclaration avant utilisation
-    let countQuery = supabase
-      .from("articles")
-      .select("*", { count: "exact", head: true });
+    let countQuery = supabase.from("articles").select("*", { count: "exact", head: true });
 
     // Support pour tag_id (single) et tag_ids (multiple)
     if (filters.tag_id) {
@@ -68,9 +89,9 @@ export async function getArticles(
         .from("article_tags")
         .select("article_id")
         .eq("tag_id", filters.tag_id);
-      
+
       if (articleIds && articleIds.length > 0) {
-        const ids = articleIds.map(item => item.article_id);
+        const ids = articleIds.map((item) => item.article_id);
         countQuery = countQuery.in("id", ids);
       } else {
         // Aucun article avec ce tag, forcer résultat vide
@@ -84,9 +105,9 @@ export async function getArticles(
         .from("article_tags")
         .select("article_id")
         .in("tag_id", filters.tag_ids);
-      
+
       if (articleIds && articleIds.length > 0) {
-        const ids = articleIds.map(item => item.article_id);
+        const ids = articleIds.map((item) => item.article_id);
         countQuery = countQuery.in("id", ids);
       } else {
         // Aucun article avec ces tags, forcer résultat vide
@@ -113,7 +134,9 @@ export async function getArticles(
     }
 
     if (filters.search) {
-      countQuery = countQuery.or(`title.ilike.%${filters.search}%,excerpt.ilike.%${filters.search}%`);
+      countQuery = countQuery.or(
+        `title.ilike.%${filters.search}%,excerpt.ilike.%${filters.search}%`
+      );
     }
 
     const { count } = await countQuery;
@@ -131,31 +154,36 @@ export async function getArticles(
     // Debug: log du nombre d'articles récupérés
     console.log(`Articles récupérés: ${articles?.length || 0}, Total en base: ${count || 0}`);
     if (articles?.length) {
-      console.log("IDs des articles:", articles.map(a => a.id));
+      console.log(
+        "IDs des articles:",
+        articles.map((a) => a.id)
+      );
     }
 
-    // Traitement des données pour inclure les tags
-    const articlesWithTags = articles?.map(article => ({
-      ...article,
-      tags: article.article_tags?.map((at: { tag: Tag }) => at.tag) || []
-    })) || [];
+    // Traitement des données pour inclure les tags et nettoyer le contenu
+    const articlesWithTags =
+      articles?.map((article) => ({
+        ...article,
+        content: ensureContentIsObject(article.content),
+        tags: article.article_tags?.map((at: { tag: Tag }) => at.tag) || [],
+      })) || [];
 
     const pagination: ArticlePagination = {
       page,
       limit,
       total: count || 0,
-      totalPages: Math.ceil((count || 0) / limit)
+      totalPages: Math.ceil((count || 0) / limit),
     };
 
     return {
       articles: articlesWithTags as ArticleDisplay[],
-      pagination
+      pagination,
     };
   } catch (error) {
     console.error("Erreur lors de la récupération des articles:", error);
     return {
       articles: [],
-      pagination: { page, limit, total: 0, totalPages: 0 }
+      pagination: { page, limit, total: 0, totalPages: 0 },
     };
   }
 }
@@ -163,17 +191,19 @@ export async function getArticles(
 export async function getArticleBySlug(slug: string): Promise<ArticleDisplay | null> {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     const { data: article, error } = await supabase
       .from("articles")
-      .select(`
+      .select(
+        `
         *,
         author:profiles!articles_author_id_fkey(id, first_name, last_name),
         category:categories(id, name, slug, color),
         article_tags(
           tag:tags(id, name, slug)
         )
-      `)
+      `
+      )
       .eq("slug", slug)
       .single();
 
@@ -199,7 +229,8 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDisplay | n
 
     return {
       ...article,
-      tags: article.article_tags?.map((at: { tag: Tag }) => at.tag) || []
+      content: ensureContentIsObject(article.content),
+      tags: article.article_tags?.map((at: { tag: Tag }) => at.tag) || [],
     } as ArticleDisplay;
   } catch (error) {
     console.error("Erreur lors de la récupération de l'article:", error);
@@ -210,17 +241,19 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDisplay | n
 export async function getArticleById(id: string): Promise<ArticleDisplay | null> {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     const { data: article, error } = await supabase
       .from("articles")
-      .select(`
+      .select(
+        `
         *,
         author:profiles!articles_author_id_fkey(id, first_name, last_name),
         category:categories(id, name, slug, color),
         article_tags(
           tag:tags(id, name, slug)
         )
-      `)
+      `
+      )
       .eq("id", id)
       .single();
 
@@ -230,7 +263,8 @@ export async function getArticleById(id: string): Promise<ArticleDisplay | null>
 
     return {
       ...article,
-      tags: article.article_tags?.map((at: { tag: Tag }) => at.tag) || []
+      content: ensureContentIsObject(article.content),
+      tags: article.article_tags?.map((at: { tag: Tag }) => at.tag) || [],
     } as ArticleDisplay;
   } catch (error) {
     console.error("Erreur lors de la récupération de l'article par ID:", error);
@@ -241,14 +275,16 @@ export async function getArticleById(id: string): Promise<ArticleDisplay | null>
 export async function getPublishedArticles(limit: number = 5): Promise<ArticleDisplay[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     const { data: articles, error } = await supabase
       .from("articles")
-      .select(`
+      .select(
+        `
         *,
         author:profiles!articles_author_id_fkey(id, first_name, last_name),
         category:categories(id, name, slug, color)
-      `)
+      `
+      )
       .eq("status", "published")
       .order("published_at", { ascending: false })
       .limit(limit);
@@ -257,7 +293,7 @@ export async function getPublishedArticles(limit: number = 5): Promise<ArticleDi
       throw error;
     }
 
-    return articles as ArticleDisplay[] || [];
+    return (articles as ArticleDisplay[]) || [];
   } catch (error) {
     console.error("Erreur lors de la récupération des articles publiés:", error);
     return [];
@@ -269,11 +305,8 @@ export async function getPublishedArticles(limit: number = 5): Promise<ArticleDi
 export async function getCategories(): Promise<Category[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    
-    const { data: categories, error } = await supabase
-      .from("categories")
-      .select("*")
-      .order("name");
+
+    const { data: categories, error } = await supabase.from("categories").select("*").order("name");
 
     if (error) {
       throw error;
@@ -289,7 +322,7 @@ export async function getCategories(): Promise<Category[]> {
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     const { data: category, error } = await supabase
       .from("categories")
       .select("*")
@@ -312,11 +345,8 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 export async function getTags(): Promise<Tag[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    
-    const { data: tags, error } = await supabase
-      .from("tags")
-      .select("*")
-      .order("name");
+
+    const { data: tags, error } = await supabase.from("tags").select("*").order("name");
 
     if (error) {
       throw error;
@@ -332,12 +362,8 @@ export async function getTags(): Promise<Tag[]> {
 export async function getTagBySlug(slug: string): Promise<Tag | null> {
   try {
     const supabase = await createSupabaseServerClient();
-    
-    const { data: tag, error } = await supabase
-      .from("tags")
-      .select("*")
-      .eq("slug", slug)
-      .single();
+
+    const { data: tag, error } = await supabase.from("tags").select("*").eq("slug", slug).single();
 
     if (error || !tag) {
       return null;
@@ -355,24 +381,26 @@ export async function getTagBySlug(slug: string): Promise<Tag | null> {
 export async function getArticleStats() {
   try {
     const supabase = await createSupabaseServerClient();
-    
-    const [
-      { count: total },
-      { count: published },
-      { count: draft },
-      { count: archived }
-    ] = await Promise.all([
-      supabase.from("articles").select("*", { count: "exact", head: true }),
-      supabase.from("articles").select("*", { count: "exact", head: true }).eq("status", "published"),
-      supabase.from("articles").select("*", { count: "exact", head: true }).eq("status", "draft"),
-      supabase.from("articles").select("*", { count: "exact", head: true }).eq("status", "archived")
-    ]);
+
+    const [{ count: total }, { count: published }, { count: draft }, { count: archived }] =
+      await Promise.all([
+        supabase.from("articles").select("*", { count: "exact", head: true }),
+        supabase
+          .from("articles")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "published"),
+        supabase.from("articles").select("*", { count: "exact", head: true }).eq("status", "draft"),
+        supabase
+          .from("articles")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "archived"),
+      ]);
 
     return {
       total: total || 0,
       published: published || 0,
       draft: draft || 0,
-      archived: archived || 0
+      archived: archived || 0,
     };
   } catch (error) {
     console.error("Erreur lors de la récupération des statistiques:", error);
@@ -380,7 +408,7 @@ export async function getArticleStats() {
       total: 0,
       published: 0,
       draft: 0,
-      archived: 0
+      archived: 0,
     };
   }
 }

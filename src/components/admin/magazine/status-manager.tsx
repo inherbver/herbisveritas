@@ -23,14 +23,7 @@ import {
 import { toast } from "sonner";
 import { changeArticleStatus } from "@/actions/magazineActions";
 import { ArticleDisplay } from "@/types/magazine";
-import { 
-  ChevronDown, 
-  Send, 
-  Archive, 
-  FileText, 
-  Eye,
-  AlertTriangle 
-} from "lucide-react";
+import { ChevronDown, Send, Archive, FileText, Eye, AlertTriangle } from "lucide-react";
 
 interface StatusManagerProps {
   article: ArticleDisplay;
@@ -42,55 +35,55 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
   const [isPending, startTransition] = useTransition();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<{
-    status: 'draft' | 'published' | 'archived';
+    status: "draft" | "published" | "archived";
     message: string;
   } | null>(null);
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'published':
+      case "published":
         return {
-          label: 'Publié',
-          variant: 'default' as const,
+          label: "Publié",
+          variant: "default" as const,
           icon: <Eye className="h-3 w-3" />,
-          color: 'text-green-600'
+          color: "text-green-600",
         };
-      case 'draft':
+      case "draft":
         return {
-          label: 'Brouillon',
-          variant: 'secondary' as const,
+          label: "Brouillon",
+          variant: "secondary" as const,
           icon: <FileText className="h-3 w-3" />,
-          color: 'text-gray-600'
+          color: "text-gray-600",
         };
-      case 'archived':
+      case "archived":
         return {
-          label: 'Archivé',
-          variant: 'outline' as const,
+          label: "Archivé",
+          variant: "outline" as const,
           icon: <Archive className="h-3 w-3" />,
-          color: 'text-orange-600'
+          color: "text-orange-600",
         };
       default:
         return {
-          label: 'Inconnu',
-          variant: 'secondary' as const,
+          label: "Inconnu",
+          variant: "secondary" as const,
           icon: <AlertTriangle className="h-3 w-3" />,
-          color: 'text-red-600'
+          color: "text-red-600",
         };
     }
   };
 
-  const handleStatusChange = async (newStatus: 'draft' | 'published' | 'archived') => {
+  const handleStatusChange = async (newStatus: "draft" | "published" | "archived") => {
     if (newStatus === article.status) return;
 
     const actions = {
-      published: 'publier',
-      draft: 'mettre en brouillon',
-      archived: 'archiver'
+      published: "publier",
+      draft: "mettre en brouillon",
+      archived: "archiver",
     };
 
     setPendingAction({
       status: newStatus,
-      message: `Êtes-vous sûr de vouloir ${actions[newStatus]} cet article ?`
+      message: `Êtes-vous sûr de vouloir ${actions[newStatus]} cet article ?`,
     });
     setShowConfirmDialog(true);
   };
@@ -114,7 +107,7 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
             });
           }
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error("Une erreur est survenue");
       } finally {
         setShowConfirmDialog(false);
@@ -123,7 +116,7 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
     });
   };
 
-  const currentStatus = getStatusConfig(article.status || 'draft');
+  const currentStatus = getStatusConfig(article.status || "draft");
 
   if (compact) {
     return (
@@ -133,36 +126,31 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
             {currentStatus.icon}
             {currentStatus.label}
           </Badge>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                disabled={isPending}
-                className="h-6 w-6 p-0"
-              >
+              <Button variant="ghost" size="sm" disabled={isPending} className="h-6 w-6 p-0">
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {article.status !== 'published' && (
-                <DropdownMenuItem onClick={() => handleStatusChange('published')}>
-                  <Send className="h-4 w-4 mr-2" />
+              {article.status !== "published" && (
+                <DropdownMenuItem onClick={() => handleStatusChange("published")}>
+                  <Send className="mr-2 h-4 w-4" />
                   Publier
                 </DropdownMenuItem>
               )}
-              {article.status !== 'draft' && (
-                <DropdownMenuItem onClick={() => handleStatusChange('draft')}>
-                  <FileText className="h-4 w-4 mr-2" />
+              {article.status !== "draft" && (
+                <DropdownMenuItem onClick={() => handleStatusChange("draft")}>
+                  <FileText className="mr-2 h-4 w-4" />
                   Brouillon
                 </DropdownMenuItem>
               )}
-              {article.status !== 'archived' && (
+              {article.status !== "archived" && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleStatusChange('archived')}>
-                    <Archive className="h-4 w-4 mr-2" />
+                  <DropdownMenuItem onClick={() => handleStatusChange("archived")}>
+                    <Archive className="mr-2 h-4 w-4" />
                     Archiver
                   </DropdownMenuItem>
                 </>
@@ -177,7 +165,7 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
               <AlertDialogTitle>Confirmer l'action</AlertDialogTitle>
               <AlertDialogDescription>
                 {pendingAction?.message}
-                {pendingAction?.status === 'published' && (
+                {pendingAction?.status === "published" && (
                   <div className="mt-2 text-sm text-amber-600">
                     L'article sera visible publiquement une fois publié.
                   </div>
@@ -185,13 +173,8 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isPending}>
-                Annuler
-              </AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={confirmStatusChange}
-                disabled={isPending}
-              >
+              <AlertDialogCancel disabled={isPending}>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmStatusChange} disabled={isPending}>
                 {isPending ? "En cours..." : "Confirmer"}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -214,9 +197,9 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
         </div>
 
         <div className="flex items-center gap-2">
-          {article.status !== 'published' && (
+          {article.status !== "published" && (
             <Button
-              onClick={() => handleStatusChange('published')}
+              onClick={() => handleStatusChange("published")}
               disabled={isPending}
               size="sm"
               className="flex items-center gap-2"
@@ -230,19 +213,19 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" disabled={isPending}>
                 Changer le statut
-                <ChevronDown className="h-4 w-4 ml-2" />
+                <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {article.status !== 'draft' && (
-                <DropdownMenuItem onClick={() => handleStatusChange('draft')}>
-                  <FileText className="h-4 w-4 mr-2" />
+              {article.status !== "draft" && (
+                <DropdownMenuItem onClick={() => handleStatusChange("draft")}>
+                  <FileText className="mr-2 h-4 w-4" />
                   Mettre en brouillon
                 </DropdownMenuItem>
               )}
-              {article.status !== 'archived' && (
-                <DropdownMenuItem onClick={() => handleStatusChange('archived')}>
-                  <Archive className="h-4 w-4 mr-2" />
+              {article.status !== "archived" && (
+                <DropdownMenuItem onClick={() => handleStatusChange("archived")}>
+                  <Archive className="mr-2 h-4 w-4" />
                   Archiver
                 </DropdownMenuItem>
               )}
@@ -257,13 +240,13 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
             <AlertDialogTitle>Confirmer l'action</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingAction?.message}
-              {pendingAction?.status === 'published' && (
-                <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+              {pendingAction?.status === "published" && (
+                <div className="mt-2 rounded-lg bg-blue-50 p-3">
                   <div className="flex items-center gap-2 text-sm text-blue-800">
                     <AlertTriangle className="h-4 w-4" />
                     <span className="font-medium">Attention :</span>
                   </div>
-                  <ul className="mt-1 text-sm text-blue-700 list-disc list-inside">
+                  <ul className="mt-1 list-inside list-disc text-sm text-blue-700">
                     <li>L'article sera visible publiquement</li>
                     <li>Il apparaîtra dans le sitemap</li>
                     <li>Les notifications peuvent être envoyées aux abonnés</li>
@@ -273,13 +256,8 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>
-              Annuler
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmStatusChange}
-              disabled={isPending}
-            >
+            <AlertDialogCancel disabled={isPending}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmStatusChange} disabled={isPending}>
               {isPending ? "En cours..." : "Confirmer"}
             </AlertDialogAction>
           </AlertDialogFooter>

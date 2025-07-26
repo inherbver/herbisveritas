@@ -2,11 +2,11 @@
 import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getArticles, getCategories } from "@/lib/magazine/queries";
-import { 
-  ArticleFilters, 
-  MagazinePageProps, 
+import {
+  ArticleFilters,
+  MagazinePageProps,
   MagazineSearchParams,
-  ArticlePagination
+  ArticlePagination,
 } from "@/types/magazine";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,29 +15,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Metadata } from "next";
-import { 
-  ArticleCard, 
-  MagazineHero 
-} from "@/components/magazine";
+import { ArticleCard, MagazineHero } from "@/components/magazine";
 
 // Génération des données structurées JSON-LD pour la page magazine
 function generateMagazineStructuredData(baseUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Blog",
-    "name": "Magazine Herbis Veritas",
-    "description": "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio",
-    "url": `${baseUrl}/magazine`,
-    "publisher": {
+    name: "Magazine Herbis Veritas",
+    description: "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio",
+    url: `${baseUrl}/magazine`,
+    publisher: {
       "@type": "Organization",
-      "name": "Herbis Veritas",
-      "logo": {
+      name: "Herbis Veritas",
+      logo: {
         "@type": "ImageObject",
-        "url": `${baseUrl}/logo.png`
-      }
+        url: `${baseUrl}/logo.png`,
+      },
     },
-    "inLanguage": "fr-FR",
-    "genre": "Beauty, Health, Natural Cosmetics"
+    inLanguage: "fr-FR",
+    genre: "Beauty, Health, Natural Cosmetics",
   };
 }
 
@@ -46,10 +43,11 @@ type Props = MagazinePageProps;
 // Génération des métadonnées pour le SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  
+
   return {
     title: "Magazine | Herbis Veritas - Articles et guides sur les cosmétiques naturels",
-    description: "Découvrez nos articles exclusifs sur les cosmétiques naturels, conseils beauté bio, guides d'utilisation et actualités du monde de la beauté naturelle.",
+    description:
+      "Découvrez nos articles exclusifs sur les cosmétiques naturels, conseils beauté bio, guides d'utilisation et actualités du monde de la beauté naturelle.",
     openGraph: {
       title: "Magazine Herbis Veritas - Cosmétiques naturels",
       description: "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio.",
@@ -72,7 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Les filtres de catégories sont maintenant intégrés dans MagazineHero
 
 // Composant pour la pagination
-function Pagination({ pagination, baseUrl }: { pagination: ArticlePagination, baseUrl: string }) {
+function Pagination({ pagination, baseUrl }: { pagination: ArticlePagination; baseUrl: string }) {
   if (pagination.totalPages <= 1) return null;
 
   const pages = Array.from({ length: pagination.totalPages }, (_, i) => i + 1);
@@ -82,8 +80,8 @@ function Pagination({ pagination, baseUrl }: { pagination: ArticlePagination, ba
       {/* Page précédente */}
       {pagination.page > 1 && (
         <Button variant="outline" size="sm" asChild>
-          <Link href={`${baseUrl}${pagination.page > 2 ? `&page=${pagination.page - 1}` : ''}`}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
+          <Link href={`${baseUrl}${pagination.page > 2 ? `&page=${pagination.page - 1}` : ""}`}>
+            <ArrowLeft className="mr-1 h-4 w-4" />
             Précédent
           </Link>
         </Button>
@@ -98,9 +96,7 @@ function Pagination({ pagination, baseUrl }: { pagination: ArticlePagination, ba
             size="sm"
             asChild
           >
-            <Link href={page === 1 ? baseUrl : `${baseUrl}&page=${page}`}>
-              {page}
-            </Link>
+            <Link href={page === 1 ? baseUrl : `${baseUrl}&page=${page}`}>{page}</Link>
           </Button>
         ))}
       </div>
@@ -110,7 +106,7 @@ function Pagination({ pagination, baseUrl }: { pagination: ArticlePagination, ba
         <Button variant="outline" size="sm" asChild>
           <Link href={`${baseUrl}&page=${pagination.page + 1}`}>
             Suivant
-            <ArrowRight className="h-4 w-4 ml-1" />
+            <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </Button>
       )}
@@ -119,8 +115,14 @@ function Pagination({ pagination, baseUrl }: { pagination: ArticlePagination, ba
 }
 
 // Composant principal combinant hero et articles
-async function MagazineContent({ searchParams, heroTitle }: { searchParams: MagazineSearchParams, heroTitle: string }) {
-  const page = parseInt(searchParams.page || '1');
+async function MagazineContent({
+  searchParams,
+  heroTitle,
+}: {
+  searchParams: MagazineSearchParams;
+  heroTitle: string;
+}) {
+  const page = parseInt(searchParams.page || "1");
   const category = searchParams.category;
   const search = searchParams.search;
 
@@ -133,7 +135,7 @@ async function MagazineContent({ searchParams, heroTitle }: { searchParams: Maga
 
   if (category) {
     // Récupérer l'ID de la catégorie depuis le slug
-    const categoryData = categories.find(c => c.slug === category);
+    const categoryData = categories.find((c) => c.slug === category);
     if (categoryData) {
       filters.category_id = categoryData.id;
     }
@@ -146,7 +148,7 @@ async function MagazineContent({ searchParams, heroTitle }: { searchParams: Maga
   const { articles, pagination } = await getArticles(filters, page, 9);
 
   // Construction de l'URL de base pour la pagination
-  const baseUrl = `/magazine?${category ? `category=${category}` : ''}${search ? `${category ? '&' : ''}search=${search}` : ''}`;
+  const baseUrl = `/magazine?${category ? `category=${category}` : ""}${search ? `${category ? "&" : ""}search=${search}` : ""}`;
 
   return (
     <>
@@ -162,9 +164,9 @@ async function MagazineContent({ searchParams, heroTitle }: { searchParams: Maga
       <section className="container mx-auto px-4 py-12">
         <div className="space-y-8">
           {/* Barre de recherche */}
-          <div className="max-w-md mx-auto">
+          <div className="mx-auto max-w-md">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
               <Input
                 placeholder="Rechercher un article..."
                 defaultValue={search}
@@ -177,7 +179,7 @@ async function MagazineContent({ searchParams, heroTitle }: { searchParams: Maga
           {/* Grille d'articles */}
           {articles.length > 0 ? (
             <>
-              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid min-w-0 gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {articles.map((article) => (
                   <ArticleCard key={article.id} article={article} />
                 ))}
@@ -189,13 +191,12 @@ async function MagazineContent({ searchParams, heroTitle }: { searchParams: Maga
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <div className="text-center space-y-2">
-                  <h3 className="font-semibold text-lg">Aucun article trouvé</h3>
+                <div className="space-y-2 text-center">
+                  <h3 className="text-lg font-semibold">Aucun article trouvé</h3>
                   <p className="text-muted-foreground">
-                    {search || category 
-                      ? "Essayez de modifier vos critères de recherche." 
-                      : "Aucun article n'a encore été publié."
-                    }
+                    {search || category
+                      ? "Essayez de modifier vos critères de recherche."
+                      : "Aucun article n'a encore été publié."}
                   </p>
                   {(search || category) && (
                     <Button variant="outline" asChild>
@@ -217,11 +218,11 @@ function MagazineContentSkeleton() {
   return (
     <>
       {/* Hero skeleton */}
-      <div className="py-16 px-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="container mx-auto max-w-4xl text-center space-y-8">
+      <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-16">
+        <div className="container mx-auto max-w-4xl space-y-8 text-center">
           <div className="space-y-4">
-            <Skeleton className="h-12 w-64 mx-auto" />
-            <Skeleton className="h-6 w-96 mx-auto" />
+            <Skeleton className="mx-auto h-12 w-64" />
+            <Skeleton className="mx-auto h-6 w-96" />
           </div>
           <div className="flex flex-wrap justify-center gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -235,7 +236,7 @@ function MagazineContentSkeleton() {
       <section className="container mx-auto px-4 py-12">
         <div className="space-y-8">
           {/* Recherche skeleton */}
-          <Skeleton className="h-10 w-80 mx-auto" />
+          <Skeleton className="mx-auto h-10 w-80" />
 
           {/* Grille skeleton */}
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -265,7 +266,7 @@ export default async function MagazinePage({ params, searchParams }: Props) {
   setRequestLocale(locale);
 
   const t = await getTranslations({ locale, namespace: "MagazinePage" });
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const structuredData = generateMagazineStructuredData(baseUrl);
 
   return (
@@ -277,13 +278,10 @@ export default async function MagazinePage({ params, searchParams }: Props) {
           __html: JSON.stringify(structuredData),
         }}
       />
-      
+
       {/* Contenu principal avec hero et articles */}
       <Suspense fallback={<MagazineContentSkeleton />}>
-        <MagazineContent 
-          searchParams={resolvedSearchParams} 
-          heroTitle={t("title") || "Magazine"}
-        />
+        <MagazineContent searchParams={resolvedSearchParams} heroTitle={t("title") || "Magazine"} />
       </Suspense>
     </main>
   );

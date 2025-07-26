@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, Upload, Link, X, CheckCircle } from "lucide-react";
+import { AlertCircle, Upload, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { uploadMagazineImage } from "@/actions/magazineActions";
 import { cn } from "@/lib/utils";
@@ -50,80 +50,100 @@ export function ImageUpload({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
-  
+
   // Formulaire pour URL externe
   const [externalUrl, setExternalUrl] = useState("");
   const [altText, setAltText] = useState("");
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Validation du fichier
-  const validateFile = (file: File): string | null => {
-    if (!allowedTypes.includes(file.type)) {
-      return `Type de fichier non supporté. Types autorisés: ${allowedTypes.join(", ")}`;
-    }
-    
-    const maxSize = maxSizeInMB * 1024 * 1024;
-    if (file.size > maxSize) {
-      return `Le fichier est trop volumineux. Taille maximum: ${maxSizeInMB}MB`;
-    }
-    
-    return null;
-  };
-
-  // Upload via Server Action
-  const uploadFile = useCallback(async (file: File) => {
-    try {
-      setIsUploading(true);
-      setError(null);
-      setUploadProgress(0);
-
-      // Simulation du progrès
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 20, 90));
-      }, 200);
-
-      // Utilisation de l'action existante
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("fileName", file.name.split(".")[0]); // Nom sans extension
-      
-      const result = await uploadMagazineImage(formData) as UploadResult;
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      if (!result.success) {
-        console.error("Upload failed:", result);
-        
-        // Afficher les erreurs de validation détaillées si disponibles
-        if (result.errors) {
-          const errorMessages = [];
-          if (result.errors.file) errorMessages.push(...result.errors.file);
-          if (result.errors.fileName) errorMessages.push(...result.errors.fileName);
-          if (errorMessages.length > 0) {
-            throw new Error(errorMessages.join(". "));
-          }
-        }
-        
-        throw new Error(result.message || "Erreur lors de l'upload");
+  const validateFile = useCallback(
+    (file: File): string | null => {
+      if (!allowedTypes.includes(file.type)) {
+        return `Type de fichier non supporté. Types autorisés: ${allowedTypes.join(", ")}`;
       }
 
-      const uploadedImage: UploadedImage = {
-        url: result.data.url,
-        filename: file.name,
-        size: file.size,
-      };
+      const maxSize = maxSizeInMB * 1024 * 1024;
+      if (file.size > maxSize) {
+        return `Le fichier est trop volumineux. Taille maximum: ${maxSizeInMB}MB`;
+      }
 
-      setUploadedImage(uploadedImage);
-      return uploadedImage;
-    } catch (error: any) {
-      setError(error.message || "Erreur lors de l'upload");
-      throw error;
-    } finally {
-      setIsUploading(false);
-    }
-  }, []);
+      return null;
+    },
+    [allowedTypes, maxSizeInMB]
+  );
+
+  // Upload via Server Action
+  const uploadFile = useCallback(
+    async (file: File) => {
+      try {
+        setIsUploading(true);
+        setError(null);
+        setUploadProgress(0);
+
+        // Simulation du progrès
+        const progressInterval = setInterval(() => {
+          setUploadProgress((prev) => Math.min(prev + 20, 90));
+        }, 200);
+
+        // Utilisation de l'action existante
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("fileName", file.name.split(".")[0]); // Nom sans extension
+
+        const result = (await uploadMagazineImage(formData)) as UploadResult;
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+
+        if (!result.success) {
+          console.error("Upload failed:", result);
+
+          // Afficher les erreurs de validation détaillées si disponibles
+          if (result.errors) {
+            const errorMessages = [];
+            if (result.errors.file) errorMessages.push(...result.errors.file);
+            if (result.errors.fileName) errorMessages.push(...result.errors.fileName);
+            if (errorMessages.length > 0) {
+              throw new Error(errorMessages.join(". "));
+            }
+          }
+
+          throw new Error(result.message || "Erreur lors de l'upload");
+        }
+
+        const uploadedImage: UploadedImage = {
+          url: result.data.url,
+          filename: file.name,
+          size: file.size,
+        };
+
+        setUploadedImage(uploadedImage);
+
+        // Insérer automatiquement l'image après l'upload réussi
+        setTimeout(() => {
+          console.log("🔧 [ImageUpload] Auto-insertion après upload:", {
+            url: uploadedImage.url,
+            filename: uploadedImage.filename,
+          });
+          // Utiliser le nom de fichier comme alt text par défaut
+          const altText = file.name.split(".")[0];
+          console.log("🔧 [ImageUpload] Appel onImageSelect avec alt text:", altText);
+          onImageSelect(uploadedImage.url, altText);
+          handleClose(false); // Fermer la modal
+        }, 500); // Petit délai pour permettre à l'utilisateur de voir le succès
+
+        return uploadedImage;
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : "Erreur lors de l'upload");
+        throw error;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [onImageSelect]
+  );
 
   // Gestion du changement de fichier
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,7 +168,7 @@ export function ImageUpload({
     async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       const file = event.dataTransfer.files[0];
-      
+
       if (!file) return;
 
       const validationError = validateFile(file);
@@ -163,7 +183,7 @@ export function ImageUpload({
         console.error("Erreur d'upload:", error);
       }
     },
-    [uploadFile]
+    [uploadFile, validateFile]
   );
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -183,7 +203,7 @@ export function ImageUpload({
   // Insertion de l'image
   const handleInsertImage = () => {
     let imageUrl = "";
-    
+
     if (uploadedImage) {
       imageUrl = uploadedImage.url;
     } else if (externalUrl && isValidUrl(externalUrl)) {
@@ -191,7 +211,11 @@ export function ImageUpload({
     }
 
     if (imageUrl) {
-      onImageSelect(imageUrl, altText);
+      console.log("🔧 [ImageUpload] Insertion manuelle avec:", {
+        url: imageUrl,
+        altText: altText || "Image",
+      });
+      onImageSelect(imageUrl, altText || "Image");
       // Reset
       handleClose(false);
     }
@@ -214,12 +238,12 @@ export function ImageUpload({
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 h-4 w-4" />
             Ajouter une image
           </Button>
         )}
       </DialogTrigger>
-      
+
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Ajouter une image</DialogTitle>
@@ -237,15 +261,15 @@ export function ImageUpload({
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               className={cn(
-                "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
+                "rounded-lg border-2 border-dashed p-8 text-center transition-colors",
                 "hover:border-gray-400 hover:bg-gray-50",
                 isUploading && "pointer-events-none opacity-50"
               )}
             >
               {!isUploading && !uploadedImage && (
                 <>
-                  <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-sm text-gray-600 mb-2">
+                  <Upload className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                  <p className="mb-2 text-sm text-gray-600">
                     Glissez une image ici ou cliquez pour sélectionner
                   </p>
                   <p className="text-xs text-gray-500">
@@ -264,20 +288,20 @@ export function ImageUpload({
 
               {isUploading && (
                 <div className="space-y-4">
-                  <Upload className="h-12 w-12 mx-auto text-blue-500 animate-pulse" />
+                  <Upload className="mx-auto h-12 w-12 animate-pulse text-blue-500" />
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">Upload en cours...</p>
+                    <p className="mb-2 text-sm text-gray-600">Upload en cours...</p>
                     <Progress value={uploadProgress} className="w-full" />
-                    <p className="text-xs text-gray-500 mt-1">{uploadProgress}%</p>
+                    <p className="mt-1 text-xs text-gray-500">{uploadProgress}%</p>
                   </div>
                 </div>
               )}
 
               {uploadedImage && (
                 <div className="space-y-4">
-                  <CheckCircle className="h-12 w-12 mx-auto text-green-500" />
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
                   <div>
-                    <p className="text-sm text-green-600 font-medium">Upload terminé !</p>
+                    <p className="text-sm font-medium text-green-600">Upload terminé !</p>
                     <p className="text-xs text-gray-500">{uploadedImage.filename}</p>
                     <p className="text-xs text-gray-500">
                       {(uploadedImage.size / 1024 / 1024).toFixed(2)} MB
@@ -286,7 +310,7 @@ export function ImageUpload({
                   <img
                     src={uploadedImage.url}
                     alt="Preview"
-                    className="max-w-full max-h-32 mx-auto rounded border"
+                    className="mx-auto max-h-32 max-w-full rounded border"
                   />
                 </div>
               )}
@@ -309,9 +333,7 @@ export function ImageUpload({
                 value={externalUrl}
                 onChange={(e) => setExternalUrl(e.target.value)}
                 placeholder="https://example.com/image.jpg"
-                className={cn(
-                  externalUrl && !isValidUrl(externalUrl) && "border-red-500"
-                )}
+                className={cn(externalUrl && !isValidUrl(externalUrl) && "border-red-500")}
               />
               {externalUrl && !isValidUrl(externalUrl) && (
                 <p className="text-sm text-red-600">URL d'image invalide</p>
@@ -319,12 +341,12 @@ export function ImageUpload({
             </div>
 
             {externalUrl && isValidUrl(externalUrl) && (
-              <div className="border rounded p-4">
-                <p className="text-sm text-gray-600 mb-2">Aperçu :</p>
+              <div className="rounded border p-4">
+                <p className="mb-2 text-sm text-gray-600">Aperçu :</p>
                 <img
                   src={externalUrl}
                   alt="Preview"
-                  className="max-w-full max-h-32 mx-auto rounded border"
+                  className="mx-auto max-h-32 max-w-full rounded border"
                   onError={() => setError("Impossible de charger l'image")}
                 />
               </div>
@@ -359,10 +381,7 @@ export function ImageUpload({
           </Button>
           <Button
             onClick={handleInsertImage}
-            disabled={
-              isUploading ||
-              (!uploadedImage && (!externalUrl || !isValidUrl(externalUrl)))
-            }
+            disabled={isUploading || (!uploadedImage && (!externalUrl || !isValidUrl(externalUrl)))}
           >
             Insérer l'image
           </Button>

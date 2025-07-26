@@ -11,13 +11,27 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 
 import { cn } from "@/lib/utils";
+import { TipTapContent } from "@/types/magazine";
 
 interface TipTapViewerProps {
-  content: any;
+  content: TipTapContent | string; // Accepter aussi les chaînes JSON
   className?: string;
 }
 
 export function TipTapViewer({ content, className }: TipTapViewerProps) {
+  // Assurer que le contenu est un objet JSON et non une chaîne
+  let parsedContent: TipTapContent;
+  try {
+    if (typeof content === "string") {
+      parsedContent = JSON.parse(content);
+    } else {
+      parsedContent = content;
+    }
+  } catch (error) {
+    console.error("Erreur lors du parsing du contenu TipTap:", error);
+    parsedContent = { type: "doc", content: [] };
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -50,7 +64,7 @@ export function TipTapViewer({ content, className }: TipTapViewerProps) {
       Subscript,
       Superscript,
     ],
-    content,
+    content: parsedContent,
     editable: false,
     immediatelyRender: false, // Fix SSR hydration issues
     editorProps: {
@@ -98,7 +112,7 @@ export function TipTapViewer({ content, className }: TipTapViewerProps) {
 
   if (!editor) {
     return (
-      <div className="min-h-[200px] flex items-center justify-center">
+      <div className="flex min-h-[200px] items-center justify-center">
         <div className="text-gray-500">Chargement du contenu...</div>
       </div>
     );
@@ -112,42 +126,52 @@ export function TipTapViewer({ content, className }: TipTapViewerProps) {
 }
 
 // Hook pour extraire du texte simple depuis le JSON TipTap
-export function useExtractPlainText(content: any): string {
-  if (!content || !content.content) return "";
+export function useExtractPlainText(content: TipTapContent | string): string {
+  let parsedContent: TipTapContent;
+  try {
+    if (typeof content === "string") {
+      parsedContent = JSON.parse(content);
+    } else {
+      parsedContent = content;
+    }
+  } catch (_error) {
+    return "";
+  }
 
-  const extractText = (node: any): string => {
+  if (!parsedContent || !parsedContent.content) return "";
+
+  const extractText = (node: TipTapContent): string => {
     if (node.text) return node.text;
     if (node.content) return node.content.map(extractText).join(" ");
     return "";
   };
 
-  return extractText(content);
+  return extractText(parsedContent);
 }
 
 // Hook pour extraire le premier paragraphe comme extrait
-export function useExtractExcerpt(content: any, maxLength: number = 160): string {
+export function useExtractExcerpt(
+  content: TipTapContent | string,
+  maxLength: number = 160
+): string {
   const plainText = useExtractPlainText(content);
-  
+
   if (plainText.length <= maxLength) {
     return plainText;
   }
-  
+
   return plainText.substring(0, maxLength).trim() + "...";
 }
 
 // Composant léger pour afficher juste un extrait
 interface ArticleExcerptProps {
-  content: any;
+  content: TipTapContent | string;
   maxLength?: number;
   className?: string;
 }
 
 export function ArticleExcerpt({ content, maxLength = 160, className }: ArticleExcerptProps) {
   const excerpt = useExtractExcerpt(content, maxLength);
-  
-  return (
-    <p className={cn("text-gray-600 leading-relaxed", className)}>
-      {excerpt}
-    </p>
-  );
+
+  return <p className={cn("leading-relaxed text-gray-600", className)}>{excerpt}</p>;
 }

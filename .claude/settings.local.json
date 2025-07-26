@@ -25,11 +25,18 @@
       "mcp__playwright__browser_take_screenshot",
       "mcp__playwright__browser_navigate",
       "Bash(npx tsc:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_console_messages",
+      "WebFetch(domain:tiptap.dev)",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_file_upload",
+      "mcp__playwright__browser_navigate_back",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_type"
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "supabase"
-  ]
+  "enabledMcpjsonServers": ["supabase"]
 }

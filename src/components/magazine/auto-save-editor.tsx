@@ -5,13 +5,14 @@ import { TipTapEditor } from "./tiptap-editor";
 import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TipTapContent } from "@/types/magazine";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 interface AutoSaveEditorProps {
-  content?: any;
-  onChange?: (content: any) => void;
-  onAutoSave?: (content: any) => Promise<void>;
+  content?: TipTapContent;
+  onChange?: (content: TipTapContent) => void;
+  onAutoSave?: (content: TipTapContent) => Promise<void>;
   placeholder?: string;
   className?: string;
   editable?: boolean;
@@ -35,64 +36,76 @@ export function AutoSaveEditor({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fonction de sauvegarde automatique
-  const performAutoSave = useCallback(async (currentContent: any) => {
-    if (!currentContent || !onAutoSave) return;
+  const performAutoSave = useCallback(
+    async (currentContent: TipTapContent) => {
+      if (!currentContent || !onAutoSave) return;
 
-    try {
-      setSaveStatus("saving");
-      
-      // Sauvegarde locale en premier
-      if (storageKey) {
-        localStorage.setItem(storageKey, JSON.stringify({
-          content: currentContent,
-          timestamp: new Date().toISOString(),
-        }));
+      try {
+        setSaveStatus("saving");
+
+        // Sauvegarde locale en premier
+        if (storageKey) {
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              content: currentContent,
+              timestamp: new Date().toISOString(),
+            })
+          );
+        }
+
+        // Sauvegarde serveur si fonction fournie
+        await onAutoSave(currentContent);
+
+        setSaveStatus("saved");
+        setLastSaved(new Date());
+
+        // Retour à idle après 2 secondes
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde automatique:", error);
+        setSaveStatus("error");
+
+        // Retour à idle après 3 secondes
+        setTimeout(() => setSaveStatus("idle"), 3000);
       }
-
-      // Sauvegarde serveur si fonction fournie
-      await onAutoSave(currentContent);
-      
-      setSaveStatus("saved");
-      setLastSaved(new Date());
-      
-      // Retour à idle après 2 secondes
-      setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch (error) {
-      console.error("Erreur lors de la sauvegarde automatique:", error);
-      setSaveStatus("error");
-      
-      // Retour à idle après 3 secondes
-      setTimeout(() => setSaveStatus("idle"), 3000);
-    }
-  }, [onAutoSave, storageKey]);
+    },
+    [onAutoSave, storageKey]
+  );
 
   // Gestion des changements de contenu
-  const handleContentChange = useCallback((newContent: any) => {
-    contentRef.current = newContent;
-    
-    // Appel du onChange externe
-    if (onChange) {
-      onChange(newContent);
-    }
+  const handleContentChange = useCallback(
+    (newContent: TipTapContent) => {
+      contentRef.current = newContent;
 
-    // Programmation de la sauvegarde automatique
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
+      // Appel du onChange externe
+      if (onChange) {
+        onChange(newContent);
+      }
 
-    saveTimeoutRef.current = setTimeout(() => {
-      performAutoSave(newContent);
-    }, autoSaveInterval);
-  }, [onChange, performAutoSave, autoSaveInterval]);
+      // Programmation de la sauvegarde automatique
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(() => {
+        performAutoSave(newContent);
+      }, autoSaveInterval);
+    },
+    [onChange, performAutoSave, autoSaveInterval]
+  );
 
   // Sauvegarde lors du déchargement de la page
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (contentRef.current && storageKey) {
-        localStorage.setItem(storageKey, JSON.stringify({
-          content: contentRef.current,
-          timestamp: new Date().toISOString(),
-        }));
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            content: contentRef.current,
+            timestamp: new Date().toISOString(),
+          })
+        );
       }
     };
 
@@ -106,7 +119,7 @@ export function AutoSaveEditor({
       try {
         const savedData = localStorage.getItem(storageKey);
         if (savedData) {
-          const { content: savedContent, timestamp } = JSON.parse(savedData);
+          const { content: _savedContent, timestamp } = JSON.parse(savedData);
           // Vous pouvez ajouter une logique pour demander à l'utilisateur
           // s'il veut restaurer le contenu sauvegardé
           console.log("Contenu sauvegardé trouvé:", { timestamp });
@@ -138,15 +151,15 @@ export function AutoSaveEditor({
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMinutes = Math.floor(diffMs / 60000);
-    
+
     if (diffMinutes < 1) return "à l'instant";
     if (diffMinutes === 1) return "il y a 1 minute";
     if (diffMinutes < 60) return `il y a ${diffMinutes} minutes`;
-    
+
     const diffHours = Math.floor(diffMinutes / 60);
     if (diffHours === 1) return "il y a 1 heure";
     if (diffHours < 24) return `il y a ${diffHours} heures`;
-    
+
     return date.toLocaleDateString("fr-FR", {
       day: "numeric",
       month: "short",
@@ -163,30 +176,28 @@ export function AutoSaveEditor({
           <div className="flex items-center gap-2">
             <Badge
               variant={
-                saveStatus === "saved" ? "default" :
-                saveStatus === "saving" ? "secondary" :
-                saveStatus === "error" ? "destructive" :
-                "outline"
+                saveStatus === "saved"
+                  ? "default"
+                  : saveStatus === "saving"
+                    ? "secondary"
+                    : saveStatus === "error"
+                      ? "destructive"
+                      : "outline"
               }
-              className={cn(
-                "text-xs",
-                saveStatus === "saving" && "animate-pulse"
-              )}
+              className={cn("text-xs", saveStatus === "saving" && "animate-pulse")}
             >
-              {saveStatus === "saving" && <Clock className="w-3 h-3 mr-1" />}
-              {saveStatus === "saved" && <CheckCircle className="w-3 h-3 mr-1" />}
-              {saveStatus === "error" && <AlertCircle className="w-3 h-3 mr-1" />}
-              
+              {saveStatus === "saving" && <Clock className="mr-1 h-3 w-3" />}
+              {saveStatus === "saved" && <CheckCircle className="mr-1 h-3 w-3" />}
+              {saveStatus === "error" && <AlertCircle className="mr-1 h-3 w-3" />}
+
               {saveStatus === "idle" && "Prêt"}
               {saveStatus === "saving" && "Sauvegarde..."}
               {saveStatus === "saved" && "Sauvegardé"}
               {saveStatus === "error" && "Erreur de sauvegarde"}
             </Badge>
-            
+
             {lastSaved && saveStatus !== "saving" && (
-              <span className="text-xs text-gray-500">
-                Sauvegardé {formatLastSaved(lastSaved)}
-              </span>
+              <span className="text-xs text-gray-500">Sauvegardé {formatLastSaved(lastSaved)}</span>
             )}
           </div>
 
@@ -195,7 +206,7 @@ export function AutoSaveEditor({
             {storageKey && (
               <button
                 onClick={clearSavedDraft}
-                className="text-xs text-gray-500 hover:text-gray-700 underline"
+                className="text-xs text-gray-500 underline hover:text-gray-700"
               >
                 Effacer le brouillon
               </button>
@@ -219,7 +230,7 @@ export function AutoSaveEditor({
 // Hook pour gérer la restauration de brouillons
 export function useRestoreDraft(storageKey: string) {
   const [savedDraft, setSavedDraft] = useState<{
-    content: any;
+    content: TipTapContent;
     timestamp: string;
   } | null>(null);
 
@@ -245,9 +256,7 @@ export function useRestoreDraft(storageKey: string) {
   }, [storageKey]);
 
   const hasDraft = savedDraft !== null;
-  const draftAge = savedDraft 
-    ? new Date().getTime() - new Date(savedDraft.timestamp).getTime()
-    : 0;
+  const draftAge = savedDraft ? new Date().getTime() - new Date(savedDraft.timestamp).getTime() : 0;
 
   return {
     hasDraft,

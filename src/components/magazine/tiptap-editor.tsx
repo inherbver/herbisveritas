@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -86,73 +86,96 @@ export function TipTapEditor({
   const [linkUrl, setLinkUrl] = useState("");
 
   // Fonction pour gérer l'upload d'images via drag/drop ou paste
-  const handleFileUpload = useCallback(async (files: FileList) => {
-    const file = files[0];
-    console.log('🔄 [TipTap] handleFileUpload appelé avec:', { fileName: file?.name, fileType: file?.type });
-    
-    if (!file || !file.type.startsWith('image/')) {
-      console.warn('⚠️ [TipTap] Fichier invalide ou pas une image');
-      return;
-    }
+  // Note: Cette fonction sera redéfinie après l'initialisation de l'editor
+  const handleFileUpload = useCallback(
+    async (files: FileList, editorInstance?: Editor) => {
+      const file = files[0];
+      console.log("🔄 [TipTap] handleFileUpload appelé avec:", {
+        fileName: file?.name,
+        fileType: file?.type,
+      });
 
-    if (!editor) {
-      console.error('❌ [TipTap] Editor non disponible');
-      return;
-    }
-
-    try {
-      // Upload direct vers le serveur sans base64 temporaire
-      console.log('☁️ [TipTap] Upload direct vers serveur');
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('fileName', file.name.split('.')[0]);
-      
-      const result = await uploadMagazineImage(formData);
-      console.log('✅ [TipTap] Résultat upload serveur:', result);
-      
-      if (result.success && result.data?.url) {
-        console.log('📝 [TipTap] Insertion image avec URL serveur:', result.data.url);
-        
-        // Insérer directement l'image avec l'URL du serveur
-        editor.chain().focus().setImage({ 
-          src: result.data.url,
-          alt: file.name.split('.')[0],
-          title: file.name.split('.')[0]
-        }).run();
-        
-        // Forcer la synchronisation avec un délai minimal
-        setTimeout(() => {
-          if (editor && onChange) {
-            const currentContent = editor.getJSON();
-            console.log('💾 [TipTap] Contenu final après upload:', JSON.stringify(currentContent, null, 2));
-            onChange(currentContent);
-          }
-        }, 100);
-      } else {
-        console.error('❌ [TipTap] Échec upload serveur:', result);
-        // En cas d'erreur, on peut optionnellement afficher l'image en base64
-        const base64 = await blobToBase64(file);
-        editor.chain().focus().setImage({ 
-          src: base64,
-          alt: file.name.split('.')[0] + ' (erreur upload)',
-          title: 'Image non sauvegardée - réessayez'
-        }).run();
+      if (!file || !file.type.startsWith("image/")) {
+        console.warn("⚠️ [TipTap] Fichier invalide ou pas une image");
+        return;
       }
-    } catch (error) {
-      console.error('💥 [TipTap] Erreur lors de l\'upload d\'image:', error);
-      // En cas d'erreur, afficher en base64 avec indication d'erreur
+
+      const currentEditor = editorInstance;
+      if (!currentEditor) {
+        console.error("❌ [TipTap] Editor non disponible");
+        return;
+      }
+
       try {
-        const base64 = await blobToBase64(file);
-        editor.chain().focus().setImage({ 
-          src: base64,
-          alt: file.name.split('.')[0] + ' (erreur upload)',
-          title: 'Image non sauvegardée - réessayez'
-        }).run();
-      } catch {
-        console.error('❌ [TipTap] Impossible de traiter l\'image');
+        // Upload direct vers le serveur sans base64 temporaire
+        console.log("☁️ [TipTap] Upload direct vers serveur");
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("fileName", file.name.split(".")[0]);
+
+        const result = await uploadMagazineImage(formData);
+        console.log("✅ [TipTap] Résultat upload serveur:", result);
+
+        if (result.success && result.data?.url) {
+          console.log("📝 [TipTap] Insertion image avec URL serveur:", result.data.url);
+
+          // Insérer directement l'image avec l'URL du serveur
+          currentEditor
+            .chain()
+            .focus()
+            .setImage({
+              src: result.data.url,
+              alt: file.name.split(".")[0],
+              title: file.name.split(".")[0],
+            })
+            .run();
+
+          // Forcer la synchronisation avec un délai minimal
+          setTimeout(() => {
+            if (currentEditor && onChange) {
+              const currentContent = currentEditor.getJSON();
+              console.log(
+                "💾 [TipTap] Contenu final après upload:",
+                JSON.stringify(currentContent, null, 2)
+              );
+              onChange(currentContent);
+            }
+          }, 100);
+        } else {
+          console.error("❌ [TipTap] Échec upload serveur:", result);
+          // En cas d'erreur, on peut optionnellement afficher l'image en base64
+          const base64 = await blobToBase64(file);
+          currentEditor
+            .chain()
+            .focus()
+            .setImage({
+              src: base64,
+              alt: file.name.split(".")[0] + " (erreur upload)",
+              title: "Image non sauvegardée - réessayez",
+            })
+            .run();
+        }
+      } catch (error) {
+        console.error("💥 [TipTap] Erreur lors de l'upload d'image:", error);
+        // En cas d'erreur, afficher en base64 avec indication d'erreur
+        try {
+          const base64 = await blobToBase64(file);
+          currentEditor
+            .chain()
+            .focus()
+            .setImage({
+              src: base64,
+              alt: file.name.split(".")[0] + " (erreur upload)",
+              title: "Image non sauvegardée - réessayez",
+            })
+            .run();
+        } catch {
+          console.error("❌ [TipTap] Impossible de traiter l'image");
+        }
       }
-    }
-  }, [editor, onChange]);
+    },
+    [onChange]
+  );
 
   const editor = useEditor({
     extensions: [
@@ -175,31 +198,31 @@ export function TipTapEditor({
             ...this.parent?.(),
             src: {
               default: null,
-              parseHTML: element => element.getAttribute('src'),
-              renderHTML: attributes => ({ src: attributes.src }),
+              parseHTML: (element) => element.getAttribute("src"),
+              renderHTML: (attributes) => ({ src: attributes.src }),
             },
             alt: {
-              default: '',
-              parseHTML: element => element.getAttribute('alt'),
-              renderHTML: attributes => ({ alt: attributes.alt }),
+              default: "",
+              parseHTML: (element) => element.getAttribute("alt"),
+              renderHTML: (attributes) => ({ alt: attributes.alt }),
             },
             title: {
-              default: '',
-              parseHTML: element => element.getAttribute('title'),
-              renderHTML: attributes => ({ title: attributes.title }),
+              default: "",
+              parseHTML: (element) => element.getAttribute("title"),
+              renderHTML: (attributes) => ({ title: attributes.title }),
             },
-          }
+          };
         },
       }),
       FileHandler.configure({
-        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
-        onDrop: (_currentEditor, files, _pos) => {
-          console.log('🎯 [TipTap] FileHandler onDrop déclenché');
-          handleFileUpload(files);
+        allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
+        onDrop: (currentEditor, files, _pos) => {
+          console.log("🎯 [TipTap] FileHandler onDrop déclenché");
+          handleFileUpload(files, currentEditor);
         },
-        onPaste: (_currentEditor, files, _event) => {
-          console.log('📋 [TipTap] FileHandler onPaste déclenché');
-          handleFileUpload(files);
+        onPaste: (currentEditor, files, _event) => {
+          console.log("📋 [TipTap] FileHandler onPaste déclenché");
+          handleFileUpload(files, currentEditor);
         },
       }),
       Link.configure({
@@ -228,9 +251,12 @@ export function TipTapEditor({
     immediatelyRender: false, // Fix SSR hydration issues
     onUpdate: ({ editor }) => {
       const currentContent = editor.getJSON();
-      console.log('🔄 [TipTap] onUpdate déclenché, contenu:', JSON.stringify(currentContent, null, 2));
+      console.log(
+        "🔄 [TipTap] onUpdate déclenché, contenu:",
+        JSON.stringify(currentContent, null, 2)
+      );
       if (onChange) {
-        console.log('📤 [TipTap] Appel onChange depuis onUpdate');
+        console.log("📤 [TipTap] Appel onChange depuis onUpdate");
         onChange(currentContent);
       }
     },
@@ -273,45 +299,46 @@ export function TipTapEditor({
     if (!linkUrl) return;
 
     if (editor) {
-      editor
-        .chain()
-        .focus()
-        .extendMarkRange("link")
-        .setLink({ href: linkUrl })
-        .run();
+      editor.chain().focus().extendMarkRange("link").setLink({ href: linkUrl }).run();
     }
 
     setLinkUrl("");
     setIsLinkDialogOpen(false);
   }, [editor, linkUrl]);
 
-  const handleImageSelect = useCallback((imageUrl: string, altText?: string) => {
-    console.log('🖼️ [TipTap] handleImageSelect appelé avec URL:', imageUrl);
-    if (editor && imageUrl) {
-      // S'assurer que l'editor a le focus et insérer l'image avec tous les attributs
-      console.log('📝 [TipTap] Insertion image via handleImageSelect');
-      editor
-        .chain()
-        .focus()
-        .setImage({ 
-          src: imageUrl, 
-          alt: altText || "",
-          title: altText || "",
-          // Ajouter des attributs par défaut pour s'assurer qu'ils sont présents
-          class: "rounded-lg max-w-full h-auto shadow-sm my-4"
-        })
-        .run();
-      
-      // Forcer la synchronisation du contenu après l'insertion d'image
-      setTimeout(() => {
-        if (onChange && editor) {
-          const updatedContent = editor.getJSON();
-          console.log('💾 [TipTap] handleImageSelect - déclenchement onChange:', JSON.stringify(updatedContent, null, 2));
-          onChange(updatedContent);
-        }
-      }, 100);
-    }
-  }, [editor, onChange]);
+  const handleImageSelect = useCallback(
+    (imageUrl: string, altText?: string) => {
+      console.log("🖼️ [TipTap] handleImageSelect appelé avec URL:", imageUrl);
+      if (editor && imageUrl) {
+        // S'assurer que l'editor a le focus et insérer l'image avec tous les attributs
+        console.log("📝 [TipTap] Insertion image via handleImageSelect");
+        editor
+          .chain()
+          .focus()
+          .setImage({
+            src: imageUrl,
+            alt: altText || "",
+            title: altText || "",
+            // Ajouter des attributs par défaut pour s'assurer qu'ils sont présents
+            class: "rounded-lg max-w-full h-auto shadow-sm my-4",
+          })
+          .run();
+
+        // Forcer la synchronisation du contenu après l'insertion d'image
+        setTimeout(() => {
+          if (onChange && editor) {
+            const updatedContent = editor.getJSON();
+            console.log(
+              "💾 [TipTap] handleImageSelect - déclenchement onChange:",
+              JSON.stringify(updatedContent, null, 2)
+            );
+            onChange(updatedContent);
+          }
+        }, 100);
+      }
+    },
+    [editor, onChange]
+  );
 
   const removeLink = useCallback(() => {
     if (editor) {
@@ -321,7 +348,7 @@ export function TipTapEditor({
 
   if (!editor) {
     return (
-      <div className="min-h-[300px] flex items-center justify-center border rounded-md">
+      <div className="flex min-h-[300px] items-center justify-center rounded-md border">
         <div className="text-gray-500">Chargement de l'éditeur...</div>
       </div>
     );
@@ -329,16 +356,16 @@ export function TipTapEditor({
 
   if (!editable) {
     return (
-      <div className={cn("prose prose-sm sm:prose-base max-w-none", className)}>
+      <div className={cn("prose prose-sm max-w-none sm:prose-base", className)}>
         <EditorContent editor={editor} />
       </div>
     );
   }
 
   return (
-    <div className="border rounded-md">
+    <div className="rounded-md border">
       {/* Toolbar */}
-      <div className="border-b p-2 flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1 border-b p-2">
         {/* Text formatting */}
         <Toggle
           size="sm"
@@ -400,9 +427,7 @@ export function TipTapEditor({
         <Toggle
           size="sm"
           pressed={editor.isActive("heading", { level: 1 })}
-          onPressedChange={() =>
-            editor.chain().focus().toggleHeading({ level: 1 }).run()
-          }
+          onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           aria-label="Titre 1"
         >
           <Heading1 className="h-4 w-4" />
@@ -411,9 +436,7 @@ export function TipTapEditor({
         <Toggle
           size="sm"
           pressed={editor.isActive("heading", { level: 2 })}
-          onPressedChange={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
+          onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           aria-label="Titre 2"
         >
           <Heading2 className="h-4 w-4" />
@@ -422,9 +445,7 @@ export function TipTapEditor({
         <Toggle
           size="sm"
           pressed={editor.isActive("heading", { level: 3 })}
-          onPressedChange={() =>
-            editor.chain().focus().toggleHeading({ level: 3 }).run()
-          }
+          onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           aria-label="Titre 3"
         >
           <Heading3 className="h-4 w-4" />
@@ -466,9 +487,7 @@ export function TipTapEditor({
         <Toggle
           size="sm"
           pressed={editor.isActive({ textAlign: "left" })}
-          onPressedChange={() =>
-            editor.chain().focus().setTextAlign("left").run()
-          }
+          onPressedChange={() => editor.chain().focus().setTextAlign("left").run()}
           aria-label="Aligner à gauche"
         >
           <AlignLeft className="h-4 w-4" />
@@ -477,9 +496,7 @@ export function TipTapEditor({
         <Toggle
           size="sm"
           pressed={editor.isActive({ textAlign: "center" })}
-          onPressedChange={() =>
-            editor.chain().focus().setTextAlign("center").run()
-          }
+          onPressedChange={() => editor.chain().focus().setTextAlign("center").run()}
           aria-label="Centrer"
         >
           <AlignCenter className="h-4 w-4" />
@@ -488,9 +505,7 @@ export function TipTapEditor({
         <Toggle
           size="sm"
           pressed={editor.isActive({ textAlign: "right" })}
-          onPressedChange={() =>
-            editor.chain().focus().setTextAlign("right").run()
-          }
+          onPressedChange={() => editor.chain().focus().setTextAlign("right").run()}
           aria-label="Aligner à droite"
         >
           <AlignRight className="h-4 w-4" />
@@ -499,9 +514,7 @@ export function TipTapEditor({
         <Toggle
           size="sm"
           pressed={editor.isActive({ textAlign: "justify" })}
-          onPressedChange={() =>
-            editor.chain().focus().setTextAlign("justify").run()
-          }
+          onPressedChange={() => editor.chain().focus().setTextAlign("justify").run()}
           aria-label="Justifier"
         >
           <AlignJustify className="h-4 w-4" />
@@ -536,9 +549,7 @@ export function TipTapEditor({
             <Button
               variant="ghost"
               size="sm"
-              className={cn(
-                editor.isActive("link") && "bg-gray-200"
-              )}
+              className={cn(editor.isActive("link") && "bg-gray-200")}
               aria-label="Lien"
             >
               <LinkIcon className="h-4 w-4" />
@@ -576,9 +587,9 @@ export function TipTapEditor({
         <ImageUpload
           onImageSelect={handleImageSelect}
           trigger={
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               aria-label="Image"
               type="button"
               onClick={() => {}} // Le onClick sera géré par DialogTrigger
@@ -614,10 +625,7 @@ export function TipTapEditor({
       </div>
 
       {/* Editor Content */}
-      <EditorContent
-        editor={editor}
-        className="min-h-[300px] focus-within:outline-none"
-      />
+      <EditorContent editor={editor} className="min-h-[300px] focus-within:outline-none" />
     </div>
   );
 }

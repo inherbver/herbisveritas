@@ -18,7 +18,7 @@ export default async function EditArticlePage({ params }: Props) {
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const t = await getTranslations({ locale, namespace: "AdminMagazine" });
+  const _t = await getTranslations({ locale, namespace: "AdminMagazine" });
 
   // Récupération de l'article et des données pour le formulaire
   const [article, categories, tags] = await Promise.all([
@@ -32,22 +32,24 @@ export default async function EditArticlePage({ params }: Props) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
               <Link href="/admin/magazine">
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="mr-2 h-4 w-4" />
                 Retour
               </Link>
             </Button>
             <Badge
               variant={
-                article.status === "published" ? "default" :
-                article.status === "draft" ? "secondary" :
-                "outline"
+                article.status === "published"
+                  ? "default"
+                  : article.status === "draft"
+                    ? "secondary"
+                    : "outline"
               }
             >
               {article.status === "published" && "Publié"}
@@ -56,15 +58,13 @@ export default async function EditArticlePage({ params }: Props) {
             </Badge>
           </div>
           <h1 className="text-3xl font-bold">{article.title}</h1>
-          <p className="text-muted-foreground">
-            Modifiez votre article et gérez sa publication
-          </p>
+          <p className="text-muted-foreground">Modifiez votre article et gérez sa publication</p>
         </div>
-        
+
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link href={`/magazine/${article.slug}`} target="_blank">
-              <Eye className="h-4 w-4 mr-2" />
+              <Eye className="mr-2 h-4 w-4" />
               Aperçu
             </Link>
           </Button>
@@ -72,7 +72,7 @@ export default async function EditArticlePage({ params }: Props) {
       </div>
 
       {/* Article Info */}
-      <div className="grid gap-4 md:grid-cols-3 text-sm text-muted-foreground">
+      <div className="grid gap-4 text-sm text-muted-foreground md:grid-cols-3">
         <div>
           <span className="font-medium">Créé le:</span>{" "}
           {new Date(article.created_at!).toLocaleDateString("fr-FR", {
@@ -106,24 +106,21 @@ export default async function EditArticlePage({ params }: Props) {
           <CardTitle>Modifier l'article</CardTitle>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-64 w-full" />
-              <div className="flex gap-2">
-                <Skeleton className="h-10 w-24" />
-                <Skeleton className="h-10 w-24" />
+          <Suspense
+            fallback={
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-10 w-24" />
+                  <Skeleton className="h-10 w-24" />
+                </div>
               </div>
-            </div>
-          }>
-            <ArticleForm
-              article={article}
-              categories={categories}
-              tags={tags}
-              mode="edit"
-            />
+            }
+          >
+            <ArticleForm article={article} categories={categories} tags={tags} mode="edit" />
           </Suspense>
         </CardContent>
       </Card>

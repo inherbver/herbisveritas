@@ -331,6 +331,4 @@ npm run dev  # Échec si configuration invalide
 
 ---
 
-**Dernière mise à jour sécurité** : 2025-01-21  
-**Prochaine révision** : 2025-04-21
-**Responsable Sécurité** : Équipe Développement
+**Dernière mise à jour sécurité** : 2025-01-21
