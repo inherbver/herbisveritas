@@ -28,53 +28,29 @@ import { AutoSaveEditor } from "@/components/magazine/auto-save-editor";
 import { TipTapViewer } from "@/components/magazine/tiptap-viewer";
 import { MagazineImageUploadField } from "@/components/admin/magazine/image-upload-field";
 import { createArticle, updateArticle } from "@/actions/magazineActions";
-import { ArticleDisplay, Category, Tag, ArticleFormData } from "@/types/magazine";
+import { ArticleDisplay, Category, Tag, ArticleFormData, TipTapContent } from "@/types/magazine";
 
 import { Save, Eye, X, AlertCircle, Clock, Hash } from "lucide-react";
 
-// Types pour le schéma TipTap
-interface TipTapMark {
-  type: string;
-  attrs?: Record<string, unknown>;
-}
-
-interface TipTapNode {
-  type: string;
-  content?: TipTapNode[];
-  attrs?: Record<string, unknown>;
-  text?: string;
-  marks?: TipTapMark[];
-}
-
-// Schema de validation TipTap récursif
-const tipTapNodeSchema: z.ZodType<TipTapNode> = z.lazy(() =>
+// Schema de validation avec TipTapContent correct
+const tipTapContentSchema: z.ZodType<TipTapContent> = z.lazy(() =>
   z.object({
     type: z.string(),
-    content: z.array(tipTapNodeSchema).optional(),
+    content: z.array(tipTapContentSchema).optional(),
     attrs: z.record(z.unknown()).optional(),
     text: z.string().optional(),
-    marks: z
-      .array(
-        z.object({
-          type: z.string(),
-          attrs: z.record(z.unknown()).optional(),
-        })
-      )
-      .optional(),
+    marks: z.array(z.object({
+      type: z.string(),
+      attrs: z.record(z.unknown()).optional(),
+    })).optional(),
   })
 );
 
-// Schema de validation
 const articleSchema = z.object({
   title: z.string().min(1, "Le titre est requis").max(255, "Titre trop long"),
   slug: z.string().optional(),
   excerpt: z.string().max(500, "L'extrait ne peut pas dépasser 500 caractères").optional(),
-  content: z
-    .object({
-      type: z.string(),
-      content: z.array(tipTapNodeSchema).optional(),
-    })
-    .refine((val) => val && val.type === "doc", "Le contenu doit être un document TipTap valide"),
+  content: tipTapContentSchema.default({ type: "doc", content: [] }),
   featured_image: z.string().url("URL d'image invalide").optional().or(z.literal("")),
   status: z.enum(["draft", "published", "archived"]),
   category_id: z.string().optional(),
@@ -107,7 +83,7 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
       title: article?.title || "",
       slug: article?.slug || "",
       excerpt: article?.excerpt || "",
-      content: article?.content || { type: "doc", content: [] },
+      content: article?.content || { type: "doc", content: [{ type: "paragraph" }] } as TipTapContent,
       featured_image: article?.featured_image || "",
       status: (article?.status as "draft" | "published" | "archived") || "draft",
       category_id: article?.category_id || "",
@@ -147,9 +123,9 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
     setIsDirty(true);
   };
 
-  const handleContentChange = (content: { type: string; content: unknown[] }) => {
+  const handleContentChange = (content: TipTapContent) => {
     console.log(
-      "📝 [ArticleForm] handleContentChange appelé avec:",
+      " [ArticleForm] handleContentChange appelé avec:",
       JSON.stringify(content, null, 2)
     );
     setValue("content", content);
@@ -173,7 +149,7 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
   };
 
   // Auto-sauvegarde pour les brouillons
-  const handleAutoSave = async (content: { type: string; content: unknown[] }) => {
+  const handleAutoSave = async (content: TipTapContent) => {
     if (mode === "edit" && article && watchedStatus === "draft") {
       try {
         const formData: ArticleFormData = {
@@ -193,7 +169,7 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
       try {
         const formData: ArticleFormData = {
           ...data,
-          content: data.content || { type: "doc", content: [] },
+          content: data.content || { type: "doc", content: [] } as TipTapContent,
           tag_ids: selectedTags,
           featured_image: data.featured_image || undefined,
           excerpt: data.excerpt || undefined,

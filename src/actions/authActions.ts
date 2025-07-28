@@ -10,13 +10,22 @@ import { isGeneralErrorResult, isValidationErrorResult } from "@/lib/cart-helper
 import { getTranslations } from "next-intl/server";
 import { createPasswordSchema, createSignupSchema } from "@/lib/validators/auth.validator";
 
+// New imports for Clean Architecture (for future migration)
+// import { ActionResult } from "@/lib/core/result";
+// import { LogUtils } from "@/lib/core/logger";
+// import { 
+//   ValidationError, 
+//   AuthenticationError,
+//   ErrorUtils 
+// } from "@/lib/core/errors";
+
 // --- Schéma Login ---
 const loginSchema = z.object({
   email: z.string().email({ message: "L'adresse email n'est pas valide." }),
   password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
 });
 
-// --- Types d'Actions ---
+// --- Types d'Actions --- (Deprecated: use ActionResult<T> instead)
 export interface AuthActionResult {
   success: boolean;
   message?: string;

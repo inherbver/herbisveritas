@@ -1,14 +1,16 @@
+import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { jest } from "@jest/globals";
 import userEvent from "@testing-library/user-event";
+import "@testing-library/jest-dom";
 
 // Mock des actions - DOIT être avant l'import
-jest.mock("@/actions/productActions", () => ({
+jest.mock("../../../../../../actions/productActions", () => ({
   deleteProduct: jest.fn(),
 }));
 
 // Import après le mock
-import * as productActions from "@/actions/productActions";
+import * as productActions from "../../../../../../actions/productActions";
 
 // Type assertion pour les mocks
 const mockProductActions = productActions as jest.Mocked<typeof productActions>;

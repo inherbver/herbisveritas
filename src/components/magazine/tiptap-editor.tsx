@@ -192,37 +192,28 @@ export function TipTapEditor({
         },
         allowBase64: true,
         inline: false,
-        // Ensure all attributes are preserved
-        addAttributes() {
-          return {
-            ...this.parent?.(),
-            src: {
-              default: null,
-              parseHTML: (element) => element.getAttribute("src"),
-              renderHTML: (attributes) => ({ src: attributes.src }),
-            },
-            alt: {
-              default: "",
-              parseHTML: (element) => element.getAttribute("alt"),
-              renderHTML: (attributes) => ({ alt: attributes.alt }),
-            },
-            title: {
-              default: "",
-              parseHTML: (element) => element.getAttribute("title"),
-              renderHTML: (attributes) => ({ title: attributes.title }),
-            },
-          };
-        },
       }),
       FileHandler.configure({
         allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
         onDrop: (currentEditor, files, _pos) => {
           console.log("🎯 [TipTap] FileHandler onDrop déclenché");
-          handleFileUpload(files, currentEditor);
+          // Convertir File[] vers FileList-like object
+          const fileList = {
+            ...files,
+            item: (index: number) => files[index] || null,
+            length: files.length,
+          } as FileList;
+          handleFileUpload(fileList, currentEditor);
         },
         onPaste: (currentEditor, files, _event) => {
           console.log("📋 [TipTap] FileHandler onPaste déclenché");
-          handleFileUpload(files, currentEditor);
+          // Convertir File[] vers FileList-like object
+          const fileList = {
+            ...files,
+            item: (index: number) => files[index] || null,
+            length: files.length,
+          } as FileList;
+          handleFileUpload(fileList, currentEditor);
         },
       }),
       Link.configure({
@@ -319,8 +310,6 @@ export function TipTapEditor({
             src: imageUrl,
             alt: altText || "",
             title: altText || "",
-            // Ajouter des attributs par défaut pour s'assurer qu'ils sont présents
-            class: "rounded-lg max-w-full h-auto shadow-sm my-4",
           })
           .run();
 
