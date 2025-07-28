@@ -173,42 +173,95 @@ export const SERVICE_TOKENS = {
 
 ## Couche Application
 
-### Server Actions avec Architecture V2
+### 🎉 Server Actions Harmonisés (Phase 2 Terminée)
+
+**STATUT :** ✅ **TOUS les Server Actions harmonisés vers ActionResult<T>**
+
+| Module | Statut | Pattern | Complexité | Services métier |
+|--------|--------|---------|------------|-----------------|
+| **cartActions** | ✅ Harmonisé | ActionResult<T> | Élevée | CartDomainService |
+| **productActions** | ✅ Harmonisé | ActionResult<T> | Moyenne | withPermissionSafe |
+| **authActions** | ✅ Harmonisé | ActionResult<T> | Moyenne | ValidationError typée |
+| **magazineActions** | ✅ Harmonisé | ActionResult<T> | Élevée | Business rules |
+| **userActions** | ✅ Harmonisé | ActionResult<T> | Faible | Admin permissions |
+| **adminActions** | ✅ Harmonisé | ActionResult<T> | Faible | Audit trails |
+| **addressActions** | ✅ Harmonisé | ActionResult<T> | Moyenne | i18n + sync |
+| **stripeActions** | ✅ Harmonisé | ActionResult<T> | **Critique** | CheckoutOrchestrator |
+
+### Pattern Server Action Unifié
 
 ```typescript
-// src/actions/cart-actions-v2.ts
-export async function addItemToCartV2(
-  prevState: unknown,
-  formData: FormData
-): Promise<ActionResult<CartData | null>> {
-  try {
-    // 1. Validation utilisateur
-    const userContext = await getUserContext();
-    if (!userContext.success) return userContext;
+// Pattern standard appliqué à TOUS les Server Actions
+export async function standardServerAction(
+  ...params: any[]
+): Promise<ActionResult<T>> {
+  const context = LogUtils.createUserActionContext(userId, 'operation', 'domain');
+  LogUtils.logOperationStart('operation', context);
 
-    // 2. Validation des données d'entrée
-    const validationResult = await CartValidationCoordinator.validateAddToCart(
-      formData, userContext.data, productDetails
-    );
-    if (validationResult.isError()) {
-      return ActionResult.error(ErrorUtils.formatForUser(validationResult.getError()));
+  try {
+    // 1. Validation des paramètres avec erreurs typées
+    if (!validation) {
+      throw new ValidationError("Message user-friendly", 'field_name');
     }
 
-    // 3. Résolution du service via DI
-    const { scope } = await createRequestScopedContainer();
-    const cartService = scope.resolve<CartDomainService>(SERVICE_TOKENS.CART_DOMAIN_SERVICE);
+    // 2. Autorisation et permissions
+    const hasPermission = await checkPermission(permission);
+    if (!hasPermission) {
+      throw new AuthenticationError("Permission refusée");
+    }
 
-    // 4. Exécution de l'opération métier
-    const result = await cartService.addItemToCart(userId, productId, quantity);
-    scope.dispose();
+    // 3. Logique métier via services
+    const result = await domainService.executeOperation(params);
 
-    // 5. Transformation et retour
-    return result.match(
-      cart => ActionResult.ok(transformCartToData(cart), 'Article ajouté avec succès'),
-      error => ActionResult.error(ErrorUtils.formatForUser(error))
-    );
+    // 4. Logging de succès avec métriques
+    LogUtils.logOperationSuccess('operation', { ...context, metrics });
+    return ActionResult.ok(result, 'Opération réussie');
   } catch (error) {
-    return ActionResult.error('Une erreur inattendue s\'est produite');
+    // 5. Gestion d'erreurs unifiée
+    LogUtils.logOperationError('operation', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) 
+        ? ErrorUtils.formatForUser(error) 
+        : 'Erreur inattendue'
+    );
+  }
+}
+```
+
+### Services Métier pour Complexités
+
+#### CheckoutOrchestrator (StripeActions)
+```typescript
+// src/lib/domain/services/checkout.service.ts
+export class CheckoutOrchestrator {
+  async processCheckout(params: CheckoutSessionParams): Promise<ActionResult<CheckoutSessionResult>> {
+    // Pipeline de validation complexe
+    const validation = await this.validateCheckoutRequest(params);
+    const session = await this.createStripeCheckoutSession(params);
+    const metadata = await this.saveCheckoutSessionMetadata(session, params);
+    
+    return ActionResult.ok({
+      sessionUrl: session.url,  // ✅ Redirection côté client
+      sessionId: session.id
+    });
+  }
+}
+```
+
+#### ProductValidationService
+```typescript
+// src/lib/domain/services/product-validation.service.ts  
+export class ProductValidationService {
+  async validateCartProducts(items: CartItem[]): Promise<ActionResult<CartValidationResult>> {
+    // Validation stock, disponibilité, prix avec erreurs métier typées
+    for (const item of items) {
+      if (product.stock_quantity < item.quantity) {
+        throw new CheckoutBusinessError(
+          CheckoutErrorCode.INSUFFICIENT_STOCK,
+          `Stock insuffisant pour ${product.name}`
+        );
+      }
+    }
   }
 }
 ```
