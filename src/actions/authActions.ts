@@ -10,14 +10,14 @@ import { isGeneralErrorResult, isValidationErrorResult } from "@/lib/cart-helper
 import { getTranslations } from "next-intl/server";
 import { createPasswordSchema, createSignupSchema } from "@/lib/validators/auth.validator";
 
-// New imports for Clean Architecture (for future migration)
-// import { ActionResult } from "@/lib/core/result";
-// import { LogUtils } from "@/lib/core/logger";
-// import { 
-//   ValidationError, 
-//   AuthenticationError,
-//   ErrorUtils 
-// } from "@/lib/core/errors";
+// New imports for Clean Architecture
+import { ActionResult } from "@/lib/core/result";
+import { LogUtils } from "@/lib/core/logger";
+import { 
+  ValidationError, 
+  AuthenticationError,
+  ErrorUtils 
+} from "@/lib/core/errors";
 
 // --- Schéma Login ---
 const loginSchema = z.object({
@@ -37,342 +37,343 @@ export interface AuthActionResult {
 export async function loginAction(
   prevState: AuthActionResult | undefined,
   formData: FormData
-): Promise<AuthActionResult> {
-  const supabase = await createSupabaseServerClient();
+): Promise<ActionResult<null>> {
+  const context = LogUtils.createUserActionContext('unknown', 'login', 'auth');
+  LogUtils.logOperationStart('login', context);
 
-  // 1. Valider les données
-  const validatedFields = loginSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
+  try {
+    const supabase = await createSupabaseServerClient();
 
-  if (!validatedFields.success) {
-    const fieldErrors = validatedFields.error.flatten().fieldErrors;
-    const formErrors = validatedFields.error.flatten().formErrors;
-    return {
-      success: false,
-      error:
-        formErrors.length > 0
-          ? formErrors.join(", ")
-          : "Erreur de validation. Veuillez vérifier les champs.",
-      fieldErrors: fieldErrors as Record<string, string[]>,
-    };
-  }
+    // 1. Valider les données
+    const validatedFields = loginSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password"),
+    });
 
-  const { email, password } = validatedFields.data;
-
-  // 2. Récupérer l'utilisateur actuel (potentiellement anonyme) AVANT la connexion
-  let guestUserId: string | undefined;
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
-  if (currentUser && currentUser.is_anonymous) {
-    guestUserId = currentUser.id;
-    console.log(`loginAction: Utilisateur invité détecté avec ID: ${guestUserId}`);
-  }
-
-  // 3. Essayer de connecter
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    console.error("Erreur Supabase Auth (Login):", error.message);
-    if (error.message === "Email not confirmed") {
-      return {
-        success: false,
-        error: "Email non confirmé. Veuillez vérifier votre boîte de réception.",
-        // On pourrait ajouter un champ pour permettre de renvoyer l'email
-        // par exemple: needsConfirmation: true
-      };
-    }
-    return {
-      success: false,
-      error: "L'email ou le mot de passe est incorrect.",
-    };
-  }
-
-  // 4. Si la connexion est réussie et qu'un utilisateur invité a été détecté, tenter la migration du panier
-  if (guestUserId) {
-    console.log(
-      `loginAction: Tentative de migration du panier pour l'ancien invité ID: ${guestUserId}`
-    );
-    const migrationResult = await migrateAndGetCart({ guestUserId });
-    if (!migrationResult.success) {
-      let errorDetails = "Détails de l'erreur de migration non disponibles.";
-      // ✅ Corriger les gardiens de type et l'accès aux propriétés
-      if (isGeneralErrorResult(migrationResult)) {
-        errorDetails = `Erreur générale: ${migrationResult.error}`;
-      } else if (isValidationErrorResult(migrationResult)) {
-        errorDetails = `Erreurs de validation: ${JSON.stringify(migrationResult.errors)}`;
-      }
-      console.warn(
-        `loginAction: La migration du panier pour l'invité ${guestUserId} a échoué. ${errorDetails}. Message: ${migrationResult.message || "Aucun message"}`
+    if (!validatedFields.success) {
+      throw new ValidationError(
+        'Données de connexion invalides',
+        undefined,
+        { validationErrors: validatedFields.error.flatten().fieldErrors }
       );
-      // Ne pas bloquer la redirection, la connexion a réussi.
-    } else {
-      console.log(`loginAction: Migration du panier pour l'invité ${guestUserId} réussie.`);
     }
-  }
 
-  redirect("/fr/profile/account");
+    const { email, password } = validatedFields.data;
+
+    // 2. Récupérer l'utilisateur actuel (potentiellement anonyme) AVANT la connexion
+    let guestUserId: string | undefined;
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    if (currentUser && currentUser.is_anonymous) {
+      guestUserId = currentUser.id;
+      context.guestUserId = guestUserId;
+    }
+
+    // 3. Essayer de connecter
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      if (error.message === "Email not confirmed") {
+        throw new AuthenticationError("Email non confirmé. Veuillez vérifier votre boîte de réception.");
+      }
+      throw new AuthenticationError("L'email ou le mot de passe est incorrect.");
+    }
+
+    // 4. Si la connexion est réussie et qu'un utilisateur invité a été détecté, tenter la migration du panier
+    if (guestUserId) {
+      try {
+        const migrationResult = await migrateAndGetCart({ guestUserId });
+        if (!migrationResult.success) {
+          let errorDetails = "Détails de l'erreur de migration non disponibles.";
+          if (isGeneralErrorResult(migrationResult)) {
+            errorDetails = `Erreur générale: ${migrationResult.error}`;
+          } else if (isValidationErrorResult(migrationResult)) {
+            errorDetails = `Erreurs de validation: ${JSON.stringify(migrationResult.errors)}`;
+          }
+          LogUtils.logOperationError('cart_migration', new Error(errorDetails), context);
+          // Ne pas bloquer la connexion si la migration échoue
+        } else {
+          LogUtils.logOperationSuccess('cart_migration', context);
+        }
+      } catch (migrationError) {
+        LogUtils.logOperationError('cart_migration', migrationError, context);
+        // Ne pas bloquer la connexion si la migration échoue
+      }
+    }
+
+    LogUtils.logOperationSuccess('login', { ...context, email });
+    redirect("/fr/profile/account");
+  } catch (error) {
+    LogUtils.logOperationError('login', error, context);
+    
+    if (error instanceof AuthenticationError || error instanceof ValidationError) {
+      return ActionResult.error(ErrorUtils.formatForUser(error));
+    }
+    
+    // Si c'est une redirection Next.js, la relancer
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "digest" in error &&
+      typeof (error as { digest: unknown }).digest === "string" &&
+      (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
+    }
+    
+    return ActionResult.error('Une erreur inattendue est survenue');
+  }
 }
 
 // --- Action d'Inscription ---
 export async function signUpAction(
   prevState: AuthActionResult | undefined,
   formData: FormData
-): Promise<AuthActionResult> {
-  const supabase = await createSupabaseServerClient();
+): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
+  const context = LogUtils.createUserActionContext('unknown', 'signup', 'auth', { locale });
+  LogUtils.logOperationStart('signup', context);
 
-  // Charger les traductions nécessaires pour la validation
-  const tPassword = await getTranslations({ locale, namespace: "PasswordPage.validation" });
-  const tAuth = await getTranslations({ locale, namespace: "Auth.validation" });
+  try {
+    const supabase = await createSupabaseServerClient();
 
-  // Créer le schéma de validation avec les traductions
-  const finalSignUpSchema = createSignupSchema(tPassword, tAuth);
+    // Charger les traductions nécessaires pour la validation
+    const tPassword = await getTranslations({ locale, namespace: "PasswordPage.validation" });
+    const tAuth = await getTranslations({ locale, namespace: "Auth.validation" });
 
-  // 1. Valider les données
-  const validatedFields = finalSignUpSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
-  });
+    // Créer le schéma de validation avec les traductions
+    const finalSignUpSchema = createSignupSchema(tPassword, tAuth);
 
-  if (!validatedFields.success) {
-    const fieldErrors = validatedFields.error.flatten().fieldErrors;
-    const formErrors = validatedFields.error.flatten().formErrors;
-    return {
-      success: false,
-      error:
-        formErrors.length > 0
-          ? formErrors.join(", ")
-          : "Erreur de validation. Veuillez vérifier les champs.",
-      fieldErrors: fieldErrors as Record<string, string[]>,
-    };
-  }
-
-  const { email, password } = validatedFields.data;
-
-  // 2. Construire l'URL de redirection
-  const origin = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!origin) {
-    console.error("FATAL: La variable d'environnement NEXT_PUBLIC_BASE_URL n'est pas définie.");
-    return {
-      success: false,
-      error: "Erreur de configuration du serveur. Impossible de traiter l'inscription.",
-    };
-  }
-  const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
-
-  // 3. Essayer d'inscrire l'utilisateur
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: redirectUrl,
-    },
-  });
-
-  if (error) {
-    console.error("Erreur Supabase Auth (Signup):", error.message);
-    const t = await getTranslations({ locale, namespace: "Auth.validation" });
-
-    // Vérifier si l'erreur est due à un utilisateur déjà existant
-    if (error.message.includes("User already registered")) {
-      return {
-        success: false,
-        error: t("emailAlreadyExists"),
-      };
-    }
-
-    // Pour toutes les autres erreurs
-    return {
-      success: false,
-      error: t("genericSignupError"),
-    };
-  }
-
-  // 4. ✅ Audit the successful signup - Corriger les propriétés selon le schéma DB
-  if (data.user) {
-    const { error: auditError } = await supabase.from("audit_logs").insert({
-      user_id: data.user.id, // ✅ Utiliser user_id au lieu de actor_id
-      event_type: "USER_REGISTERED", // ✅ Utiliser le bon type d'événement
-      data: {
-        // ✅ Utiliser le champ data pour stocker les métadonnées
-        email: data.user.email,
-        user_id: data.user.id,
-        status: "SUCCESS",
-        registration_method: "email_password",
-      },
-      severity: "INFO",
+    // 1. Valider les données
+    const validatedFields = finalSignUpSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
     });
 
-    if (auditError) {
-      console.error("Failed to create audit log for user signup:", auditError);
-      // Do not fail the signup if audit fails, just log it.
+    if (!validatedFields.success) {
+      throw new ValidationError(
+        'Données d\'inscription invalides',
+        undefined,
+        { validationErrors: validatedFields.error.flatten().fieldErrors }
+      );
     }
-  }
 
-  // 5. Succès
-  return {
-    success: true,
-    message:
-      "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.",
-  };
+    const { email, password } = validatedFields.data;
+
+    // 2. Construire l'URL de redirection
+    const origin = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!origin) {
+      throw new Error("NEXT_PUBLIC_BASE_URL n'est pas définie.");
+    }
+  const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
+
+    // 3. Essayer d'inscrire l'utilisateur
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+
+    if (error) {
+      const t = await getTranslations({ locale, namespace: "Auth.validation" });
+      
+      if (error.message.includes("User already registered")) {
+        throw new ValidationError(t("emailAlreadyExists"));
+      }
+      
+      throw new AuthenticationError(t("genericSignupError"));
+    }
+
+    // 4. Audit the successful signup
+    if (data.user) {
+      context.userId = data.user.id;
+      
+      const { error: auditError } = await supabase.from("audit_logs").insert({
+        user_id: data.user.id,
+        event_type: "USER_REGISTERED",
+        data: {
+          email: data.user.email,
+          user_id: data.user.id,
+          status: "SUCCESS",
+          registration_method: "email_password",
+        },
+        severity: "INFO",
+      });
+
+      if (auditError) {
+        LogUtils.logOperationError('audit_signup', auditError, context);
+        // Don't fail signup if audit fails
+      }
+    }
+
+    LogUtils.logOperationSuccess('signup', { ...context, email });
+    return ActionResult.ok(null, "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.");
+  } catch (error) {
+    LogUtils.logOperationError('signup', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
+    );
+  }
 }
 
 // --- Mot de passe oublié ---
 export async function requestPasswordResetAction(
   prevState: AuthActionResult | undefined,
   formData: FormData
-): Promise<AuthActionResult> {
-  const supabase = await createSupabaseServerClient();
+): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
-  const email = formData.get("email") as string;
+  const context = LogUtils.createUserActionContext('unknown', 'password_reset', 'auth', { locale });
+  LogUtils.logOperationStart('password_reset', context);
 
-  // 1. Valider l'email
-  const t = await getTranslations({ locale, namespace: "Auth.validation" });
-  const emailSchema = z.string().email({ message: t("emailInvalid") });
-  const validatedEmail = emailSchema.safeParse(email);
+  try {
+    const supabase = await createSupabaseServerClient();
+    const email = formData.get("email") as string;
 
-  if (!validatedEmail.success) {
-    return {
-      success: false,
-      fieldErrors: {
-        email: validatedEmail.error.flatten().formErrors,
-      },
-    };
+    // 1. Valider l'email
+    const t = await getTranslations({ locale, namespace: "Auth.validation" });
+    const emailSchema = z.string().email({ message: t("emailInvalid") });
+    const validatedEmail = emailSchema.safeParse(email);
+
+    if (!validatedEmail.success) {
+      throw new ValidationError('Email invalide', 'email');
+    }
+
+    // 2. Construire l'URL de redirection
+    const origin = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!origin) {
+      throw new Error("NEXT_PUBLIC_BASE_URL is not set.");
+    }
+    const redirectUrl = `${origin}/${locale}/update-password`;
+
+    // 3. Appeler Supabase pour envoyer l'email
+    const { error } = await supabase.auth.resetPasswordForEmail(validatedEmail.data, {
+      redirectTo: redirectUrl,
+    });
+
+    if (error) {
+      LogUtils.logOperationError('password_reset_email', error, { ...context, email: validatedEmail.data });
+      // Ne pas révéler si l'email existe - retourner succès générique
+    }
+
+    // 4. Toujours renvoyer un message de succès pour des raisons de sécurité
+    const tSuccess = await getTranslations({ locale, namespace: "Auth.ForgotPassword" });
+    LogUtils.logOperationSuccess('password_reset', { ...context, email: validatedEmail.data });
+    return ActionResult.ok(null, tSuccess("successMessage"));
+  } catch (error) {
+    LogUtils.logOperationError('password_reset', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
+    );
   }
-
-  // 2. Construire l'URL de redirection
-  const origin = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!origin) {
-    console.error("FATAL: NEXT_PUBLIC_BASE_URL is not set.");
-    return {
-      success: false,
-      error: "Server configuration error.",
-    };
-  }
-  const redirectUrl = `${origin}/${locale}/update-password`;
-
-  // 3. Appeler Supabase pour envoyer l'email
-  const { error } = await supabase.auth.resetPasswordForEmail(validatedEmail.data, {
-    redirectTo: redirectUrl,
-  });
-
-  if (error) {
-    console.error("Error sending password reset email:", error.message);
-    // Ne pas révéler si l'email existe ou non
-    // On renvoie un succès générique pour des raisons de sécurité
-  }
-
-  // 4. Toujours renvoyer un message de succès pour éviter l'énumération d'utilisateurs
-  const tSuccess = await getTranslations({ locale, namespace: "Auth.ForgotPassword" });
-  return {
-    success: true,
-    message: tSuccess("successMessage"),
-  };
 }
 
 export async function updatePasswordAction(
   prevState: AuthActionResult | undefined,
   formData: FormData
-): Promise<AuthActionResult> {
-  const supabase = await createSupabaseServerClient();
+): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
+  const context = LogUtils.createUserActionContext('unknown', 'update_password', 'auth', { locale });
+  LogUtils.logOperationStart('update_password', context);
 
-  // 1. Valider les mots de passe
-  const tValidation = await getTranslations({ locale, namespace: "PasswordPage.validation" });
-  const tAuth = await getTranslations({ locale, namespace: "Auth" });
+  try {
+    const supabase = await createSupabaseServerClient();
 
-  const updatePasswordSchema = z
-    .object({
-      password: createPasswordSchema(tValidation),
-      confirmPassword: z.string(),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-      message: tAuth("passwordsDoNotMatch"),
-      path: ["confirmPassword"],
+    // 1. Valider les mots de passe
+    const tValidation = await getTranslations({ locale, namespace: "PasswordPage.validation" });
+    const tAuth = await getTranslations({ locale, namespace: "Auth" });
+
+    const updatePasswordSchema = z
+      .object({
+        password: createPasswordSchema(tValidation),
+        confirmPassword: z.string(),
+      })
+      .refine((data) => data.password === data.confirmPassword, {
+        message: tAuth("passwordsDoNotMatch"),
+        path: ["confirmPassword"],
+      });
+
+    const validatedFields = updatePasswordSchema.safeParse({
+      password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
     });
 
-  const validatedFields = updatePasswordSchema.safeParse({
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
-  });
+    if (!validatedFields.success) {
+      throw new ValidationError(
+        'Mots de passe invalides',
+        undefined,
+        { validationErrors: validatedFields.error.flatten().fieldErrors }
+      );
+    }
 
-  if (!validatedFields.success) {
-    return {
-      success: false,
-      fieldErrors: validatedFields.error.flatten().fieldErrors as Record<string, string[]>,
-    };
+    const { password } = validatedFields.data;
+
+    // 2. Mettre à jour l'utilisateur dans Supabase
+    const { error } = await supabase.auth.updateUser({
+      password: password,
+    });
+
+    if (error) {
+      throw ErrorUtils.fromSupabaseError(error);
+    }
+
+    // 3. Succès
+    const tSuccess = await getTranslations({ locale, namespace: "Auth.UpdatePassword" });
+    LogUtils.logOperationSuccess('update_password', context);
+    return ActionResult.ok(null, tSuccess("successMessage"));
+  } catch (error) {
+    LogUtils.logOperationError('update_password', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
+    );
   }
-
-  const { password } = validatedFields.data;
-
-  // 2. Mettre à jour l'utilisateur dans Supabase
-  const { error } = await supabase.auth.updateUser({
-    password: password,
-  });
-
-  if (error) {
-    console.error("Error updating password:", error.message);
-    const tError = await getTranslations({ locale, namespace: "Auth.UpdatePassword" });
-    return {
-      success: false,
-      error: tError("errorMessage"),
-    };
-  }
-
-  // 3. Succès
-  const tSuccess = await getTranslations({ locale, namespace: "Auth.UpdatePassword" });
-  return {
-    success: true,
-    message: tSuccess("successMessage"),
-  };
 }
 
 // --- Action pour renvoyer l'email de confirmation ---
-export async function resendConfirmationEmailAction(email: string): Promise<AuthActionResult> {
-  const supabase = await createSupabaseServerClient();
+export async function resendConfirmationEmailAction(email: string): Promise<ActionResult<null>> {
+  const context = LogUtils.createUserActionContext('unknown', 'resend_confirmation', 'auth', { email });
+  LogUtils.logOperationStart('resend_confirmation', context);
 
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email: email,
-  });
+  try {
+    const supabase = await createSupabaseServerClient();
 
-  if (error) {
-    console.error("Erreur lors du renvoi de l'email de confirmation:", error.message);
-    return {
-      success: false,
-      error: "Une erreur est survenue lors du renvoi de l'email.",
-    };
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email,
+    });
+
+    if (error) {
+      throw ErrorUtils.fromSupabaseError(error);
+    }
+
+    LogUtils.logOperationSuccess('resend_confirmation', context);
+    return ActionResult.ok(null, "Email de confirmation renvoyé avec succès. Veuillez vérifier votre boîte de réception.");
+  } catch (error) {
+    LogUtils.logOperationError('resend_confirmation', error, context);
+    return ActionResult.error('Une erreur est survenue lors du renvoi de l\'email.');
   }
-
-  return {
-    success: true,
-    message:
-      "Email de confirmation renvoyé avec succès. Veuillez vérifier votre boîte de réception.",
-  };
 }
 
 // --- Logout Action ---
 export async function logoutAction() {
+  const context = LogUtils.createUserActionContext('unknown', 'logout', 'auth');
+  LogUtils.logOperationStart('logout', context);
+
   try {
     const supabase = await createSupabaseServerClient();
-
-    // Log pour traçabilité
-    console.log("Server: Initiating logout process");
 
     // Déconnexion avec gestion d'erreur
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      console.error("Server: Logout error:", error.message);
-      // En cas d'erreur de déconnexion Supabase, on redirige quand même mais avec un indicateur d'erreur
-      // pour éviter que l'utilisateur reste bloqué sur une page nécessitant une session.
+      LogUtils.logOperationError('logout', error, context);
+      // En cas d'erreur de déconnexion Supabase, on redirige quand même
       redirect("/?logout_error=true&message=" + encodeURIComponent(error.message));
     } else {
-      console.log("Server: Logout successful");
+      LogUtils.logOperationSuccess('logout', context);
       // Redirection avec paramètre pour signaler la déconnexion réussie
       redirect("/?logged_out=true");
     }
@@ -383,7 +384,6 @@ export async function logoutAction() {
     }
 
     // Si l'erreur est une redirection Next.js, la relancer pour que Next.js la gère
-    // Vérification de type pour error.digest (spécifique aux erreurs Next.js)
     if (
       typeof error === "object" &&
       error !== null &&
@@ -395,7 +395,7 @@ export async function logoutAction() {
     }
 
     // Pour toutes les autres erreurs, loguer et rediriger vers une page d'erreur
-    console.error("Server: Exception during logout:", error);
+    LogUtils.logOperationError('logout', error, context);
     redirect("/?logout_error=true&message=" + encodeURIComponent(errorMessage));
   }
 }
