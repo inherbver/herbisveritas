@@ -22,6 +22,15 @@ import {
   extractExcerpt,
 } from "@/lib/magazine/html-converter";
 
+// New imports for Clean Architecture
+import { ActionResult } from "@/lib/core/result";
+import { LogUtils } from "@/lib/core/logger";
+import { 
+  ValidationError, 
+  AuthenticationError,
+  ErrorUtils 
+} from "@/lib/core/errors";
+
 // Fonction utilitaire pour nettoyer le contenu TipTap avant sauvegarde
 function sanitizeTipTapContent(content: unknown): TipTapContent {
   console.log("🧹 [MagazineActions] sanitizeTipTapContent reçu:", JSON.stringify(content, null, 2));
@@ -98,14 +107,17 @@ function generateSlug(title: string): string {
 
 /* ==================== ARTICLES ==================== */
 
-export async function createArticle(formData: ArticleFormData) {
+export async function createArticle(formData: ArticleFormData): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext('unknown', 'create_article', 'magazine');
+  LogUtils.logOperationStart('create_article', context);
+
   try {
     const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions
     const hasPermission = await checkUserPermission("content:create");
     if (!hasPermission) {
-      return { success: false, error: "Permission refusée" };
+      throw new AuthenticationError("Permission refusée");
     }
 
     // Récupération de l'utilisateur actuel
@@ -114,8 +126,9 @@ export async function createArticle(formData: ArticleFormData) {
       error: userError,
     } = await supabase.auth.getUser();
     if (userError || !user) {
-      return { success: false, error: "Utilisateur non authentifié" };
+      throw new AuthenticationError("Utilisateur non authentifié");
     }
+    context.userId = user.id;
 
     // Génération du slug si non fourni
     const slug = formData.slug || generateSlug(formData.title);
@@ -128,7 +141,7 @@ export async function createArticle(formData: ArticleFormData) {
       .single();
 
     if (existingArticle) {
-      return { success: false, error: "Un article avec ce slug existe déjà" };
+      throw new ValidationError("Un article avec ce slug existe déjà", 'slug');
     }
 
     // Nettoyage et validation du contenu TipTap
@@ -166,7 +179,7 @@ export async function createArticle(formData: ArticleFormData) {
       .single();
 
     if (createError) {
-      return { success: false, error: createError.message };
+      throw ErrorUtils.fromSupabaseError(createError);
     }
 
     // Ajout des tags si fournis
@@ -179,30 +192,35 @@ export async function createArticle(formData: ArticleFormData) {
       const { error: tagError } = await supabase.from("article_tags").insert(tagRelations);
 
       if (tagError) {
-        console.error("Erreur lors de l'ajout des tags:", tagError);
+        LogUtils.logOperationError('add_article_tags', tagError, context);
+        // Ne pas faire échouer la création si les tags échouent
       }
     }
 
     revalidatePath("/admin/magazine");
     revalidatePath("/magazine");
 
-    return { success: true, data: article };
-  } catch (_error) {
-    return { success: false, error: "Erreur inattendue lors de la création" };
+    LogUtils.logOperationSuccess('create_article', { ...context, articleId: article.id, title: formData.title });
+    return ActionResult.ok(article, 'Article créé avec succès');
+  } catch (error) {
+    LogUtils.logOperationError('create_article', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur inattendue lors de la création'
+    );
   }
 }
 
-export async function updateArticle(id: string, formData: ArticleFormData) {
-  try {
-    console.log("📝 [MagazineActions] updateArticle appelé pour ID:", id);
-    console.log("📄 [MagazineActions] formData reçu:", JSON.stringify(formData, null, 2));
+export async function updateArticle(id: string, formData: ArticleFormData): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext('unknown', 'update_article', 'magazine', { articleId: id });
+  LogUtils.logOperationStart('update_article', context);
 
+  try {
     const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions
     const hasPermission = await checkUserPermission("content:update");
     if (!hasPermission) {
-      return { success: false, error: "Permission refusée" };
+      throw new AuthenticationError("Permission refusée");
     }
 
     // Génération du slug si modifié
@@ -217,7 +235,7 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
       .single();
 
     if (existingArticle) {
-      return { success: false, error: "Un autre article avec ce slug existe déjà" };
+      throw new ValidationError("Un autre article avec ce slug existe déjà", 'slug');
     }
 
     // Nettoyage et validation du contenu TipTap
@@ -259,7 +277,7 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
       .single();
 
     if (updateError) {
-      return { success: false, error: updateError.message };
+      throw ErrorUtils.fromSupabaseError(updateError);
     }
 
     // Mise à jour des tags
@@ -277,7 +295,7 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
         const { error: tagError } = await supabase.from("article_tags").insert(tagRelations);
 
         if (tagError) {
-          console.error("Erreur lors de la mise à jour des tags:", tagError);
+          LogUtils.logOperationError('update_article_tags', tagError, context);
         }
       }
     }
@@ -286,46 +304,60 @@ export async function updateArticle(id: string, formData: ArticleFormData) {
     revalidatePath("/magazine");
     revalidatePath(`/magazine/${article.slug}`);
 
-    return { success: true, data: article };
-  } catch (_error) {
-    return { success: false, error: "Erreur inattendue lors de la mise à jour" };
+    LogUtils.logOperationSuccess('update_article', { ...context, title: formData.title });
+    return ActionResult.ok(article, 'Article mis à jour avec succès');
+  } catch (error) {
+    LogUtils.logOperationError('update_article', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur inattendue lors de la mise à jour'
+    );
   }
 }
 
-export async function deleteArticle(id: string) {
+export async function deleteArticle(id: string): Promise<ActionResult<null>> {
+  const context = LogUtils.createUserActionContext('unknown', 'delete_article', 'magazine', { articleId: id });
+  LogUtils.logOperationStart('delete_article', context);
+
   try {
     const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions
     const hasPermission = await checkUserPermission("content:delete");
     if (!hasPermission) {
-      return { success: false, error: "Permission refusée" };
+      throw new AuthenticationError("Permission refusée");
     }
 
     const { error } = await supabase.from("articles").delete().eq("id", id);
 
     if (error) {
-      return { success: false, error: error.message };
+      throw ErrorUtils.fromSupabaseError(error);
     }
 
     revalidatePath("/admin/magazine");
     revalidatePath("/magazine");
 
-    return { success: true };
-  } catch (_error) {
-    return { success: false, error: "Erreur lors de la suppression" };
+    LogUtils.logOperationSuccess('delete_article', context);
+    return ActionResult.ok(null, 'Article supprimé avec succès');
+  } catch (error) {
+    LogUtils.logOperationError('delete_article', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la suppression'
+    );
   }
 }
 
 /* ==================== CATÉGORIES ==================== */
 
-export async function createCategory(data: Omit<CategoryInsert, "id">) {
+export async function createCategory(data: Omit<CategoryInsert, "id">): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext('unknown', 'create_category', 'magazine');
+  LogUtils.logOperationStart('create_category', context);
+
   try {
     const supabase = await createSupabaseServerClient();
 
     const hasPermission = await checkUserPermission("content:create");
     if (!hasPermission) {
-      return { success: false, error: "Permission refusée" };
+      throw new AuthenticationError("Permission refusée");
     }
 
     const { data: category, error } = await supabase
@@ -335,13 +367,17 @@ export async function createCategory(data: Omit<CategoryInsert, "id">) {
       .single();
 
     if (error) {
-      return { success: false, error: error.message };
+      throw ErrorUtils.fromSupabaseError(error);
     }
 
     revalidatePath("/admin/magazine");
-    return { success: true, data: category };
-  } catch (_error) {
-    return { success: false, error: "Erreur lors de la création de la catégorie" };
+    LogUtils.logOperationSuccess('create_category', { ...context, categoryName: data.name });
+    return ActionResult.ok(category, 'Catégorie créée avec succès');
+  } catch (error) {
+    LogUtils.logOperationError('create_category', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la création de la catégorie'
+    );
   }
 }
 
@@ -350,7 +386,10 @@ export async function createCategory(data: Omit<CategoryInsert, "id">) {
 export async function changeArticleStatus(
   articleId: string,
   newStatus: "draft" | "published" | "archived"
-) {
+): Promise<ActionResult<null>> {
+  const context = LogUtils.createUserActionContext('unknown', 'change_article_status', 'magazine', { articleId, newStatus });
+  LogUtils.logOperationStart('change_article_status', context);
+
   try {
     const supabase = await createSupabaseServerClient();
 
@@ -413,13 +452,14 @@ export async function changeArticleStatus(
     revalidatePath("/magazine");
     revalidatePath(`/magazine/${currentArticle.slug}`);
 
-    return {
-      success: true,
-      message: getPublicationActionMessage(action, currentArticle.title),
-    };
+    const message = getPublicationActionMessage(action, currentArticle.title);
+    LogUtils.logOperationSuccess('change_article_status', { ...context, articleTitle: currentArticle.title });
+    return ActionResult.ok(null, message);
   } catch (error) {
-    console.error("Erreur lors du changement de statut:", error);
-    return { success: false, error: "Erreur interne du serveur." };
+    LogUtils.logOperationError('change_article_status', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur interne du serveur'
+    );
   }
 }
 
@@ -476,25 +516,32 @@ export async function bulkChangeArticleStatus(
 
 /* ==================== TAGS ==================== */
 
-export async function createTag(data: Omit<TagInsert, "id">) {
+export async function createTag(data: Omit<TagInsert, "id">): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext('unknown', 'create_tag', 'magazine');
+  LogUtils.logOperationStart('create_tag', context);
+
   try {
     const supabase = await createSupabaseServerClient();
 
     const hasPermission = await checkUserPermission("content:create");
     if (!hasPermission) {
-      return { success: false, error: "Permission refusée" };
+      throw new AuthenticationError("Permission refusée");
     }
 
     const { data: tag, error } = await supabase.from("tags").insert(data).select().single();
 
     if (error) {
-      return { success: false, error: error.message };
+      throw ErrorUtils.fromSupabaseError(error);
     }
 
     revalidatePath("/admin/magazine");
-    return { success: true, data: tag };
-  } catch (_error) {
-    return { success: false, error: "Erreur lors de la création du tag" };
+    LogUtils.logOperationSuccess('create_tag', { ...context, tagName: data.name });
+    return ActionResult.ok(tag, 'Tag créé avec succès');
+  } catch (error) {
+    LogUtils.logOperationError('create_tag', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la création du tag'
+    );
   }
 }
 
