@@ -1,70 +1,87 @@
 "use server";
 
-import { z } from "zod";
+// import { z } from "zod"; // Utilisé via ValidationError pour les erreurs Zod
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { addressSchema, AddressFormData } from "@/lib/validators/address.validator";
 import { getTranslations } from "next-intl/server";
 
-interface ActionResult {
-  success: boolean;
-  message?: string;
-  error?: {
-    message?: string;
-    issues?: z.ZodIssue[];
-  };
-}
+// New imports for Clean Architecture
+import { ActionResult } from "@/lib/core/result";
+import { LogUtils } from "@/lib/core/logger";
+import { 
+  ValidationError, 
+  AuthenticationError,
+  ErrorUtils 
+} from "@/lib/core/errors";
 
-export async function addAddress(data: AddressFormData, locale: string): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: { message: "User not authenticated." } };
-  }
-
-  const t = await getTranslations({ locale, namespace: "AddressForm.serverActions" });
-
-  const validationResult = addressSchema.safeParse(data);
-  if (!validationResult.success) {
-    return {
-      success: false,
-      error: {
-        message: t("validationError"),
-        issues: validationResult.error.issues,
-      },
-    };
-  }
+export async function addAddress(data: AddressFormData, locale: string): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext('unknown', 'add_address', 'profile');
+  LogUtils.logOperationStart('add_address', context);
 
   try {
-    const { error: insertError } = await supabase.from("addresses").insert([
-      {
-        ...validationResult.data,
-        user_id: user.id,
-      },
-    ]);
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (insertError) {
-      console.error("Supabase insert error:", insertError);
-      return { success: false, error: { message: t("addError") } };
+    if (!user) {
+      throw new AuthenticationError("Utilisateur non authentifié");
+    }
+    context.userId = user.id;
+
+    const t = await getTranslations({ locale, namespace: "AddressForm.serverActions" });
+
+    // Validation avec Zod
+    const validationResult = addressSchema.safeParse(data);
+    if (!validationResult.success) {
+      throw new ValidationError(
+        t("validationError"),
+        'address_validation',
+        validationResult.error.issues
+      );
     }
 
-    // ✅ Revalider les pages de profil et checkout pour synchroniser
+    // Insertion en base
+    const { data: newAddress, error: insertError } = await supabase
+      .from("addresses")
+      .insert([
+        {
+          ...validationResult.data,
+          user_id: user.id,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      throw ErrorUtils.fromSupabaseError(insertError);
+    }
+
+    // Revalidation des pages
     revalidatePath(`/${locale}/profile/addresses`);
     revalidatePath(`/${locale}/checkout`);
-    // Force refresh du cache router pour les Client Components
     revalidatePath("/");
 
-    // ✅ Synchroniser le flag billing_address_is_different
-    const { syncProfileAddressFlag } = await import("./profileActions");
-    await syncProfileAddressFlag(locale, user.id);
+    // Synchronisation du flag billing_address_is_different
+    try {
+      const { syncProfileAddressFlag } = await import("./profileActions");
+      await syncProfileAddressFlag(locale, user.id);
+    } catch (syncError) {
+      LogUtils.logOperationError('sync_profile_address_flag', syncError, context);
+      // Ne pas faire échouer l'ajout si la sync échoue
+    }
 
-    return { success: true, message: t("addSuccess") };
+    LogUtils.logOperationSuccess('add_address', { 
+      ...context, 
+      addressType: validationResult.data.address_type 
+    });
+    return ActionResult.ok(newAddress, t("addSuccess"));
   } catch (error) {
-    console.error("Error adding address:", error);
-    return { success: false, error: { message: t("addError") } };
+    LogUtils.logOperationError('add_address', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de l\'ajout de l\'adresse'
+    );
   }
 }
 
@@ -72,54 +89,69 @@ export async function updateAddress(
   addressId: string,
   data: AddressFormData,
   locale: string
-): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: { message: "User not authenticated." } };
-  }
-
-  const t = await getTranslations({ locale, namespace: "AddressForm.serverActions" });
-
-  const validationResult = addressSchema.safeParse(data);
-  if (!validationResult.success) {
-    return {
-      success: false,
-      error: {
-        message: t("validationError"),
-        issues: validationResult.error.issues,
-      },
-    };
-  }
+): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext('unknown', 'update_address', 'profile', { addressId });
+  LogUtils.logOperationStart('update_address', context);
 
   try {
-    const { error: updateError } = await supabase
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new AuthenticationError("Utilisateur non authentifié");
+    }
+    context.userId = user.id;
+
+    const t = await getTranslations({ locale, namespace: "AddressForm.serverActions" });
+
+    // Validation avec Zod
+    const validationResult = addressSchema.safeParse(data);
+    if (!validationResult.success) {
+      throw new ValidationError(
+        t("validationError"),
+        'address_validation',
+        validationResult.error.issues
+      );
+    }
+
+    // Mise à jour en base (avec sécurité utilisateur)
+    const { data: updatedAddress, error: updateError } = await supabase
       .from("addresses")
       .update(validationResult.data)
       .eq("id", addressId)
-      .eq("user_id", user.id); // Ensure user can only update their own address
+      .eq("user_id", user.id) // Sécurité : utilisateur ne peut modifier que ses adresses
+      .select()
+      .single();
 
     if (updateError) {
-      console.error("Supabase update error:", updateError);
-      return { success: false, error: { message: t("updateError") } };
+      throw ErrorUtils.fromSupabaseError(updateError);
     }
 
-    // ✅ Revalider les pages de profil et checkout pour synchroniser
+    // Revalidation des pages
     revalidatePath(`/${locale}/profile/addresses`);
     revalidatePath(`/${locale}/checkout`);
-    // Force refresh du cache router pour les Client Components
     revalidatePath("/");
 
-    // ✅ Synchroniser le flag billing_address_is_different
-    const { syncProfileAddressFlag } = await import("./profileActions");
-    await syncProfileAddressFlag(locale, user.id);
+    // Synchronisation du flag billing_address_is_different
+    try {
+      const { syncProfileAddressFlag } = await import("./profileActions");
+      await syncProfileAddressFlag(locale, user.id);
+    } catch (syncError) {
+      LogUtils.logOperationError('sync_profile_address_flag', syncError, context);
+      // Ne pas faire échouer la mise à jour si la sync échoue
+    }
 
-    return { success: true, message: t("updateSuccess") };
+    LogUtils.logOperationSuccess('update_address', { 
+      ...context, 
+      addressType: validationResult.data.address_type 
+    });
+    return ActionResult.ok(updatedAddress, t("updateSuccess"));
   } catch (error) {
-    console.error("Error updating address:", error);
-    return { success: false, error: { message: t("updateError") } };
+    LogUtils.logOperationError('update_address', error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la mise à jour de l\'adresse'
+    );
   }
 }
