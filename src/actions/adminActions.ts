@@ -3,6 +3,14 @@
 import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 
+// New imports for Clean Architecture
+import { ActionResult } from "@/lib/core/result";
+import { LogUtils } from "@/lib/core/logger";
+import { 
+  AuthenticationError,
+  ErrorUtils 
+} from "@/lib/core/errors";
+
 interface SetUserRoleParams {
   userId: string;
   newRole: "user" | "dev" | "admin";
@@ -11,7 +19,13 @@ interface SetUserRoleParams {
 
 export const setUserRole = withPermissionSafe(
   "users:update:role",
-  async ({ userId, newRole, reason }: SetUserRoleParams): Promise<{ error: string | null }> => {
+  async ({ userId, newRole, reason }: SetUserRoleParams): Promise<ActionResult<null>> => {
+    const context = LogUtils.createUserActionContext('unknown', 'set_user_role', 'admin', { 
+      targetUserId: userId, 
+      newRole 
+    });
+    LogUtils.logOperationStart('set_user_role', context);
+
     try {
       const supabaseServer = await createSupabaseServerClient();
       const {
@@ -19,13 +33,13 @@ export const setUserRole = withPermissionSafe(
       } = await supabaseServer.auth.getUser();
 
       if (!caller) {
-        throw new Error("Utilisateur non authentifié.");
+        throw new AuthenticationError("Utilisateur non authentifié.");
       }
+      context.userId = caller.id;
 
       const internalFunctionSecret = process.env.INTERNAL_FUNCTION_SECRET;
       if (!internalFunctionSecret) {
-        console.error("INTERNAL_FUNCTION_SECRET n'est pas défini.");
-        throw new Error("Configuration serveur incorrecte.");
+        throw new Error("Configuration serveur incorrecte: INTERNAL_FUNCTION_SECRET non défini.");
       }
 
       const supabaseAdmin = createSupabaseAdminClient();
@@ -37,17 +51,21 @@ export const setUserRole = withPermissionSafe(
       });
 
       if (error) {
-        console.error("Error invoking set-user-role function:", error);
         throw new Error(
           error.message || "Une erreur est survenue lors de l'appel à la fonction Edge."
         );
       }
 
-      return { error: null };
-    } catch (err) {
-      const error = err as Error;
-      console.error("Unexpected error in setUserRole:", error.message);
-      return { error: "Une erreur inattendue est survenue." };
+      LogUtils.logOperationSuccess('set_user_role', { 
+        ...context, 
+        reason: reason.substring(0, 50) // Limiter pour les logs 
+      });
+      return ActionResult.ok(null, `Rôle utilisateur mis à jour vers ${newRole}`);
+    } catch (error) {
+      LogUtils.logOperationError('set_user_role', error, context);
+      return ActionResult.error(
+        ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
+      );
     }
   }
 );
