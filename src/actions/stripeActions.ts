@@ -8,12 +8,19 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import Stripe from "stripe";
 import { Address } from "@/types";
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string | null;
-}
+// New imports for Clean Architecture
+import { ActionResult } from "@/lib/core/result";
+import { LogUtils } from "@/lib/core/logger";
+import { 
+  CheckoutBusinessError, 
+  CheckoutErrorCode,
+  CheckoutSessionResult 
+} from "@/lib/domain/services/checkout.service";
+import { ProductValidationService } from "@/lib/domain/services/product-validation.service";
+import { AddressValidationService } from "@/lib/domain/services/address-validation.service";
+import { ErrorUtils } from "@/lib/core/errors";
+
+// interface Product - plus nécessaire, remplacé par ProductValidationService
 
 // ✅ Interface pour les méthodes de livraison selon le schéma DB réel
 interface ShippingMethod {
@@ -26,117 +33,131 @@ interface ShippingMethod {
 /**
  * @description Crée une session de checkout Stripe pour le panier actuel.
  * Gère les utilisateurs authentifiés et invités, ainsi que les adresses nouvelles ou existantes.
- * @returns Un objet contenant soit le `sessionId` et l'`url` en cas de succès, soit un message d'erreur.
+ * @returns ActionResult contenant sessionId et url de redirection en cas de succès.
  */
 export async function createStripeCheckoutSession(
   shippingAddress: Address,
   billingAddress: Address,
   shippingMethodId: string
-): Promise<{
-  success: boolean;
-  sessionId?: string;
-  url?: string | null;
-  error?: string;
-}> {
-  if (!shippingAddress) {
-    return { success: false, error: "L'adresse de livraison est requise." };
-  }
-  if (!billingAddress) {
-    return { success: false, error: "L'adresse de facturation est requise." };
-  }
-  if (!shippingMethodId) {
-    return { success: false, error: "La méthode de livraison est requise." };
-  }
+): Promise<ActionResult<CheckoutSessionResult>> {
+  const context = LogUtils.createUserActionContext('unknown', 'create_stripe_checkout', 'stripe');
+  LogUtils.logOperationStart('create_stripe_checkout', context);
+
+  try {
+    // Validation des paramètres d'entrée
+    if (!shippingAddress) {
+      throw new CheckoutBusinessError(CheckoutErrorCode.INVALID_ADDRESS, "L'adresse de livraison est requise");
+    }
+    if (!billingAddress) {
+      throw new CheckoutBusinessError(CheckoutErrorCode.INVALID_ADDRESS, "L'adresse de facturation est requise");
+    }
+    if (!shippingMethodId) {
+      throw new CheckoutBusinessError(CheckoutErrorCode.INVALID_SHIPPING_METHOD, "La méthode de livraison est requise");
+    }
 
   const supabase = await createSupabaseServerClient();
   const headersList = await headers();
   const locale = headersList.get("x-next-intl-locale") || "fr";
 
-  const cartResult = await getCart();
-  if (!cartResult.success || !cartResult.data) {
-    return { success: false, error: cartResult.message || "Votre panier est vide." };
-  }
-
-  const cart = cartResult.data;
-  if (cart.items.length === 0) {
-    return { success: false, error: "Votre panier est vide." };
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_URL is not set.");
-  }
-
-  try {
-    let finalShippingAddressId: string | null = null;
-    let finalBillingAddressId: string | null = null;
-
-    const processAddress = async (
-      address: Address,
-      type: "shipping" | "billing"
-    ): Promise<string | null> => {
-      if ("id" in address && !address.id.startsWith("temp-")) {
-        return address.id;
-      }
-      if (user) {
-        const { data: newAddress, error: insertError } = await supabase
-          .from("addresses")
-          .insert({ ...address, id: undefined, user_id: user.id, address_type: type })
-          .select()
-          .single();
-        if (insertError) {
-          console.error(`Error saving new ${type} address:`, insertError);
-          throw new Error(`Erreur lors de la sauvegarde de la nouvelle adresse de ${type}.`);
-        }
-        return newAddress.id;
-      }
-      return null; // Guest address, not saved to DB
-    };
-
-    try {
-      finalShippingAddressId = await processAddress(shippingAddress, "shipping");
-      finalBillingAddressId = await processAddress(billingAddress, "billing");
-
-      // ✅ Revalider les pages de profil pour synchroniser les nouvelles adresses
-      if (finalShippingAddressId || finalBillingAddressId) {
-        revalidatePath("/[locale]/profile/addresses");
-        revalidatePath("/[locale]/checkout");
-      }
-    } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : "Unknown error" };
+    // Vérification du panier
+    const cartResult = await getCart();
+    if (!cartResult.success || !cartResult.data) {
+      throw new CheckoutBusinessError(CheckoutErrorCode.EMPTY_CART, cartResult.message || "Votre panier est vide");
     }
 
-    // ✅ Valider les produits avec le bon type
-    const productIds = cart.items.map((item) => item.productId); // ✅ Utiliser productId selon le type CartItem
-    const { data: products, error: productsError } = await supabase
-      .from("products")
-      .select("id, name, price, image_url")
-      .in("id", productIds)
-      .returns<Product[]>();
+    const cart = cartResult.data;
+    if (cart.items.length === 0) {
+      throw new CheckoutBusinessError(CheckoutErrorCode.EMPTY_CART, "Votre panier est vide");
+    }
 
-    if (productsError) throw new Error("Erreur lors de la validation des produits.");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    
+    if (user) {
+      context.userId = user.id;
+    }
 
-    const productPriceMap = new Map(products.map((p: Product) => [p.id, p]));
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!baseUrl) {
+      throw new Error("NEXT_PUBLIC_BASE_URL is not set");
+    }
 
-    // ✅ Requête corrigée pour les méthodes de livraison selon le schéma DB réel
+    // Validation des adresses avec le service dédié
+    const addressValidationService = new AddressValidationService();
+    const addressValidationResult = await addressValidationService.validateAndProcessAddresses(
+      shippingAddress,
+      billingAddress,
+      user?.id,
+      {
+        allowGuestAddresses: true,
+        allowedCountries: ["FR", "GB", "DE", "ES", "IT", "US", "CA", "BE", "CH", "LU"]
+      }
+    );
+
+    if (!addressValidationResult.success) {
+      return addressValidationResult;
+    }
+
+    const processedAddresses = addressValidationResult.data!;
+
+    // Revalidation des pages si des adresses ont été sauvegardées
+    if (processedAddresses.shippingAddressId || processedAddresses.billingAddressId) {
+      revalidatePath("/[locale]/profile/addresses");
+      revalidatePath("/[locale]/checkout");
+    }
+
+    // Validation des produits avec le service dédié
+    const productValidationService = new ProductValidationService();
+    const cartItems = cart.items.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity
+    }));
+
+    const productValidationResult = await productValidationService.validateCartProducts(cartItems);
+    if (!productValidationResult.success) {
+      return productValidationResult;
+    }
+
+    const validatedCart = productValidationResult.data!;
+
+    // Création de la map des produits validés
+    const productPriceMap = new Map(
+      validatedCart.items.map(item => [
+        item.productId, 
+        {
+          id: item.productId,
+          name: item.name,
+          price: item.price,
+          image_url: null // Sera récupérée plus tard si nécessaire
+        }
+      ])
+    );
+
+    // Validation de la méthode de livraison
     const { data: shippingMethod, error: shippingError } = await supabase
       .from("shipping_methods")
-      .select("id, name, price") // ✅ Supprimer delivery_time_min/max qui n'existent pas
+      .select("id, name, price")
       .eq("id", shippingMethodId)
       .eq("is_active", true)
       .single<ShippingMethod>();
 
     if (shippingError || !shippingMethod) {
-      throw new Error("La méthode de livraison sélectionnée n'est pas valide.");
+      throw new CheckoutBusinessError(
+        CheckoutErrorCode.INVALID_SHIPPING_METHOD,
+        "La méthode de livraison sélectionnée n'est pas valide"
+      );
     }
 
-    // ✅ Construire les line_items avec le bon type
+    // Construction des line_items Stripe avec les produits validés
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cart.items.map((item) => {
-      const product = productPriceMap.get(item.productId); // ✅ Utiliser productId
-      if (!product) throw new Error(`Produit ${item.productId} non trouvé.`);
+      const product = productPriceMap.get(item.productId);
+      if (!product) {
+        throw new CheckoutBusinessError(
+          CheckoutErrorCode.PRODUCT_NOT_FOUND,
+          `Produit ${item.productId} non trouvé`
+        );
+      }
       return {
         price_data: {
           currency: "eur",
@@ -177,8 +198,8 @@ export async function createStripeCheckoutSession(
       metadata: {
         cartId: cart.id,
         userId: user?.id || "guest",
-        shippingAddressId: finalShippingAddressId || "guest_address",
-        billingAddressId: finalBillingAddressId || "guest_address",
+        shippingAddressId: processedAddresses.shippingAddressId || "guest_address",
+        billingAddressId: processedAddresses.billingAddressId || "guest_address",
         shippingMethodId: shippingMethodId,
       },
     };
@@ -203,17 +224,40 @@ export async function createStripeCheckoutSession(
       sessionParams.billing_address_collection = "required";
     }
 
+    // Création de la session Stripe
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     if (!session.id || !session.url) {
-      return { success: false, error: "Erreur lors de la création de la session Stripe." };
+      throw new CheckoutBusinessError(
+        CheckoutErrorCode.STRIPE_SESSION_CREATION_FAILED,
+        "Erreur lors de la création de la session Stripe"
+      );
     }
 
-    return { success: true, sessionId: session.id, url: session.url };
+    const result: CheckoutSessionResult = {
+      sessionUrl: session.url,
+      sessionId: session.id
+    };
+
+    LogUtils.logOperationSuccess('create_stripe_checkout', {
+      ...context,
+      sessionId: session.id,
+      totalAmount: validatedCart.totalAmount,
+      isGuestCheckout: processedAddresses.isGuestCheckout
+    });
+
+    return ActionResult.ok(result, 'Session de checkout créée avec succès');
   } catch (error) {
-    console.error("[STRIPE_ACTION_ERROR]", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Une erreur interne est survenue.";
-    return { success: false, error: errorMessage };
+    LogUtils.logOperationError('create_stripe_checkout', error, context);
+    
+    if (error instanceof CheckoutBusinessError) {
+      return ActionResult.error(error.message);
+    }
+    
+    return ActionResult.error(
+      ErrorUtils.isAppError(error) 
+        ? ErrorUtils.formatForUser(error) 
+        : 'Une erreur inattendue est survenue lors du checkout'
+    );
   }
 }
