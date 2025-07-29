@@ -23,15 +23,14 @@ import {
 } from "@/components/ui/sheet";
 import { Menu, Info } from "lucide-react";
 import { CartSheet } from "@/components/domain/shop/cart-sheet";
-import { useTranslations } from "next-intl";
 import { cn } from "@/utils/cn";
-import { useRouter, usePathname } from "@/i18n/navigation";
+import { useSafeTranslations, useSafePathname, useSafeRouter } from "@/hooks/use-safe-intl";
 import LocaleSwitcher from "./locale-switcher";
 import { useScroll } from "@/hooks/use-scroll";
 import { motion } from "framer-motion";
 
 const Logo = () => {
-  const tGlobal = useTranslations("Global");
+  const tGlobal = useSafeTranslations("Global");
   return (
     <Link
       href="/"
@@ -55,13 +54,14 @@ interface AuthState {
 
 export function HeaderClient({ isAdmin }: HeaderClientProps) {
   const scrolled = useScroll(10);
-  const pathname = usePathname();
-  const tGlobal = useTranslations("Global");
+  const pathname = useSafePathname();
+  const tGlobal = useSafeTranslations("Global");
+  const router = useSafeRouter();
+  
   const [authState, setAuthState] = useState<AuthState>({
     session: null,
     isLoading: true,
   });
-  const router = useRouter();
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

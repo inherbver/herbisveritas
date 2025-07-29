@@ -13,9 +13,16 @@ import { logger } from "@/lib/core/logger";
 // Domain Services
 import { CartDomainService, EventPublisher } from "@/lib/domain/services/cart.service";
 
+// Event System
+import { configureEventSystem, initializeEventSystem } from '../events/event-container-config';
+
 // Repositories
 import { SupabaseCartRepository } from "../repositories/cart.repository";
 import { SupabaseProductRepository } from "../repositories/product.repository";
+import { UserSupabaseRepository } from "../repositories/user.supabase.repository";
+import { AddressSupabaseRepository } from "../repositories/address.supabase.repository";
+import { OrderSupabaseRepository } from "../repositories/order.supabase.repository";
+import { ArticleSupabaseRepository } from "../repositories/article.supabase.repository";
 
 // Supabase clients
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -41,49 +48,6 @@ class SimpleEventPublisher implements EventPublisher {
   }
 }
 
-/**
- * User repository implementation (simplified for this example)
- */
-class SimpleUserRepository {
-  constructor(private readonly supabase: SupabaseClient) {}
-  
-  async exists(userId: string): Promise<Result<boolean, Error>> {
-    try {
-      const { data, error } = await this.supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      if (error) {
-        return Result.error(error);
-      }
-      
-      return Result.ok(!!data);
-    } catch (error) {
-      return Result.error(error as Error);
-    }
-  }
-  
-  async isActive(userId: string): Promise<Result<boolean, Error>> {
-    try {
-      const { data, error } = await this.supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .eq('is_active', true)
-        .maybeSingle();
-        
-      if (error) {
-        return Result.error(error);
-      }
-      
-      return Result.ok(!!data);
-    } catch (error) {
-      return Result.error(error as Error);
-    }
-  }
-}
 
 /**
  * Container configuration for different environments
@@ -122,20 +86,38 @@ export class ContainerConfiguration {
 
       builder.addSingleton(
         SERVICE_TOKENS.USER_REPOSITORY,
-        (container) => new SimpleUserRepository(
+        () => new UserSupabaseRepository(),
+        []
+      );
+
+      builder.addSingleton(
+        SERVICE_TOKENS.ADDRESS_REPOSITORY,
+        (container) => new AddressSupabaseRepository(
           container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
         ),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
-      // Infrastructure Services
       builder.addSingleton(
-        SERVICE_TOKENS.EVENT_PUBLISHER,
-        () => new SimpleEventPublisher(),
-        []
+        SERVICE_TOKENS.ORDER_REPOSITORY,
+        (container) => new OrderSupabaseRepository(
+          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
+        ),
+        [SERVICE_TOKENS.SUPABASE_CLIENT]
+      );
+
+      builder.addSingleton(
+        SERVICE_TOKENS.ARTICLE_REPOSITORY,
+        (container) => new ArticleSupabaseRepository(
+          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
+        ),
+        [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
       builder.addInstance(SERVICE_TOKENS.LOGGER, logger);
+
+      // Configure Event System
+      configureEventSystem(builder);
 
       // Domain Services
       builder.addTransient(
@@ -194,20 +176,38 @@ export class ContainerConfiguration {
 
       builder.addSingleton(
         SERVICE_TOKENS.USER_REPOSITORY,
-        (container) => new SimpleUserRepository(
+        () => new UserSupabaseRepository(),
+        []
+      );
+
+      builder.addSingleton(
+        SERVICE_TOKENS.ADDRESS_REPOSITORY,
+        (container) => new AddressSupabaseRepository(
           container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
         ),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
-      // Infrastructure Services
       builder.addSingleton(
-        SERVICE_TOKENS.EVENT_PUBLISHER,
-        () => new SimpleEventPublisher(),
-        []
+        SERVICE_TOKENS.ORDER_REPOSITORY,
+        (container) => new OrderSupabaseRepository(
+          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
+        ),
+        [SERVICE_TOKENS.SUPABASE_CLIENT]
+      );
+
+      builder.addSingleton(
+        SERVICE_TOKENS.ARTICLE_REPOSITORY,
+        (container) => new ArticleSupabaseRepository(
+          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
+        ),
+        [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
       builder.addInstance(SERVICE_TOKENS.LOGGER, logger);
+
+      // Configure Event System
+      configureEventSystem(builder);
 
       // Domain Services
       builder.addTransient(

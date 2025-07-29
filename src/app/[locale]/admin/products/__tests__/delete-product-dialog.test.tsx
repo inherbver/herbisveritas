@@ -10,7 +10,7 @@ jest.mock("../../../../../../actions/productActions", () => ({
 }));
 
 // Import après le mock
-import * as productActions from "../../../../../../actions/productActions";
+import * as productActions from "@/actions/productActions";
 
 // Type assertion pour les mocks
 const mockProductActions = productActions as jest.Mocked<typeof productActions>;

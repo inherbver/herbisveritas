@@ -14,14 +14,14 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ShoppingBagIcon } from "lucide-react";
-import useCartStore, { selectCartTotalItems } from "@/stores/cartStore";
+import { useCartTotalItemsHydrated } from "@/hooks/use-cart-hydrated";
 import { CartDisplay } from "./cart-display"; // Assurez-vous que le chemin est correct
 import { cn } from "@/utils/cn";
 
 export function CartSheet() {
   const t = useTranslations("CartSheet"); // Pour les textes comme le titre du sheet
   const tGlobal = useTranslations("Global"); // Pour les textes globaux comme "Panier"
-  const totalItems = useCartStore(selectCartTotalItems);
+  const totalItems = useCartTotalItemsHydrated();
   const [isOpen, setIsOpen] = React.useState(false);
 
   const handleClose = () => setIsOpen(false);

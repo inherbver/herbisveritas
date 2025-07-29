@@ -6,7 +6,7 @@
  */
 
 import { useCartStore } from "@/stores/cart-store-refactored";
-import { getCart } from "@/lib/cartReader";
+import { getCart } from "@/actions/cartActions";
 import { logger, LogUtils } from "@/lib/core/logger";
 import type { CartItem, CartData } from "@/types/cart";
 
@@ -26,6 +26,8 @@ export class CartSyncManager {
   private static instance: CartSyncManager | null = null;
   private syncInProgress = false;
   private syncQueue: Array<() => Promise<void>> = [];
+  private lastSyncTime = 0;
+  private readonly MIN_SYNC_INTERVAL = 2000; // Minimum 2 seconds between syncs
 
   private constructor() {}
 
@@ -43,6 +45,14 @@ export class CartSyncManager {
     if (this.syncInProgress) {
       return;
     }
+
+    // Throttle sync calls to prevent excessive requests
+    const now = Date.now();
+    if (now - this.lastSyncTime < this.MIN_SYNC_INTERVAL) {
+      logger.info('Cart sync throttled - too frequent requests');
+      return;
+    }
+    this.lastSyncTime = now;
 
     this.syncInProgress = true;
     const store = useCartStore.getState();
@@ -162,7 +172,8 @@ export class CartSyncManager {
       
       if (result.success) {
         LogUtils.logOperationSuccess('add_item_to_cart', context);
-        await this.syncWithServer(); // Sync to get the correct server state
+        // Don't auto-sync after successful add - let the component decide
+        // await this.syncWithServer(); // Sync to get the correct server state
       } else {
         throw new Error(result.error || 'Failed to add item');
       }
@@ -202,7 +213,8 @@ export class CartSyncManager {
       
       if (result.success) {
         LogUtils.logOperationSuccess('remove_item_from_cart', context);
-        await this.syncWithServer();
+        // Don't auto-sync after successful remove - let the component decide
+        // await this.syncWithServer();
       } else {
         throw new Error(result.error || 'Failed to remove item');
       }
@@ -244,7 +256,8 @@ export class CartSyncManager {
       
       if (result.success) {
         LogUtils.logOperationSuccess('update_item_quantity', context);
-        await this.syncWithServer();
+        // Don't auto-sync after successful update - let the component decide
+        // await this.syncWithServer();
       } else {
         throw new Error(result.error || 'Failed to update quantity');
       }
@@ -283,7 +296,8 @@ export class CartSyncManager {
       
       if (result.success) {
         LogUtils.logOperationSuccess('clear_cart', context);
-        await this.syncWithServer();
+        // Don't auto-sync after successful clear - let the component decide
+        // await this.syncWithServer();
       } else {
         throw new Error(result.error || 'Failed to clear cart');
       }
@@ -334,17 +348,22 @@ export const useCartOperations = () => {
  */
 import { useEffect } from 'react';
 
-export const useCartAutoSync = (intervalMs: number = 30000) => {
+export const useCartAutoSync = (intervalMs: number = 60000) => { // Reduced from 30s to 60s
   
   useEffect(() => {
-    // Initial sync
-    cartSyncManager.syncWithServer();
+    // Initial sync with delay to avoid overwhelming on page load
+    const initialSyncTimer = setTimeout(() => {
+      cartSyncManager.syncWithServer();
+    }, 1000);
     
-    // Set up periodic sync
+    // Set up periodic sync with much longer interval
     const interval = setInterval(() => {
       cartSyncManager.syncWithServer();
     }, intervalMs);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialSyncTimer);
+      clearInterval(interval);
+    };
   }, [intervalMs]);
 };

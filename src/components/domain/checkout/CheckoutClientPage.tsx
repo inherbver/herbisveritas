@@ -3,7 +3,9 @@
 import { useState, useTransition, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
-import useCartStore, { selectCartItems, selectCartSubtotal } from "@/stores/cartStore";
+import { useCartItemsHydrated, useCartSubtotalHydrated } from "@/hooks/use-cart-hydrated";
+import { useCartStore } from "@/stores/cart-store-refactored";
+import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import {
   removeItemFromCartFormAction,
   updateCartItemQuantityFormAction,
@@ -68,10 +70,10 @@ export default function CheckoutClientPage({
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
 
-  // Cart state from Zustand store
-  const items = useCartStore(selectCartItems);
-  const subtotal = useCartStore(selectCartSubtotal);
-  const { _setItems } = useCartStore((state) => ({ _setItems: state._setItems }));
+  // Cart state from refactored store
+  const items = useCartItemsHydrated();
+  const subtotal = useCartSubtotalHydrated();
+  const { syncWithServer } = useCartOperations();
 
   // Local UI state
   const [shippingAddress, setShippingAddress] = useState<Address | AddressFormData | null>(
@@ -87,9 +89,9 @@ export default function CheckoutClientPage({
   );
 
   useEffect(() => {
-    // Les données cart.items sont déjà transformées par cartReader.ts
+    // Synchronisation initiale du panier si nécessaire
     if (cart?.items) {
-      useCartStore.getState()._setItems(cart.items);
+      syncWithServer();
     }
 
     if (isUserAuthenticated && !initialShippingAddress) {
@@ -154,7 +156,7 @@ export default function CheckoutClientPage({
     if (isSuccessResult(result)) {
       toast.success(result.message || tCart("itemRemovedSuccess"));
       if (result.data?.items && result.data.id) {
-        _setItems(result.data.items);
+        useCartStore.getState().setItems(result.data.items);
       }
     } else {
       toast.error(result.message || tGlobal("genericError"));
@@ -164,15 +166,11 @@ export default function CheckoutClientPage({
   const handleUpdateItemQuantity = async (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 0) return;
 
-    const currentItems = useCartStore.getState().items;
-    const previousState = [...currentItems];
+    // Save current state for rollback
+    const previousState = [...useCartStore.getState().items];
 
-    // Mise à jour optimiste
-    const optimisticItems = currentItems
-      .map((item) => (item.id === cartItemId ? { ...item, quantity: newQuantity } : item))
-      .filter((item) => item.quantity > 0);
-
-    _setItems(optimisticItems);
+    // Utilisation des opérations du nouveau système
+    // La mise à jour optimiste est gérée automatiquement par useCartOperations
 
     const formData = new FormData();
     formData.append("cartItemId", cartItemId);
@@ -185,10 +183,10 @@ export default function CheckoutClientPage({
 
     if (isSuccessResult(result) && result.data?.items && result.data.id) {
       // Les données result.data.items sont déjà transformées
-      _setItems(result.data.items);
+      useCartStore.getState().setItems(result.data.items);
     } else {
       toast.error(result.message || tGlobal("genericError"));
-      _setItems(previousState); // Rollback on error
+      useCartStore.getState().setItems(previousState); // Rollback on error
     }
   };
 

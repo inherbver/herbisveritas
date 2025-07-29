@@ -50,7 +50,7 @@ const articleSchema = z.object({
   title: z.string().min(1, "Le titre est requis").max(255, "Titre trop long"),
   slug: z.string().optional(),
   excerpt: z.string().max(500, "L'extrait ne peut pas dépasser 500 caractères").optional(),
-  content: tipTapContentSchema.default({ type: "doc", content: [] }),
+  content: tipTapContentSchema,
   featured_image: z.string().url("URL d'image invalide").optional().or(z.literal("")),
   status: z.enum(["draft", "published", "archived"]),
   category_id: z.string().optional(),
@@ -83,7 +83,7 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
       title: article?.title || "",
       slug: article?.slug || "",
       excerpt: article?.excerpt || "",
-      content: article?.content || { type: "doc", content: [{ type: "paragraph" }] } as TipTapContent,
+      content: article?.content || { type: "doc", content: [{ type: "paragraph" }] },
       featured_image: article?.featured_image || "",
       status: (article?.status as "draft" | "published" | "archived") || "draft",
       category_id: article?.category_id || "",
@@ -169,7 +169,7 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
       try {
         const formData: ArticleFormData = {
           ...data,
-          content: data.content || { type: "doc", content: [] } as TipTapContent,
+          content: data.content,
           tag_ids: selectedTags,
           featured_image: data.featured_image || undefined,
           excerpt: data.excerpt || undefined,

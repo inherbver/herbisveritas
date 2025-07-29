@@ -14,13 +14,13 @@ import {
   getCartV2,
   mergeCartsV2
 } from '../cart-actions-v2';
-import { ContainerConfiguration } from '@/lib/infrastructure/container/container.config';
-import { SERVICE_TOKENS } from '@/lib/infrastructure/container/container';
+// import { ContainerConfiguration } from '@/lib/infrastructure/container/container.config';
+// import { SERVICE_TOKENS } from '@/lib/infrastructure/container/container';
 import { Cart } from '@/lib/domain/entities/cart.entity';
 import { Money } from '@/lib/domain/value-objects/money';
 import { Quantity } from '@/lib/domain/value-objects/quantity';
 import { ProductReference } from '@/lib/domain/value-objects/product-reference';
-import { BusinessError, ValidationError } from '@/lib/core/errors';
+import { BusinessError } from '@/lib/core/errors';
 
 // Mock external dependencies
 jest.mock('@/utils/authUtils', () => ({
@@ -61,18 +61,22 @@ describe('Cart Actions V2 Integration Tests', () => {
   let mockGetActiveUserId: jest.Mock;
   let mockCreateSupabaseServerClient: jest.Mock;
   let mockCreateRequestScopedContainer: jest.Mock;
-  let mockCartDomainService: any;
-  let mockScope: any;
-  let mockSupabase: any;
+  let mockCartDomainService: unknown;
+  let mockScope: unknown;
+  let mockSupabase: unknown;
 
   const mockUserId = 'user-123';
   const mockProductId = 'product-456';
 
   beforeEach(() => {
     // Setup mocks
-    mockGetActiveUserId = require('@/utils/authUtils').getActiveUserId as jest.Mock;
-    mockCreateSupabaseServerClient = require('@/lib/supabase/server').createSupabaseServerClient as jest.Mock;
-    mockCreateRequestScopedContainer = require('@/lib/infrastructure/container/container.config').createRequestScopedContainer as jest.Mock;
+    const authUtils = jest.requireActual('@/utils/authUtils');
+    const supabaseServer = jest.requireActual('@/lib/supabase/server');
+    const containerConfig = jest.requireActual('@/lib/infrastructure/container/container.config');
+    
+    mockGetActiveUserId = authUtils.getActiveUserId as jest.Mock;
+    mockCreateSupabaseServerClient = supabaseServer.createSupabaseServerClient as jest.Mock;
+    mockCreateRequestScopedContainer = containerConfig.createRequestScopedContainer as jest.Mock;
 
     // Mock Supabase client
     mockSupabase = {

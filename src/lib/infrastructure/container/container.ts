@@ -487,12 +487,37 @@ export const SERVICE_TOKENS = {
   CART_REPOSITORY: 'CartRepository',
   PRODUCT_REPOSITORY: 'ProductRepository',
   USER_REPOSITORY: 'UserRepository',
+  ADDRESS_REPOSITORY: 'AddressRepository',
+  ORDER_REPOSITORY: 'OrderRepository',
+  ARTICLE_REPOSITORY: 'ArticleRepository',
   
   // Domain Services
   CART_DOMAIN_SERVICE: 'CartDomainService',
   
-  // Infrastructure Services
+  // Event System
   EVENT_PUBLISHER: 'EventPublisher',
+  EVENT_BUS: 'EventBus',
+  EVENT_STORE: 'EventStore',
+  EVENT_PROCESSOR: 'EventProcessor',
+  
+  // Event Handlers
+  CART_EVENT_HANDLER: 'CartEventHandler',
+  ORDER_EVENT_HANDLER: 'OrderEventHandler',
+  USER_EVENT_HANDLER: 'UserEventHandler',
+  INVENTORY_EVENT_HANDLER: 'InventoryEventHandler',
+  NOTIFICATION_EVENT_HANDLER: 'NotificationEventHandler',
+  AUDIT_EVENT_HANDLER: 'AuditEventHandler',
+  
+  // Event Listeners (Aggregate Handlers)
+  CART_EVENT_LISTENER: 'CartEventListener',
+  ORDER_WORKFLOW_EVENT_LISTENER: 'OrderWorkflowEventListener',
+  NOTIFICATION_EVENT_LISTENER: 'NotificationEventListener',
+  AUDIT_EVENT_LISTENER: 'AuditEventListener',
+  
+  // Event System
+  EVENT_SYSTEM_INITIALIZER: 'EventSystemInitializer',
+  
+  // Infrastructure Services
   LOGGER: 'Logger',
   
   // External Services

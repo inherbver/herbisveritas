@@ -420,11 +420,9 @@ export async function changeArticleStatus(
     if (newStatus === "published") {
       const validation = validateArticleForPublication(currentArticle);
       if (!validation.isValid) {
-        return {
-          success: false,
-          error: "L'article ne peut pas être publié",
-          details: validation.errors,
-        };
+        return ActionResult.error(
+          `L'article ne peut pas être publié: ${validation.errors.join(", ")}`
+        );
       }
     }
 

@@ -24,6 +24,20 @@ export abstract class Result<T, E = Error> {
   }
 
   /**
+   * Creates a successful result (alias for ok)
+   */
+  static success<T, E = Error>(value: T): Result<T, E> {
+    return new Success<T, E>(value);
+  }
+
+  /**
+   * Creates a failure result (alias for error)
+   */
+  static failure<T, E = Error>(error: E): Result<T, E> {
+    return new Failure<T, E>(error);
+  }
+
+  /**
    * Creates a result from a function that might throw
    */
   static from<T, E = Error>(fn: () => T): Result<T, E> {

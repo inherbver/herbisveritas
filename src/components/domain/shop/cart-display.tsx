@@ -4,11 +4,13 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Link as NextLink } from "@/i18n/navigation";
-import useCartStore, {
-  selectCartItems,
-  selectCartTotalItems,
-  selectCartSubtotal,
-} from "@/stores/cartStore";
+import { 
+  useCartItemsHydrated, 
+  useCartTotalItemsHydrated, 
+  useCartSubtotalHydrated 
+} from "@/hooks/use-cart-hydrated";
+import { useCartStore } from "@/stores/cart-store-refactored";
+import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import {
   removeItemFromCart,
   updateCartItemQuantity as updateCartItemQuantityAction,
@@ -37,13 +39,11 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
   const t = useTranslations("CartDisplay");
   const tGlobal = useTranslations("Global");
 
-  const items = useCartStore(selectCartItems);
-  const totalItems = useCartStore(selectCartTotalItems);
-  const subtotal = useCartStore(selectCartSubtotal);
+  const items = useCartItemsHydrated();
+  const totalItems = useCartTotalItemsHydrated();
+  const subtotal = useCartSubtotalHydrated();
 
-  const { _setItems } = useCartStore((state) => ({
-    _setItems: state._setItems, // To update store after server action
-  }));
+  const { syncWithServer: _syncWithServer } = useCartOperations();
 
   const handleRemoveItem = async (cartItemId: string) => {
     if (!cartItemId) {
@@ -57,7 +57,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemRemovedSuccess"));
       if (result.data?.items) {
-        _setItems(result.data.items);
+        useCartStore.getState().setItems(result.data.items);
       }
     } else {
       toast.error(result.message || tGlobal("genericError"));
@@ -93,7 +93,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
       .map((item) => (item.id === cartItemId ? { ...item, quantity: newQuantity } : item))
       .filter((item) => item.quantity > 0); // Retirer si quantity <= 0
 
-    _setItems(optimisticItems);
+    useCartStore.getState().setItems(optimisticItems);
     console.log(
       `${logPrefix} Applied optimistic update (${optimisticItems.length} items after update)`
     );
@@ -116,7 +116,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
           console.log(
             `${logPrefix} Server action SUCCESS. Syncing with server data (${result.data.items.length} items)`
           );
-          _setItems(result.data.items);
+          useCartStore.getState().setItems(result.data.items);
         } else {
           console.log(`${logPrefix} Server action SUCCESS but no data - keeping optimistic update`);
         }
@@ -126,7 +126,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
         console.error(
           `${logPrefix} Server action FAILED. Error: ${result.message}. Rolling back to previous state.`
         );
-        _setItems(previousState);
+        useCartStore.getState().setItems(previousState);
 
         // Log des détails d'erreur pour debugging
         if ("fieldErrors" in result && result.fieldErrors) {
@@ -153,7 +153,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
         console.error(`${logPrefix} Additional error details (non-Error object):`, error);
       }
 
-      _setItems(previousState);
+      useCartStore.getState().setItems(previousState);
       toast.error(tGlobal("genericError"));
     }
   };
