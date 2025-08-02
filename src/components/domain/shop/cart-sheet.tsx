@@ -14,15 +14,23 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ShoppingBagIcon } from "lucide-react";
-import { useCartTotalItemsHydrated } from "@/hooks/use-cart-hydrated";
-import { CartDisplay } from "./cart-display"; // Assurez-vous que le chemin est correct
+import { useCartSimple } from "@/hooks/use-cart-simple";
+import { CartDisplaySimple } from "./cart-display-simple"; // CORRECTION D'URGENCE: Composant unifié
 import { cn } from "@/utils/cn";
 
 export function CartSheet() {
   const t = useTranslations("CartSheet"); // Pour les textes comme le titre du sheet
   const tGlobal = useTranslations("Global"); // Pour les textes globaux comme "Panier"
-  const totalItems = useCartTotalItemsHydrated();
+  
+  // CORRECTION D'URGENCE: Utiliser directement cart-simple.store pour l'affichage
+  const { totalItems } = useCartSimple();
   const [isOpen, setIsOpen] = React.useState(false);
+  
+  // Gestion d'hydratation pour éviter les erreurs SSR/Client
+  const [isHydrated, setIsHydrated] = React.useState(false);
+  React.useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const handleClose = () => setIsOpen(false);
 
@@ -31,13 +39,14 @@ export function CartSheet() {
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" className="relative">
           <ShoppingBagIcon className="h-5 w-5" />
-          {totalItems > 0 && (
+          {isHydrated && totalItems > 0 && (
             <span
               className={cn(
                 "absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground",
                 "duration-300 animate-in fade-in zoom-in"
               )}
               aria-label={tGlobal("Cart.itemCount", { count: totalItems })}
+              suppressHydrationWarning
             >
               {totalItems}
             </span>
@@ -52,7 +61,7 @@ export function CartSheet() {
           <SheetDescription>{t("cartDescription")}</SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
-          <CartDisplay onClose={handleClose} />
+          <CartDisplaySimple onClose={handleClose} />
         </div>
         {/* Vous pourriez ajouter un SheetFooter ici avec un bouton de checkout plus proéminent si nécessaire */}
         {/* <SheetFooter className="p-6 pt-4 border-t">
