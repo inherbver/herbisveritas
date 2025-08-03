@@ -181,21 +181,21 @@ describe('Phase 3 Integration Tests - Repository Pattern', () => {
 });
 
 /**
- * Tests de compatibilité avec les migrations
+ * Tests de compatibilité d'interface
  */
-describe('Migration Compatibility Tests', () => {
-  it('should maintain interface compatibility for migrated actions', async () => {
+describe('Interface Compatibility Tests', () => {
+  it('should maintain interface compatibility for server actions', async () => {
     // Test que les interfaces des repositories restent compatibles
-    // avec les besoins des Server Actions migrés
+    // avec les besoins des Server Actions actuels
     
     const userRepository = await resolveService<IUserRepository>(SERVICE_TOKENS.USER_REPOSITORY);
     const addressRepository = await resolveService<IAddressRepository>(SERVICE_TOKENS.ADDRESS_REPOSITORY);
     
-    // Vérifier que les méthodes nécessaires pour userActions.migrated.ts existent
+    // Vérifier que les méthodes nécessaires pour userActions.ts existent
     expect(typeof userRepository.findAllWithProfiles).toBe('function');
     expect(typeof userRepository.findByIdWithProfile).toBe('function');
     
-    // Vérifier que les méthodes nécessaires pour addressActions.migrated.ts existent
+    // Vérifier que les méthodes nécessaires pour addressActions.ts existent
     expect(typeof addressRepository.create).toBe('function');
     expect(typeof addressRepository.update).toBe('function');
     expect(typeof addressRepository.delete).toBe('function');
@@ -209,7 +209,7 @@ describe('Migration Compatibility Tests', () => {
  * 1. ✅ Tous les repositories sont correctement enregistrés dans le container DI
  * 2. ✅ Ils peuvent être résolus sans erreur depuis les containers server et admin
  * 3. ✅ Le comportement singleton fonctionne correctement
- * 4. ✅ Les interfaces sont compatibles avec les Server Actions migrés
+ * 4. ✅ Les interfaces sont compatibles avec les Server Actions actuels
  * 5. ✅ La gestion d'erreur fonctionne pour les services inexistants
  * 6. ✅ Le health check des containers fonctionne
  */

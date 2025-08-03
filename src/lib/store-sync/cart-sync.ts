@@ -6,7 +6,7 @@
  */
 
 import { useCartStore } from "@/stores/cart.store";
-import { getCart } from "@/actions/cart.actions";
+import { getCart } from "@/actions/cartActions";
 import { logger, LogUtils } from "@/lib/core/logger";
 import type { CartItem, CartData } from "@/types/cart";
 
@@ -16,7 +16,7 @@ import {
   removeItemFromCart as removeItemFromCartAction,
   updateCartItemQuantity as updateCartItemQuantityAction,
   clearCartAction,
-} from "@/actions/cart.actions";
+} from "@/actions/cartActions";
 
 /**
  * Cart sync manager class
@@ -64,7 +64,6 @@ export class CartSyncManager {
       
       if (cartResult.success && cartResult.data) {
         this.updateStoreFromServerData(cartResult.data);
-        store.markSyncComplete();
         logger.info('Cart sync completed successfully');
       } else {
         throw new Error('Failed to fetch cart from server');
@@ -174,7 +173,8 @@ export class CartSyncManager {
         // Don't auto-sync after successful add - let the component decide
         // await this.syncWithServer(); // Sync to get the correct server state
       } else {
-        throw new Error(result.error || 'Failed to add item');
+        const errorMessage = 'error' in result ? result.error : (result.message || 'Failed to add item');
+        throw new Error(errorMessage);
       }
     } catch (error) {
       LogUtils.logOperationError('add_item_to_cart', error, context);
@@ -201,7 +201,10 @@ export class CartSyncManager {
     const currentItem = store.getItemById(cartItemId);
     
     // Optimistic update
-    store.removeItemOptimistic(cartItemId);
+    const itemToRemove = store.items.find(item => item.id === cartItemId);
+    if (itemToRemove) {
+      store.removeItemOptimistic(itemToRemove.productId);
+    }
     store.setLoading('remove', true);
     store.setError('remove', null);
 
@@ -215,7 +218,8 @@ export class CartSyncManager {
         // Don't auto-sync after successful remove - let the component decide
         // await this.syncWithServer();
       } else {
-        throw new Error(result.error || 'Failed to remove item');
+        const errorMessage = 'error' in result ? result.error : (result.message || 'Failed to remove item');
+        throw new Error(errorMessage);
       }
     } catch (error) {
       LogUtils.logOperationError('remove_item_from_cart', error, context);
@@ -240,11 +244,13 @@ export class CartSyncManager {
     const context = LogUtils.createUserActionContext('unknown', 'update_item_quantity', 'cart', { cartItemId, newQuantity });
     
     // Store current quantity for potential rollback
-    const currentItem = store.getItemById(cartItemId);
+    const currentItem = store.items.find(item => item.id === cartItemId);
     const currentQuantity = currentItem?.quantity || 0;
     
     // Optimistic update
-    store.updateItemQuantityOptimistic(cartItemId, newQuantity);
+    if (currentItem) {
+      store.updateQuantityOptimistic(currentItem.productId, newQuantity);
+    }
     store.setLoading('update', true);
     store.setError('update', null);
 
@@ -258,13 +264,16 @@ export class CartSyncManager {
         // Don't auto-sync after successful update - let the component decide
         // await this.syncWithServer();
       } else {
-        throw new Error(result.error || 'Failed to update quantity');
+        const errorMessage = 'error' in result ? result.error : (result.message || 'Failed to update quantity');
+        throw new Error(errorMessage);
       }
     } catch (error) {
       LogUtils.logOperationError('update_item_quantity', error, context);
       
       // Rollback optimistic update
-      store.updateItemQuantityOptimistic(cartItemId, currentQuantity);
+      if (currentItem) {
+        store.updateQuantityOptimistic(currentItem.productId, currentQuantity);
+      }
       store.setError('update', error instanceof Error ? error.message : 'Erreur lors de la mise à jour');
       
       await this.syncWithServer();
@@ -291,14 +300,15 @@ export class CartSyncManager {
     try {
       LogUtils.logOperationStart('clear_cart', context);
       
-      const result = await clearCartAction(null);
+      const result = await clearCartAction();
       
       if (result.success) {
         LogUtils.logOperationSuccess('clear_cart', context);
         // Don't auto-sync after successful clear - let the component decide
         // await this.syncWithServer();
       } else {
-        throw new Error(result.error || 'Failed to clear cart');
+        const errorMessage = 'error' in result ? result.error : (result.message || 'Failed to clear cart');
+        throw new Error(errorMessage);
       }
     } catch (error) {
       LogUtils.logOperationError('clear_cart', error, context);

@@ -62,7 +62,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
   /**
    * Find cart by user ID with all items and product details
    */
-  async findByUserId(userId: string): Promise<Result<Cart | null, Error>> {
+  async findByUserId(userId: string): Promise<Result<Cart | null, DatabaseError>> {
     try {
       const { data, error } = await this.supabase
         .from('carts')
@@ -93,16 +93,16 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       if (error) {
         logger.error('Failed to find cart by user ID', error, { userId });
-        return Result.error(ErrorUtils.fromSupabaseError(error));
+        return Result.error(ErrorUtils.fromSupabaseError(error) as DatabaseError);
       }
 
       if (!data) {
         return Result.ok(null);
       }
 
-      const mappingResult = this.mapCartWithItemsFromDatabase(data as CartWithItemsRecord);
+      const mappingResult = this.mapCartWithItemsFromDatabase(data as unknown as CartWithItemsRecord);
       if (mappingResult.isError()) {
-        return Result.error(mappingResult.getError());
+        return Result.error(mappingResult.getError() as DatabaseError);
       }
 
       return Result.ok(mappingResult.getValue());
@@ -115,7 +115,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
   /**
    * Find cart by ID with all items and product details
    */
-  async findById(cartId: string): Promise<Result<Cart | null, Error>> {
+  async findById(cartId: string): Promise<Result<Cart | null, DatabaseError>> {
     try {
       const { data, error } = await this.supabase
         .from('carts')
@@ -146,16 +146,16 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       if (error) {
         logger.error('Failed to find cart by ID', error, { cartId });
-        return Result.error(ErrorUtils.fromSupabaseError(error));
+        return Result.error(ErrorUtils.fromSupabaseError(error) as DatabaseError);
       }
 
       if (!data) {
         return Result.ok(null);
       }
 
-      const mappingResult = this.mapCartWithItemsFromDatabase(data as CartWithItemsRecord);
+      const mappingResult = this.mapCartWithItemsFromDatabase(data as unknown as CartWithItemsRecord);
       if (mappingResult.isError()) {
-        return Result.error(mappingResult.getError());
+        return Result.error(mappingResult.getError() as DatabaseError);
       }
 
       return Result.ok(mappingResult.getValue());
@@ -168,7 +168,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
   /**
    * Save cart with all its items
    */
-  async save(cart: Cart): Promise<Result<Cart, Error>> {
+  async save(cart: Cart): Promise<Result<Cart, DatabaseError>> {
     try {
       // Start transaction using Supabase's built-in transaction support
       const { error: cartError } = await this.supabase
@@ -184,7 +184,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       if (cartError) {
         logger.error('Failed to save cart', cartError, { cartId: cart.id });
-        return Result.error(ErrorUtils.fromSupabaseError(cartError));
+        return Result.error(ErrorUtils.fromSupabaseError(cartError) as DatabaseError);
       }
 
       // Get current cart items to determine what to add/update/delete
@@ -195,7 +195,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       if (currentItemsError) {
         logger.error('Failed to get current cart items', currentItemsError, { cartId: cart.id });
-        return Result.error(ErrorUtils.fromSupabaseError(currentItemsError));
+        return Result.error(ErrorUtils.fromSupabaseError(currentItemsError) as DatabaseError);
       }
 
       const currentItemIds = new Set((currentItems || []).map(item => item.id));
@@ -212,7 +212,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
         if (deleteError) {
           logger.error('Failed to delete cart items', deleteError, { cartId: cart.id, itemsToDelete });
-          return Result.error(ErrorUtils.fromSupabaseError(deleteError));
+          return Result.error(ErrorUtils.fromSupabaseError(deleteError) as DatabaseError);
         }
       }
 
@@ -232,7 +232,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
         if (itemsError) {
           logger.error('Failed to save cart items', itemsError, { cartId: cart.id });
-          return Result.error(ErrorUtils.fromSupabaseError(itemsError));
+          return Result.error(ErrorUtils.fromSupabaseError(itemsError) as DatabaseError);
         }
       }
 
@@ -244,7 +244,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       const savedCartWithItems = savedCartResult.getValue();
       if (!savedCartWithItems) {
-        return Result.error(new NotFoundError('Cart', cart.id));
+        return Result.error(new DatabaseError('Cart not found', new Error(`Cart ${cart.id} not found`)));
       }
 
       return Result.ok(savedCartWithItems);
@@ -257,7 +257,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
   /**
    * Delete cart and all its items
    */
-  async delete(cartId: string): Promise<Result<void, Error>> {
+  async delete(cartId: string): Promise<Result<boolean, DatabaseError>> {
     try {
       // Delete cart items first (foreign key constraint)
       const { error: itemsError } = await this.supabase
@@ -267,7 +267,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       if (itemsError) {
         logger.error('Failed to delete cart items', itemsError, { cartId });
-        return Result.error(ErrorUtils.fromSupabaseError(itemsError));
+        return Result.error(ErrorUtils.fromSupabaseError(itemsError) as DatabaseError);
       }
 
       // Delete cart
@@ -278,10 +278,10 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       if (cartError) {
         logger.error('Failed to delete cart', cartError, { cartId });
-        return Result.error(ErrorUtils.fromSupabaseError(cartError));
+        return Result.error(ErrorUtils.fromSupabaseError(cartError) as DatabaseError);
       }
 
-      return Result.ok(undefined);
+      return Result.ok(true);
     } catch (error) {
       logger.error('Exception in delete cart', error, { cartId });
       return Result.error(new DatabaseError('Database operation failed', error));
@@ -346,7 +346,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       if (error) {
         logger.error('Failed to find carts with pagination', error, { options });
-        return Result.error(ErrorUtils.fromSupabaseError(error));
+        return Result.error(ErrorUtils.fromSupabaseError(error) as DatabaseError);
       }
 
       if (!data) {
@@ -355,10 +355,10 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
 
       // Map carts
       const carts: Cart[] = [];
-      for (const cartData of data as CartWithItemsRecord[]) {
+      for (const cartData of data as unknown as CartWithItemsRecord[]) {
         const mappingResult = this.mapCartWithItemsFromDatabase(cartData);
         if (mappingResult.isError()) {
-          logger.warn('Failed to map cart in findAllWithPagination', mappingResult.getError(), { cartId: cartData.id });
+          logger.warn('Failed to map cart in findAllWithPagination', { error: mappingResult.getError(), cartId: cartData.id });
           continue;
         }
         carts.push(mappingResult.getValue());
@@ -405,7 +405,7 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
         .select('*', { count: 'exact', head: true });
 
       if (itemsError) {
-        return Result.error(ErrorUtils.fromSupabaseError(itemsError));
+        return Result.error(ErrorUtils.fromSupabaseError(itemsError) as DatabaseError);
       }
 
       const averageItemsPerCart = (activeCarts || 0) > 0 ? (totalItems || 0) / (activeCarts || 1) : 0;

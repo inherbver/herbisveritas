@@ -5,7 +5,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe le client Supabase côté serveur
 
-import { migrateAndGetCart } from "@/actions/cart.actions"; // AJOUT: Importer pour la migration du panier
+import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
 import { isGeneralErrorResult, isValidationErrorResult } from "@/lib/cart-helpers"; // ✅ Corriger les noms d'imports
 import { getTranslations } from "next-intl/server";
 import { createPasswordSchema, createSignupSchema } from "@/lib/validators/auth.validator";

@@ -6,7 +6,7 @@
  */
 
 import { Result } from "@/lib/core/result";
-import { BusinessError, NotFoundError, ValidationError } from "@/lib/core/errors";
+import { BusinessError, NotFoundError, ValidationError, DatabaseError } from "@/lib/core/errors";
 import { logger, LogUtils } from "@/lib/core/logger";
 import { Cart, CartItem, Money, Quantity, ProductReference } from "../entities/cart.entity";
 
@@ -14,10 +14,10 @@ import { Cart, CartItem, Money, Quantity, ProductReference } from "../entities/c
  * Cart repository interface (will be implemented in infrastructure layer)
  */
 export interface CartRepository {
-  findByUserId(userId: string): Promise<Result<Cart | null, Error>>;
-  findById(cartId: string): Promise<Result<Cart | null, Error>>;
-  save(cart: Cart): Promise<Result<Cart, Error>>;
-  delete(cartId: string): Promise<Result<void, Error>>;
+  findByUserId(userId: string): Promise<Result<Cart | null, DatabaseError>>;
+  findById(cartId: string): Promise<Result<Cart | null, DatabaseError>>;
+  save(cart: Cart): Promise<Result<Cart, DatabaseError>>;
+  delete(cartId: string): Promise<Result<boolean, DatabaseError>>;
 }
 
 /**

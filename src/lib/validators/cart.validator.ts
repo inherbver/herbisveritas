@@ -34,11 +34,21 @@ export type RemoveFromCartInput = z.infer<typeof RemoveFromCartInputSchema>;
 // ✅ Schéma pour UpdateCartItemQuantityInputSchema
 export const UpdateCartItemQuantityInputSchema = z.object({
   cartItemId: z.string().uuid("L'ID de l'article du panier doit être un UUID valide."),
-  quantity: z
-    .number()
-    .int("La quantité doit être un nombre entier.")
-    .min(0, "La quantité ne peut pas être négative.")
-    .max(99, "La quantité ne peut pas dépasser 99."),
+  quantity: z.preprocess(
+    (val) => {
+      // Convertir string vers number si nécessaire (pour FormData)
+      if (typeof val === "string") {
+        const parsed = parseInt(val, 10);
+        return isNaN(parsed) ? val : parsed;
+      }
+      return val;
+    },
+    z
+      .number()
+      .int("La quantité doit être un nombre entier.")
+      .min(0, "La quantité ne peut pas être négative.")
+      .max(99, "La quantité ne peut pas dépasser 99.")
+  ),
 });
 
 export type UpdateCartItemQuantityInput = z.infer<typeof UpdateCartItemQuantityInputSchema>;

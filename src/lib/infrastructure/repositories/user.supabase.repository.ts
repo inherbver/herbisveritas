@@ -41,7 +41,7 @@ export class UserSupabaseRepository implements IUserRepository {
   // === Opérations de base utilisateur ===
 
   async findByEmail(email: string): Promise<Result<User | null, Error>> {
-    const context = LogUtils.createOperationContext('findByEmail', 'user-repository');
+    const context = LogUtils.createUserActionContext('system', 'findByEmail');
     LogUtils.logOperationStart('findByEmail', context);
 
     try {
@@ -63,7 +63,7 @@ export class UserSupabaseRepository implements IUserRepository {
 
       const mappedUser: User = {
         id: user.id,
-        email: user.email!,
+        email: user.email || '',
         created_at: user.created_at,
         updated_at: user.updated_at,
         email_confirmed_at: user.email_confirmed_at,
@@ -98,7 +98,7 @@ export class UserSupabaseRepository implements IUserRepository {
 
       const user: User = {
         id: userData.user.id,
-        email: userData.user.email!,
+        email: userData.user.email || '',
         created_at: userData.user.created_at,
         updated_at: userData.user.updated_at,
         email_confirmed_at: userData.user.email_confirmed_at,
@@ -171,7 +171,7 @@ export class UserSupabaseRepository implements IUserRepository {
       // Combiner les données
       const adminUsers: AdminUserData[] = authData.users.map(user => ({
         id: user.id,
-        email: user.email!,
+        email: user.email || '',
         created_at: user.created_at,
         last_sign_in_at: user.last_sign_in_at,
         profile: profilesMap.get(user.id) || {
@@ -207,7 +207,7 @@ export class UserSupabaseRepository implements IUserRepository {
   // === Opérations profil ===
 
   async createProfile(userId: string, profileData: CreateProfileData): Promise<Result<Profile, Error>> {
-    const context = LogUtils.createOperationContext('createProfile', 'user-repository');
+    const context = LogUtils.createUserActionContext('system', 'getUserStats');
     LogUtils.logOperationStart('createProfile', { ...context, userId });
 
     try {
@@ -242,7 +242,7 @@ export class UserSupabaseRepository implements IUserRepository {
   }
 
   async updateProfile(userId: string, profileData: UpdateProfileData): Promise<Result<Profile, Error>> {
-    const context = LogUtils.createOperationContext('updateProfile', 'user-repository');
+    const context = LogUtils.createUserActionContext(userId, 'updateUserProfile');
     LogUtils.logOperationStart('updateProfile', { ...context, userId });
 
     try {
@@ -274,7 +274,7 @@ export class UserSupabaseRepository implements IUserRepository {
   }
 
   async findProfileByUserId(userId: string): Promise<Result<Profile | null, Error>> {
-    const context = LogUtils.createOperationContext('findProfileByUserId', 'user-repository');
+    const context = LogUtils.createUserActionContext('system', 'findProfileByUserId');
     LogUtils.logOperationStart('findProfileByUserId', { ...context, userId });
 
     try {
@@ -304,7 +304,7 @@ export class UserSupabaseRepository implements IUserRepository {
   // === Opérations admin ===
 
   async checkAdminRole(userId: string): Promise<Result<boolean, Error>> {
-    const context = LogUtils.createOperationContext('checkAdminRole', 'user-repository');
+    const context = LogUtils.createUserActionContext('system', 'checkAdminRole');
     LogUtils.logOperationStart('checkAdminRole', { ...context, userId });
 
     try {
@@ -330,7 +330,7 @@ export class UserSupabaseRepository implements IUserRepository {
   }
 
   async updateAdminStatus(userId: string, isAdmin: boolean): Promise<Result<Profile, Error>> {
-    const context = LogUtils.createOperationContext('updateAdminStatus', 'user-repository');
+    const context = LogUtils.createUserActionContext('system', 'updateAdminStatus');
     LogUtils.logOperationStart('updateAdminStatus', { ...context, userId, isAdmin });
 
     try {
@@ -362,7 +362,7 @@ export class UserSupabaseRepository implements IUserRepository {
   }
 
   async deleteUser(userId: string): Promise<Result<void, Error>> {
-    const context = LogUtils.createOperationContext('deleteUser', 'user-repository');
+    const context = LogUtils.createUserActionContext(userId, 'deleteUser');
     LogUtils.logOperationStart('deleteUser', { ...context, userId });
 
     try {
@@ -399,7 +399,7 @@ export class UserSupabaseRepository implements IUserRepository {
   }
 
   async findAdminUsers(): Promise<Result<AdminUserData[], Error>> {
-    const context = LogUtils.createOperationContext('findAdminUsers', 'user-repository');
+    const context = LogUtils.createUserActionContext('system', 'findAdminUsers');
     LogUtils.logOperationStart('findAdminUsers', context);
 
     try {
@@ -434,7 +434,7 @@ export class UserSupabaseRepository implements IUserRepository {
           const profile = profilesData?.find(p => p.user_id === user.id);
           return {
             id: user.id,
-            email: user.email!,
+            email: user.email || '',
             created_at: user.created_at,
             last_sign_in_at: user.last_sign_in_at,
             profile: profile!
@@ -455,7 +455,7 @@ export class UserSupabaseRepository implements IUserRepository {
   // === Opérations de validation ===
 
   async validateProfileData(profileData: CreateProfileData | UpdateProfileData): Promise<Result<void, Error>> {
-    const context = LogUtils.createOperationContext('validateProfileData', 'user-repository');
+    const context = LogUtils.createUserActionContext('system', 'validateProfileData');
 
     try {
       // Validation basique
@@ -480,7 +480,7 @@ export class UserSupabaseRepository implements IUserRepository {
   }
 
   async isEmailTaken(email: string, excludeUserId?: string): Promise<Result<boolean, Error>> {
-    const context = LogUtils.createOperationContext('isEmailTaken', 'user-repository');
+    const context = LogUtils.createUserActionContext('system', 'searchUsers');
     LogUtils.logOperationStart('isEmailTaken', { ...context, email, excludeUserId });
 
     try {

@@ -9,7 +9,7 @@ import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import {
   removeItemFromCartFormAction,
   updateCartItemQuantityFormAction,
-} from "@/actions/cart.actions";
+} from "@/actions/cartActions";
 import { createStripeCheckoutSession } from "@/actions/stripeActions";
 import type { ShippingMethod, Address } from "@/types";
 import type { CartItem, CartData } from "@/types/cart";
@@ -70,8 +70,13 @@ export default function CheckoutClientPage({
   const [isPending, startTransition] = useTransition();
 
   // Cart state from refactored store
-  const items = useCartItemsHydrated();
-  const subtotal = useCartSubtotalHydrated();
+  const clientItems = useCartItemsHydrated();
+  const clientSubtotal = useCartSubtotalHydrated();
+  
+  // Use server data when client store is not hydrated yet
+  const items = clientItems.length > 0 ? clientItems : cart?.items || [];
+  const subtotal = clientItems.length > 0 ? clientSubtotal : 
+    (cart?.items || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const { syncWithServer } = useCartOperations();
 
   // Local UI state

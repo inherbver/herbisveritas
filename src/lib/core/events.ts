@@ -54,11 +54,11 @@ export interface EventStore {
  * Event bus interface for coordinating publishers and handlers
  */
 export interface EventBus {
-  subscribe<T extends DomainEvent>(handler: EventHandler<T>): void;
-  unsubscribe<T extends DomainEvent>(handler: EventHandler<T>): void;
+  subscribe(eventType: string, handler: (event: DomainEvent) => Promise<void>): Promise<void>;
+  unsubscribe(eventType: string, handler: (event: DomainEvent) => Promise<void>): Promise<void>;
   publish<T extends DomainEvent>(event: T): Promise<Result<void, Error>>;
   publishBatch<T extends DomainEvent>(events: T[]): Promise<Result<void, Error>>;
-  getSubscribedHandlers(eventType: string): EventHandler[];
+  getSubscribedHandlers(eventType: string): ((event: DomainEvent) => Promise<void>)[];
 }
 
 /**

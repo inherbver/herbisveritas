@@ -34,7 +34,7 @@ function createSimpleContext(action: string, resource: string, data: any = {}) {
  * Provides immediate event processing with optional persistence
  */
 export class InMemoryEventBus implements EventBus {
-  private subscribers = new Map<string, Set<EventHandler>>();
+  private subscribers = new Map<string, Set<(event: DomainEvent) => Promise<void>>>();
   protected eventFactory = new EventFactory();
   protected eventStore?: EventStore;
 
@@ -43,39 +43,39 @@ export class InMemoryEventBus implements EventBus {
   /**
    * Subscribe an event handler to a specific event type
    */
-  subscribe<T extends DomainEvent>(handler: EventHandler<T>): void {
-    const handlers = this.subscribers.get(handler.eventType) || new Set();
+  async subscribe(eventType: string, handler: (event: DomainEvent) => Promise<void>): Promise<void> {
+    const handlers = this.subscribers.get(eventType) || new Set();
     handlers.add(handler);
-    this.subscribers.set(handler.eventType, handlers);
+    this.subscribers.set(eventType, handlers);
 
     logger.info('Event handler subscribed', {
-      eventType: handler.eventType,
-      handlerName: handler.constructor.name,
+      eventType,
+      handlerName: handler.constructor?.name || 'Anonymous',
     });
   }
 
   /**
    * Unsubscribe an event handler
    */
-  unsubscribe<T extends DomainEvent>(handler: EventHandler<T>): void {
-    const handlers = this.subscribers.get(handler.eventType);
+  async unsubscribe(eventType: string, handler: (event: DomainEvent) => Promise<void>): Promise<void> {
+    const handlers = this.subscribers.get(eventType);
     if (handlers) {
       handlers.delete(handler);
       if (handlers.size === 0) {
-        this.subscribers.delete(handler.eventType);
+        this.subscribers.delete(eventType);
       }
     }
 
     logger.info('Event handler unsubscribed', {
-      eventType: handler.eventType,
-      handlerName: handler.constructor.name,
+      eventType,
+      handlerName: handler.constructor?.name || 'Anonymous',
     });
   }
 
   /**
    * Get all subscribed handlers for an event type
    */
-  getSubscribedHandlers(eventType: string): EventHandler[] {
+  getSubscribedHandlers(eventType: string): ((event: DomainEvent) => Promise<void>)[] {
     const handlers = this.subscribers.get(eventType);
     return handlers ? Array.from(handlers) : [];
   }
@@ -200,28 +200,17 @@ export class InMemoryEventBus implements EventBus {
       handlers.map(async handler => {
         try {
           const startTime = Date.now();
-          const result = await handler.handle(event);
+          await handler(event);
           const duration = Date.now() - startTime;
-
-          if (result.isError()) {
-            logger.error('Event handler failed', {
-              eventType: event.eventType,
-              eventId: event.eventId,
-              handlerName: handler.constructor.name,
-              error: result.getError().message,
-              duration,
-            });
-            return result;
-          }
 
           logger.debug('Event handler completed successfully', {
             eventType: event.eventType,
             eventId: event.eventId,
-            handlerName: handler.constructor.name,
+            handlerName: handler.constructor?.name || 'Anonymous',
             duration,
           });
 
-          return result;
+          return Result.ok(undefined);
         } catch (error) {
           const err = error instanceof Error ? error : new Error('Handler execution failed');
           logger.error('Event handler threw exception', {

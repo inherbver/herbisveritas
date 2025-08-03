@@ -42,7 +42,7 @@ export { getCart };
 /**
  * Add item to cart with proper validation and error handling
  */
-export async function addItemToCart(
+export async function addItemToCartAction(
   prevState: unknown,
   formData: FormData
 ): Promise<CartActionResult<CartData | null>> {
@@ -141,16 +141,14 @@ export async function addItemToCart(
           cart_id: cartId,
           product_id: productId,
           quantity,
-          price_at_add: product.price,
-          product_name_at_add: product.name,
-          product_image_url_at_add: product.image_url,
-          product_slug_at_add: product.slug,
+          added_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
 
       if (itemError) {
-        return createGeneralErrorResult("Erreur lors de l'ajout au panier.");
+        console.error("Error inserting cart item:", itemError);
+        return createGeneralErrorResult(`Erreur lors de l'ajout au panier: ${itemError.message}`);
       }
     }
 
@@ -160,9 +158,14 @@ export async function addItemToCart(
     // Get updated cart for response
     const updatedCartResult = await getCart();
     
+    // Determine appropriate success message based on action taken
+    const successMessage = existingItem 
+      ? "Quantité mise à jour dans le panier."
+      : "Produit ajouté au panier avec succès !";
+    
     return createSuccessResult(
       updatedCartResult.success ? updatedCartResult.data : null,
-      "Produit ajouté au panier avec succès !"
+      successMessage
     );
 
   } catch (error) {
@@ -174,7 +177,7 @@ export async function addItemToCart(
 /**
  * Remove item from cart
  */
-export async function removeItemFromCart(
+export async function removeItemFromCartAction(
   prevState: unknown,
   formData: FormData
 ): Promise<CartActionResult<CartData | null>> {
@@ -223,7 +226,7 @@ export async function removeItemFromCart(
 /**
  * Update cart item quantity
  */
-export async function updateCartItemQuantity(
+export async function updateCartItemQuantityAction(
   prevState: unknown,
   formData: FormData
 ): Promise<CartActionResult<CartData | null>> {
@@ -246,7 +249,7 @@ export async function updateCartItemQuantity(
       // If quantity is 0 or negative, remove the item
       const removeFormData = new FormData();
       removeFormData.append("cartItemId", itemId);
-      return removeItemFromCart(null, removeFormData);
+      return removeItemFromCartAction(null, removeFormData);
     }
 
     const adminSupabase = await createSupabaseAdminClient();
@@ -296,9 +299,14 @@ export async function updateCartItemQuantity(
     // Get updated cart
     const updatedCartResult = await getCart();
     
+    // Determine appropriate success message based on quantity change
+    const successMessage = quantity === 0 
+      ? "Article retiré du panier."
+      : `Quantité mise à jour (${quantity}).`;
+    
     return createSuccessResult(
       updatedCartResult.success ? updatedCartResult.data : null,
-      "Quantité mise à jour."
+      successMessage
     );
 
   } catch (error) {
@@ -452,10 +460,7 @@ export async function migrateAndGetCart(
             cart_id: userCart.id,
             product_id: guestItem.productId,
             quantity: guestItem.quantity,
-            price_at_add: product.price,
-            product_name_at_add: product.name,
-            product_image_url_at_add: product.image_url,
-            product_slug_at_add: product.slug,
+            added_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
@@ -480,20 +485,20 @@ export async function migrateAndGetCart(
 // --- Legacy Action Wrappers (for compatibility) ---
 
 /**
- * Form action wrapper for removeItemFromCart
+ * Form action wrapper for removeItemFromCartAction
  */
 export async function removeItemFromCartFormAction(formData: FormData) {
-  return removeItemFromCart(null, formData);
+  return removeItemFromCartAction(null, formData);
 }
 
 /**
- * Form action wrapper for updateCartItemQuantity
+ * Form action wrapper for updateCartItemQuantityAction
  */
 export async function updateCartItemQuantityFormAction(formData: FormData) {
-  return updateCartItemQuantity(null, formData);
+  return updateCartItemQuantityAction(null, formData);
 }
 
 // --- Export aliases for backward compatibility ---
-export { addItemToCart as addItemToCartAction };
-export { removeItemFromCart as removeItemFromCartAction };
-export { updateCartItemQuantity as updateCartItemQuantityAction };
+export { addItemToCartAction as addItemToCart };
+export { removeItemFromCartAction as removeItemFromCart };
+export { updateCartItemQuantityAction as updateCartItemQuantity };

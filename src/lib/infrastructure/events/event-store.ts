@@ -8,7 +8,7 @@ import { Result } from "@/lib/core/result";
 import { BusinessError } from "@/lib/core/errors";
 import type { DomainEvent, EventStore } from "@/lib/core/events";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/lib/core/logger";
+import { logger, Logger } from "@/lib/core/logger";
 
 /**
  * Structure des événements stockés dans Supabase
@@ -33,7 +33,7 @@ export class InMemoryEventStore implements EventStore {
   private events: DomainEvent[] = [];
   private readonly supabaseClient: SupabaseClient;
 
-  constructor(supabaseClient: SupabaseClient, private readonly logger: typeof logger) {
+  constructor(supabaseClient: SupabaseClient, private readonly logger: Logger) {
     this.supabaseClient = supabaseClient;
   }
 

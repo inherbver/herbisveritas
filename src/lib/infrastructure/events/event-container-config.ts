@@ -326,7 +326,7 @@ export async function checkEventSystemHealth(container: { resolve: (token: strin
 
   try {
     // Check Event Bus
-    const eventBus: EventBus = container.resolve(SERVICE_TOKENS.EVENT_BUS);
+    const eventBus = container.resolve(SERVICE_TOKENS.EVENT_BUS) as EventBus;
     result.eventBus = eventBus !== null;
   } catch (error) {
     errors.push(`Event Bus: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -334,7 +334,7 @@ export async function checkEventSystemHealth(container: { resolve: (token: strin
 
   try {
     // Check Event Store
-    const eventStore: EventStore = container.resolve(SERVICE_TOKENS.EVENT_STORE);
+    const eventStore = container.resolve(SERVICE_TOKENS.EVENT_STORE) as EventStore;
     result.eventStore = eventStore !== null;
   } catch (error) {
     errors.push(`Event Store: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -352,7 +352,7 @@ export async function checkEventSystemHealth(container: { resolve: (token: strin
 
   for (const token of handlerTokens) {
     try {
-      const handler = container.resolve(SERVICE_TOKENS[token]);
+      const handler = container.resolve((SERVICE_TOKENS as any)[token]);
       result.handlers[token] = handler !== null;
     } catch (error) {
       result.handlers[token] = false;
@@ -370,7 +370,7 @@ export async function checkEventSystemHealth(container: { resolve: (token: strin
 
   for (const token of listenerTokens) {
     try {
-      const listener = container.resolve(SERVICE_TOKENS[token]);
+      const listener = container.resolve((SERVICE_TOKENS as any)[token]);
       result.listeners[token] = listener !== null;
     } catch (error) {
       result.listeners[token] = false;

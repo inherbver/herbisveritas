@@ -15,7 +15,7 @@ import { useTranslations } from "next-intl";
 import { QuantityInput } from "./quantity-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductDetailData } from "@/types/product-types";
-import { addItemToCartAction } from "@/actions/cart.actions";
+import { addItemToCartAction } from "@/actions/cartActions";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import type { CartData } from "@/types/cart";
 import { toast } from "sonner";

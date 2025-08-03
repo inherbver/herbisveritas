@@ -49,6 +49,19 @@ Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur pour
 
 Ce projet est accompagné d'une documentation technique détaillée pour faciliter la compréhension de son architecture et de ses fonctionnalités. **Il est fortement recommandé de la consulter.**
 
+### 📋 Dernières Mises à Jour (Août 2025)
+
+**🎉 Système de Panier Intégralement Validé**
+- **Audit complet** effectué par 6 sous-agents spécialisés
+- **Bug critique d'ajout** identifié et corrigé  
+- **100% des fonctionnalités** opérationnelles (guest + authenticated)
+- **Score sécurité** : 9.25/10 avec RLS Supabase robuste
+
+**📚 Documentation Enrichie :**
+- `doc/CART_AUDIT_REPORT_2025.md` - Rapport d'audit détaillé
+- `doc/CART_BUG_FIXES_2025.md` - Documentation des correctifs
+- `doc/CART.md` - Section validation et tests ajoutée
+
 - **[ARCHITECTURE DE LA BASE DE DONNÉES](./doc/DATABASE.md)**
   _Détaille le schéma, les tables, les fonctions SQL et les politiques de sécurité (RLS)._
 

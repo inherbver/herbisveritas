@@ -14,10 +14,10 @@ import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import {
   removeItemFromCartFormAction,
   updateCartItemQuantityFormAction,
-} from "@/actions/cart.actions";
+} from "@/actions/cartActions";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
-import { toast } from "sonner";
+import { toastManager, CartToastMessages } from "@/lib/utils/toast-manager";
 import type { CartData } from "@/types/cart";
 import { Button } from "@/components/ui/button";
 import { CheckoutButton } from "./checkout-button";
@@ -43,7 +43,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
 
   const handleRemoveItem = async (cartItemId: string) => {
     if (!cartItemId) {
-      toast.error(tGlobal("genericError"));
+      toastManager.error(tGlobal("genericError"), { id: CartToastMessages.CART_ERROR });
       return;
     }
 
@@ -52,12 +52,16 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
     const result: CartActionResult<CartData | null> = await removeItemFromCartFormAction(formData);
 
     if (isSuccessResult(result)) {
-      toast.success(result.message || t("itemRemovedSuccess"));
+      toastManager.success(result.message || t("itemRemovedSuccess"), { 
+        id: CartToastMessages.ITEM_REMOVED 
+      });
       if (result.data?.items) {
         useCartStore.getState().setItems(result.data.items);
       }
     } else {
-      toast.error(result.message || tGlobal("genericError"));
+      toastManager.error(result.message || tGlobal("genericError"), { 
+        id: CartToastMessages.CART_ERROR 
+      });
     }
     // Reset loading state if implemented
   };
@@ -68,14 +72,20 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
 
     if (!cartItemId) {
       console.error(`${logPrefix} cartItemId is MISSING.`);
-      toast.error(tGlobal("genericError"));
+      toastManager.error(tGlobal("genericError"), { id: CartToastMessages.CART_ERROR });
       return;
     }
 
     // Validation côté client
     if (newQuantity < 0) {
       console.warn(`${logPrefix} Invalid quantity: ${newQuantity}. Must be >= 0.`);
-      toast.error("La quantité doit être positive ou nulle.");
+      toastManager.error("La quantité doit être positive ou nulle.", { id: CartToastMessages.CART_ERROR });
+      return;
+    }
+
+    // Si la nouvelle quantité est 0, utiliser la fonction de suppression directement
+    if (newQuantity === 0) {
+      await handleRemoveItem(cartItemId);
       return;
     }
 
@@ -99,9 +109,17 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
     const formData = new FormData();
     formData.append("cartItemId", cartItemId);
     formData.append("quantity", newQuantity.toString());
-    console.log(
-      `${logPrefix} Calling server action with cartItemId: ${cartItemId}, quantity: ${newQuantity}`
-    );
+    
+    // 🐛 Debug: Log detailed FormData content
+    console.log(`${logPrefix} Calling server action with detailed data:`, {
+      cartItemId,
+      cartItemIdType: typeof cartItemId,
+      newQuantity,
+      newQuantityType: typeof newQuantity,
+      quantityString: newQuantity.toString(),
+      formDataCartItemId: formData.get("cartItemId"),
+      formDataQuantity: formData.get("quantity"),
+    });
 
     try {
       const result: CartActionResult<CartData | null> =
@@ -118,7 +136,9 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
         } else {
           console.log(`${logPrefix} Server action SUCCESS but no data - keeping optimistic update`);
         }
-        toast.success(result.message || t("itemQuantityUpdatedSuccess"));
+        toastManager.success(result.message || t("itemQuantityUpdatedSuccess"), { 
+          id: CartToastMessages.QUANTITY_UPDATED 
+        });
       } else {
         // 3b. ERREUR SERVEUR - Rollback à l'état précédent
         console.error(
@@ -133,7 +153,9 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
           console.error(`${logPrefix} Internal server error:`, result.internalError);
         }
 
-        toast.error(result.message || tGlobal("genericError"));
+        toastManager.error(result.message || tGlobal("genericError"), { 
+          id: CartToastMessages.CART_ERROR 
+        });
       }
     } catch (error: unknown) {
       // 3c. ERREUR RÉSEAU/INATTENDUE - Rollback
@@ -152,7 +174,9 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
       }
 
       useCartStore.getState().setItems(previousState);
-      toast.error(tGlobal("genericError"));
+      toastManager.error(tGlobal("genericError"), { 
+        id: CartToastMessages.CART_ERROR 
+      });
     }
   };
 
@@ -268,7 +292,9 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                           if (item.id) {
                             handleRemoveItem(item.id);
                           } else {
-                            toast.error("Impossible de supprimer l'article : ID manquant.");
+                            toastManager.error("Impossible de supprimer l'article : ID manquant.", { 
+                              id: CartToastMessages.CART_ERROR 
+                            });
                           }
                         }}
                         className="hover:text-destructive/80 font-medium text-destructive"
