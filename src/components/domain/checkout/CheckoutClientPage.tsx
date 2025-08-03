@@ -4,12 +4,12 @@ import { useState, useTransition, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
 import { useCartItemsHydrated, useCartSubtotalHydrated } from "@/hooks/use-cart-hydrated";
-import { useCartStore } from "@/stores/cart-store-refactored";
+import { useCartStore } from "@/stores/cart.store";
 import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import {
   removeItemFromCartFormAction,
   updateCartItemQuantityFormAction,
-} from "@/actions/cartActions";
+} from "@/actions/cart.actions";
 import { createStripeCheckoutSession } from "@/actions/stripeActions";
 import type { ShippingMethod, Address } from "@/types";
 import type { CartItem, CartData } from "@/types/cart";

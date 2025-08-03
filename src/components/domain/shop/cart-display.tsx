@@ -9,12 +9,12 @@ import {
   useCartTotalItemsHydrated, 
   useCartSubtotalHydrated 
 } from "@/hooks/use-cart-hydrated";
-import { useCartStore } from "@/stores/cart-store-refactored";
+import { useCartStore } from "@/stores/cart.store";
 import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import {
   removeItemFromCart,
   updateCartItemQuantity as updateCartItemQuantityAction,
-} from "@/actions/cartActions";
+} from "@/actions/cart.actions";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { toast } from "sonner";

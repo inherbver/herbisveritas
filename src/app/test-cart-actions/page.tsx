@@ -7,7 +7,7 @@ import {
   getCart,
   removeItemFromCartFormAction,
   updateCartItemQuantityFormAction,
-} from "@/actions/cartActions";
+} from "@/actions/cart.actions";
 import {
   INITIAL_ACTION_STATE_DO_NOT_PROCESS,
   isGeneralErrorResult,

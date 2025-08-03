@@ -51,7 +51,7 @@ export async function addAddressMigrated(
       throw new ValidationError(
         t("validationError"),
         'address_validation',
-        validationResult.error.issues
+        { zodIssues: validationResult.error.issues }
       );
     }
 
@@ -122,7 +122,7 @@ export async function updateAddressMigrated(
       throw new ValidationError(
         t("validationError"),
         'address_validation',
-        validationResult.error.issues
+        { zodIssues: validationResult.error.issues }
       );
     }
 

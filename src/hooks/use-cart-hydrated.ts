@@ -6,7 +6,7 @@
  */
 
 import { useHydrated } from './use-hydrated';
-import { useCartTotalItems as useCartTotalItemsStore, useCartItems as useCartItemsStore, useCartSubtotal as useCartSubtotalStore } from '@/stores/cart-store-refactored';
+import { useCartTotalItems as useCartTotalItemsStore, useCartItems as useCartItemsStore, useCartSubtotal as useCartSubtotalStore } from '@/stores/cart.store';
 
 /**
  * Hook to get total cart items count with hydration safety

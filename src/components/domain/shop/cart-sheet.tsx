@@ -14,16 +14,16 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ShoppingBagIcon } from "lucide-react";
-import { useCartSimple } from "@/hooks/use-cart-simple";
-import { CartDisplaySimple } from "./cart-display-simple"; // CORRECTION D'URGENCE: Composant unifié
+import { useCartTotalItems } from "@/stores/cart.store";
+import { CartDisplay } from "./cart-display"; // Utiliser le composant existant
 import { cn } from "@/utils/cn";
 
 export function CartSheet() {
   const t = useTranslations("CartSheet"); // Pour les textes comme le titre du sheet
   const tGlobal = useTranslations("Global"); // Pour les textes globaux comme "Panier"
   
-  // CORRECTION D'URGENCE: Utiliser directement cart-simple.store pour l'affichage
-  const { totalItems } = useCartSimple();
+  // Utiliser le store refactorisé unifié
+  const totalItems = useCartTotalItems();
   const [isOpen, setIsOpen] = React.useState(false);
   
   // Gestion d'hydratation pour éviter les erreurs SSR/Client
@@ -61,7 +61,7 @@ export function CartSheet() {
           <SheetDescription>{t("cartDescription")}</SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
-          <CartDisplaySimple onClose={handleClose} />
+          <CartDisplay onClose={handleClose} />
         </div>
         {/* Vous pourriez ajouter un SheetFooter ici avec un bouton de checkout plus proéminent si nécessaire */}
         {/* <SheetFooter className="p-6 pt-4 border-t">

@@ -5,19 +5,18 @@
  * It provides optimistic updates with rollback capabilities and handles error states.
  */
 
-import { useCartStore } from "@/stores/cart-store-refactored";
-import { getCart } from "@/actions/cartActions";
+import { useCartStore } from "@/stores/cart.store";
+import { getCart } from "@/actions/cart.actions";
 import { logger, LogUtils } from "@/lib/core/logger";
 import type { CartItem, CartData } from "@/types/cart";
 
-// Import refactored actions (when available)
-// For now, we'll import the original actions and gradually migrate
+// Import unified actions
 import {
   addItemToCart as addItemToCartAction,
   removeItemFromCart as removeItemFromCartAction,
   updateCartItemQuantity as updateCartItemQuantityAction,
   clearCartAction,
-} from "@/actions/cart-actions-refactored";
+} from "@/actions/cart.actions";
 
 /**
  * Cart sync manager class

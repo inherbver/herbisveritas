@@ -13,7 +13,7 @@ import type {
   GeneralErrorResult as CartHelpersGeneralErrorResult,
 } from "@/lib/cart-helpers";
 import type { CartData } from "@/types/cart";
-import { addItemToCart as addItemToCartAction } from "@/actions/cartActions";
+import { addItemToCart as addItemToCartAction } from "@/actions/cart.actions";
 import { toast } from "sonner";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 

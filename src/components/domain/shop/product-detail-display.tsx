@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { type Locale } from "@/i18n-config";
 import { QuantityInput } from "./quantity-input";
 import { ProductDetailData } from "@/types/product-types";
-import { addItemToCart } from "@/actions/cartActions";
+import { addItemToCart } from "@/actions/cart.actions";
 import {
   type CartActionResult,
   isGeneralErrorResult, // ✅ Corriger les noms d'imports
@@ -17,7 +17,7 @@ import {
 import type { CartDataFromServer } from "@/types/cart"; // ✅ Import depuis le bon fichier
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useCartItems } from "@/stores/cart-store-refactored";
+import { useCartItems } from "@/stores/cart.store";
 import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import { Price } from "@/components/ui/price";
 import clsx from "clsx";
@@ -62,7 +62,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
     if (isSuccessResult(state)) {
       toast.success(state.message || t("ProductDetailModal.itemAddedSuccess"));
       // Synchronisation avec le serveur après succès
-      syncWithServer();
+      _syncWithServer();
     } else if (state.success === false) {
       let errorMessage: string | undefined;
 
