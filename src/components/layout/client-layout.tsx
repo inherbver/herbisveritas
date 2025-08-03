@@ -84,11 +84,11 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
       const {
         data: { user },
         error: userError,
-      } = await supabaseCallWithTimeout(
+      } = (await supabaseCallWithTimeout(
         supabase.auth.getUser(),
         2500, // Timeout de 2.5 secondes
         1 // 1 retry seulement pour ne pas trop ralentir
-      );
+      )) as any;
 
       if (userError || !user) {
         // Pas d'utilisateur authentifié côté serveur
@@ -98,11 +98,11 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
       // Si l'utilisateur est validé, on peut récupérer la session locale en toute confiance
       const {
         data: { session },
-      } = await supabaseCallWithTimeout(
+      } = (await supabaseCallWithTimeout(
         supabase.auth.getSession(),
         2000, // Timeout plus court pour getSession
         1
-      );
+      )) as any;
       return session;
     } catch (error) {
       if (

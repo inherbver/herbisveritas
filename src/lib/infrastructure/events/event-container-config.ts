@@ -6,8 +6,8 @@
 
 import { ContainerBuilder, SERVICE_TOKENS } from "../container/container";
 import { SimpleEventBus } from "./simple-event-bus";
-import { EventStore, InMemoryEventStore } from "./event-store";
-import type { EventBus } from "@/lib/core/events";
+import { InMemoryEventStore } from "./event-store";
+import type { EventBus, EventStore } from "@/lib/core/events";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/core/logger";
 

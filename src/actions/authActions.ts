@@ -11,7 +11,7 @@ import { getTranslations } from "next-intl/server";
 import { createPasswordSchema, createSignupSchema } from "@/lib/validators/auth.validator";
 
 // New imports for Clean Architecture
-import { ActionResult } from "@/lib/core/result";
+import { ActionResult, FormActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
 import { 
   ValidationError, 
@@ -130,7 +130,7 @@ export async function loginAction(
 export async function signUpAction(
   prevState: AuthActionResult | undefined,
   formData: FormData
-): Promise<ActionResult<null>> {
+): Promise<FormActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
   const context = LogUtils.createUserActionContext('unknown', 'signup', 'auth', { locale });
   LogUtils.logOperationStart('signup', context);
@@ -211,10 +211,16 @@ export async function signUpAction(
     }
 
     LogUtils.logOperationSuccess('signup', { ...context, email });
-    return ActionResult.ok(null, "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.");
+    return FormActionResult.ok(null, "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.");
   } catch (error) {
     LogUtils.logOperationError('signup', error, context);
-    return ActionResult.error(
+    
+    // Handle ValidationError with field errors
+    if (error instanceof ValidationError && error.context?.validationErrors) {
+      return FormActionResult.fieldValidationError(error.context.validationErrors as Record<string, string[]>);
+    }
+    
+    return FormActionResult.error(
       ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
     );
   }
@@ -274,7 +280,7 @@ export async function requestPasswordResetAction(
 export async function updatePasswordAction(
   prevState: AuthActionResult | undefined,
   formData: FormData
-): Promise<ActionResult<null>> {
+): Promise<FormActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
   const context = LogUtils.createUserActionContext('unknown', 'update_password', 'auth', { locale });
   LogUtils.logOperationStart('update_password', context);
@@ -323,10 +329,16 @@ export async function updatePasswordAction(
     // 3. Succès
     const tSuccess = await getTranslations({ locale, namespace: "Auth.UpdatePassword" });
     LogUtils.logOperationSuccess('update_password', context);
-    return ActionResult.ok(null, tSuccess("successMessage"));
+    return FormActionResult.ok(null, tSuccess("successMessage"));
   } catch (error) {
     LogUtils.logOperationError('update_password', error, context);
-    return ActionResult.error(
+    
+    // Handle ValidationError with field errors
+    if (error instanceof ValidationError && error.context?.validationErrors) {
+      return FormActionResult.fieldValidationError(error.context.validationErrors as Record<string, string[]>);
+    }
+    
+    return FormActionResult.error(
       ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
     );
   }

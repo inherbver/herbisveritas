@@ -96,7 +96,11 @@ export async function createStripeCheckoutSession(
     );
 
     if (!addressValidationResult.success) {
-      return addressValidationResult;
+      return {
+        success: false,
+        message: addressValidationResult.message,
+        error: addressValidationResult.error
+      };
     }
 
     const processedAddresses = addressValidationResult.data!;
@@ -116,7 +120,11 @@ export async function createStripeCheckoutSession(
 
     const productValidationResult = await productValidationService.validateCartProducts(cartItems);
     if (!productValidationResult.success) {
-      return productValidationResult;
+      return {
+        success: false,
+        message: productValidationResult.message,
+        error: productValidationResult.error
+      };
     }
 
     const validatedCart = productValidationResult.data!;

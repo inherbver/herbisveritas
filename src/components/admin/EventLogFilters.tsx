@@ -437,7 +437,10 @@ function MobileEventTypeFilter({
                       id={`group-${group.id}`}
                       checked={allSelected}
                       ref={(el) => {
-                        if (el) el.indeterminate = someSelected && !allSelected;
+                        if (el) {
+                          const input = el.querySelector('input');
+                          if (input) input.indeterminate = someSelected && !allSelected;
+                        }
                       }}
                       onCheckedChange={() => onEventGroupToggle(group)}
                     />

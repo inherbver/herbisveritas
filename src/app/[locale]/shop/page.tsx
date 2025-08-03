@@ -182,7 +182,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
         imageUrl={heroPropsForComponent.imageUrl}
         imageAlt={heroPropsForComponent.imageAlt}
         ctaLabel={heroPropsForComponent.ctaLabel}
-        ctaLink={heroPropsForComponent.ctaLink}
+        ctaLink={heroPropsForComponent.ctaLink as any}
       />
 
       <div className="container py-8">

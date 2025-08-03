@@ -43,7 +43,7 @@ const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
                     {separator}
                   </span>
                 )}
-                <Link
+                <a
                   href={item.href}
                   // Les éléments non actifs (sauf le dernier) sont des liens
                   // Le dernier élément est juste du texte (ou un lien non cliquable)
@@ -54,7 +54,7 @@ const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
                   aria-current={isLast ? "page" : undefined}
                 >
                   {item.label}
-                </Link>
+                </a>
               </li>
             );
           })}

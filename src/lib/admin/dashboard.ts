@@ -107,7 +107,7 @@ export async function getRecentActivityLogs(): Promise<ActivityLogItem[]> {
   return (auditLogs as AuditLog[]).map((log) => ({
     id: log.id,
     timestamp: log.created_at,
-    description: log.data?.message || getEventDescription(log.event_type, log.data),
+    description: log.data?.message || getEventDescription(log.event_type, log.data || {}),
     user_email: log.user_id ? userEmailMap.get(log.user_id) || "Utilisateur inconnu" : "Système",
     type: log.event_type,
     severity: log.severity,

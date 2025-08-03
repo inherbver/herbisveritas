@@ -21,7 +21,7 @@ import {
   EventCorrelation
 } from '@/lib/core/events';
 import { Result } from '@/lib/core/result';
-import { logger } from '@/lib/core/logger';
+import { logger, Logger } from '@/lib/core/logger';
 
 // Temporary helper function
 function createSimpleContext(action: string, resource: string, data: any = {}) {
@@ -34,18 +34,19 @@ function createSimpleContext(action: string, resource: string, data: any = {}) {
  * Provides immediate event processing with optional persistence
  */
 export class InMemoryEventBus implements EventBus {
-  private subscribers = new Map<string, Set<(event: DomainEvent) => Promise<void>>>();
-  private eventFactory = new EventFactory();
+  private subscribers = new Map<string, Set<EventHandler>>();
+  protected eventFactory = new EventFactory();
+  protected eventStore?: EventStore;
 
-  constructor(private readonly logger: typeof logger) {}
+  constructor(private readonly logger: Logger) {}
 
   /**
    * Subscribe an event handler to a specific event type
    */
   subscribe<T extends DomainEvent>(handler: EventHandler<T>): void {
-    const handlers = this.handlers.get(handler.eventType) || new Set();
+    const handlers = this.subscribers.get(handler.eventType) || new Set();
     handlers.add(handler);
-    this.handlers.set(handler.eventType, handlers);
+    this.subscribers.set(handler.eventType, handlers);
 
     logger.info('Event handler subscribed', {
       eventType: handler.eventType,
@@ -57,11 +58,11 @@ export class InMemoryEventBus implements EventBus {
    * Unsubscribe an event handler
    */
   unsubscribe<T extends DomainEvent>(handler: EventHandler<T>): void {
-    const handlers = this.handlers.get(handler.eventType);
+    const handlers = this.subscribers.get(handler.eventType);
     if (handlers) {
       handlers.delete(handler);
       if (handlers.size === 0) {
-        this.handlers.delete(handler.eventType);
+        this.subscribers.delete(handler.eventType);
       }
     }
 
@@ -75,7 +76,7 @@ export class InMemoryEventBus implements EventBus {
    * Get all subscribed handlers for an event type
    */
   getSubscribedHandlers(eventType: string): EventHandler[] {
-    const handlers = this.handlers.get(eventType);
+    const handlers = this.subscribers.get(eventType);
     return handlers ? Array.from(handlers) : [];
   }
 
@@ -184,7 +185,7 @@ export class InMemoryEventBus implements EventBus {
   /**
    * Process event immediately with all subscribed handlers
    */
-  private async processEventImmediate<T extends DomainEvent>(event: T): Promise<Result<void, Error>> {
+  protected async processEventImmediate<T extends DomainEvent>(event: T): Promise<Result<void, Error>> {
     const handlers = this.getSubscribedHandlers(event.eventType);
     
     if (handlers.length === 0) {
@@ -310,11 +311,11 @@ export class InMemoryEventBus implements EventBus {
     eventTypes: string[];
     handlersByType: Record<string, number>;
   } {
-    const eventTypes = Array.from(this.handlers.keys());
+    const eventTypes = Array.from(this.subscribers.keys());
     const handlersByType: Record<string, number> = {};
     let totalHandlers = 0;
 
-    for (const [eventType, handlers] of this.handlers) {
+    for (const [eventType, handlers] of this.subscribers) {
       handlersByType[eventType] = handlers.size;
       totalHandlers += handlers.size;
     }
@@ -330,7 +331,7 @@ export class InMemoryEventBus implements EventBus {
    * Clear all subscriptions (useful for testing)
    */
   clear(): void {
-    this.handlers.clear();
+    this.subscribers.clear();
     logger.info('Event bus cleared');
   }
 }
@@ -344,13 +345,17 @@ export class AsyncEventBus extends InMemoryEventBus {
   private processingQueue: EventEnvelope[] = [];
   private isProcessing = false;
   private processingInterval: NodeJS.Timeout | null = null;
+  private eventProcessor?: EventProcessor;
 
   constructor(
+    logger: Logger,
     eventStore?: EventStore,
     eventProcessor?: EventProcessor,
     private readonly processingIntervalMs: number = 1000
   ) {
-    super(eventStore, eventProcessor);
+    super(logger);
+    this.eventStore = eventStore;
+    this.eventProcessor = eventProcessor;
     this.startProcessing();
   }
 

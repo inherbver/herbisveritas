@@ -247,6 +247,13 @@ export interface ServerActionResult<T> {
   message?: string;
 }
 
+/**
+ * Form Action Result interface with field validation support
+ */
+export interface FormActionResult<T> extends ServerActionResult<T> {
+  fieldErrors?: Record<string, string[]>;
+}
+
 export type ActionResult<T> = ServerActionResult<T>;
 
 /**
@@ -272,6 +279,29 @@ export const ActionResult = {
       )
     );
   }
+};
+
+/**
+ * Helper functions for form action results
+ */
+export const FormActionResult = {
+  ok: <T>(value: T, message?: string): FormActionResult<T> => ({
+    success: true,
+    data: value,
+    message
+  }),
+  
+  error: <T>(error: string, fieldErrors?: Record<string, string[]>): FormActionResult<T> => ({
+    success: false,
+    error,
+    fieldErrors
+  }),
+  
+  fieldValidationError: <T>(fieldErrors: Record<string, string[]>): FormActionResult<T> => ({
+    success: false,
+    error: "Validation errors occurred",
+    fieldErrors
+  })
 };
 
 /**

@@ -54,7 +54,7 @@ export const getUsersMigrated = withPermissionSafe(
           id: userData.id,
           email: userData.email,
           full_name: fullName,
-          role: userData.profile?.role || "user",
+          role: "user",
           created_at: userData.created_at,
           last_sign_in_at: userData.last_sign_in_at || null,
         };
@@ -111,7 +111,7 @@ export const getUserByIdMigrated = withPermissionSafe(
         full_name: [userData.profile?.first_name, userData.profile?.last_name]
           .filter(Boolean)
           .join(" ") || null,
-        role: userData.profile?.role || "user",
+        role: "user",
         created_at: userData.created_at,
         last_sign_in_at: userData.last_sign_in_at || null,
       };

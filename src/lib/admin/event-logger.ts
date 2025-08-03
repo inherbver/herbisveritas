@@ -21,7 +21,7 @@ export class EventLogger {
     severity: EventSeverity = "INFO"
   ): Promise<void> {
     try {
-      const { error } = await this.supabase.from("audit_logs").insert({
+      const { error } = await (await this.supabase).from("audit_logs").insert({
         event_type: eventType,
         user_id: userId || null,
         data: data || null,
@@ -112,7 +112,7 @@ export class EventLogger {
  * Factory function pour créer un EventLogger
  */
 export async function createEventLogger(): Promise<EventLogger> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServerClient();
   return new EventLogger(supabase);
 }
 

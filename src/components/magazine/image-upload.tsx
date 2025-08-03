@@ -113,6 +113,10 @@ export function ImageUpload({
           throw new Error(result.message || "Erreur lors de l'upload");
         }
 
+        if (!result.data?.url) {
+          throw new Error("Upload failed - no URL returned");
+        }
+
         const uploadedImage: UploadedImage = {
           url: result.data.url,
           filename: file.name,

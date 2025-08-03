@@ -14,7 +14,6 @@ import { createStripeCheckoutSession } from "@/actions/stripeActions";
 import type { ShippingMethod, Address } from "@/types";
 import type { CartItem, CartData } from "@/types/cart";
 import type { CartActionResult } from "@/lib/cart-helpers";
-import type { AddressFormData } from "@/lib/validators/address.validator";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { Button } from "@/components/ui/button";
 import {
@@ -134,7 +133,7 @@ export default function CheckoutClientPage({
         }
         toast.success(t("toast.addressSaved"));
       } else {
-        toast.error(result.error?.message || "Erreur lors de la sauvegarde");
+        toast.error(result.error || "Erreur lors de la sauvegarde");
       }
     } catch (error) {
       console.error("Erreur lors de la sauvegarde de l'adresse:", error);
@@ -148,10 +147,7 @@ export default function CheckoutClientPage({
     const formData = new FormData();
     formData.append("cartItemId", cartItemId);
 
-    const result: CartActionResult<CartData | null> = await removeItemFromCartFormAction(
-      undefined,
-      formData
-    );
+    const result: CartActionResult<CartData | null> = await removeItemFromCartFormAction(formData);
 
     if (isSuccessResult(result)) {
       toast.success(result.message || tCart("itemRemovedSuccess"));
@@ -176,10 +172,7 @@ export default function CheckoutClientPage({
     formData.append("cartItemId", cartItemId);
     formData.append("quantity", newQuantity.toString());
 
-    const result: CartActionResult<CartData | null> = await updateCartItemQuantityFormAction(
-      undefined,
-      formData
-    );
+    const result: CartActionResult<CartData | null> = await updateCartItemQuantityFormAction(formData);
 
     if (isSuccessResult(result) && result.data?.items && result.data.id) {
       // Les données result.data.items sont déjà transformées
@@ -226,8 +219,8 @@ export default function CheckoutClientPage({
         selectedShippingMethodId!
       );
 
-      if (result.success && result.url) {
-        window.location.href = result.url;
+      if (result.success && result.data?.sessionUrl) {
+        window.location.href = result.data.sessionUrl;
       } else {
         toast.error(t("toast.paymentErrorTitle"), { description: result.error });
       }

@@ -15,7 +15,7 @@ import { useTranslations } from "next-intl";
 import { QuantityInput } from "./quantity-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductDetailData } from "@/types/product-types";
-import { addItemToCart } from "@/actions/cartActions";
+import { addItemToCartAction } from "@/actions/cart.actions";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import type { CartData } from "@/types/cart";
 import { toast } from "sonner";
@@ -49,7 +49,7 @@ export function ProductDetailModal({ product, isOpen, onOpenChange }: ProductDet
     data: null,
     message: "",
   };
-  const [state, formAction] = useActionState(addItemToCart, initialState);
+  const [state, formAction] = useActionState(addItemToCartAction, initialState);
 
   // Reset quantity and potentially form state when modal opens/changes product
   useEffect(() => {

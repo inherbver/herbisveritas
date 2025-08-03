@@ -12,17 +12,13 @@ import {
 import { useCartStore } from "@/stores/cart.store";
 import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import {
-  removeItemFromCart,
-  updateCartItemQuantity as updateCartItemQuantityAction,
+  removeItemFromCartFormAction,
+  updateCartItemQuantityFormAction,
 } from "@/actions/cart.actions";
 import type { CartActionResult } from "@/lib/cart-helpers";
 import { isSuccessResult } from "@/lib/cart-helpers";
 import { toast } from "sonner";
 import type { CartData } from "@/types/cart";
-import type {
-  RemoveFromCartInput,
-  UpdateCartItemQuantityInput,
-} from "@/lib/validators/cart.validator";
 import { Button } from "@/components/ui/button";
 import { CheckoutButton } from "./checkout-button";
 import { MinusIcon, PlusIcon, XIcon } from "lucide-react";
@@ -51,8 +47,9 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
       return;
     }
 
-    const actionInput: RemoveFromCartInput = { cartItemId };
-    const result: CartActionResult<CartData | null> = await removeItemFromCart(actionInput);
+    const formData = new FormData();
+    formData.append("cartItemId", cartItemId);
+    const result: CartActionResult<CartData | null> = await removeItemFromCartFormAction(formData);
 
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemRemovedSuccess"));
@@ -99,15 +96,16 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
     );
 
     // 3. APPELER L'ACTION SERVEUR
-    const actionInput: UpdateCartItemQuantityInput = { cartItemId, quantity: newQuantity };
+    const formData = new FormData();
+    formData.append("cartItemId", cartItemId);
+    formData.append("quantity", newQuantity.toString());
     console.log(
-      `${logPrefix} Calling server action with input:`,
-      JSON.stringify(actionInput, null, 2)
+      `${logPrefix} Calling server action with cartItemId: ${cartItemId}, quantity: ${newQuantity}`
     );
 
     try {
       const result: CartActionResult<CartData | null> =
-        await updateCartItemQuantityAction(actionInput);
+        await updateCartItemQuantityFormAction(formData);
       console.log(`${logPrefix} Received response from server action. Success: ${result.success}`);
 
       if (isSuccessResult(result)) {

@@ -100,12 +100,7 @@ export function StatusManager({ article, onStatusChange, compact = false }: Stat
           onStatusChange?.();
         } else {
           toast.error(result.error);
-          if (result.details) {
-            // Afficher les détails de validation
-            result.details.forEach((detail: string) => {
-              toast.error(detail, { duration: 5000 });
-            });
-          }
+          // Plus de détails de validation disponibles
         }
       } catch (_error) {
         toast.error("Une erreur est survenue");

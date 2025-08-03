@@ -58,8 +58,8 @@ export function ForgotPasswordForm() {
               required
               placeholder={t("emailLabel")}
             />
-            {state?.fieldErrors?.email && (
-              <p className="mt-2 text-sm text-red-600">{state.fieldErrors.email.join(", ")}</p>
+            {state?.error && (
+              <p className="mt-2 text-sm text-red-600">{state.error}</p>
             )}
           </div>
         </div>

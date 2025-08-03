@@ -46,7 +46,7 @@ export function LoginForm() {
     success: false,
     error: undefined,
     message: undefined,
-    fieldErrors: {},
+    // fieldErrors removed
   };
   const [state, formAction] = useActionState(loginAction, initialState);
   const [email, setEmail] = React.useState("");
@@ -90,11 +90,7 @@ export function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               value={email}
             />
-            {state.fieldErrors?.email && (
-              <p className="text-sm font-medium text-destructive">
-                {state.fieldErrors.email.join(", ")}
-              </p>
-            )}
+            {/* Email validation errors handled by general error message */}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("passwordLabel")}</Label>
@@ -107,11 +103,7 @@ export function LoginForm() {
                 {t("forgotPasswordLink")}
               </a>
             </div>
-            {state.fieldErrors?.password && (
-              <p className="text-sm font-medium text-destructive">
-                {state.fieldErrors.password.join(", ")}
-              </p>
-            )}
+            {/* Password validation errors handled by general error message */}
           </div>
           {/* General form error message is now handled by toast */}
         </CardContent>

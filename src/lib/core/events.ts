@@ -323,12 +323,12 @@ export class EventValidation {
     return (
       typeof event === 'object' &&
       event !== null &&
-      typeof event.eventId === 'string' &&
-      typeof event.eventType === 'string' &&
-      typeof event.aggregateId === 'string' &&
-      typeof event.aggregateType === 'string' &&
-      event.occurredAt instanceof Date &&
-      typeof event.version === 'number'
+      'eventId' in event && typeof (event as any).eventId === 'string' &&
+      'eventType' in event && typeof (event as any).eventType === 'string' &&
+      'aggregateId' in event && typeof (event as any).aggregateId === 'string' &&
+      'aggregateType' in event && typeof (event as any).aggregateType === 'string' &&
+      'occurredAt' in event && (event as any).occurredAt instanceof Date &&
+      'version' in event && typeof (event as any).version === 'number'
     );
   }
 
@@ -339,7 +339,7 @@ export class EventValidation {
   static sanitizeEventData(eventData: unknown): unknown {
     // Remove sensitive data and perform basic sanitization
     if (typeof eventData === 'object' && eventData !== null) {
-      const sanitized = { ...eventData };
+      const sanitized = { ...eventData } as any;
       
       // Remove common sensitive fields
       delete sanitized.password;

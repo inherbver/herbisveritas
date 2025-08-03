@@ -28,13 +28,13 @@ export default function ProfileNavLinks() {
   const t = useTranslations("ProfileNav");
   const pathname = usePathname();
 
-  const isSubPage = pathname !== mainLink.href;
+  const isSubPage = (pathname as string) !== mainLink.href;
 
   return (
     <nav aria-label={t("navigationLabel")} className="flex flex-col space-y-4">
       {isSubPage && (
         <Link
-          href={mainLink.href}
+          href={mainLink.href as any}
           className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-accent-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -44,7 +44,7 @@ export default function ProfileNavLinks() {
 
       <div>
         <Link
-          href={mainLink.href}
+          href={mainLink.href as any}
           className={cn(
             "block rounded-md px-3 py-2 text-base font-semibold text-foreground",
             !isSubPage && "bg-accent"
@@ -55,11 +55,11 @@ export default function ProfileNavLinks() {
 
         <div className="mt-2 space-y-1 pl-4">
           {subLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = (pathname as string) === link.href;
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                href={link.href as any}
                 className={cn(
                   "block rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                   isActive && "bg-accent font-semibold text-accent-foreground"

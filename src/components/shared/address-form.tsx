@@ -192,16 +192,7 @@ const AddressForm: FC<AddressFormProps> = ({
         onSuccess?.();
         form.reset();
       } else {
-        if (result.error?.issues) {
-          result.error.issues.forEach((issue: z.ZodIssue) => {
-            setError(issue.path[0] as keyof AddressFormData, {
-              type: "server",
-              message: issue.message,
-            });
-          });
-        } else {
-          toast.error(result.error?.message || t("genericError"));
-        }
+        toast.error(result.error || t("genericError"));
       }
     });
   };

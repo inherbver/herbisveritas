@@ -127,8 +127,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
             router.push("/admin/products");
           } else {
             toast.error(actionResult.message || "Une erreur inattendue est survenue.");
-            if (actionResult.errors) {
-              console.error("Erreurs de validation:", actionResult.errors);
+            if (actionResult.error) {
+              console.error("Erreur:", actionResult.error);
             }
           }
         } else {

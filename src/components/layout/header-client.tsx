@@ -113,7 +113,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
       setAuthState({ session: newSession, isLoading: false });
 
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-        setTimeout(() => router.refresh(), 100);
+        setTimeout(() => router?.refresh(), 100);
       }
     });
 

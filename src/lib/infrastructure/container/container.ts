@@ -53,7 +53,7 @@ export class ContainerScope {
         try {
           instance.dispose();
         } catch (error) {
-          logger.warn(`Failed to dispose scoped service ${token}`, error);
+          logger.warn(`Failed to dispose scoped service ${token}`, { error });
         }
       }
     }

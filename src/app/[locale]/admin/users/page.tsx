@@ -9,7 +9,8 @@ export default async function AdminUsersPage() {
     return <div className="text-red-500">Error: {result.error}</div>;
   }
 
-  const users = result.data;
+  // TypeScript now knows result.success is true, so result.data exists
+  const users = result.data as any;
 
   return (
     <section className="container mx-auto py-10">

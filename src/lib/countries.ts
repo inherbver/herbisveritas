@@ -6,7 +6,7 @@ export interface Country {
 }
 
 // Option 2: Structure multilingue (si vous supportez plusieurs langues)
-export const countries = {
+export const countries: Record<string, Country[]> = {
   FR: [
     { code: "FR", name: "France" },
     { code: "AD", name: "Andorre" },

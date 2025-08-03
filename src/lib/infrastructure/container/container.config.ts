@@ -92,26 +92,20 @@ export class ContainerConfiguration {
 
       builder.addSingleton(
         SERVICE_TOKENS.ADDRESS_REPOSITORY,
-        (container) => new AddressSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
-        [SERVICE_TOKENS.SUPABASE_CLIENT]
+        () => new AddressSupabaseRepository(),
+        []
       );
 
       builder.addSingleton(
         SERVICE_TOKENS.ORDER_REPOSITORY,
-        (container) => new OrderSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
-        [SERVICE_TOKENS.SUPABASE_CLIENT]
+        () => new OrderSupabaseRepository(),
+        []
       );
 
       builder.addSingleton(
         SERVICE_TOKENS.ARTICLE_REPOSITORY,
-        (container) => new ArticleSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
-        [SERVICE_TOKENS.SUPABASE_CLIENT]
+        () => new ArticleSupabaseRepository(),
+        []
       );
 
       builder.addInstance(SERVICE_TOKENS.LOGGER, logger);
@@ -182,26 +176,20 @@ export class ContainerConfiguration {
 
       builder.addSingleton(
         SERVICE_TOKENS.ADDRESS_REPOSITORY,
-        (container) => new AddressSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
-        [SERVICE_TOKENS.SUPABASE_CLIENT]
+        () => new AddressSupabaseRepository(),
+        []
       );
 
       builder.addSingleton(
         SERVICE_TOKENS.ORDER_REPOSITORY,
-        (container) => new OrderSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
-        [SERVICE_TOKENS.SUPABASE_CLIENT]
+        () => new OrderSupabaseRepository(),
+        []
       );
 
       builder.addSingleton(
         SERVICE_TOKENS.ARTICLE_REPOSITORY,
-        (container) => new ArticleSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
-        [SERVICE_TOKENS.SUPABASE_CLIENT]
+        () => new ArticleSupabaseRepository(),
+        []
       );
 
       builder.addInstance(SERVICE_TOKENS.LOGGER, logger);
