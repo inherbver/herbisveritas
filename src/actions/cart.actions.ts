@@ -180,7 +180,7 @@ export async function removeItemFromCart(
 ): Promise<CartActionResult<CartData | null>> {
   try {
     const validatedFields = RemoveFromCartInputSchema.safeParse({
-      cartItemId: formData.get("itemId"),
+      cartItemId: formData.get("cartItemId"),
     });
 
     if (!validatedFields.success) {
@@ -229,7 +229,7 @@ export async function updateCartItemQuantity(
 ): Promise<CartActionResult<CartData | null>> {
   try {
     const validatedFields = UpdateCartItemQuantityInputSchema.safeParse({
-      cartItemId: formData.get("itemId"),
+      cartItemId: formData.get("cartItemId"),
       quantity: formData.get("quantity"),
     });
 
@@ -245,7 +245,7 @@ export async function updateCartItemQuantity(
     if (quantity <= 0) {
       // If quantity is 0 or negative, remove the item
       const removeFormData = new FormData();
-      removeFormData.append("itemId", itemId);
+      removeFormData.append("cartItemId", itemId);
       return removeItemFromCart(null, removeFormData);
     }
 

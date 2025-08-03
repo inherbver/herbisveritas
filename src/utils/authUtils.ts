@@ -17,16 +17,21 @@ export async function getActiveUserId(supabase: SupabaseClientType): Promise<str
   let userId = user?.id;
 
   if (!userId) {
-    const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
-    if (anonError) {
-      console.error("Erreur lors de la connexion anonyme:", anonError.message);
+    try {
+      const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
+      if (anonError) {
+        console.error("[ Server ] Erreur lors de la connexion anonyme:", anonError.message);
+        return null;
+      }
+      if (!anonAuthResponse?.user) {
+        console.error("[ Server ] La connexion anonyme n'a pas retourné d'utilisateur.");
+        return null;
+      }
+      userId = anonAuthResponse.user.id;
+    } catch (error) {
+      console.error("[ Server ] Exception lors de la connexion anonyme:", error);
       return null;
     }
-    if (!anonAuthResponse?.user) {
-      console.error("La connexion anonyme n'a pas retourné d'utilisateur.");
-      return null;
-    }
-    userId = anonAuthResponse.user.id;
   }
   return userId;
 }
