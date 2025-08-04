@@ -5,15 +5,13 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 
 // Mock des actions - DOIT être avant l'import
-jest.mock("../../../../../../actions/productActions", () => ({
-  deleteProduct: jest.fn(),
+const mockDeleteProduct = jest.fn();
+jest.mock("@/actions/productActions", () => ({
+  deleteProduct: mockDeleteProduct,
 }));
 
 // Import après le mock
 import * as productActions from "@/actions/productActions";
-
-// Type assertion pour les mocks
-const mockProductActions = productActions as jest.Mocked<typeof productActions>;
 
 // Mock du composant DeleteProductDialog
 const DeleteProductDialog = ({
@@ -176,7 +174,7 @@ describe("DeleteProductDialog Component", () => {
 
   it("should handle successful product deletion", async () => {
     const user = userEvent.setup();
-    mockProductActions.deleteProduct.mockResolvedValue({
+    mockDeleteProduct.mockResolvedValue({
       success: true,
       data: {
         success: true,
@@ -200,7 +198,7 @@ describe("DeleteProductDialog Component", () => {
     }
 
     await waitFor(() => {
-      expect(mockProductActions.deleteProduct).toHaveBeenCalledWith("test-product-id");
+      expect(mockDeleteProduct).toHaveBeenCalledWith("test-product-id");
       expect(mockOnDelete).toHaveBeenCalled();
       expect(mockOnOpenChange).toHaveBeenCalledWith(false);
     });
@@ -208,7 +206,7 @@ describe("DeleteProductDialog Component", () => {
 
   it("should handle deletion error", async () => {
     const user = userEvent.setup();
-    mockProductActions.deleteProduct.mockResolvedValue({
+    mockDeleteProduct.mockResolvedValue({
       success: false,
       error: "Cannot delete product with existing orders",
     });
@@ -229,7 +227,7 @@ describe("DeleteProductDialog Component", () => {
     }
 
     await waitFor(() => {
-      expect(mockProductActions.deleteProduct).toHaveBeenCalledWith("test-product-id");
+      expect(mockDeleteProduct).toHaveBeenCalledWith("test-product-id");
       expect(mockOnDelete).not.toHaveBeenCalled();
       expect(mockOnOpenChange).not.toHaveBeenCalledWith(false);
       // Vérifier que l'erreur est affichée (via toast ou dans le dialog)
@@ -238,7 +236,7 @@ describe("DeleteProductDialog Component", () => {
 
   it("should show loading state during deletion", async () => {
     const user = userEvent.setup();
-    mockProductActions.deleteProduct.mockImplementation(
+    mockDeleteProduct.mockImplementation(
       () =>
         new Promise((resolve) =>
           setTimeout(
@@ -274,7 +272,7 @@ describe("DeleteProductDialog Component", () => {
 
   it("should disable buttons during deletion process", async () => {
     const user = userEvent.setup();
-    mockProductActions.deleteProduct.mockImplementation(
+    mockDeleteProduct.mockImplementation(
       () =>
         new Promise((resolve) =>
           setTimeout(
@@ -323,7 +321,7 @@ describe("DeleteProductDialog Component", () => {
 
   it("should handle API network errors", async () => {
     const user = userEvent.setup();
-    mockProductActions.deleteProduct.mockRejectedValue(new Error("Network error"));
+    mockDeleteProduct.mockRejectedValue(new Error("Network error"));
 
     render(
       <DeleteProductDialog
@@ -341,7 +339,7 @@ describe("DeleteProductDialog Component", () => {
     }
 
     await waitFor(() => {
-      expect(mockProductActions.deleteProduct).toHaveBeenCalledWith("test-product-id");
+      expect(mockDeleteProduct).toHaveBeenCalledWith("test-product-id");
       // Vérifier que l'erreur réseau est gérée
       expect(mockOnDelete).not.toHaveBeenCalled();
     });
@@ -372,7 +370,7 @@ describe("DeleteProductDialog Component", () => {
     const user = userEvent.setup();
 
     // Test avec succès
-    mockProductActions.deleteProduct.mockResolvedValue({
+    mockDeleteProduct.mockResolvedValue({
       success: true,
       message: "Deleted successfully",
     } as never);
@@ -396,7 +394,7 @@ describe("DeleteProductDialog Component", () => {
     jest.clearAllMocks();
 
     // Test avec échec
-    mockProductActions.deleteProduct.mockResolvedValue({
+    mockDeleteProduct.mockResolvedValue({
       success: false,
       message: "Deletion failed",
     } as never);

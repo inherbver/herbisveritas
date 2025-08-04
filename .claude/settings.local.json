@@ -46,7 +46,8 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
       "mcp__playwright__browser_evaluate",
-      "mcp__playwright__browser_tab_new"
+      "mcp__playwright__browser_tab_new",
+      "Bash(mkdir:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

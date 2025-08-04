@@ -7,10 +7,51 @@ import { TextEncoder, TextDecoder } from "util";
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
 
+// Polyfill pour Response (requis pour les tests microservices)
+if (typeof global.Response === 'undefined') {
+  global.Response = class Response {
+    body: any;
+    init: any;
+    constructor(body?: any, init: any = {}) {
+      this.body = body;
+      this.init = init;
+    }
+    get status() { return this.init?.status || 200; }
+  } as any;
+}
+
+// Mock global fetch for Stripe and other HTTP clients
+if (typeof global.fetch === 'undefined') {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({}),
+      text: () => Promise.resolve(''),
+    })
+  ) as any;
+}
+
+// Mock global Request for API Gateway tests
+if (typeof global.Request === 'undefined') {
+  global.Request = class Request {
+    url: string;
+    method: string;
+    headers: any;
+    constructor(url: string, init: any = {}) {
+      this.url = url;
+      this.method = init.method || 'GET';
+      this.headers = init.headers || {};
+    }
+  } as any;
+}
+
 // Variables d'environnement pour les tests
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://esgirafriwoildqcwtjm.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
+process.env.STRIPE_SECRET_KEY = "sk_test_mock_123456789";
+process.env.STRIPE_PUBLISHABLE_KEY = "pk_test_mock_123456789";
 
 // Mock Next.js cache et revalidation functions
 jest.mock("next/cache", () => ({
@@ -194,6 +235,7 @@ const createMockSupabaseClient = () => ({
     maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
     insert: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
+    upsert: jest.fn().mockReturnThis(),
     delete: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),

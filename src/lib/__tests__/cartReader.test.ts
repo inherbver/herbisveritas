@@ -10,7 +10,7 @@ jest.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: jest.fn(),
 }));
 
-jest.mock("../authUtils", () => ({
+jest.mock("@/utils/authUtils", () => ({
   getActiveUserId: jest.fn(),
 }));
 

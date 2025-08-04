@@ -37,14 +37,26 @@ describe('ServiceRegistry', () => {
   };
 
   beforeEach(() => {
+    // Enable fake timers to control setTimeout/setInterval
+    jest.useFakeTimers();
+    
     const config = getRegistryConfig('test');
     registry = new ServiceRegistry(config);
+    
+    // Reset and configure fetch mock for each test
     mockFetch = fetch as jest.MockedFunction<typeof fetch>;
     mockFetch.mockClear();
+    mockFetch.mockResolvedValue(
+      new Response('OK', { status: 200 })
+    );
   });
 
   afterEach(async () => {
+    // Clean up any pending timers
+    jest.runOnlyPendingTimers();
     await registry.shutdown();
+    // Restore real timers
+    jest.useRealTimers();
   });
 
   describe('Service Registration', () => {
@@ -145,11 +157,19 @@ describe('ServiceRegistry', () => {
         port: 3003,
       });
 
-      // Wait for initial health checks
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Advance timers for initial health checks
+      jest.advanceTimersByTime(1000);
     });
 
     it('should discover healthy service instances', async () => {
+      // Register a service first
+      const registerResult = await registry.register(testRegistration);
+      expect(registerResult.isSuccess()).toBe(true);
+      
+      // Advance timers to trigger health check (test config: 1000ms interval)
+      jest.advanceTimersByTime(1000);
+      
+      // Now discovery should work with healthy instance
       const result = await registry.discover('test-service');
       
       expect(result.isSuccess()).toBe(true);
@@ -166,6 +186,9 @@ describe('ServiceRegistry', () => {
     });
 
     it('should use round-robin load balancing by default', async () => {
+      // Advance timers to make sure all instances are healthy
+      jest.advanceTimersByTime(1000);
+      
       const instances = new Set();
       
       // Discover multiple times to test round-robin
@@ -194,8 +217,8 @@ describe('ServiceRegistry', () => {
         weight: 200, // Double weight
       });
 
-      // Wait for health checks
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Advance timers to trigger health checks
+      jest.advanceTimersByTime(1000);
 
       const selections = new Map<number, number>();
       
@@ -225,8 +248,8 @@ describe('ServiceRegistry', () => {
       const result = await registry.register(testRegistration);
       expect(result.isSuccess()).toBe(true);
 
-      // Wait for health check
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Advance timers to trigger health check
+      jest.advanceTimersByTime(1000);
 
       const instances = registry.getServiceInstances('test-service');
       expect(instances[0].status).toBe('healthy');
@@ -238,8 +261,8 @@ describe('ServiceRegistry', () => {
       const result = await registry.register(testRegistration);
       expect(result.isSuccess()).toBe(true);
 
-      // Wait for health check
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Advance timers to trigger health check
+      jest.advanceTimersByTime(1000);
 
       const instances = registry.getServiceInstances('test-service');
       expect(instances[0].status).toBe('unhealthy');
@@ -250,8 +273,8 @@ describe('ServiceRegistry', () => {
 
       await registry.register(testRegistration);
       
-      // Wait for health check to fail
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Advance timers to trigger health check failure
+      jest.advanceTimersByTime(1000);
 
       const result = await registry.discover('test-service');
       expect(result.isError()).toBe(true);
@@ -271,8 +294,8 @@ describe('ServiceRegistry', () => {
         port: 3002,
       });
 
-      // Wait for health checks
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Advance timers for health checks
+      jest.advanceTimersByTime(1000);
     });
 
     it('should track connection counts for load balancing', async () => {
@@ -325,8 +348,8 @@ describe('ServiceRegistry', () => {
         port: 3002,
       });
 
-      // Wait for health checks
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Advance timers to trigger health checks
+      jest.advanceTimersByTime(1000);
 
       const stats = registry.getStatistics();
       
