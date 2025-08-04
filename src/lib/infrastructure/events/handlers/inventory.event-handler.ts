@@ -6,22 +6,39 @@ import { Result } from "@/lib/core/result";
 import { BusinessError } from "@/lib/core/errors";
 import type { DomainEvent, EventStore } from "@/lib/core/events";
 import type { SupabaseProductRepository } from "../../repositories/product.repository";
-import { logger } from "@/lib/core/logger";
+import { logger, Logger } from "@/lib/core/logger";
+
+interface ProductStockUpdatedEventData {
+  productId: string;
+  oldStock: number;
+  newStock: number;
+}
+
+interface ProductPriceChangedEventData {
+  productId: string;
+  oldPrice: number;
+  newPrice: number;
+}
+
+interface ProductReservedEventData {
+  productId: string;
+  quantity: number;
+}
 
 export class InventoryEventHandler {
   constructor(
     private readonly productRepository: SupabaseProductRepository,
     private readonly eventStore: EventStore,
-    private readonly logger: typeof logger
+    private readonly logger: Logger = logger
   ) {}
 
   async handle(event: DomainEvent): Promise<Result<void, BusinessError>> {
     try {
       switch (event.eventType) {
         case 'PRODUCT_STOCK_UPDATED':
-          return await this.handleProductStockUpdated(event);
+          return await this.handleProductStockUpdated(event as DomainEvent<ProductStockUpdatedEventData>);
         case 'PRODUCT_PRICE_CHANGED':
-          return await this.handleProductPriceChanged(event);
+          return await this.handleProductPriceChanged(event as DomainEvent<ProductPriceChangedEventData>);
         default:
           this.logger.warn('Unhandled inventory event type', { eventType: event.eventType });
           return Result.ok(undefined);
@@ -32,7 +49,7 @@ export class InventoryEventHandler {
     }
   }
 
-  async handleProductStockUpdated(event: DomainEvent): Promise<Result<void, BusinessError>> {
+  async handleProductStockUpdated(event: DomainEvent<ProductStockUpdatedEventData>): Promise<Result<void, BusinessError>> {
     try {
       const { productId, oldStock, newStock } = event.eventData;
       this.logger.info('Processing product stock updated', { productId, oldStock, newStock, eventId: event.eventId });
@@ -42,7 +59,7 @@ export class InventoryEventHandler {
     }
   }
 
-  async handleProductPriceChanged(event: DomainEvent): Promise<Result<void, BusinessError>> {
+  async handleProductPriceChanged(event: DomainEvent<ProductPriceChangedEventData>): Promise<Result<void, BusinessError>> {
     try {
       const { productId, oldPrice, newPrice } = event.eventData;
       this.logger.info('Processing product price changed', { productId, oldPrice, newPrice, eventId: event.eventId });
@@ -52,7 +69,7 @@ export class InventoryEventHandler {
     }
   }
 
-  async reserveStock(event: DomainEvent): Promise<Result<void, BusinessError>> {
+  async reserveStock(event: DomainEvent<ProductReservedEventData>): Promise<Result<void, BusinessError>> {
     try {
       const { productId, quantity } = event.eventData;
       this.logger.info('Reserving stock', { productId, quantity, eventId: event.eventId });

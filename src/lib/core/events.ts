@@ -46,7 +46,7 @@ export interface EventStore {
   append<T extends DomainEvent>(event: T): Promise<Result<void, Error>>;
   appendBatch<T extends DomainEvent>(events: T[]): Promise<Result<void, Error>>;
   getEvents(aggregateId: string, fromVersion?: number): Promise<Result<DomainEvent[], Error>>;
-  getEventsByType(eventType: string, fromDate?: Date): Promise<Result<DomainEvent[], Error>>;
+  getEventsByType(eventType: string, options?: { fromDate?: Date; limit?: number }): Promise<Result<DomainEvent[], Error>>;
   getAllEvents(fromDate?: Date, limit?: number): Promise<Result<DomainEvent[], Error>>;
 }
 

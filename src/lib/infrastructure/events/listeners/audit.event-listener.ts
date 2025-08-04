@@ -4,12 +4,12 @@
 
 import type { DomainEvent } from "@/lib/core/events";
 import type { AuditEventHandler } from "../handlers/audit.event-handler";
-import { logger } from "@/lib/core/logger";
+import { logger, Logger } from "@/lib/core/logger";
 
 export class AuditEventListener {
   constructor(
     private readonly auditHandler: AuditEventHandler,
-    private readonly logger: typeof logger
+    private readonly logger: Logger = logger
   ) {}
 
   async handleAuditEvent(event: DomainEvent): Promise<void> {

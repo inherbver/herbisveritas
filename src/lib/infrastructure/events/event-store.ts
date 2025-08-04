@@ -155,7 +155,7 @@ export class InMemoryEventStore implements EventStore {
     }
   }
 
-  async getEventsByType(eventType: string, limit?: number): Promise<Result<DomainEvent[], BusinessError>> {
+  async getEventsByType(eventType: string, options?: { fromDate?: Date; limit?: number }): Promise<Result<DomainEvent[], BusinessError>> {
     try {
       // Essayer d'abord Supabase
       let query = this.supabaseClient
@@ -164,8 +164,12 @@ export class InMemoryEventStore implements EventStore {
         .eq('event_type', eventType)
         .order('occurred_at', { ascending: false });
 
-      if (limit) {
-        query = query.limit(limit);
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+
+      if (options?.fromDate) {
+        query = query.gte('occurred_at', options.fromDate.toISOString());
       }
 
       const { data, error } = await query;
@@ -177,8 +181,8 @@ export class InMemoryEventStore implements EventStore {
         let memoryEvents = this.events.filter(e => e.eventType === eventType);
         memoryEvents.sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
         
-        if (limit) {
-          memoryEvents = memoryEvents.slice(0, limit);
+        if (options?.limit) {
+          memoryEvents = memoryEvents.slice(0, options.limit);
         }
         
         return Result.ok(memoryEvents);
@@ -259,7 +263,7 @@ export class InMemoryEventStore implements EventStore {
         .delete()
         .neq('id', ''); // Supprimer tous les enregistrements
     } catch (error) {
-      this.logger.warn('Failed to clear Supabase events (test cleanup)', error);
+      this.logger.warn('Failed to clear Supabase events (test cleanup)', { error: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 
@@ -270,6 +274,25 @@ export class InMemoryEventStore implements EventStore {
   getInMemoryEventCount(): number {
     return this.events.length;
   }
+
+  async getAllEvents(fromDate?: Date, limit?: number): Promise<Result<DomainEvent[], BusinessError>> {
+    try {
+      let events = [...this.events];
+      
+      if (fromDate) {
+        events = events.filter(event => event.occurredAt >= fromDate);
+      }
+      
+      if (limit) {
+        events = events.slice(0, limit);
+      }
+      
+      return Result.ok(events);
+    } catch (error) {
+      this.logger.error('Failed to get all events', error);
+      return Result.error(new BusinessError('Failed to retrieve all events from event store', { error }));
+    }
+  }
 }
 
 /**
@@ -279,7 +302,7 @@ export class InMemoryEventStore implements EventStore {
 export class SupabaseEventStore implements EventStore {
   constructor(
     private readonly supabaseClient: SupabaseClient,
-    private readonly logger: typeof logger
+    private readonly logger: Logger = logger
   ) {}
 
   async append(event: DomainEvent): Promise<Result<void, BusinessError>> {
@@ -382,7 +405,7 @@ export class SupabaseEventStore implements EventStore {
     }
   }
 
-  async getEventsByType(eventType: string, limit?: number): Promise<Result<DomainEvent[], BusinessError>> {
+  async getEventsByType(eventType: string, options?: { fromDate?: Date; limit?: number }): Promise<Result<DomainEvent[], BusinessError>> {
     try {
       let query = this.supabaseClient
         .from('domain_events')
@@ -390,8 +413,12 @@ export class SupabaseEventStore implements EventStore {
         .eq('event_type', eventType)
         .order('occurred_at', { ascending: false });
 
-      if (limit) {
-        query = query.limit(limit);
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+
+      if (options?.fromDate) {
+        query = query.gte('occurred_at', options.fromDate.toISOString());
       }
 
       const { data, error } = await query;
@@ -443,6 +470,48 @@ export class SupabaseEventStore implements EventStore {
     } catch (error) {
       this.logger.error('Failed to get event store statistics', error);
       return Result.error(new BusinessError('Failed to retrieve event store statistics', { error }));
+    }
+  }
+
+  async getAllEvents(fromDate?: Date, limit?: number): Promise<Result<DomainEvent[], BusinessError>> {
+    try {
+      let query = this.supabaseClient
+        .from('domain_events')
+        .select('*')
+        .order('occurred_at', { ascending: false });
+
+      if (fromDate) {
+        query = query.gte('occurred_at', fromDate.toISOString());
+      }
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        this.logger.error('Failed to retrieve all events from Supabase', { error });
+        return Result.error(new BusinessError('Failed to retrieve all events from event store', { error }));
+      }
+
+      const events: DomainEvent[] = (data || []).map(record => ({
+        eventId: record.event_id,
+        eventType: record.event_type,
+        aggregateId: record.aggregate_id,
+        aggregateType: record.aggregate_type,
+        eventData: record.event_data,
+        version: record.version,
+        userId: record.user_id,
+        correlationId: record.correlation_id,
+        causationId: record.causation_id,
+        occurredAt: new Date(record.occurred_at),
+      }));
+
+      return Result.ok(events);
+    } catch (error) {
+      this.logger.error('Failed to get all events', error);
+      return Result.error(new BusinessError('Failed to retrieve all events from event store', { error }));
     }
   }
 }

@@ -8,26 +8,58 @@ import { Result } from "@/lib/core/result";
 import { BusinessError } from "@/lib/core/errors";
 import type { DomainEvent, EventStore } from "@/lib/core/events";
 import type { SupabaseCartRepository } from "../../repositories/cart.repository";
-import { logger } from "@/lib/core/logger";
+import { logger, Logger } from "@/lib/core/logger";
+
+interface CartItemAddedEventData {
+  productId: string;
+  quantity: number;
+  userId: string;
+  cartId: string;
+  productName?: string;
+  productPrice?: number;
+}
+
+interface CartItemRemovedEventData {
+  itemId: string;
+  productId: string;
+  userId: string;
+  cartId: string;
+  quantity: number;
+}
+
+interface CartItemQuantityUpdatedEventData {
+  itemId: string;
+  productId: string;
+  userId: string;
+  cartId: string;
+  oldQuantity: number;
+  newQuantity: number;
+}
+
+interface CartClearedEventData {
+  userId: string;
+  cartId: string;
+  itemCount: number;
+}
 
 export class CartEventHandler {
   constructor(
     private readonly cartRepository: SupabaseCartRepository,
     private readonly eventStore: EventStore,
-    private readonly logger: typeof logger
+    private readonly logger: Logger = logger
   ) {}
 
   async handle(event: DomainEvent): Promise<Result<void, BusinessError>> {
     try {
       switch (event.eventType) {
         case 'CART_ITEM_ADDED':
-          return await this.handleCartItemAdded(event);
+          return await this.handleCartItemAdded(event as DomainEvent<CartItemAddedEventData>);
         case 'CART_ITEM_REMOVED':
-          return await this.handleCartItemRemoved(event);
+          return await this.handleCartItemRemoved(event as DomainEvent<CartItemRemovedEventData>);
         case 'CART_ITEM_QUANTITY_UPDATED':
-          return await this.handleCartItemQuantityUpdated(event);
+          return await this.handleCartItemQuantityUpdated(event as DomainEvent<CartItemQuantityUpdatedEventData>);
         case 'CART_CLEARED':
-          return await this.handleCartCleared(event);
+          return await this.handleCartCleared(event as DomainEvent<CartClearedEventData>);
         default:
           this.logger.warn('Unhandled cart event type', { eventType: event.eventType });
           return Result.ok(undefined);
@@ -38,7 +70,7 @@ export class CartEventHandler {
     }
   }
 
-  async handleCartItemAdded(event: DomainEvent): Promise<Result<void, BusinessError>> {
+  async handleCartItemAdded(event: DomainEvent<CartItemAddedEventData>): Promise<Result<void, BusinessError>> {
     try {
       const { productId, quantity, userId, cartId } = event.eventData;
 
@@ -69,7 +101,7 @@ export class CartEventHandler {
     }
   }
 
-  async handleCartItemRemoved(event: DomainEvent): Promise<Result<void, BusinessError>> {
+  async handleCartItemRemoved(event: DomainEvent<CartItemRemovedEventData>): Promise<Result<void, BusinessError>> {
     try {
       const { productId, quantity, userId, cartId, itemId } = event.eventData;
 
@@ -95,7 +127,7 @@ export class CartEventHandler {
     }
   }
 
-  async handleCartItemQuantityUpdated(event: DomainEvent): Promise<Result<void, BusinessError>> {
+  async handleCartItemQuantityUpdated(event: DomainEvent<CartItemQuantityUpdatedEventData>): Promise<Result<void, BusinessError>> {
     try {
       const { productId, oldQuantity, newQuantity, userId, cartId } = event.eventData;
 
@@ -122,7 +154,7 @@ export class CartEventHandler {
     }
   }
 
-  async handleCartCleared(event: DomainEvent): Promise<Result<void, BusinessError>> {
+  async handleCartCleared(event: DomainEvent<CartClearedEventData>): Promise<Result<void, BusinessError>> {
     try {
       const { userId, cartId, itemCount } = event.eventData;
 

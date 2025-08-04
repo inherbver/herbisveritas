@@ -6,13 +6,18 @@ import { Result } from "@/lib/core/result";
 import { BusinessError } from "@/lib/core/errors";
 import type { DomainEvent, EventStore } from "@/lib/core/events";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/lib/core/logger";
+import { logger, Logger } from "@/lib/core/logger";
+
+interface CartNotificationEventData {
+  userId: string;
+  cartId: string;
+}
 
 export class NotificationEventHandler {
   constructor(
     private readonly supabaseClient: SupabaseClient,
     private readonly eventStore: EventStore,
-    private readonly logger: typeof logger
+    private readonly logger: Logger = logger
   ) {}
 
   async handle(event: DomainEvent): Promise<Result<void, BusinessError>> {
@@ -25,7 +30,7 @@ export class NotificationEventHandler {
     }
   }
 
-  async sendCartNotification(event: DomainEvent): Promise<Result<void, BusinessError>> {
+  async sendCartNotification(event: DomainEvent<CartNotificationEventData>): Promise<Result<void, BusinessError>> {
     try {
       const { userId, cartId } = event.eventData;
       this.logger.info('Sending cart notification', { userId, cartId, eventId: event.eventId });

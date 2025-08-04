@@ -335,8 +335,8 @@ export class ProductRecommendationUpdateHandler implements EventHandler {
     // or machine learning model with user preference data
     logger.info('Product affinity updated', {
       recommendations: {
-        action: 'update_affinity',
         ...data,
+        actionType: 'update_affinity',
       },
     });
   }

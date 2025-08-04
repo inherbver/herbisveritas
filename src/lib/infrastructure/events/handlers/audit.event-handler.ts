@@ -6,13 +6,13 @@ import { Result } from "@/lib/core/result";
 import { BusinessError } from "@/lib/core/errors";
 import type { DomainEvent, EventStore } from "@/lib/core/events";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/lib/core/logger";
+import { logger, Logger } from "@/lib/core/logger";
 
 export class AuditEventHandler {
   constructor(
     private readonly supabaseClient: SupabaseClient,
     private readonly eventStore: EventStore,
-    private readonly logger: typeof logger
+    private readonly logger: Logger = logger
   ) {}
 
   async handle(event: DomainEvent): Promise<Result<void, BusinessError>> {

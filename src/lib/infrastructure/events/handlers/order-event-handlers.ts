@@ -182,7 +182,9 @@ export class OrderConfirmationEmailHandler implements EventHandler {
       // Send order confirmation email
       await this.sendOrderConfirmationEmail({
         recipientEmail: user.email,
-        recipientName: user.full_name || user.email,
+        recipientName: (user.profile?.first_name && user.profile?.last_name) 
+          ? `${user.profile.first_name} ${user.profile.last_name}` 
+          : user.email,
         order: event.eventData,
         templateData: {
           orderNumber: event.eventData.orderId,
@@ -446,7 +448,9 @@ export class OrderStatusUpdateHandler implements EventHandler {
       // Send shipping notification email
       await this.sendShippingNotification({
         recipientEmail: user.email,
-        recipientName: user.full_name || user.email,
+        recipientName: (user.profile?.first_name && user.profile?.last_name) 
+          ? `${user.profile.first_name} ${user.profile.last_name}` 
+          : user.email,
         orderId: event.eventData.orderId,
         trackingNumber: event.eventData.trackingNumber,
         carrier: event.eventData.carrier,
