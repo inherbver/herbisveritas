@@ -26,6 +26,23 @@ import { getCart } from "@/lib/cartReader";
 import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CartData } from "@/types/cart";
+
+// Interface spécifique pour les produits dans le contexte du panier
+interface CartItemProduct {
+  id: string;
+  stock: number | null;
+  name: string;
+  price: number;
+}
+
+// Interface pour les éléments du panier invité
+interface GuestCartItem {
+  productId: string;
+  quantity: number;
+  name?: string;
+  price?: number;
+  image?: string;
+}
 import {
   AddToCartInputSchema,
   RemoveFromCartInputSchema,
@@ -275,7 +292,7 @@ export async function updateCartItemQuantityAction(
     }
 
     // Check stock availability
-    const product = cartItem.products as any;
+    const product = cartItem.products as CartItemProduct;
     if (product.stock !== null && product.stock < quantity) {
       return createGeneralErrorResult("Stock insuffisant pour cette quantité.");
     }
@@ -366,7 +383,7 @@ export async function clearCartAction(): Promise<CartActionResult<CartData | nul
  * Migrate guest cart to authenticated user cart
  */
 export async function migrateAndGetCart(
-  guestCartItems: any[] = []
+  guestCartItems: GuestCartItem[] = []
 ): Promise<CartActionResult<CartData | null>> {
   try {
     const supabase = await createSupabaseServerClient();

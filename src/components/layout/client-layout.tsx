@@ -6,8 +6,19 @@ import { useSearchParams } from "next/navigation";
 // import { Toaster } from "@/components/ui/sonner"; // Toaster est déjà dans LocaleLayout
 import { ThemeProvider } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { useCartOperations } from "@/lib/store-sync/cart-sync";
+
+// Types spécifiques pour les réponses Supabase
+interface SupabaseUserResponse {
+  data: { user: User | null };
+  error: Error | null;
+}
+
+interface SupabaseSessionResponse {
+  data: { session: Session | null };
+  error: Error | null;
+}
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -37,7 +48,7 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
 
   // Fonction helper pour les appels Supabase avec timeout et retry
   const supabaseCallWithTimeout = useCallback(
-    async (promise: Promise<unknown>, timeoutMs = 3000, maxRetries = 2) => {
+    async <T,>(promise: Promise<T>, timeoutMs = 3000, maxRetries = 2): Promise<T> => {
       let lastError: Error;
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -84,11 +95,11 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
       const {
         data: { user },
         error: userError,
-      } = (await supabaseCallWithTimeout(
+      } = await supabaseCallWithTimeout<SupabaseUserResponse>(
         supabase.auth.getUser(),
         2500, // Timeout de 2.5 secondes
         1 // 1 retry seulement pour ne pas trop ralentir
-      )) as any;
+      );
 
       if (userError || !user) {
         // Pas d'utilisateur authentifié côté serveur
@@ -98,11 +109,11 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
       // Si l'utilisateur est validé, on peut récupérer la session locale en toute confiance
       const {
         data: { session },
-      } = (await supabaseCallWithTimeout(
+      } = await supabaseCallWithTimeout<SupabaseSessionResponse>(
         supabase.auth.getSession(),
         2000, // Timeout plus court pour getSession
         1
-      )) as any;
+      );
       return session;
     } catch (error) {
       if (

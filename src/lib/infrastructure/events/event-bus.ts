@@ -24,7 +24,7 @@ import { Result } from '@/lib/core/result';
 import { logger, Logger } from '@/lib/core/logger';
 
 // Temporary helper function
-function createSimpleContext(action: string, resource: string, data: any = {}) {
+function createSimpleContext(action: string, resource: string, data: Record<string, unknown> = {}) {
   return { action, resource, ...data };
 }
 

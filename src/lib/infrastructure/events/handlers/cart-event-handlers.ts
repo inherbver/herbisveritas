@@ -14,7 +14,7 @@ import { logger } from '@/lib/core/logger';
 import { resolveService } from '@/lib/infrastructure/container/container.config';
 
 // Temporary helper function
-function createSimpleContext(action: string, resource: string, data: any = {}) {
+function createSimpleContext(action: string, resource: string, data: Record<string, unknown> = {}) {
   return { action, resource, ...data };
 }
 import { SERVICE_TOKENS } from '@/lib/infrastructure/container/container';
@@ -54,6 +54,17 @@ interface CartItemQuantityUpdatedEventData {
   cartId: string;
   oldQuantity: number;
   newQuantity: number;
+}
+
+/**
+ * Generic Cart Item Data for abandonment tracking
+ */
+interface CartItemData {
+  id: string;
+  productId: string;
+  quantity: number;
+  price?: number;
+  productName?: string;
 }
 
 /**
@@ -191,7 +202,7 @@ export class InventoryUpdateEventHandler implements EventHandler {
 export class CartAbandonmentTrackingHandler implements EventHandler {
   readonly eventType = EventTypes.CART_ABANDONED;
 
-  async handle(event: DomainEvent<{ userId: string; cartId: string; items: any[] }>): Promise<Result<void, Error>> {
+  async handle(event: DomainEvent<{ userId: string; cartId: string; items: CartItemData[] }>): Promise<Result<void, Error>> {
     const context = createSimpleContext('cart_abandonment_handler', 'marketing', {
       eventId: event.eventId,
       userId: event.eventData.userId,
@@ -249,7 +260,7 @@ export class CartAbandonmentTrackingHandler implements EventHandler {
     userId: string;
     userEmail: string;
     cartId: string;
-    items: any[];
+    items: CartItemData[];
     abandonedAt: Date;
   }): Promise<void> {
     // In a real implementation, this would integrate with an email service

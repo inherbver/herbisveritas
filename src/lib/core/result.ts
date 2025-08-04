@@ -3,6 +3,8 @@
  * Provides type-safe error handling without exceptions
  */
 
+import type { SupabaseError } from './errors';
+
 export abstract class Result<T, E = Error> {
   protected constructor(
     protected readonly _value?: T,
@@ -310,7 +312,7 @@ export const FormActionResult = {
 export interface DatabaseError {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export type DatabaseResult<T> = Result<T, DatabaseError>;
@@ -321,7 +323,7 @@ export type DatabaseResult<T> = Result<T, DatabaseError>;
 export const DatabaseResult = {
   ok: <T>(value: T): DatabaseResult<T> => Result.ok(value),
   error: <T>(error: DatabaseError): DatabaseResult<T> => Result.error(error),
-  fromSupabaseError: <T>(error: any): DatabaseResult<T> => {
+  fromSupabaseError: <T>(error: SupabaseError): DatabaseResult<T> => {
     return Result.error({
       code: error.code || 'UNKNOWN',
       message: error.message || 'Unknown database error',

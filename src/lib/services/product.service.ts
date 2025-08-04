@@ -21,7 +21,9 @@ import type {
   CreateProductData,
   UpdateProductData,
   ProductStatus,
-  StockUpdate
+  StockUpdate,
+  ProductTranslation,
+  StockMovement
 } from '@/lib/domain/interfaces/product.repository.interface';
 
 // Import des anciennes fonctions (fallback)
@@ -192,7 +194,7 @@ export class ProductService {
   /**
    * Créer un nouveau produit
    */
-  async createProduct(productData: CreateProductData, translationData?: any): Promise<Result<Product, Error>> {
+  async createProduct(productData: CreateProductData, translationData?: Partial<ProductTranslation>): Promise<Result<Product, Error>> {
     const context = LogUtils.createOperationContext('createProduct', 'product-service');
     LogUtils.logOperationStart('createProduct', { ...context, slug: productData.slug });
 
@@ -484,7 +486,7 @@ export class ProductService {
   /**
    * Ajuster le stock avec traçabilité
    */
-  async adjustStock(update: StockUpdate): Promise<Result<{ product: Product; movement: any }, Error>> {
+  async adjustStock(update: StockUpdate): Promise<Result<{ product: Product; movement: StockMovement }, Error>> {
     const context = LogUtils.createOperationContext('adjustStock', 'product-service');
     LogUtils.logOperationStart('adjustStock', { ...context, productId: update.product_id, delta: update.quantity_delta });
 

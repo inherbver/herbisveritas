@@ -21,12 +21,12 @@ export enum ServiceLifetime {
 /**
  * Service factory function
  */
-export type ServiceFactory<T = any> = (container: Container) => T;
+export type ServiceFactory<T = unknown> = (container: Container) => T;
 
 /**
  * Service registration
  */
-interface ServiceRegistration<T = any> {
+interface ServiceRegistration<T = unknown> {
   factory: ServiceFactory<T>;
   lifetime: ServiceLifetime;
   instance?: T;
@@ -38,7 +38,7 @@ interface ServiceRegistration<T = any> {
  * Container scope for scoped services
  */
 export class ContainerScope {
-  private scopedInstances = new Map<string, any>();
+  private scopedInstances = new Map<string, unknown>();
 
   constructor(private readonly container: Container) {}
 
@@ -66,7 +66,7 @@ export class ContainerScope {
  */
 export class Container {
   private services = new Map<string, ServiceRegistration>();
-  private singletonInstances = new Map<string, any>();
+  private singletonInstances = new Map<string, unknown>();
   private isBuilt = false;
 
   /**
@@ -154,7 +154,7 @@ export class Container {
    */
   registerClass<T>(
     token: string,
-    constructor: new (...args: any[]) => T,
+    constructor: new (...args: unknown[]) => T,
     lifetime: ServiceLifetime = ServiceLifetime.TRANSIENT,
     dependencies: string[] = [],
     tags: string[] = []
@@ -207,7 +207,7 @@ export class Container {
   /**
    * Resolve a service within a scope
    */
-  resolveInScope<T>(token: string, scopedInstances: Map<string, any>): T {
+  resolveInScope<T>(token: string, scopedInstances: Map<string, unknown>): T {
     this.ensureBuilt();
     return this.resolveInternal<T>(token, new Set(), scopedInstances);
   }
@@ -305,7 +305,7 @@ export class Container {
   private resolveInternal<T>(
     token: string,
     resolutionStack: Set<string>,
-    scopedInstances?: Map<string, any>
+    scopedInstances?: Map<string, unknown>
   ): T {
     // Check for circular dependencies
     if (resolutionStack.has(token)) {
@@ -372,7 +372,7 @@ export class Container {
     token: string,
     registration: ServiceRegistration<T>,
     resolutionStack: Set<string>,
-    scopedInstances: Map<string, any>
+    scopedInstances: Map<string, unknown>
   ): T {
     if (scopedInstances.has(token)) {
       return scopedInstances.get(token);
@@ -391,7 +391,7 @@ export class Container {
     token: string,
     registration: ServiceRegistration<T>,
     resolutionStack: Set<string>,
-    scopedInstances?: Map<string, any>
+    scopedInstances?: Map<string, unknown>
   ): T {
     return registration.factory(this);
   }

@@ -23,7 +23,7 @@ import type {
 
 // Import des anciennes fonctions (fallback)
 import { getProfile } from '@/actions/profileActions';
-import { getAllUsers, updateUserRole } from '@/actions/userActions';
+import { getUsers, updateUserRole, type UserForAdminPanel } from '@/actions/userActions';
 
 export class UserService {
   private repository: IUserRepository;
@@ -181,22 +181,22 @@ export class UserService {
 
       // Fallback vers l'ancien système
       LogUtils.logOperationInfo('getAllUsers', 'Using legacy userActions', context);
-      const legacyResult = await getAllUsers();
+      const legacyResult = await getUsers();
       
       if (legacyResult.success && legacyResult.data) {
-        const users = legacyResult.data.map((user: any) => ({
+        const users = legacyResult.data.map((user: UserForAdminPanel) => ({
           id: user.id,
           email: user.email,
           created_at: user.created_at,
           last_sign_in_at: user.last_sign_in_at,
-          profile: user.profile || {
-            id: '',
+          profile: {
+            id: user.id,
             user_id: user.id,
-            first_name: null,
-            last_name: null,
+            first_name: user.full_name?.split(' ')[0] || null,
+            last_name: user.full_name?.split(' ').slice(1).join(' ') || null,
             phone: null,
             avatar_url: null,
-            is_admin: false,
+            is_admin: user.role === 'admin',
             marketing_consent: false,
             created_at: user.created_at,
             updated_at: user.created_at,

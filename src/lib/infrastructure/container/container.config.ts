@@ -32,7 +32,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
  * Simple event publisher implementation
  */
 class SimpleEventPublisher implements EventPublisher {
-  async publish(event: any): Promise<void> {
+  async publish(event: { eventType: string; aggregateId: string; eventData: unknown }): Promise<void> {
     // Log the event for now - in production this would publish to a message queue
     logger.info('Domain event published', { 
       eventType: event.eventType,
@@ -224,7 +224,7 @@ export class ContainerConfiguration {
   /**
    * Configure container for testing
    */
-  static configureTest(mockServices: Record<string, any> = {}): Result<Container, BusinessError> {
+  static configureTest(mockServices: Record<string, unknown> = {}): Result<Container, BusinessError> {
     try {
       const builder = new ContainerBuilder();
 

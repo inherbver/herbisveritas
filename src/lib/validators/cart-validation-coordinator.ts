@@ -12,10 +12,8 @@ import { ValidationError, BusinessError } from "@/lib/core/errors";
 import {
   CartApiValidator,
   type AddToCartFormData,
-  type AddToCartJson,
   type RemoveFromCartFormData,
   type UpdateQuantityFormData,
-  type MigrateCartJson,
 } from "./api/cart-api.validator";
 
 // Domain Layer
@@ -26,6 +24,12 @@ import {
   type UpdateCartItemQuantityDomain,
   type MigrateCartDomain,
 } from "./domain/cart-domain.validator";
+
+// Type pour les opérations validées en lot
+type ValidatedCartOperation = 
+  | { type: 'add'; data: AddToCartFormData }
+  | { type: 'remove'; data: RemoveFromCartFormData }
+  | { type: 'update'; data: UpdateQuantityFormData };
 
 /**
  * Validation pipeline result
@@ -238,12 +242,12 @@ export class CartValidationCoordinator {
       type: 'add' | 'remove' | 'update';
       data: unknown;
     }>,
-    userContext: UserContext
-  ): Promise<ValidationPipelineResult<Array<any>>> {
-    const validatedOperations: Array<any> = [];
+    _userContext: UserContext
+  ): Promise<ValidationPipelineResult<ValidatedCartOperation[]>> {
+    const validatedOperations: ValidatedCartOperation[] = [];
     
     for (const operation of operations) {
-      let validationResult: ValidationPipelineResult<any>;
+      let validationResult: ValidationPipelineResult<ValidatedCartOperation>;
       
       switch (operation.type) {
         case 'add':
@@ -314,7 +318,7 @@ export const CartValidationUtils = {
   validateRateLimit: (
     userContext: UserContext,
     operation: string,
-    maxOperationsPerMinute: number = 60
+    _maxOperationsPerMinute: number = 60
   ): Result<boolean, ValidationError> => {
     // This would integrate with a rate limiting service
     // For now, we'll return OK

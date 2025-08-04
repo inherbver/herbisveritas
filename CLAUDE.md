@@ -103,15 +103,42 @@ src/
 - Tailwind CSS for styling (avoid `@apply` with non-existent classes)
 - Follow existing patterns for component structure and naming
 
-### ESLint & Code Quality
+### TypeScript & ESLint Strictness
 
-- **NEVER use `any` type** - Always define proper TypeScript interfaces/types
-- **Unused variables/imports**: Remove completely or prefix with `_` if needed for future use
-- **Error handling**: Always use caught errors for logging or prefix with `_error`
-- **React Hooks**: Include all dependencies in dependency arrays, use proper cleanup
-- **Switch statements**: Wrap case declarations in `{}` blocks to avoid lexical declaration errors
-- **Translations**: Always use translation variables (`t`) or remove unused imports
-- **Run `npm run lint` before committing** - Zero ESLint errors policy
+#### Règles TypeScript Obligatoires
+
+- **INTERDICTION absolue du type `any`** - Créer des interfaces/types spécifiques
+- **Types spécifiques > `unknown`** - Préférer les types explicites, `unknown` en dernier recours
+- **Typage explicite des retours de fonctions** - Particulièrement pour les fonctions async `Promise<Type>`
+- **Types utilitaires** - Exploiter `Partial<T>`, `Required<T>`, `Pick<T>`, `Omit<T>`, `Record<K, V>`
+- **Génériques contraints** - Utiliser `T extends SomeType` plutôt que des types larges
+- **Unions discriminées** - Préférer `type Status = 'loading' | 'success' | 'error'` aux strings brutes
+
+#### Patterns TypeScript Avancés
+
+- **Mapped Types** - Pour les transformations de types complexes
+- **Conditional Types** - Avec `T extends U ? X : Y` pour la logique de types
+- **Template Literal Types** - Pour les types de chaînes composées
+- **Narrowing** - Utiliser les type guards et assertions précises
+- **Readonly & Immutabilité** - `ReadonlyArray<T>`, `readonly` sur les propriétés
+
+#### Erreurs TypeScript Fréquentes à Éviter
+
+- **Propriétés manquantes** - Utiliser `Partial<T>` ou rendre les propriétés optionnelles explicitement
+- **Comparaisons avec `NaN`** - Utiliser `Number.isNaN(value)` au lieu de `value === NaN`
+- **Promises non awaited** - Typer explicitement `Promise<T>` et utiliser `await`
+- **Callbacks non typés** - Préférer `() => void` à `() => any` pour les callbacks ignorés
+- **Récursivité de types** - Éviter les références circulaires dans les conditional types
+- **Overloads inutiles** - Utiliser les paramètres optionnels ou les unions quand possible
+
+#### Qualité de Code & Lint
+
+- **Variables non utilisées** - Supprimer ou préfixer `_` si réservé pour usage futur
+- **Gestion d'erreurs** - Toujours typer les erreurs capturées ou préfixer `_error`
+- **Hooks React** - Inclure toutes les dépendances, nettoyer dans `useEffect`
+- **Switch statements** - Encapsuler les déclarations dans `{}` pour éviter les conflits de scope
+- **Traductions i18n** - Utiliser les variables de traduction `t` ou supprimer les imports inutiles
+- **Politique Zéro Erreur** - `npm run lint` doit passer avant tout commit
 
 ### Security Considerations
 

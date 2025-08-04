@@ -27,6 +27,40 @@ import {
 import { getCart } from "../../lib/cartReader";
 import { getActiveUserId } from "../../utils/authUtils";
 
+// Types spécifiques pour les tests
+interface TestProduct {
+  id: string;
+  name: string;
+  price: number;
+  image_url?: string;
+  stock: number;
+  slug?: string;
+  is_active: boolean;
+}
+
+interface TestCartItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  name: string;
+  price: number;
+  image_url?: string;
+  cart_id: string;
+  products: {
+    stock: number;
+    name: string;
+  };
+}
+
+interface SupabaseResponse<T> {
+  data: T | null;
+  error: Error | null;
+}
+
+interface SupabaseUpdateResponse {
+  error: Error | null;
+}
+
 // Mocks typés
 const mockGetCart = getCart as jest.Mock;
 const mockGetActiveUserId = getActiveUserId as jest.Mock;
@@ -71,7 +105,7 @@ function createTestCartData(overrides: Partial<CartData> = {}): CartData {
   };
 }
 
-function createTestProduct(overrides: any = {}) {
+function createTestProduct(overrides: Partial<TestProduct> = {}): TestProduct {
   return {
     id: VALID_PRODUCT_ID,
     name: "Test Product",
@@ -84,7 +118,7 @@ function createTestProduct(overrides: any = {}) {
   };
 }
 
-function createTestCartItem(overrides: any = {}) {
+function createTestCartItem(overrides: Partial<TestCartItem> = {}): TestCartItem {
   return {
     id: VALID_CART_ITEM_ID,
     product_id: VALID_PRODUCT_ID,
@@ -103,12 +137,12 @@ function createTestCartItem(overrides: any = {}) {
 
 // Mock factory simplifié pour Supabase
 function createMockSupabaseClient(config: {
-  productResponse?: { data: any; error: any };
-  cartResponse?: { data: any; error: any };
-  cartItemResponse?: { data: any; error: any };
-  insertResponse?: { data: any; error: any };
-  updateResponse?: { error: any };
-  deleteResponse?: { error: any };
+  productResponse?: SupabaseResponse<TestProduct>;
+  cartResponse?: SupabaseResponse<unknown>;
+  cartItemResponse?: SupabaseResponse<TestCartItem>;
+  insertResponse?: SupabaseResponse<{ id: string }>;
+  updateResponse?: SupabaseUpdateResponse;
+  deleteResponse?: SupabaseUpdateResponse;
 } = {}) {
   const {
     productResponse = { data: createTestProduct(), error: null },

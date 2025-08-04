@@ -34,9 +34,9 @@ export abstract class BaseSupabaseRepository<
   /**
    * Abstract methods that must be implemented by concrete repositories
    */
-  abstract mapFromDatabase(raw: any): Result<TEntity, DatabaseError>;
-  abstract mapToDatabase(entity: TCreateInput): any;
-  abstract mapUpdateToDatabase(entity: TUpdateInput): any;
+  abstract mapFromDatabase(raw: Record<string, unknown>): Result<TEntity, DatabaseError>;
+  abstract mapToDatabase(entity: TCreateInput): Record<string, unknown>;
+  abstract mapUpdateToDatabase(entity: TUpdateInput): Record<string, unknown>;
 
   /**
    * Find entity by ID
@@ -380,7 +380,7 @@ export abstract class BaseSupabaseRepository<
    */
   protected async executeRawQuery<T>(
     query: string,
-    params?: any[]
+    params?: unknown[]
   ): Promise<Result<T[], DatabaseError>> {
     try {
       const { data, error } = await this.supabase.rpc('execute_sql', {
@@ -415,7 +415,7 @@ export abstract class BaseSupabaseRepository<
           modifiedQuery = modifiedQuery.in(key, value);
         } else if (typeof value === 'object' && value.hasOwnProperty('operator')) {
           // Support for complex operators like { operator: 'gte', value: 100 }
-          const condition = value as { operator: string; value: any };
+          const condition = value as { operator: string; value: unknown };
           switch (condition.operator) {
             case 'gte':
               modifiedQuery = modifiedQuery.gte(key, condition.value);

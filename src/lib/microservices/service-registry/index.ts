@@ -5,6 +5,21 @@
  * Provides unified access to registration, discovery, and configuration.
  */
 
+// Types pour les handlers HTTP
+interface HttpRequest {
+  method?: string;
+  url?: string;
+  headers?: Record<string, string | string[]>;
+  body?: unknown;
+}
+
+interface HttpResponse {
+  statusCode?: number;
+  setHeader(name: string, value: string | number | readonly string[]): this;
+  end(chunk?: unknown): this;
+  json?(object: unknown): this;
+}
+
 // Core registry functionality
 export { ServiceRegistry } from './registry';
 export type { 
@@ -211,8 +226,8 @@ export class HealthCheckUtils {
    */
   static createHealthCheckHandler(
     customChecks: Array<() => Promise<boolean>> = []
-  ): (req: any, res: any) => Promise<void> {
-    return async (req: any, res: any) => {
+  ): (req: HttpRequest, res: HttpResponse) => Promise<void> {
+    return async (req: HttpRequest, res: HttpResponse) => {
       try {
         const health = {
           status: 'healthy',

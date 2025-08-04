@@ -39,7 +39,7 @@ export interface DiscoveryOptions {
   forceRefresh?: boolean;
   timeout?: number;
   version?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -145,7 +145,7 @@ export class ServiceDiscoveryClient {
     options: {
       method?: string;
       headers?: Record<string, string>;
-      body?: any;
+      body?: string | FormData | URLSearchParams | ReadableStream<Uint8Array> | null;
       timeout?: number;
       retries?: number;
       discoveryOptions?: DiscoveryOptions;

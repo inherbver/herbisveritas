@@ -9,7 +9,7 @@ export interface LogContext {
   resource?: string;
   ip?: string;
   userAgent?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface LogEntry {
@@ -56,7 +56,7 @@ class ConsoleLogger implements Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as any).code
+          code: (error as { code?: string }).code
         };
       } else {
         entry.error = {
@@ -151,7 +151,7 @@ class DatabaseLogger implements Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as any).code
+          code: (error as { code?: string }).code
         };
       } else {
         entry.error = {
@@ -216,7 +216,7 @@ export const LogUtils = {
     userId: string,
     action: string,
     resource?: string,
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, string | number | boolean>
   ): LogContext => ({
     userId,
     action,
@@ -229,7 +229,7 @@ export const LogUtils = {
    */
   createRequestContext: (
     request: Request,
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, string | number | boolean>
   ): LogContext => ({
     requestId: crypto.randomUUID(),
     ip: request.headers.get('x-forwarded-for') || 'unknown',

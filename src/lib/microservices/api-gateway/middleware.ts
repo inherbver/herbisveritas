@@ -126,12 +126,22 @@ export async function apiGatewayMiddleware(request: NextRequest): Promise<NextRe
   }
 }
 
+// Interface pour les statistiques de la gateway
+interface GatewayStatistics {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageResponseTime: number;
+  activeConnections: number;
+  uptime: number;
+}
+
 /**
  * Health check endpoint for gateway
  */
 export async function gatewayHealthCheck(): Promise<{
   status: 'healthy' | 'unhealthy';
-  gateway: any;
+  gateway: GatewayStatistics;
   timestamp: string;
 }> {
   try {

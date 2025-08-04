@@ -15,7 +15,7 @@ import { logger } from '@/lib/core/logger';
 import { resolveService } from '@/lib/infrastructure/container/container.config';
 
 // Temporary helper function
-function createSimpleContext(action: string, resource: string, data: any = {}) {
+function createSimpleContext(action: string, resource: string, data: Record<string, unknown> = {}) {
   return { action, resource, ...data };
 }
 import { SERVICE_TOKENS } from '@/lib/infrastructure/container/container';
@@ -36,8 +36,8 @@ interface OrderCreatedEventData {
   }>;
   totalAmount: number;
   currency: string;
-  shippingAddress: any;
-  billingAddress: any;
+  shippingAddress: AddressData;
+  billingAddress: AddressData;
   paymentMethod: string;
 }
 
@@ -62,6 +62,36 @@ interface OrderConfirmedEventData {
   userId: string;
   confirmationNumber: string;
   estimatedDelivery: Date;
+}
+
+/**
+ * Address Data Interface
+ */
+interface AddressData {
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  name?: string;
+  company?: string;
+}
+
+/**
+ * Order Email Template Data
+ */
+interface OrderEmailTemplateData {
+  orderNumber: string;
+  orderDate: Date;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    price: number;
+    productName: string;
+  }>;
+  totalAmount: number;
+  currency: string;
+  shippingAddress: AddressData;
 }
 
 /**
@@ -210,7 +240,7 @@ export class OrderConfirmationEmailHandler implements EventHandler {
     recipientEmail: string;
     recipientName: string;
     order: OrderCreatedEventData;
-    templateData: any;
+    templateData: OrderEmailTemplateData;
   }): Promise<void> {
     // In a real implementation, this would integrate with an email service
     logger.info('Order confirmation email sent', {

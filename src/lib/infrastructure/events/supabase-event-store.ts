@@ -19,7 +19,7 @@ import { Result } from '@/lib/core/result';
 import { logger } from '@/lib/core/logger';
 
 // Temporary helper function
-function createSimpleContext(action: string, resource: string, data: any = {}) {
+function createSimpleContext(action: string, resource: string, data: Record<string, unknown> = {}) {
   return { action, resource, ...data };
 }
 
@@ -32,7 +32,7 @@ interface StoredEventRecord {
   event_type: string;
   aggregate_id: string;
   aggregate_type: string;
-  event_data: any; // JSONB in Supabase
+  event_data: Record<string, unknown>; // JSONB in Supabase
   version: number;
   occurred_at: string; // ISO timestamp
   user_id?: string;
@@ -55,7 +55,7 @@ interface EventStreamMetadata {
   created_at: string;
   updated_at: string;
   snapshot_version?: number;
-  snapshot_data?: any;
+  snapshot_data?: Record<string, unknown>;
 }
 
 /**
@@ -372,7 +372,7 @@ export class SupabaseEventStore implements EventStore {
     aggregateId: string,
     aggregateType: string,
     version: number,
-    snapshotData: any
+    snapshotData: Record<string, unknown>
   ): Promise<Result<void, Error>> {
     try {
       const { error } = await this.supabase

@@ -19,7 +19,7 @@ export interface ServiceInstance {
   readonly port: number;
   readonly protocol: 'http' | 'https';
   readonly healthCheckPath: string;
-  readonly metadata: Record<string, any>;
+  readonly metadata: Record<string, unknown>;
   readonly registeredAt: Date;
   readonly lastHealthCheck: Date;
   readonly status: 'healthy' | 'unhealthy' | 'unknown';
@@ -36,7 +36,7 @@ export interface ServiceRegistration {
   readonly port: number;
   readonly protocol?: 'http' | 'https';
   readonly healthCheckPath?: string;
-  readonly metadata?: Record<string, any>;
+  readonly metadata?: Record<string, unknown>;
   readonly weight?: number;
 }
 

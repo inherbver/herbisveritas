@@ -425,11 +425,11 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
   /**
    * Required by base class but not used for carts (use specific methods instead)
    */
-  mapFromDatabase(raw: any): Result<Cart, DatabaseError> {
+  mapFromDatabase(raw: Record<string, unknown>): Result<Cart, DatabaseError> {
     return Result.error(new DatabaseError('Use mapCartWithItemsFromDatabase instead'));
   }
 
-  mapToDatabase(entity: Partial<Cart>): any {
+  mapToDatabase(entity: Partial<Cart>): Record<string, unknown> {
     return {
       id: entity.id,
       user_id: entity.userId,
@@ -438,8 +438,8 @@ export class SupabaseCartRepository extends BaseSupabaseRepository<Cart, Partial
     };
   }
 
-  mapUpdateToDatabase(entity: Partial<Cart>): any {
-    const data: any = {};
+  mapUpdateToDatabase(entity: Partial<Cart>): Record<string, unknown> {
+    const data: Record<string, unknown> = {};
     if (entity.userId) data.user_id = entity.userId;
     if (entity.updatedAt) data.updated_at = entity.updatedAt.toISOString();
     return data;

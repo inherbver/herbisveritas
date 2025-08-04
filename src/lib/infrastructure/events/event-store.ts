@@ -19,11 +19,14 @@ interface StoredEventRecord {
   event_type: string;
   aggregate_id: string;
   aggregate_type: string;
-  event_data: any; // JSONB
+  event_data: Record<string, unknown>; // JSONB
   version: number;
   occurred_at: string;
   created_at?: string;
   checksum?: string;
+  user_id?: string;
+  correlation_id?: string;
+  causation_id?: string;
 }
 
 /**

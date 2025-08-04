@@ -320,15 +320,19 @@ export class EventCorrelation {
  */
 export class EventValidation {
   static isValidEvent(event: unknown): event is DomainEvent {
+    if (typeof event !== 'object' || event === null) {
+      return false;
+    }
+    
+    const candidate = event as Record<string, unknown>;
+    
     return (
-      typeof event === 'object' &&
-      event !== null &&
-      'eventId' in event && typeof (event as any).eventId === 'string' &&
-      'eventType' in event && typeof (event as any).eventType === 'string' &&
-      'aggregateId' in event && typeof (event as any).aggregateId === 'string' &&
-      'aggregateType' in event && typeof (event as any).aggregateType === 'string' &&
-      'occurredAt' in event && (event as any).occurredAt instanceof Date &&
-      'version' in event && typeof (event as any).version === 'number'
+      typeof candidate.eventId === 'string' &&
+      typeof candidate.eventType === 'string' &&
+      typeof candidate.aggregateId === 'string' &&
+      typeof candidate.aggregateType === 'string' &&
+      candidate.occurredAt instanceof Date &&
+      typeof candidate.version === 'number'
     );
   }
 
@@ -339,7 +343,7 @@ export class EventValidation {
   static sanitizeEventData(eventData: unknown): unknown {
     // Remove sensitive data and perform basic sanitization
     if (typeof eventData === 'object' && eventData !== null) {
-      const sanitized = { ...eventData } as any;
+      const sanitized = { ...eventData } as Record<string, unknown>;
       
       // Remove common sensitive fields
       delete sanitized.password;

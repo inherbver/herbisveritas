@@ -7,11 +7,22 @@ import "mapbox-gl/dist/mapbox-gl.css";
 declare global {
   interface Window {
     handleColissimoSelect?: (point: PointRetrait) => void;
+    jQuery?: JQueryStatic;
+    $?: JQueryStatic;
+    [callbackId: string]: unknown; // Pour les callbacks dynamiques
   }
   interface JQuery {
     frameColissimoOpen(options: ColissimoWidgetOptions): void;
     frameColissimoClose(): void;
   }
+}
+
+// Interface pour jQuery avec plugin Colissimo
+interface JQueryWithColissimo extends JQueryStatic {
+  fn: JQueryStatic['fn'] & {
+    frameColissimoOpen?: (options: ColissimoWidgetOptions) => void;
+    frameColissimoClose?: () => void;
+  };
 }
 
 export interface PointRetrait {
@@ -60,7 +71,7 @@ const loadColissimoScript = (src: string): Promise<void> => {
     // Vérifier si le script est déjà chargé et si le plugin est disponible
     const existingScript = document.querySelector(`script[src="${src}"]`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (existingScript && ($ as any).fn.frameColissimoOpen) {
+    if (existingScript && ($ as JQueryWithColissimo).fn.frameColissimoOpen) {
       console.log("Script Colissimo déjà chargé et plugin disponible");
       resolve();
       return;
@@ -71,12 +82,11 @@ const loadColissimoScript = (src: string): Promise<void> => {
 
     // S'assurer que jQuery est disponible globalement
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof (window as any).jQuery === "undefined") {
+    if (typeof window.jQuery === "undefined") {
       console.log("jQuery non disponible globalement, exposition...");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).jQuery = $;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).$ = $;
+      window.jQuery = $;
+      window.$ = $;
     }
 
     console.log("Chargement du script Colissimo...");
@@ -91,8 +101,8 @@ const loadColissimoScript = (src: string): Promise<void> => {
       // Vérifier que le plugin jQuery est bien disponible
       const checkPlugin = () => {
         const jQueryAvailable =
-          typeof $ !== "undefined" && typeof (window as any).jQuery !== "undefined"; // eslint-disable-line @typescript-eslint/no-explicit-any
-        const pluginAvailable = jQueryAvailable && ($ as any).fn.frameColissimoOpen; // eslint-disable-line @typescript-eslint/no-explicit-any
+          typeof $ !== "undefined" && typeof window.jQuery !== "undefined";
+        const pluginAvailable = jQueryAvailable && ($ as JQueryWithColissimo).fn.frameColissimoOpen;
 
         console.log(`jQuery disponible: ${jQueryAvailable}, Plugin disponible: ${pluginAvailable}`);
 
@@ -151,7 +161,7 @@ export default function ColissimoWidget({
 
         // Vérification finale que le plugin est bien disponible
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (!$ || !($ as any).fn.frameColissimoOpen) {
+        if (!$ || !($ as JQueryWithColissimo).fn.frameColissimoOpen) {
           throw new Error("Le plugin jQuery Colissimo n'est pas disponible après chargement");
         }
 
@@ -180,14 +190,14 @@ export default function ColissimoWidget({
 
         // Définir la callback globale unique pour cette instance
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any)[callbackId.current] = (point: PointRetrait) => {
+        window[callbackId.current] = (point: PointRetrait) => {
           console.log("Point de retrait sélectionné:", point);
           onSelect(point);
 
           // Fermer le widget après sélection
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if (($ as any).fn.frameColissimoClose) {
+            if (($ as JQueryWithColissimo).fn.frameColissimoClose) {
               container.frameColissimoClose();
             }
           } catch (closeError) {
@@ -217,9 +227,8 @@ export default function ColissimoWidget({
       // Nettoyer la callback globale
       const currentCallbackId = callbackId.current; // Copy to avoid ref issues
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((window as any)[currentCallbackId]) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (window as any)[currentCallbackId];
+      if (window[currentCallbackId]) {
+        delete window[currentCallbackId];
       }
 
       // Fermer le widget s'il est ouvert

@@ -25,6 +25,33 @@ import { OrderWorkflowEventListener } from "./listeners/order-workflow.event-lis
 import { NotificationEventListener } from "./listeners/notification.event-listener";
 import { AuditEventListener } from "./listeners/audit.event-listener";
 
+// Event Listener Interfaces
+interface CartEventListenerInterface {
+  handleCartItemAdded: (event: unknown) => Promise<void>;
+  handleCartItemRemoved: (event: unknown) => Promise<void>;
+  handleCartItemQuantityUpdated: (event: unknown) => Promise<void>;
+  handleCartCleared: (event: unknown) => Promise<void>;
+  handleProductStockUpdated: (event: unknown) => Promise<void>;
+  handleProductPriceChanged: (event: unknown) => Promise<void>;
+}
+
+interface OrderWorkflowEventListenerInterface {
+  handleOrderCreated: (event: unknown) => Promise<void>;
+  handleOrderConfirmed: (event: unknown) => Promise<void>;
+  handleOrderShipped: (event: unknown) => Promise<void>;
+  handleOrderDelivered: (event: unknown) => Promise<void>;
+  handleOrderCancelled: (event: unknown) => Promise<void>;
+}
+
+interface NotificationEventListenerInterface {
+  handleUserRegistered: (event: unknown) => Promise<void>;
+  handleUserProfileUpdated: (event: unknown) => Promise<void>;
+}
+
+interface AuditEventListenerInterface {
+  handleAuditEvent: (event: unknown) => Promise<void>;
+}
+
 /**
  * Configure the complete event system in the DI container
  */
@@ -239,28 +266,10 @@ export async function initializeEventSystem(container: { resolve: (token: string
     const eventBus: EventBus = container.resolve(SERVICE_TOKENS.EVENT_BUS) as EventBus;
     
     // Get all event listeners
-    const cartListener = container.resolve(SERVICE_TOKENS.CART_EVENT_LISTENER) as { 
-      handleCartItemAdded: (event: unknown) => Promise<void>;
-      handleCartItemRemoved: (event: unknown) => Promise<void>;
-      handleCartItemQuantityUpdated: (event: unknown) => Promise<void>;
-      handleCartCleared: (event: unknown) => Promise<void>;
-      handleProductStockUpdated: (event: unknown) => Promise<void>;
-      handleProductPriceChanged: (event: unknown) => Promise<void>;
-    };
-    const orderWorkflowListener = container.resolve(SERVICE_TOKENS.ORDER_WORKFLOW_EVENT_LISTENER) as {
-      handleOrderCreated: (event: unknown) => Promise<void>;
-      handleOrderConfirmed: (event: unknown) => Promise<void>;
-      handleOrderShipped: (event: unknown) => Promise<void>;
-      handleOrderDelivered: (event: unknown) => Promise<void>;
-      handleOrderCancelled: (event: unknown) => Promise<void>;
-    };
-    const notificationListener = container.resolve(SERVICE_TOKENS.NOTIFICATION_EVENT_LISTENER) as {
-      handleUserRegistered: (event: unknown) => Promise<void>;
-      handleUserProfileUpdated: (event: unknown) => Promise<void>;
-    };
-    const auditListener = container.resolve(SERVICE_TOKENS.AUDIT_EVENT_LISTENER) as {
-      handleAuditEvent: (event: unknown) => Promise<void>;
-    };
+    const cartListener = container.resolve(SERVICE_TOKENS.CART_EVENT_LISTENER) as CartEventListenerInterface;
+    const orderWorkflowListener = container.resolve(SERVICE_TOKENS.ORDER_WORKFLOW_EVENT_LISTENER) as OrderWorkflowEventListenerInterface;
+    const notificationListener = container.resolve(SERVICE_TOKENS.NOTIFICATION_EVENT_LISTENER) as NotificationEventListenerInterface;
+    const auditListener = container.resolve(SERVICE_TOKENS.AUDIT_EVENT_LISTENER) as AuditEventListenerInterface;
 
     // Register Cart Event Subscriptions
     await eventBus.subscribe('CART_ITEM_ADDED', (event) => cartListener.handleCartItemAdded(event));
@@ -352,7 +361,7 @@ export async function checkEventSystemHealth(container: { resolve: (token: strin
 
   for (const token of handlerTokens) {
     try {
-      const handler = container.resolve((SERVICE_TOKENS as any)[token]);
+      const handler = container.resolve((SERVICE_TOKENS as Record<string, string>)[token]);
       result.handlers[token] = handler !== null;
     } catch (error) {
       result.handlers[token] = false;
@@ -370,7 +379,7 @@ export async function checkEventSystemHealth(container: { resolve: (token: strin
 
   for (const token of listenerTokens) {
     try {
-      const listener = container.resolve((SERVICE_TOKENS as any)[token]);
+      const listener = container.resolve((SERVICE_TOKENS as Record<string, string>)[token]);
       result.listeners[token] = listener !== null;
     } catch (error) {
       result.listeners[token] = false;

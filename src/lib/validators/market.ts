@@ -254,7 +254,22 @@ export const updateMarketFormSchema = z.object({
     .optional()
     .default('true'),
 }).transform((data) => {
-  const result: Record<string, any> = {};
+  // Type spécifique pour les données de mise à jour du marché
+  const result: Partial<{
+    name: string;
+    start_date: string;
+    end_date: string;
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+    city: string;
+    address: string;
+    description: string;
+    gps_link: string;
+    hero_image_url: string;
+    image_url: string;
+    is_active: boolean;
+  }> = {};
   
   // Only include non-empty fields
   if (data.name && data.name.trim()) result.name = data.name.trim();

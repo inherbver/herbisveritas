@@ -2,6 +2,16 @@
  * Application-specific error types and utilities
  */
 
+/**
+ * Supabase error structure
+ */
+export interface SupabaseError {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+}
+
 export abstract class AppError extends Error {
   abstract readonly code: string;
   abstract readonly statusCode: number;
@@ -246,7 +256,7 @@ export const ErrorUtils = {
   /**
    * Creates error from Supabase error
    */
-  fromSupabaseError: (error: any): AppError => {
+  fromSupabaseError: (error: SupabaseError): AppError => {
     if (!error) {
       return new DatabaseError('Erreur de base de données inconnue');
     }

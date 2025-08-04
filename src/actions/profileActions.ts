@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { z } from "zod";
@@ -24,11 +23,22 @@ const accountInfoSchema = z.object({
     .nullable(), // Allows null
 });
 
+// Interface pour les erreurs de validation du profil
+type ProfileValidationErrors = Partial<Record<keyof z.infer<typeof accountInfoSchema>, string[]>>;
+
+// Interface pour les données à insérer dans la base de données
+interface ProfileUpsertData {
+  id: string;
+  updated_at: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string | null;
+}
+
 export interface UpdateProfileFormState {
-  // This state type might need to be adjusted if its errors field is tied to the full profileSchema
   success: boolean;
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof accountInfoSchema>, string[]>> | null; // Adjusted to accountInfoSchema
+  errors?: ProfileValidationErrors | null;
   resetKey?: string; // To help trigger form reset on successful submission
 }
 
@@ -67,13 +77,13 @@ export async function updateUserProfile(
     return {
       success: false,
       message: "Validation failed. Please check the errors.",
-      errors: validationResult.error.flatten().fieldErrors as any,
+      errors: validationResult.error.flatten().fieldErrors as ProfileValidationErrors,
     };
   }
 
   const accountInfoUpdateData = validationResult.data;
 
-  const dataToUpsert: any = {
+  const dataToUpsert: ProfileUpsertData = {
     id: user.id,
     updated_at: new Date().toISOString(),
     first_name: accountInfoUpdateData.first_name,

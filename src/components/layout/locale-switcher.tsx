@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { LanguagesIcon } from "lucide-react";
 import { startTransition } from "react";
 
+// Type pour les paramètres de navigation
+type NavigationParams = Record<string, string | string[]>;
+
 export default function LocaleSwitcher() {
   return null; // Masquer le sélecteur de langue
   const t = useTranslations("Global.LocaleSwitcher");
@@ -48,9 +51,7 @@ export default function LocaleSwitcher() {
       router.replace(
         {
           pathname: pathname as AppPathname, // pathname is already AppPathname
-          // TODO: Refactor params construction for stricter type compatibility with next-intl
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          params: newParams as any,
+          params: newParams as NavigationParams,
         },
         { locale: otherLocale }
       );
