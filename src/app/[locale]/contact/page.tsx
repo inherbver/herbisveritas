@@ -10,7 +10,7 @@ import { Mail, Phone, MapPin } from "lucide-react"; // Icônes pour les coordonn
 import { MarketCalendarView } from "@/components/domain/market/MarketCalendarView"; // Import du nouveau composant calendrier
 import { SocialFollow } from "@/components/domain/social/SocialFollow"; // Import du composant pour les réseaux sociaux
 import { PartnerShopCard, PartnerShop } from "@/components/domain/partner/PartnerShopCard";
-import partnersData from "@/data/partners.json"; // Import du composant pour les réseaux sociaux
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type Props = {
   params: Promise<{ locale: string }>; // ✅ Changement pour Next.js 15
@@ -24,6 +24,14 @@ export default async function ContactPage({ params }: Props) {
 
   const nextMarket = await getNextUpcomingMarket();
   const allSortedMarkets = await getAllMarketsSorted(); // Récupération de tous les marchés triés
+
+  // Récupération des partenaires actifs depuis Supabase
+  const supabase = await createSupabaseServerClient();
+  const { data: partners = [] } = await supabase
+    .from("partners")
+    .select("*")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
 
   const heroProps: HeroProps = {
     heading: t("defaultHeroHeading"),
@@ -51,7 +59,14 @@ export default async function ContactPage({ params }: Props) {
     heroProps.ctaLink = { pathname: targetPath, hash: "marches" };
   }
 
-  const partners: PartnerShop[] = partnersData;
+  // Transformation des données Supabase vers le format PartnerShop
+  const partnerShops: PartnerShop[] = partners.map(partner => ({
+    name: partner.name,
+    description: partner.description,
+    address: partner.address,
+    imageUrl: partner.image_url || "",
+    facebookUrl: partner.facebook_url || undefined
+  }));
 
   return (
     <>
@@ -128,7 +143,7 @@ export default async function ContactPage({ params }: Props) {
             </p>
           </header>
           <section className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2" role="list">
-            {partners.map((partner) => (
+            {partnerShops.map((partner) => (
               <article key={partner.name} role="listitem">
                 <PartnerShopCard partner={partner} />
               </article>

@@ -78,6 +78,7 @@ export async function createPartner(formData: FormData): Promise<ActionResult<{ 
     // 5. Revalidate cache
     revalidatePath("/partenaires");
     revalidatePath("/admin/partners");
+    revalidatePath("/contact");
 
     // 6. TODO: Emit event (Phase 4)
     // await emitPartnerCreatedEvent(data.id, validation.data);
@@ -155,6 +156,7 @@ export async function updatePartner(
     // 5. Revalidate cache
     revalidatePath("/partenaires");
     revalidatePath("/admin/partners");
+    revalidatePath("/contact");
 
     // 6. TODO: Emit event (Phase 4)
     // await emitPartnerUpdatedEvent(id, validation.data);
@@ -228,6 +230,7 @@ export async function deletePartner(id: string): Promise<ActionResult<void>> {
     // 5. Revalidate cache
     revalidatePath("/partenaires");
     revalidatePath("/admin/partners");
+    revalidatePath("/contact");
 
     // 6. TODO: Emit event (Phase 4)
     // await emitPartnerDeletedEvent(id, partner);
@@ -370,6 +373,7 @@ export async function updatePartnersOrder(
     // 4. Revalidate cache
     revalidatePath("/partenaires");
     revalidatePath("/admin/partners");
+    revalidatePath("/contact");
 
     // 5. TODO: Emit event (Phase 4)
     // await emitPartnersOrderUpdatedEvent(validation.data.partners);
@@ -437,6 +441,7 @@ export async function togglePartnerStatus(
     // 4. Revalidate cache
     revalidatePath("/partenaires");
     revalidatePath("/admin/partners");
+    revalidatePath("/contact");
 
     // 5. TODO: Emit event (Phase 4)
     // await emitPartnerStatusChangedEvent(validation.data.id, validation.data.is_active);
