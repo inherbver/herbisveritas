@@ -12,7 +12,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 import { ActionResult } from "@/lib/core/result";
-import type { Partner, CreatePartnerData, UpdatePartnerData } from "@/types/partner";
+import type { Partner } from "@/types/partner";
 import { 
   createPartnerSchema, 
   updatePartnerSchema, 

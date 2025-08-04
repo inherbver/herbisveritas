@@ -12,14 +12,12 @@
 
 import crypto from "crypto";
 import { revalidateTag } from "next/cache";
-import { z } from "zod";
 
 import { getActiveUserId } from "@/utils/authUtils";
 import {
   createGeneralErrorResult,
   createSuccessResult,
   createValidationErrorResult,
-  isGeneralErrorResult,
   type CartActionResult,
 } from "@/lib/cart-helpers";
 import { getCart } from "@/lib/cartReader";
@@ -47,8 +45,6 @@ import {
   AddToCartInputSchema,
   RemoveFromCartInputSchema,
   UpdateCartItemQuantityInputSchema,
-  type RemoveFromCartInput,
-  type UpdateCartItemQuantityInput,
 } from "@/lib/validators/cart.validator";
 
 // Re-export getCart for external usage
@@ -339,7 +335,7 @@ export async function clearCartAction(): Promise<CartActionResult<CartData | nul
   try {
     const supabase = await createSupabaseServerClient();
     const adminSupabase = await createSupabaseAdminClient();
-    const userId = await getActiveUserId(supabase);
+    const _userId = await getActiveUserId(supabase);
 
     // Get current cart
     const cartResult = await getCart();

@@ -70,7 +70,7 @@ const loadColissimoScript = (src: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Vérifier si le script est déjà chargé et si le plugin est disponible
     const existingScript = document.querySelector(`script[src="${src}"]`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     if (existingScript && ($ as JQueryWithColissimo).fn.frameColissimoOpen) {
       console.log("Script Colissimo déjà chargé et plugin disponible");
       resolve();
@@ -81,10 +81,10 @@ const loadColissimoScript = (src: string): Promise<void> => {
     document.querySelectorAll('script[src*="colissimo"]').forEach((script) => script.remove());
 
     // S'assurer que jQuery est disponible globalement
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     if (typeof window.jQuery === "undefined") {
       console.log("jQuery non disponible globalement, exposition...");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       window.jQuery = $;
       window.$ = $;
     }
@@ -160,7 +160,7 @@ export default function ColissimoWidget({
         );
 
         // Vérification finale que le plugin est bien disponible
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         if (!$ || !($ as JQueryWithColissimo).fn.frameColissimoOpen) {
           throw new Error("Le plugin jQuery Colissimo n'est pas disponible après chargement");
         }
@@ -189,14 +189,14 @@ export default function ColissimoWidget({
         console.log("Configuration du widget Colissimo:", widgetOptions);
 
         // Définir la callback globale unique pour cette instance
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         window[callbackId.current] = (point: PointRetrait) => {
           console.log("Point de retrait sélectionné:", point);
           onSelect(point);
 
           // Fermer le widget après sélection
           try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             
             if (($ as JQueryWithColissimo).fn.frameColissimoClose) {
               container.frameColissimoClose();
             }
@@ -226,7 +226,7 @@ export default function ColissimoWidget({
     return () => {
       // Nettoyer la callback globale
       const currentCallbackId = callbackId.current; // Copy to avoid ref issues
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       if (window[currentCallbackId]) {
         delete window[currentCallbackId];
       }
