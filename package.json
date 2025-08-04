@@ -11,7 +11,8 @@
     "test": "jest",
     "prepare": "husky",
     "audit-roles": "tsx scripts/audit-roles.ts",
-    "fix-admin-role": "tsx scripts/fix-admin-role.ts"
+    "fix-admin-role": "tsx scripts/fix-admin-role.ts",
+    "migrate:markets-partners": "tsx scripts/migrate-markets-partners.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -92,6 +93,7 @@
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.54.2",
     "@supabase/functions-js": "^2.4.5",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

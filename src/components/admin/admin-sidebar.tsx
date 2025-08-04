@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Package, Users, FileText } from "lucide-react";
+import { Home, Package, Users, FileText, MapPin, Handshake } from "lucide-react";
 import { cn } from "@/utils/cn";
 
 const navItems = [
   { href: "/admin", label: "Vue d'ensemble", icon: Home },
   { href: "/admin/products", label: "Produits", icon: Package },
   { href: "/admin/magazine", label: "Magazine", icon: FileText },
+  { href: "/admin/markets", label: "Marchés", icon: MapPin },
+  { href: "/admin/partners", label: "Partenaires", icon: Handshake },
   { href: "/admin/users", label: "Gestions utilisateurs", icon: Users },
   // { href: '/admin/orders', label: 'Commandes', icon: ShoppingCart }, // Future
 ];

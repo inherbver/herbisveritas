@@ -76,6 +76,7 @@ export async function middleware(request: NextRequest) {
 
   // Gestion plus robuste de la récupération de l'utilisateur avec timeout et retry
   let user = null;
+  let authTimedOut = false;
 
   // Fonction helper pour les appels Supabase avec timeout
   const supabaseCallWithTimeout = async <T>(
@@ -117,6 +118,7 @@ export async function middleware(request: NextRequest) {
     if (e instanceof Error && e.message === "Supabase_Timeout") {
       console.warn("Supabase auth timeout in middleware. Continuing without blocking navigation.");
       user = null;
+      authTimedOut = true;
     } else if (
       e instanceof Error &&
       (e.message.includes("fetch") ||
@@ -181,6 +183,12 @@ export async function middleware(request: NextRequest) {
   // Protéger les routes admin avec le nouveau système basé sur la base de données
   else if (pathToCheck.startsWith("/admin")) {
     if (!user) {
+      // Si c'est un timeout, ne pas rediriger vers login - laisser la page gérer l'auth
+      if (authTimedOut) {
+        console.warn("Auth timeout in middleware for admin route. Letting page handle authentication.");
+        return response;
+      }
+      
       // Utilisateur non authentifié : redirection vers la page de connexion avec redirectUrl
       const loginRedirectPath = `/${currentLocale}/login?redirectUrl=${encodeURIComponent(request.nextUrl.pathname)}`;
       return NextResponse.redirect(new URL(loginRedirectPath, request.nextUrl.origin));

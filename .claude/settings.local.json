@@ -47,7 +47,10 @@
       "mcp__context7__get-library-docs",
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_tab_new",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(where chrome)",
+      "Bash(where chromium)",
+      "Bash(npx playwright test:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

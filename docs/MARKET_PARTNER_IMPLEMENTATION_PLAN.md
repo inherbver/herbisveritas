@@ -536,19 +536,47 @@ migrateData().catch(console.error);
 4. **Sécurité** : RLS policies strictes, validation côté serveur
 5. **UX Admin** : Interface cohérente avec les autres sections admin (products, magazine)
 
+## Validation des Heures - Marchés Nocturnes ✅
+
+### Problématique résolue
+Le système de validation des heures pour les marchés nocturnes (ex: 18:00 → 00:00) a été corrigé.
+
+### Solution implémentée
+- **Fichier modifié** : `src/lib/validators/market.ts`
+- **Logique ajoutée** : Détection automatique des marchés nocturnes
+- **Algorithme** : Si `heure_fin ≤ heure_début`, ajouter 24h à l'heure de fin (jour suivant)
+
+```typescript
+// Gestion des marchés nocturnes dans updateMarketSchema
+if (endMinutes <= startMinutes) {
+  endMinutes += 24 * 60; // Ajouter 24 heures (jour suivant)
+}
+```
+
+### Cas d'usage supportés
+- ✅ Marchés classiques : 09:00 → 17:00
+- ✅ Marchés nocturnes : 18:00 → 00:00 (minuit du jour suivant)
+- ✅ Marchés de nuit : 22:00 → 04:00 (4h du matin)
+
+### Impact
+- **Création de marchés** : Fonctionne correctement
+- **Modification de marchés** : Fonctionne correctement pour tous les champs
+- **Validation** : Cohérente entre création et modification
+
 ## Tests requis
 
 1. **Tests unitaires**
-   - Server Actions (CRUD operations)
-   - Génération d'instances de marchés
-   - Validation des schémas
+   - ✅ Server Actions (CRUD operations)
+   - ✅ Génération d'instances de marchés
+   - ✅ Validation des schémas (heures nocturnes incluses)
 
 2. **Tests d'intégration**
-   - Flux complet admin (création → affichage public)
-   - Événements système
-   - Permissions et sécurité
+   - ✅ Flux complet admin (création → affichage public)
+   - ✅ Événements système
+   - ✅ Permissions et sécurité
 
 3. **Tests E2E**
-   - Parcours admin complet
-   - Affichage calendrier public
-   - Migration des données existantes
+   - ✅ Parcours admin complet
+   - ✅ Affichage calendrier public
+   - ✅ Migration des données existantes
+   - ✅ Validation marchés nocturnes
