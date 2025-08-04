@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPartner, updatePartner } from "@/actions/partnerActions";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Partner } from "@/types/partner";
+import { ImageUploadButton } from "@/components/shared/image-upload-button";
+import { uploadPartnerImageCore } from "@/lib/storage/image-upload";
 
 interface PartnerFormProps {
   partner?: Partner;
@@ -23,6 +25,7 @@ export function PartnerForm({ partner, mode = "create" }: PartnerFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const imageUrlRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -124,17 +127,37 @@ export function PartnerForm({ partner, mode = "create" }: PartnerFormProps) {
             />
           </div>
 
-          {/* URL de l'image */}
+          {/* URL de l'image avec upload */}
           <div className="space-y-2">
             <Label htmlFor="image_url">URL de l'image *</Label>
-            <Input
-              id="image_url"
-              name="image_url"
-              type="url"
-              defaultValue={partner?.image_url}
-              required
-              placeholder="https://example.com/image.jpg"
-            />
+            <div className="flex gap-2">
+              <Input
+                ref={imageUrlRef}
+                id="image_url"
+                name="image_url"
+                type="url"
+                defaultValue={partner?.image_url}
+                required
+                placeholder="https://example.com/image.jpg"
+                className="flex-1"
+              />
+              <ImageUploadButton
+                onUploadSuccess={(url) => {
+                  if (imageUrlRef.current) {
+                    imageUrlRef.current.value = url;
+                  }
+                }}
+                uploadFunction={uploadPartnerImageCore}
+                label="Upload"
+              />
+            </div>
+            {partner?.image_url && (
+              <img 
+                src={partner.image_url} 
+                alt="Logo partenaire" 
+                className="h-24 w-auto rounded-md"
+              />
+            )}
           </div>
 
           {/* URL Facebook */}

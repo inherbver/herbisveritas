@@ -5,29 +5,33 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { uploadMagazineImage } from "@/actions/magazineActions";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { Upload, Link2, X } from "lucide-react";
+import { Upload, Link2, X, Loader2 } from "lucide-react";
+import type { UploadImageResult } from "@/lib/storage/image-upload";
 
-interface MagazineImageUploadFieldProps<T extends FieldValues> {
+interface ImageUploadFieldProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>;
   label?: string;
   description?: string;
   placeholder?: string;
   required?: boolean;
+  uploadFunction: (formData: FormData) => Promise<UploadImageResult>;
+  translationKey?: string;
 }
 
-export function MagazineImageUploadField<T extends FieldValues>({
+export function ImageUploadField<T extends FieldValues>({
   control,
   name,
   label,
   description,
   placeholder = "https://exemple.com/image.jpg",
   required = false,
-}: MagazineImageUploadFieldProps<T>) {
-  const t = useTranslations("AdminMagazine");
+  uploadFunction,
+  translationKey = "Common",
+}: ImageUploadFieldProps<T>) {
+  const t = useTranslations(translationKey);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleImageUpload = async (file: File, onChange: (url: string) => void) => {
@@ -37,7 +41,7 @@ export function MagazineImageUploadField<T extends FieldValues>({
       formData.append("file", file);
       formData.append("fileName", file.name.split(".")[0]);
 
-      const result = await uploadMagazineImage(formData);
+      const result = await uploadFunction(formData);
 
       if (result.success) {
         onChange(result.data.url);
@@ -61,7 +65,7 @@ export function MagazineImageUploadField<T extends FieldValues>({
         <FormItem>
           <FormLabel className="flex items-center gap-2">
             <Link2 className="h-4 w-4" />
-            {label || "Image à la une"}
+            {label || "Image"}
             {required && <span className="text-red-500">*</span>}
           </FormLabel>
           <FormControl>
@@ -111,8 +115,17 @@ export function MagazineImageUploadField<T extends FieldValues>({
                   disabled={isUploading}
                   className="shrink-0"
                 >
-                  <Upload className="mr-2 h-4 w-4" />
-                  {isUploading ? t("upload.uploading") : t("upload.uploadButton")}
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Téléversement...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Téléverser
+                    </>
+                  )}
                 </Button>
               </div>
 
@@ -138,12 +151,12 @@ export function MagazineImageUploadField<T extends FieldValues>({
                         className="opacity-90"
                       >
                         <X className="mr-1 h-4 w-4" />
-                        {t("upload.remove")}
+                        Supprimer
                       </Button>
                     </div>
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {t("upload.supportedFormats")}
+                    Formats supportés: JPEG, PNG, WebP, GIF (max 4Mo)
                   </p>
                 </div>
               )}
