@@ -15,7 +15,6 @@ import { ActionResult, FormActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
 import { 
   ValidationError, 
-  AuthenticationError,
   ErrorUtils 
 } from "@/lib/core/errors";
 import { AuthErrorHandler } from "@/lib/auth/error-handler";

@@ -4,7 +4,7 @@ import type { AuthError } from '@supabase/supabase-js';
 interface ErrorContext {
   showResendButton?: boolean;
   email?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export class AuthErrorHandler {

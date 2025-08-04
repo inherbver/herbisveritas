@@ -8,15 +8,15 @@ import { useEffect } from 'react';
 import type { ZodSchema } from 'zod';
 import type { FormActionResult } from '@/lib/core/result';
 
-interface UseAuthFormOptions<T extends Record<string, any>> {
+interface UseAuthFormOptions<T extends Record<string, unknown>> {
   schema: ZodSchema<T>;
-  action: (state: any, formData: FormData) => Promise<FormActionResult<any>>;
-  onSuccess?: (data: any) => void;
+  action: (state: FormActionResult<unknown> | null, formData: FormData) => Promise<FormActionResult<unknown>>;
+  onSuccess?: (data: unknown) => void;
   defaultValues?: T;
   useFormOptions?: Omit<UseFormProps<T>, 'resolver' | 'defaultValues'>;
 }
 
-export function useAuthForm<T extends Record<string, any>>({
+export function useAuthForm<T extends Record<string, unknown>>({
   schema,
   action,
   onSuccess,
@@ -52,7 +52,7 @@ export function useAuthForm<T extends Record<string, any>>({
     if (state.fieldErrors) {
       Object.entries(state.fieldErrors).forEach(([field, messages]) => {
         const message = Array.isArray(messages) ? messages[0] : messages;
-        form.setError(field as any, {
+        form.setError(field as keyof T, {
           type: 'server',
           message: message as string
         });

@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useAuthForm } from "@/hooks/useAuthForm";
 import { signUpAction } from "@/actions/authActions";
 import { createSignupSchema } from "@/lib/validators/auth.validator";
+import { FormActionResult } from "@/lib/core/result";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -61,7 +62,7 @@ export function RegisterForm() {
   type FormValues = z.infer<typeof formSchema>;
 
   // Créer une action wrapper qui ajoute la locale
-  const signUpWithLocaleAction = async (state: any, formData: FormData) => {
+  const signUpWithLocaleAction = async (state: FormActionResult<null> | null, formData: FormData) => {
     formData.append("locale", locale);
     return signUpAction(state, formData);
   };
