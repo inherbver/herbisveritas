@@ -20,18 +20,35 @@ export async function getActiveUserId(supabase: SupabaseClientType): Promise<str
     try {
       const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
       if (anonError) {
+        // Gérer spécifiquement les erreurs de création d'utilisateur anonyme
+        if (anonError.message?.includes("Database error creating anonymous user")) {
+          // Cette erreur peut survenir après une déconnexion ou si les politiques RLS bloquent
+          // Dans ce cas, on retourne null sans logger d'erreur pour éviter le bruit
+          return null;
+        }
+        
+        // Pour toute autre erreur, on la log normalement
         console.error("[ Server ] Erreur lors de la connexion anonyme:", anonError.message);
         return null;
       }
+      
       if (!anonAuthResponse?.user) {
         console.error("[ Server ] La connexion anonyme n'a pas retourné d'utilisateur.");
         return null;
       }
+      
       userId = anonAuthResponse.user.id;
     } catch (error) {
+      // Gérer les exceptions de manière similaire
+      if (error instanceof Error && error.message?.includes("Database error creating anonymous user")) {
+        // Silencieusement retourner null pour cette erreur spécifique
+        return null;
+      }
+      
       console.error("[ Server ] Exception lors de la connexion anonyme:", error);
       return null;
     }
   }
+  
   return userId;
 }

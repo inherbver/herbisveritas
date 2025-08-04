@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useWatch } from "react-hook-form";
 import { z } from "zod";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
-
+import { useAuthForm } from "@/hooks/useAuthForm";
 import { signUpAction } from "@/actions/authActions";
 import { createSignupSchema } from "@/lib/validators/auth.validator";
 import { Button } from "@/components/ui/button";
@@ -33,6 +31,8 @@ import {
   PasswordRequirement,
   PasswordStrengthBar,
 } from "@/components/domain/auth/password-strength";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import Link from "next/link";
 
 const MIN_LENGTH = 8;
 const REGEX_UPPERCASE = /[A-Z]/;
@@ -49,7 +49,6 @@ export function RegisterForm() {
   const router = useRouter();
   const locale = params.locale as string;
 
-  const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [requirements, setRequirements] = useState({
     length: false,
@@ -61,16 +60,26 @@ export function RegisterForm() {
   const formSchema = createSignupSchema(tPassword, tValidation);
   type FormValues = z.infer<typeof formSchema>;
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  // Créer une action wrapper qui ajoute la locale
+  const signUpWithLocaleAction = async (state: any, formData: FormData) => {
+    formData.append("locale", locale);
+    return signUpAction(state, formData);
+  };
+
+  const { form, state, formAction, isLoading, control } = useAuthForm<FormValues>({
+    schema: formSchema,
+    action: signUpWithLocaleAction,
     defaultValues: {
       email: "",
       password: "",
       confirmPassword: "",
     },
+    onSuccess: () => {
+      router.push(`/${locale}/login`);
+    }
   });
 
-  const passwordValue = useWatch({ control: form.control, name: "password" });
+  const passwordValue = useWatch({ control, name: "password" });
 
   useEffect(() => {
     const newRequirements = {
@@ -85,38 +94,6 @@ export function RegisterForm() {
     setPasswordStrength(strength);
   }, [passwordValue]);
 
-  async function onSubmit(values: FormValues) {
-    setIsLoading(true);
-
-    const formData = new FormData();
-    formData.append("email", values.email);
-    formData.append("password", values.password);
-    formData.append("confirmPassword", values.confirmPassword);
-    formData.append("locale", locale);
-
-    const result = await signUpAction(undefined, formData);
-
-    if (result.success) {
-      toast.success(result.message || tAuth("feedback.success"));
-      router.push(`/${locale}/login`);
-    } else {
-      // Affiche les erreurs de champ spécifiques
-      if (result.fieldErrors) {
-        Object.entries(result.fieldErrors).forEach(([field, errors]) => {
-          form.setError(field as keyof FormValues, {
-            type: "manual",
-            message: errors.join(", "),
-          });
-        });
-      }
-      // Affiche une erreur générale si elle existe
-      if (result.error) {
-        toast.error(result.error);
-      }
-    }
-    setIsLoading(false);
-  }
-
   return (
     <Card className="border-border/50 w-full max-w-md rounded-xl shadow-xl">
       <CardHeader className="space-y-1 text-center">
@@ -125,9 +102,17 @@ export function RegisterForm() {
           {tAuth("description")}
         </CardDescription>
       </CardHeader>
+      
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form action={formAction}>
           <CardContent className="space-y-4">
+            {/* Affichage des erreurs générales */}
+            {state?.error && !state?.fieldErrors && (
+              <Alert variant="destructive">
+                <AlertDescription>{state.error}</AlertDescription>
+              </Alert>
+            )}
+            
             <FormField
               control={form.control}
               name="email"
@@ -135,12 +120,19 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>{tAuth("emailLabel")}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="nom@exemple.com" {...field} />
+                    <Input 
+                      type="email" 
+                      placeholder="nom@exemple.com" 
+                      autoComplete="email"
+                      {...field} 
+                      disabled={isLoading}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="password"
@@ -148,7 +140,12 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>{tAuth("passwordLabel")}</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder="••••••••" {...field} />
+                    <PasswordInput 
+                      placeholder="••••••••" 
+                      autoComplete="new-password"
+                      {...field} 
+                      disabled={isLoading}
+                    />
                   </FormControl>
                   <FormMessage />
                   <div className="mt-2 space-y-1">
@@ -170,6 +167,7 @@ export function RegisterForm() {
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="confirmPassword"
@@ -177,13 +175,19 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>{tAuth("confirmPasswordLabel")}</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder="••••••••" {...field} />
+                    <PasswordInput 
+                      placeholder="••••••••" 
+                      autoComplete="new-password"
+                      {...field} 
+                      disabled={isLoading}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </CardContent>
+          
           <CardFooter className="flex flex-col">
             <Button
               type="submit"
@@ -196,12 +200,12 @@ export function RegisterForm() {
             </Button>
             <p className="mt-4 text-center text-sm">
               {tAuth("loginPrompt")}{" "}
-              <a
+              <Link
                 href={`/${locale}/login`}
                 className="hover:text-primary/90 font-semibold text-primary underline-offset-4 transition-colors hover:underline"
               >
                 {tAuth("loginLink")}
-              </a>
+              </Link>
             </p>
           </CardFooter>
         </form>

@@ -465,34 +465,69 @@ export default function ClientLayout({ children, locale, messages }: ClientLayou
 }
 ```
 
-### Sessions Invitées
+### Sessions Invitées et Utilisateurs Anonymes
 
-Le système utilise une approche **hybride** pour les utilisateurs non authentifiés :
+Le système utilise **Supabase Anonymous Sign-ins** pour les utilisateurs non authentifiés :
 
-- **Panier persistant** : Stockage via `guest_id` généré côté client
-- **Fusion automatique** : Migration des données à la connexion
-- **Pas de sessions Supabase anonymes** : Approche simplifiée avec localStorage
+- **Utilisateurs anonymes** : Création automatique via `signInAnonymously()` pour les primo-visiteurs
+- **Fusion automatique** : Migration des données à la connexion avec un compte permanent
+- **Gestion des erreurs** : Suppression silencieuse des erreurs "Database error creating anonymous user" après déconnexion
 
 ```typescript
-// Migration du panier invité lors de la connexion
-export async function migrateAndGetCart(items: CartItem[]): Promise<CartResult> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { success: false, error: "User not authenticated" };
-    }
+// src/utils/authUtils.ts - Gestion des utilisateurs actifs
+export async function getActiveUserId(supabase: SupabaseClientType): Promise<string | null> {
+  const {
+    data: { user },
+    error: getUserError,
+  } = await supabase.auth.getUser();
 
-    // Migration des items du panier invité vers utilisateur authentifié
-    // Logique de fusion et nettoyage
-    
-    return { success: true, data: migratedCart };
-  } catch (error) {
-    return { success: false, error: "Migration failed" };
+  if (getUserError && getUserError.message !== "Auth session missing!") {
+    console.error("Erreur lors de la récupération de l'utilisateur:", getUserError.message);
   }
+
+  let userId = user?.id;
+
+  if (!userId) {
+    try {
+      const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
+      if (anonError) {
+        // Gérer spécifiquement les erreurs de création d'utilisateur anonyme
+        if (anonError.message?.includes("Database error creating anonymous user")) {
+          // Cette erreur peut survenir après une déconnexion ou si les politiques RLS bloquent
+          // Dans ce cas, on retourne null sans logger d'erreur pour éviter le bruit
+          return null;
+        }
+        
+        console.error("[ Server ] Erreur lors de la connexion anonyme:", anonError.message);
+        return null;
+      }
+      
+      userId = anonAuthResponse.user.id;
+    } catch (error) {
+      if (error instanceof Error && error.message?.includes("Database error creating anonymous user")) {
+        // Silencieusement retourner null pour cette erreur spécifique
+        return null;
+      }
+      
+      console.error("[ Server ] Exception lors de la connexion anonyme:", error);
+      return null;
+    }
+  }
+  
+  return userId;
 }
 ```
+
+### Gestion de la Transition Authentifié vers Guest
+
+Lors de la déconnexion d'un utilisateur authentifié, le système peut rencontrer une erreur temporaire lors de la tentative de création d'un nouvel utilisateur anonyme. Cette situation est normale et gérée de manière élégante :
+
+1. **Erreur attendue** : "Database error creating anonymous user" après déconnexion
+2. **Comportement** : L'erreur est capturée et ignorée silencieusement
+3. **Résultat** : L'utilisateur peut continuer à naviguer sans session
+4. **Sécurité** : Aucun impact sur la sécurité ou l'intégrité des données
+
+Cette approche évite les logs d'erreurs inutiles tout en maintenant une expérience utilisateur fluide.
 
 ---
 

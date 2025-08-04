@@ -1,12 +1,8 @@
 "use client";
 
-"use client";
-
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
-import React, { useEffect } from "react"; // Import useEffect
-import { toast } from "sonner"; // Import toast from sonner
+import React from "react";
 import { useTranslations } from "next-intl";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,56 +12,51 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  loginAction,
-  resendConfirmationEmailAction,
-  type AuthActionResult,
-} from "@/actions/authActions";
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  const t = useTranslations("Auth.LoginForm");
-  return (
-    <Button
-      type="submit"
-      size="lg"
-      variant="secondary"
-      className="w-full shadow-md transition-transform duration-200 ease-in-out active:scale-95 hover:scale-105"
-      disabled={pending}
-    >
-      {pending ? t("loading") : t("submitButton")}
-    </Button>
-  );
-}
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuthForm } from "@/hooks/useAuthForm";
+import { loginAction, resendConfirmationEmailAction } from "@/actions/authActions";
+import { createLoginSchema } from "@/lib/validators/auth.validator";
+import { toast } from "sonner";
+import Link from "next/link";
 
 export function LoginForm() {
   const t = useTranslations("Auth.LoginForm");
-  const initialState: AuthActionResult = {
-    success: false,
-    error: undefined,
-    message: undefined,
-    // fieldErrors removed
-  };
-  const [state, formAction] = useActionState(loginAction, initialState);
-  const [email, setEmail] = React.useState("");
-
-  useEffect(() => {
-    if (state.error) {
-      toast.error(state.error);
-    }
-    if (state.success && state.message) {
-      toast.success(state.message);
-    }
-  }, [state]);
+  const tValidation = useTranslations("Auth.validation");
+  
+  // Créer le schéma avec les traductions
+  const loginSchema = createLoginSchema(tValidation);
+  type LoginFormData = z.infer<typeof loginSchema>;
+  
+  const { form, state, formAction, isLoading } = useAuthForm<LoginFormData>({
+    schema: loginSchema,
+    action: loginAction,
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   const handleResendEmail = async () => {
+    const email = form.getValues("email");
+    if (!email) {
+      toast.error("Veuillez entrer votre email");
+      return;
+    }
+    
     const result = await resendConfirmationEmailAction(email);
     if (result.success) {
-      toast.success(result.message);
+      toast.success(result.message || "Email de confirmation envoyé");
     } else {
-      toast.error(result.error);
+      toast.error(result.error || "Erreur lors de l'envoi");
     }
   };
 
@@ -77,60 +68,101 @@ export function LoginForm() {
           {t("description")}
         </CardDescription>
       </CardHeader>
-      <form action={formAction}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">{t("emailLabel")}</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="m@exemple.com"
-              required
-              onChange={(e) => setEmail(e.target.value)}
-              value={email}
-            />
-            {/* Email validation errors handled by general error message */}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">{t("passwordLabel")}</Label>
-            <Input id="password" name="password" type="password" required />
-            <div className="text-right">
-              <a
-                href="/forgot-password"
-                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+      
+      <Form {...form}>
+        <form action={formAction}>
+          <CardContent className="space-y-4">
+            {/* Affichage des erreurs générales avec gestion du bouton de renvoi */}
+            {state?.error && !state?.fieldErrors && (
+              <Alert variant="destructive">
+                <AlertDescription>{state.error}</AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Affichage du bouton de renvoi d'email si nécessaire */}
+            {state?.data?.showResendButton && (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={handleResendEmail}
+                className="w-full"
+                disabled={isLoading}
               >
-                {t("forgotPasswordLink")}
-              </a>
-            </div>
-            {/* Password validation errors handled by general error message */}
-          </div>
-          {/* General form error message is now handled by toast */}
-        </CardContent>
-        <CardFooter className="flex-col">
-          {state.error?.includes("Email non confirmé") && (
+                {t("resendConfirmationButton")}
+              </Button>
+            )}
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("emailLabel")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="m@exemple.com"
+                      autoComplete="email"
+                      {...field}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("passwordLabel")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      {...field}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <div className="text-right">
+                    <Link
+                      href="/forgot-password"
+                      className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      {t("forgotPasswordLink")}
+                    </Link>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </CardContent>
+          
+          <CardFooter>
             <Button
-              variant="outline"
-              type="button"
-              onClick={handleResendEmail}
-              className="mb-4 w-full"
+              type="submit"
+              size="lg"
+              variant="secondary"
+              className="w-full shadow-md transition-transform duration-200 ease-in-out active:scale-95 hover:scale-105"
+              disabled={isLoading}
             >
-              {t("resendConfirmationButton")}
+              {isLoading ? t("loading") : t("submitButton")}
             </Button>
-          )}
-          <div className="mt-6 w-full">
-            <SubmitButton />
-          </div>
-        </CardFooter>
-      </form>
+          </CardFooter>
+        </form>
+      </Form>
+      
       <p className="mt-4 px-6 pb-6 text-center text-sm">
         {t("registerPrompt")}{" "}
-        <a
+        <Link
           href="/register"
           className="hover:text-primary/90 font-semibold text-primary underline-offset-4 transition-colors hover:underline"
         >
           {t("registerLink")}
-        </a>
+        </Link>
       </p>
     </Card>
   );

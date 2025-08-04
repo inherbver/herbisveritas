@@ -18,6 +18,7 @@ import {
   AuthenticationError,
   ErrorUtils 
 } from "@/lib/core/errors";
+import { AuthErrorHandler } from "@/lib/auth/error-handler";
 
 // --- Schéma Login ---
 const loginSchema = z.object({
@@ -25,19 +26,13 @@ const loginSchema = z.object({
   password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
 });
 
-// --- Types d'Actions --- (Deprecated: use ActionResult<T> instead)
-export interface AuthActionResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-}
+// --- Types d'Actions --- (Use ActionResult<T> or FormActionResult<T> from @/lib/core/result)
 
 // --- Action de Connexion ---
 export async function loginAction(
-  prevState: AuthActionResult | undefined,
+  prevState: FormActionResult<null> | null,
   formData: FormData
-): Promise<ActionResult<null>> {
+): Promise<FormActionResult<null>> {
   const context = LogUtils.createUserActionContext('unknown', 'login', 'auth');
   LogUtils.logOperationStart('login', context);
 
@@ -51,10 +46,8 @@ export async function loginAction(
     });
 
     if (!validatedFields.success) {
-      throw new ValidationError(
-        'Données de connexion invalides',
-        undefined,
-        { validationErrors: validatedFields.error.flatten().fieldErrors }
+      return FormActionResult.fieldValidationError(
+        validatedFields.error.flatten().fieldErrors
       );
     }
 
@@ -74,10 +67,7 @@ export async function loginAction(
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      if (error.message === "Email not confirmed") {
-        throw new AuthenticationError("Email non confirmé. Veuillez vérifier votre boîte de réception.");
-      }
-      throw new AuthenticationError("L'email ou le mot de passe est incorrect.");
+      return AuthErrorHandler.handleSupabaseError(error, { email });
     }
 
     // 4. Si la connexion est réussie et qu'un utilisateur invité a été détecté, tenter la migration du panier
@@ -107,10 +97,6 @@ export async function loginAction(
   } catch (error) {
     LogUtils.logOperationError('login', error, context);
     
-    if (error instanceof AuthenticationError || error instanceof ValidationError) {
-      return ActionResult.error(ErrorUtils.formatForUser(error));
-    }
-    
     // Si c'est une redirection Next.js, la relancer
     if (
       typeof error === "object" &&
@@ -122,13 +108,23 @@ export async function loginAction(
       throw error;
     }
     
-    return ActionResult.error('Une erreur inattendue est survenue');
+    if (error instanceof ValidationError && error.context?.validationErrors) {
+      return FormActionResult.fieldValidationError(
+        error.context.validationErrors as Record<string, string[]>
+      );
+    }
+    
+    return FormActionResult.error(
+      ErrorUtils.isAppError(error) 
+        ? ErrorUtils.formatForUser(error) 
+        : "Une erreur inattendue est survenue lors de la connexion"
+    );
   }
 }
 
 // --- Action d'Inscription ---
 export async function signUpAction(
-  prevState: AuthActionResult | undefined,
+  prevState: FormActionResult<null> | null,
   formData: FormData
 ): Promise<FormActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
@@ -153,10 +149,8 @@ export async function signUpAction(
     });
 
     if (!validatedFields.success) {
-      throw new ValidationError(
-        'Données d\'inscription invalides',
-        undefined,
-        { validationErrors: validatedFields.error.flatten().fieldErrors }
+      return FormActionResult.fieldValidationError(
+        validatedFields.error.flatten().fieldErrors
       );
     }
 
@@ -165,9 +159,11 @@ export async function signUpAction(
     // 2. Construire l'URL de redirection
     const origin = process.env.NEXT_PUBLIC_BASE_URL;
     if (!origin) {
-      throw new Error("NEXT_PUBLIC_BASE_URL n'est pas définie.");
+      return FormActionResult.error(
+        "Configuration serveur incorrecte. Veuillez contacter l'administrateur."
+      );
     }
-  const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
+    const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
 
     // 3. Essayer d'inscrire l'utilisateur
     const { data, error } = await supabase.auth.signUp({
@@ -179,13 +175,7 @@ export async function signUpAction(
     });
 
     if (error) {
-      const t = await getTranslations({ locale, namespace: "Auth.validation" });
-      
-      if (error.message.includes("User already registered")) {
-        throw new ValidationError(t("emailAlreadyExists"));
-      }
-      
-      throw new AuthenticationError(t("genericSignupError"));
+      return AuthErrorHandler.handleSupabaseError(error, { email });
     }
 
     // 4. Audit the successful signup
@@ -221,7 +211,7 @@ export async function signUpAction(
     }
     
     return FormActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue lors de l\'inscription'
     );
   }
 }

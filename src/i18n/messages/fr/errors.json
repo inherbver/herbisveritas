@@ -1,0 +1,38 @@
+{
+  "auth": {
+    "invalidCredentials": "Email ou mot de passe incorrect",
+    "emailNotConfirmed": "Email non confirmé. Veuillez vérifier votre boîte de réception.",
+    "accountLocked": "Votre compte a été temporairement verrouillé pour des raisons de sécurité",
+    "tooManyAttempts": "Trop de tentatives. Veuillez réessayer dans quelques minutes.",
+    "userAlreadyRegistered": "Un compte existe déjà avec cet email",
+    "networkError": "Erreur de connexion. Vérifiez votre connexion internet",
+    "serverError": "Une erreur serveur est survenue. Veuillez réessayer",
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter",
+    "invalidResetToken": "Le lien de réinitialisation est invalide ou a expiré",
+    "signupDisabled": "Les inscriptions sont temporairement désactivées",
+    "emailRateLimitExceeded": "Trop d'emails envoyés. Veuillez réessayer plus tard",
+    "weakPassword": "Le mot de passe est trop faible",
+    "unexpectedError": "Une erreur inattendue est survenue",
+    "loginUnexpectedError": "Une erreur inattendue est survenue lors de la connexion",
+    "signupUnexpectedError": "Une erreur inattendue est survenue lors de l'inscription",
+    "databaseError": "Erreur de base de données. Veuillez réessayer",
+    "configurationError": "Configuration serveur incorrecte. Veuillez contacter l'administrateur"
+  },
+  "validation": {
+    "fieldRequired": "Ce champ est requis",
+    "invalidEmail": "Email invalide",
+    "passwordTooShort": "Le mot de passe doit contenir au moins {min} caractères",
+    "passwordTooLong": "Le mot de passe ne peut pas dépasser {max} caractères",
+    "passwordRequiresUppercase": "Le mot de passe doit contenir au moins une majuscule",
+    "passwordRequiresNumber": "Le mot de passe doit contenir au moins un chiffre",
+    "passwordRequiresSpecial": "Le mot de passe doit contenir au moins un caractère spécial",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "invalidData": "Données invalides. Veuillez vérifier vos informations"
+  },
+  "general": {
+    "retry": "Réessayer",
+    "contactSupport": "Contacter le support",
+    "goBack": "Retour",
+    "close": "Fermer"
+  }
+}

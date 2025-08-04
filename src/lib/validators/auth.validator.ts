@@ -56,3 +56,15 @@ export const createResetPasswordSchema = (
       message: tAuth("passwordsDoNotMatch"),
       path: ["confirmPassword"],
     });
+
+// Schéma pour le formulaire de connexion (login)
+export const createLoginSchema = (t: ReturnType<typeof useTranslations>) =>
+  z.object({
+    email: z
+      .string()
+      .min(1, { message: t("emailRequired") })
+      .email({ message: t("emailInvalid") }),
+    password: z
+      .string()
+      .min(1, { message: t("passwordRequired") }),
+  });
