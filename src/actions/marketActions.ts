@@ -19,6 +19,10 @@ import {
   validateMarketForm,
   validateUpdateMarketForm
 } from "@/lib/validators/market";
+import {
+  uploadMarketImageCore,
+  UploadImageResult as CoreUploadImageResult,
+} from "@/lib/storage/image-upload";
 
 /**
  * Create a new market
@@ -318,3 +322,9 @@ export async function getMarketById(id: string): Promise<ActionResult<Market>> {
 export async function redirectToMarketsAdmin(): Promise<never> {
   redirect("/admin/markets");
 }
+
+/**
+ * Upload market image
+ */
+export type UploadImageResult = CoreUploadImageResult;
+export const uploadMarketImage = uploadMarketImageCore;

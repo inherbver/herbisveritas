@@ -20,6 +20,10 @@ import {
   updatePartnerOrderSchema,
   togglePartnerStatusSchema
 } from "@/lib/validators/partner";
+import {
+  uploadPartnerImageCore,
+  UploadImageResult as CoreUploadImageResult,
+} from "@/lib/storage/image-upload";
 
 /**
  * Create a new partner
@@ -458,3 +462,9 @@ export async function togglePartnerStatus(
 export async function redirectToPartnersAdmin(): Promise<never> {
   redirect("/admin/partners");
 }
+
+/**
+ * Upload partner image
+ */
+export type UploadImageResult = CoreUploadImageResult;
+export const uploadPartnerImage = uploadPartnerImageCore;

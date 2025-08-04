@@ -26,7 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { AutoSaveEditor } from "@/components/magazine/auto-save-editor";
 import { TipTapViewer } from "@/components/magazine/tiptap-viewer";
-import { MagazineImageUploadField } from "@/components/admin/magazine/image-upload-field";
+import { ImageUploadField } from "@/components/shared/image-upload-field";
+import { uploadMagazineImageCore } from "@/lib/storage/image-upload";
 import { createArticle, updateArticle } from "@/actions/magazineActions";
 import { ArticleDisplay, Category, Tag, ArticleFormData, TipTapContent } from "@/types/magazine";
 
@@ -371,11 +372,13 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
             <TabsContent value="settings" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 {/* Image mise en avant */}
-                <MagazineImageUploadField
+                <ImageUploadField
                   control={form.control}
                   name="featured_image"
                   label="Image mise en avant"
                   description="Choisissez une image qui représente bien votre article"
+                  uploadFunction={uploadMagazineImageCore}
+                  translationKey="AdminMagazine"
                   placeholder="https://example.com/image.jpg"
                 />
 

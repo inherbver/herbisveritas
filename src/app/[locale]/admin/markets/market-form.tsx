@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createMarket, updateMarket } from "@/actions/marketActions";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Market } from "@/types/market";
+import { ImageUploadButton } from "@/components/shared/image-upload-button";
+import { uploadMarketImageCore } from "@/lib/storage/image-upload";
 
 interface MarketFormProps {
   market?: Market;
@@ -34,6 +36,8 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const heroImageRef = useRef<HTMLInputElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -223,27 +227,67 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
             />
           </div>
 
-          {/* Images */}
+          {/* Images avec upload */}
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="hero_image_url">Image principale (URL)</Label>
-              <Input
-                id="hero_image_url"
-                name="hero_image_url"
-                type="url"
-                defaultValue={market?.hero_image_url || ""}
-                placeholder="https://example.com/image.jpg"
-              />
+              <Label htmlFor="hero_image_url">Image principale</Label>
+              <div className="flex gap-2">
+                <Input
+                  ref={heroImageRef}
+                  id="hero_image_url"
+                  name="hero_image_url"
+                  type="url"
+                  defaultValue={market?.hero_image_url || ""}
+                  placeholder="https://example.com/image.jpg"
+                  className="flex-1"
+                />
+                <ImageUploadButton
+                  onUploadSuccess={(url) => {
+                    if (heroImageRef.current) {
+                      heroImageRef.current.value = url;
+                    }
+                  }}
+                  uploadFunction={uploadMarketImageCore}
+                  label="Upload"
+                />
+              </div>
+              {market?.hero_image_url && (
+                <img 
+                  src={market.hero_image_url} 
+                  alt="Image principale" 
+                  className="h-24 w-auto rounded-md"
+                />
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image_url">Image secondaire (URL)</Label>
-              <Input
-                id="image_url"
-                name="image_url"
-                type="url"
-                defaultValue={market?.image_url || ""}
-                placeholder="https://example.com/image2.jpg"
-              />
+              <Label htmlFor="image_url">Image secondaire</Label>
+              <div className="flex gap-2">
+                <Input
+                  ref={imageRef}
+                  id="image_url"
+                  name="image_url"
+                  type="url"
+                  defaultValue={market?.image_url || ""}
+                  placeholder="https://example.com/image2.jpg"
+                  className="flex-1"
+                />
+                <ImageUploadButton
+                  onUploadSuccess={(url) => {
+                    if (imageRef.current) {
+                      imageRef.current.value = url;
+                    }
+                  }}
+                  uploadFunction={uploadMarketImageCore}
+                  label="Upload"
+                />
+              </div>
+              {market?.image_url && (
+                <img 
+                  src={market.image_url} 
+                  alt="Image secondaire" 
+                  className="h-24 w-auto rounded-md"
+                />
+              )}
             </div>
           </div>
 

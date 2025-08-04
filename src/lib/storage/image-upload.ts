@@ -30,7 +30,7 @@ export type UploadImageResult =
 
 // Configuration par bucket
 interface BucketConfig {
-  bucket: "products" | "magazine";
+  bucket: "products" | "magazine" | "contact";
   permission: AppPermission;
   usePermissionSafe?: boolean;
 }
@@ -125,6 +125,22 @@ export const uploadProductImageCore = withPermissionSafe(
 export async function uploadMagazineImageCore(formData: FormData): Promise<UploadImageResult> {
   return uploadImageCore(formData, {
     bucket: "magazine",
+    permission: "content:create",
+  });
+}
+
+// Market image upload
+export async function uploadMarketImageCore(formData: FormData): Promise<UploadImageResult> {
+  return uploadImageCore(formData, {
+    bucket: "contact",
+    permission: "content:create",
+  });
+}
+
+// Partner image upload
+export async function uploadPartnerImageCore(formData: FormData): Promise<UploadImageResult> {
+  return uploadImageCore(formData, {
+    bucket: "contact",
     permission: "content:create",
   });
 }

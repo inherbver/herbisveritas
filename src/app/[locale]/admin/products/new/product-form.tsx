@@ -36,7 +36,8 @@ import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createProduct, updateProduct } from "@/actions/productActions";
-import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { ImageUploadField } from "@/components/shared/image-upload-field";
+import { uploadProductImageCore } from "@/lib/storage/image-upload";
 import { type ProductWithTranslations } from "@/lib/supabase/queries/products";
 import { type Database } from "@/types/supabase";
 
@@ -291,7 +292,12 @@ export function ProductForm({ initialData }: ProductFormProps) {
                 </div>
               </div>
 
-              <ImageUploadField control={form.control} name="image_url" />
+              <ImageUploadField 
+                control={form.control} 
+                name="image_url" 
+                uploadFunction={uploadProductImageCore}
+                translationKey="AdminProducts"
+              />
 
               {/* Sélecteur de statut */}
               <FormField
