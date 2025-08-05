@@ -45,7 +45,12 @@
       "Bash(timeout 30 npm run build)",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "Bash(mkdir:*)"
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_tab_new",
+      "Bash(mkdir:*)",
+      "Bash(where chrome)",
+      "Bash(where chromium)",
+      "Bash(npx playwright test:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

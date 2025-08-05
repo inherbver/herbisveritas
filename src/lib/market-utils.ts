@@ -1,26 +1,37 @@
-import { MarketInfo, RecurringMarketInfo } from "@/types/market";
+/**
+ * Market Utilities
+ * 
+ * Utilities for working with market data. This file has been updated to use
+ * database data instead of JSON files, while maintaining backward compatibility
+ * with the existing API.
+ */
+
+import { MarketInfo } from "@/types/market";
+import { 
+  getAllMarketInstances, 
+  getUpcomingMarkets, 
+  getNextUpcomingMarket as getNextUpcomingMarketFromDb,
+  getAllMarketsSorted as getAllMarketsSortedFromDb
+} from "@/lib/markets/queries";
+
+// Legacy imports for backward compatibility (will be removed after migration)
 import recurringMarketsData from "@/data/markets.json";
+import { RecurringMarketInfo } from "@/types/market";
 
 /**
- * Generates a list of single-date market instances from recurring market data.
- * This function is not exported and is used internally to build the `allMarketInstances` constant.
- * It iterates through the date range specified in each recurring market entry and creates
- * an instance for each matching day of the week. All date calculations are done in UTC
- * to ensure timezone consistency.
- * @returns An array of MarketInfo objects, each representing a specific market day.
+ * Legacy function for generating market instances from JSON data
+ * @deprecated Use database queries instead
  */
-function generateMarketInstances(): MarketInfo[] {
+function generateMarketInstancesLegacy(): MarketInfo[] {
   const recurringMarkets: RecurringMarketInfo[] = recurringMarketsData;
   const allInstances: MarketInfo[] = [];
 
   recurringMarkets.forEach((recurringMarket) => {
-    // Dates from JSON are strings like 'YYYY-MM-DD'. new Date('YYYY-MM-DD') creates a date at UTC midnight.
     const startDate = new Date(recurringMarket.startDate);
     const endDate = new Date(recurringMarket.endDate);
     const dayOfWeek = recurringMarket.dayOfWeek;
 
     const currentDate = new Date(startDate);
-    // No need to set hours, it's already at midnight UTC.
 
     while (currentDate <= endDate) {
       if (currentDate.getUTCDay() === dayOfWeek) {
@@ -28,7 +39,7 @@ function generateMarketInstances(): MarketInfo[] {
         allInstances.push({
           id: `${recurringMarket.id}-${isoDate}`,
           name: recurringMarket.name,
-          date: isoDate, // YYYY-MM-DD string
+          date: isoDate,
           startTime: recurringMarket.startTime,
           endTime: recurringMarket.endTime,
           city: recurringMarket.city,
@@ -46,8 +57,8 @@ function generateMarketInstances(): MarketInfo[] {
   return allInstances;
 }
 
-// Generate all market instances once
-const allMarketInstances = generateMarketInstances();
+// Fallback to legacy data if database is not available
+const legacyMarketInstances = generateMarketInstancesLegacy();
 
 /**
  * Formats a date string (YYYY-MM-DD) into a more readable format.
@@ -64,70 +75,93 @@ export function formatDate(dateString: string, locale: string = "fr-FR"): string
 }
 
 /**
- * Retrieves the next upcoming market from the generated list.
+ * Retrieves the next upcoming market.
+ * Now uses database data with fallback to legacy JSON data.
  * All date comparisons are done in UTC to ensure consistency.
  */
 export async function getNextUpcomingMarket(): Promise<MarketInfo | null> {
-  const now = new Date();
+  try {
+    // Try to get from database first
+    return await getNextUpcomingMarketFromDb();
+  } catch (error) {
+    console.warn("Failed to fetch market from database, falling back to legacy data:", error);
+    
+    // Fallback to legacy logic
+    const now = new Date();
+    const upcomingMarkets = legacyMarketInstances
+      .filter((market) => {
+        const marketDateString = market.date;
+        let marketEndDateTime;
 
-  const upcomingMarkets = allMarketInstances
-    .filter((market) => {
-      const marketDateString = market.date;
-      let marketEndDateTime;
+        if (market.endTime === "00:00") {
+          const tempDate = new Date(marketDateString + "T00:00:00Z");
+          tempDate.setUTCDate(tempDate.getUTCDate() + 1);
+          marketEndDateTime = tempDate;
+        } else {
+          marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00Z`);
+        }
+        return marketEndDateTime > now;
+      })
+      .sort((a, b) => {
+        const aStartDateTime = new Date(`${a.date}T${a.startTime}:00Z`);
+        const bStartDateTime = new Date(`${b.date}T${b.startTime}:00Z`);
+        return aStartDateTime.getTime() - bStartDateTime.getTime();
+      });
 
-      if (market.endTime === "00:00") {
-        // Market ends at midnight, which is the start of the next day.
-        const tempDate = new Date(marketDateString + "T00:00:00Z"); // Midnight UTC on market day
-        tempDate.setUTCDate(tempDate.getUTCDate() + 1); // Advance to next day in UTC
-        marketEndDateTime = tempDate;
-      } else {
-        marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00Z`); // Create as UTC
-      }
-      return marketEndDateTime > now;
-    })
-    .sort((a, b) => {
-      const aStartDateTime = new Date(`${a.date}T${a.startTime}:00Z`);
-      const bStartDateTime = new Date(`${b.date}T${b.startTime}:00Z`);
-      return aStartDateTime.getTime() - bStartDateTime.getTime();
-    });
-
-  return upcomingMarkets.length > 0 ? upcomingMarkets[0] : null;
+    return upcomingMarkets.length > 0 ? upcomingMarkets[0] : null;
+  }
 }
 
 /**
- * Retrieves all upcoming markets from the generated list, sorted by date.
+ * Retrieves all upcoming markets, sorted by date.
+ * Now uses database data with fallback to legacy JSON data.
  * All date comparisons are done in UTC to ensure consistency.
  */
 export async function getAllUpcomingMarkets(): Promise<MarketInfo[]> {
-  const now = new Date();
+  try {
+    // Try to get from database first
+    return await getUpcomingMarkets();
+  } catch (error) {
+    console.warn("Failed to fetch markets from database, falling back to legacy data:", error);
+    
+    // Fallback to legacy logic
+    const now = new Date();
+    return legacyMarketInstances
+      .filter((market) => {
+        const marketDateString = market.date;
+        let marketEndDateTime;
 
-  return allMarketInstances
-    .filter((market) => {
-      const marketDateString = market.date;
-      let marketEndDateTime;
-
-      if (market.endTime === "00:00") {
-        // Market ends at midnight, which is the start of the next day.
-        const tempDate = new Date(marketDateString + "T00:00:00Z"); // Midnight UTC on market day
-        tempDate.setUTCDate(tempDate.getUTCDate() + 1); // Advance to next day in UTC
-        marketEndDateTime = tempDate;
-      } else {
-        marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00Z`); // Create as UTC
-      }
-      return marketEndDateTime > now;
-    })
-    .sort((a, b) => {
-      const aStartDateTime = new Date(`${a.date}T${a.startTime}:00Z`);
-      const bStartDateTime = new Date(`${b.date}T${b.startTime}:00Z`);
-      return aStartDateTime.getTime() - bStartDateTime.getTime();
-    });
+        if (market.endTime === "00:00") {
+          const tempDate = new Date(marketDateString + "T00:00:00Z");
+          tempDate.setUTCDate(tempDate.getUTCDate() + 1);
+          marketEndDateTime = tempDate;
+        } else {
+          marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00Z`);
+        }
+        return marketEndDateTime > now;
+      })
+      .sort((a, b) => {
+        const aStartDateTime = new Date(`${a.date}T${a.startTime}:00Z`);
+        const bStartDateTime = new Date(`${b.date}T${b.startTime}:00Z`);
+        return aStartDateTime.getTime() - bStartDateTime.getTime();
+      });
+  }
 }
 
 /**
- * Retrieves all generated market instances, sorted by date (most recent first).
+ * Retrieves all market instances, sorted by date (most recent first).
+ * Now uses database data with fallback to legacy JSON data.
  */
 export async function getAllMarketsSorted(): Promise<MarketInfo[]> {
-  return [...allMarketInstances].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  try {
+    // Try to get from database first
+    return await getAllMarketsSortedFromDb();
+  } catch (error) {
+    console.warn("Failed to fetch markets from database, falling back to legacy data:", error);
+    
+    // Fallback to legacy logic
+    return [...legacyMarketInstances].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }
 }

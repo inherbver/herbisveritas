@@ -38,3 +38,5 @@ export type Cart = Table<"carts">;
 export type CartItem = Table<"cart_items">;
 export type Profile = Table<"profiles">;
 export type Address = Table<"addresses">;
+export type Market = Table<"markets">;
+export type Partner = Table<"partners">;
