@@ -36,6 +36,7 @@ const Logo = () => {
       href="/"
       className="font-serif text-xl font-bold text-primary md:text-2xl"
       aria-label={tGlobal("Header.logoAriaLabel")}
+      data-testid="logo-link"
     >
       In Herbis Veritas
     </Link>
@@ -113,7 +114,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
       setAuthState({ session: newSession, isLoading: false });
 
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-        setTimeout(() => router.refresh(), 100);
+        setTimeout(() => router?.refresh(), 100);
       }
     });
 
@@ -156,7 +157,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
         <div className="flex items-center gap-6">
           <Logo />
           {/* 4. Navigation Principale (Desktop) */}
-          <NavigationMenu className="hidden md:flex">
+          <NavigationMenu className="hidden md:flex" data-testid="main-navigation">
             <NavigationMenuList>
               {navLinks.map((link) => {
                 const isActive = pathname === link.href;
@@ -178,7 +179,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
               })}
               {isAdmin && (
                 <NavigationMenuItem>
-                  <Link href="/admin" className={navigationMenuTriggerStyle()}>
+                  <Link href="/admin" className={navigationMenuTriggerStyle()} data-testid="admin-nav-link">
                     Admin
                   </Link>
                 </NavigationMenuItem>
@@ -198,14 +199,14 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
             </div>
           ) : isLoggedIn ? (
             <div className="flex items-center gap-2">
-              <Link href="/profile/account">
-                <Button variant="ghost" size="sm">
+              <Link href="/profile/account" data-testid="profile-link">
+                <Button variant="ghost" size="sm" data-testid="profile-button">
                   {tGlobal("Header.accountAriaLabel")}
                 </Button>
               </Link>
               {isAdmin && (
-                <Link href="/admin">
-                  <Button variant="secondary" size="sm">
+                <Link href="/admin" data-testid="admin-link">
+                  <Button variant="secondary" size="sm" data-testid="admin-button">
                     Admin
                   </Button>
                 </Link>
@@ -214,7 +215,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
           ) : (
             <>
               <Button asChild variant="ghost" size="sm" className="rounded-2xl">
-                <Link href="/login">{tGlobal("Header.login")}</Link>
+                <Link href="/login" data-testid="login-link">{tGlobal("Header.login")}</Link>
               </Button>
               <Button asChild variant="primary" size="sm" className="rounded-2xl">
                 <Link href="/register">{tGlobal("Header.register")}</Link>

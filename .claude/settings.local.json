@@ -50,7 +50,8 @@
       "Bash(mkdir:*)",
       "Bash(where chrome)",
       "Bash(where chromium)",
-      "Bash(npx playwright test:*)"
+      "Bash(npx playwright test:*)",
+      "Bash(git cherry-pick:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

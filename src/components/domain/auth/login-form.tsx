@@ -34,6 +34,7 @@ function SubmitButton() {
       variant="secondary"
       className="w-full shadow-md transition-transform duration-200 ease-in-out active:scale-95 hover:scale-105"
       disabled={pending}
+      data-testid="login-submit-button"
     >
       {pending ? t("loading") : t("submitButton")}
     </Button>
@@ -70,14 +71,14 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="border-border/50 w-full max-w-sm rounded-xl shadow-xl">
+    <Card className="border-border/50 w-full max-w-sm rounded-xl shadow-xl" data-testid="login-form">
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-2xl font-bold tracking-tight">{t("title")}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
           {t("description")}
         </CardDescription>
       </CardHeader>
-      <form action={formAction}>
+      <form action={formAction} data-testid="login-form-element">
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">{t("emailLabel")}</Label>
@@ -89,6 +90,7 @@ export function LoginForm() {
               required
               onChange={(e) => setEmail(e.target.value)}
               value={email}
+              data-testid="email-input"
             />
             {state.fieldErrors?.email && (
               <p className="text-sm font-medium text-destructive">
@@ -98,7 +100,7 @@ export function LoginForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("passwordLabel")}</Label>
-            <Input id="password" name="password" type="password" required />
+            <Input id="password" name="password" type="password" required data-testid="password-input" />
             <div className="text-right">
               <a
                 href="/forgot-password"

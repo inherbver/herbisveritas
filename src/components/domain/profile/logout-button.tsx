@@ -16,6 +16,7 @@ function SubmitLogoutButton() {
       className="w-full sm:w-auto"
       disabled={pending}
       aria-disabled={pending}
+      data-testid="logout-button"
     >
       {pending ? t("pendingButtonText") : t("buttonText")}
     </Button>
@@ -24,7 +25,7 @@ function SubmitLogoutButton() {
 
 export function LogoutButton() {
   return (
-    <form action={logoutAction}>
+    <form action={logoutAction} data-testid="logout-form">
       <SubmitLogoutButton />
     </form>
   );

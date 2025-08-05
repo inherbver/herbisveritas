@@ -1,0 +1,144 @@
+# Page snapshot
+
+```yaml
+- alert: Mon Compte - In Herbis Veritas
+- button "Open Next.js Dev Tools":
+  - img
+- button "Open issues overlay": 2 Issue
+- button "Collapse issues badge":
+  - img
+- banner:
+  - text: Livraison offerte dès 50€ d'achat !
+  - link "In Herbis Veritas - Retour à la page d'accueil":
+    - /url: /
+    - text: In Herbis Veritas
+  - navigation "Main":
+    - list:
+      - listitem:
+        - link "Boutique":
+          - /url: /shop
+      - listitem:
+        - link "Magazine":
+          - /url: /magazine
+      - listitem:
+        - link "Retrouvez-nous":
+          - /url: /contact
+      - listitem:
+        - link "Nos Racines":
+          - /url: /about
+      - listitem:
+        - link "Admin":
+          - /url: /admin
+  - button "6 articles Ouvrir le Panier": 6 Ouvrir le Panier
+  - link "Mon compte":
+    - /url: /profile/account
+    - button "Mon compte"
+  - link "Admin":
+    - /url: /admin
+    - button "Admin"
+- complementary "Navigation du Profil":
+  - heading "Navigation du Profil" [level=2]
+  - navigation "Navigation du Profil":
+    - link "Mon Compte":
+      - /url: /fr/profile/account
+    - link "Mes Adresses":
+      - /url: /fr/profile/addresses
+    - link "Mes Commandes":
+      - /url: /fr/profile/orders
+    - link "Mon Mot de Passe":
+      - /url: /fr/profile/password
+- main:
+  - article:
+    - heading "Informations Personnelles" [level=2]
+    - link "Modifier":
+      - /url: /fr/profile/account/edit
+    - term: Nom complet
+    - definition: Maria Palazon
+    - term: Adresse E-mail
+    - definition: inherbver@gmail.com
+  - article:
+    - heading "Mes Adresses" [level=2]
+    - link "Gérer":
+      - /url: /fr/profile/addresses
+    - checkbox "Mon adresse de facturation est identique à mon adresse de livraison"
+    - text: Mon adresse de facturation est identique à mon adresse de livraison
+    - heading "Adresse de Livraison" [level=3]
+    - term: Ligne d'Adresse 1
+    - definition: 14 Place des Carmélites
+    - term: Ligne d'Adresse 2 (Optionnel)
+    - definition: Ilôt 6 - Appt 195
+    - term: Code Postal
+    - definition: "32000"
+    - term: Ville
+    - definition: Auch
+    - term: Pays
+    - definition: FR
+    - term: Numéro de Téléphone (Optionnel)
+    - definition: "0745892217"
+    - separator
+    - heading "Adresse de Facturation" [level=3]
+    - term: Ligne d'Adresse 1
+    - definition: 17 bis Boulevard Gambetta
+    - term: Ligne d'Adresse 2 (Optionnel)
+    - definition: Immeuble La Rotonde
+    - term: Code Postal
+    - definition: "06000"
+    - term: Ville
+    - definition: Nice
+    - term: Pays
+    - definition: FR
+    - term: Numéro de Téléphone (Optionnel)
+    - definition: "0612921350"
+  - article:
+    - heading "Mon Mot de Passe" [level=2]
+    - link "Modifier":
+      - /url: /fr/profile/password
+    - paragraph: Modifiez votre mot de passe et vos paramètres de sécurité.
+  - article:
+    - heading "Mes Commandes" [level=2]
+    - link "Voir mes commandes":
+      - /url: /fr/profile/orders
+  - article:
+    - heading "Déconnexion" [level=2]
+    - button "Se déconnecter"
+    - paragraph: Vous serez déconnecté de votre session actuelle.
+- contentinfo:
+  - heading "In Herbis Veritas" [level=2]
+  - paragraph: Des tisanes biologiques d'exception, cultivées avec passion pour votre bien-être au quotidien.
+  - heading "Navigation" [level=3]
+  - list:
+    - listitem:
+      - link "À propos":
+        - /url: /about
+    - listitem:
+      - link "Contact":
+        - /url: /contact
+    - listitem:
+      - link "Conditions d’utilisation":
+        - /url: /terms
+    - listitem:
+      - link "Politique de confidentialité":
+        - /url: /privacy
+  - heading "Support" [level=3]
+  - list:
+    - listitem:
+      - link "FAQ":
+        - /url: /faq
+    - listitem:
+      - link "Livraison":
+        - /url: /shipping
+    - listitem:
+      - link "Retours":
+        - /url: /returns
+  - heading "Restons en contact" [level=3]
+  - paragraph: Inscrivez-vous à notre newsletter pour des offres exclusives et nos nouveautés.
+  - text: Adresse e-mail
+  - textbox "Adresse e-mail"
+  - button "S'inscrire"
+  - link "Instagram":
+    - /url: https://www.instagram.com/in_herbis_veritas/?utm_source=ig_web_button_share_sheet
+  - link "Facebook":
+    - /url: https://www.facebook.com/in.herbis.veritas
+  - paragraph: © 2025 In Herbis Veritas. Tous droits réservés.
+- region "Notifications alt+T"
+```
