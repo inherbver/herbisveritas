@@ -5,6 +5,7 @@ Ce guide détaille la migration de l'architecture existante vers le nouveau syst
 ## 🎯 Vue d'ensemble des changements
 
 ### Avant (Architecture actuelle)
+
 ```typescript
 // Couplage fort entre store et actions
 const useCartStore = create((set, get) => ({
@@ -28,13 +29,14 @@ export async function addToCartAction(productId: string, quantity: number) {
 ```
 
 ### Après (Architecture refactorisée)
+
 ```typescript
 // Store découplé - gestion d'état pure
 const useCartStore = create((set, get) => ({
   items: [],
   loading: { add: false, remove: false, ... },
   errors: { add: null, remove: null, ... },
-  
+
   setItems: (items) => set({ items }),
   addItemOptimistic: (item) => {
     // Mise à jour optimiste immédiate
@@ -47,7 +49,7 @@ export async function addItemToCart(formData: FormData): Promise<ActionResult<Ca
     // Validation en couches
     const validationResult = await CartValidationCoordinator.validateAddToCart(...);
     if (validationResult.isError()) throw validationResult.getError();
-    
+
     // Logique métier pure
     const result = await cartService.addItem(validationResult.getValue());
     return result;
@@ -66,11 +68,13 @@ const { addItem } = useCartOperations(); // Hook qui gère optimisme + sync
 ### Étape 1 : Mise en place des fondations
 
 #### 1.1 Installer les nouveaux systèmes
+
 ```bash
 # Aucune installation nécessaire - tout est en TypeScript pur
 ```
 
 #### 1.2 Ajouter les nouveaux fichiers
+
 ```
 src/lib/core/
 ├── result.ts                 # ✅ Créé
@@ -95,6 +99,7 @@ src/actions/
 ### Étape 2 : Migration progressive des composants
 
 #### 2.1 Identifier les composants utilisant le cart
+
 ```bash
 # Rechercher les usages du store actuel
 grep -r "useCartStore" src/components/
@@ -104,6 +109,7 @@ grep -r "cartActions" src/components/
 #### 2.2 Migrer composant par composant
 
 **Ancien code :**
+
 ```typescript
 // components/cart/add-to-cart-old.tsx
 import useCartStore from '@/stores/cartStore';
@@ -111,14 +117,14 @@ import { addItemToCart } from '@/actions/cartActions';
 
 export function AddToCartOld({ product }) {
   const { items, addItem, isLoading } = useCartStore();
-  
+
   const handleAdd = async () => {
     const result = await addItemToCart(prevState, formData);
     if (result.success) {
       addItem(product); // Store et action séparés
     }
   };
-  
+
   return (
     <button onClick={handleAdd} disabled={isLoading}>
       {isLoading ? 'Ajout...' : 'Ajouter'}
@@ -128,6 +134,7 @@ export function AddToCartOld({ product }) {
 ```
 
 **Nouveau code :**
+
 ```typescript
 // components/cart/add-to-cart-new.tsx
 import { useCartLoading, useCartErrors } from '@/stores/cart-store-refactored';
@@ -137,7 +144,7 @@ export function AddToCartNew({ product }) {
   const loading = useCartLoading();
   const errors = useCartErrors();
   const { addItem } = useCartOperations(); // Système unifié
-  
+
   const handleAdd = async () => {
     await addItem(product.id, 1, {
       name: product.name,
@@ -146,7 +153,7 @@ export function AddToCartNew({ product }) {
       slug: product.slug,
     });
   };
-  
+
   return (
     <div>
       <button onClick={handleAdd} disabled={loading.add}>
@@ -161,21 +168,19 @@ export function AddToCartNew({ product }) {
 ### Étape 3 : Mise à jour des imports
 
 #### 3.1 Remplacement des imports existants
+
 ```typescript
 // AVANT
-import useCartStore from '@/stores/cartStore';
-import { addItemToCart, removeItemFromCart } from '@/actions/cartActions';
+import useCartStore from "@/stores/cartStore";
+import { addItemToCart, removeItemFromCart } from "@/actions/cartActions";
 
 // APRÈS
-import { 
-  useCartItems, 
-  useCartLoading, 
-  useCartErrors 
-} from '@/stores/cart-store-refactored';
-import { useCartOperations } from '@/lib/store-sync/cart-sync';
+import { useCartItems, useCartLoading, useCartErrors } from "@/stores/cart-store-refactored";
+import { useCartOperations } from "@/lib/store-sync/cart-sync";
 ```
 
 #### 3.2 Migration des hooks personnalisés
+
 ```typescript
 // AVANT
 const useCart = () => {
@@ -194,7 +199,7 @@ const useCart = () => {
   const operations = useCartOperations();
   const loading = useCartLoading();
   const errors = useCartErrors();
-  
+
   return {
     items,
     ...operations,
@@ -207,6 +212,7 @@ const useCart = () => {
 ### Étape 4 : Tests et validation
 
 #### 4.1 Exécuter les tests
+
 ```bash
 npm test src/lib/core/__tests__/result.test.ts
 npm test src/lib/validators/__tests__/cart-validation.test.ts
@@ -214,6 +220,7 @@ npm test src/actions/__tests__/cart-actions-refactored.test.ts
 ```
 
 #### 4.2 Tests d'intégration manuels
+
 1. **Test d'ajout au panier :**
    - Vérifier la mise à jour optimiste
    - Vérifier la synchronisation serveur
@@ -232,33 +239,36 @@ npm test src/actions/__tests__/cart-actions-refactored.test.ts
 Pendant la migration, les deux systèmes peuvent coexister :
 
 ### Routage conditionnel
+
 ```typescript
 // components/cart/cart-wrapper.tsx
 import { useFeatureFlag } from '@/lib/feature-flags';
 
 export function CartWrapper({ children }) {
   const useNewCartSystem = useFeatureFlag('new-cart-system');
-  
+
   if (useNewCartSystem) {
     return <NewCartProvider>{children}</NewCartProvider>;
   }
-  
+
   return <OldCartProvider>{children}</OldCartProvider>;
 }
 ```
 
 ### Migration par feature flag
+
 ```typescript
 // lib/feature-flags.ts
 export const FEATURE_FLAGS = {
-  'new-cart-system': process.env.ENABLE_NEW_CART === 'true',
-  'new-cart-validation': process.env.ENABLE_NEW_VALIDATION === 'true',
+  "new-cart-system": process.env.ENABLE_NEW_CART === "true",
+  "new-cart-validation": process.env.ENABLE_NEW_VALIDATION === "true",
 } as const;
 ```
 
 ## ⚠️ Points d'attention
 
 ### 1. Types et interfaces
+
 ```typescript
 // Assurer la compatibilité des types
 interface CartItem {
@@ -274,6 +284,7 @@ interface CartItem {
 ```
 
 ### 2. Gestion des erreurs
+
 ```typescript
 // Ancien format d'erreur
 { success: false, error: "Message d'erreur" }
@@ -283,25 +294,27 @@ interface CartItem {
 ```
 
 ### 3. Estados de loading
+
 ```typescript
 // Ancien : loading global
 { isLoading: true }
 
 // Nouveau : loading granulaire
-{ 
-  loading: { 
-    add: true, 
-    remove: false, 
-    update: false, 
-    clear: false, 
-    sync: false 
-  } 
+{
+  loading: {
+    add: true,
+    remove: false,
+    update: false,
+    clear: false,
+    sync: false
+  }
 }
 ```
 
 ## 🧪 Validation de la migration
 
 ### Checklist de validation
+
 - [ ] Tous les composants utilisent les nouveaux hooks
 - [ ] Aucune référence directe à l'ancien store
 - [ ] Les tests passent pour les nouveaux systèmes
@@ -312,6 +325,7 @@ interface CartItem {
 - [ ] Le rollback en cas d'erreur fonctionne
 
 ### Métriques de succès
+
 - **Performance** : Temps de réponse < 200ms pour les updates optimistes
 - **Fiabilité** : 0 erreur non gérée dans les logs
 - **UX** : Feedback immédiat pour toutes les actions utilisateur
@@ -320,6 +334,7 @@ interface CartItem {
 ## 🚀 Après la migration
 
 ### Nettoyage du code legacy
+
 ```bash
 # Supprimer les anciens fichiers (après validation complète)
 rm src/stores/cartStore.ts
@@ -328,6 +343,7 @@ rm src/lib/cart-helpers.ts
 ```
 
 ### Optimisations possibles
+
 1. **Preload** : Précharger les données produit pour la validation
 2. **Batch operations** : Grouper les opérations pour les mises à jour multiples
 3. **Offline support** : Supporter les opérations hors ligne avec sync différée
@@ -336,11 +352,13 @@ rm src/lib/cart-helpers.ts
 ## 📚 Ressources additionnelles
 
 ### Documentation
+
 - [Result Pattern](./src/lib/core/result.ts) - Documentation inline
 - [Validation en couches](./src/lib/validators/) - Exemples d'usage
 - [Store sync](./src/lib/store-sync/cart-sync.ts) - Guide d'utilisation
 
 ### Exemples d'implémentation
+
 - [Composant exemple complet](./src/components/cart/cart-example-refactored.tsx)
 - [Tests d'intégration](./src/actions/__tests__/cart-actions-refactored.test.ts)
 
