@@ -16,6 +16,7 @@ import type { CartData } from "@/types/cart";
 import { addItemToCart as addItemToCartAction } from "@/actions/cartActions";
 import { toast } from "sonner";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { useCartStore } from "@/stores/cart-store-refactored";
 
 export interface ProductCardProps {
   /** Unique identifier for the product */
@@ -89,6 +90,11 @@ export function ProductCard({
     }
     if (state.success) {
       toast.success(state.message || t("itemAddedSuccess"));
+      // Mettre à jour le store avec les données du serveur
+      if (state.data?.items) {
+        const { setItems } = useCartStore.getState();
+        setItems(state.data.items);
+      }
     } else {
       toast.error(state.message || tGlobal("genericError"));
     }

@@ -60,7 +60,18 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
         useCartStore.getState().setItems(result.data.items);
       }
     } else {
-      toast.error(result.message || tGlobal("genericError"));
+      // Gestion spéciale pour les erreurs d'authentification
+      const isAuthError = result.message?.includes("identifier l'utilisateur") || 
+                         result.message?.includes("not authenticated") ||
+                         result.message?.includes("User identification failed");
+      
+      if (isAuthError) {
+        console.warn("User not authenticated during remove operation. Clearing cart.");
+        useCartStore.getState().clearCart();
+        toast.info(tGlobal("Cart.sessionExpired") || "Votre session a expiré. Le panier a été vidé.");
+      } else {
+        toast.error(result.message || tGlobal("genericError"));
+      }
     }
     // Reset loading state if implemented
   };
@@ -122,20 +133,32 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
         }
         toast.success(result.message || t("itemQuantityUpdatedSuccess"));
       } else {
-        // 3b. ERREUR SERVEUR - Rollback à l'état précédent
-        console.error(
-          `${logPrefix} Server action FAILED. Error: ${result.message}. Rolling back to previous state.`
-        );
-        useCartStore.getState().setItems(previousState);
+        // 3b. ERREUR SERVEUR - Gestion spéciale pour les erreurs d'authentification
+        const isAuthError = result.message?.includes("identifier l'utilisateur") || 
+                           result.message?.includes("not authenticated") ||
+                           result.message?.includes("User identification failed");
+        
+        if (isAuthError) {
+          // L'utilisateur n'est plus authentifié - vider le panier silencieusement
+          console.warn(`${logPrefix} User not authenticated. Clearing cart.`);
+          useCartStore.getState().clearCart();
+          toast.info(tGlobal("Cart.sessionExpired") || "Votre session a expiré. Le panier a été vidé.");
+        } else {
+          // Autres erreurs serveur - Rollback à l'état précédent
+          console.error(
+            `${logPrefix} Server action FAILED. Error: ${result.message}. Rolling back to previous state.`
+          );
+          useCartStore.getState().setItems(previousState);
 
-        // Log des détails d'erreur pour debugging
-        if ("fieldErrors" in result && result.fieldErrors) {
-          console.error(`${logPrefix} Field validation errors:`, result.fieldErrors);
-        } else if ("internalError" in result && result.internalError) {
-          console.error(`${logPrefix} Internal server error:`, result.internalError);
+          // Log des détails d'erreur pour debugging
+          if ("fieldErrors" in result && result.fieldErrors) {
+            console.error(`${logPrefix} Field validation errors:`, result.fieldErrors);
+          } else if ("internalError" in result && result.internalError) {
+            console.error(`${logPrefix} Internal server error:`, result.internalError);
+          }
+
+          toast.error(result.message || tGlobal("genericError"));
         }
-
-        toast.error(result.message || tGlobal("genericError"));
       }
     } catch (error: unknown) {
       // 3c. ERREUR RÉSEAU/INATTENDUE - Rollback

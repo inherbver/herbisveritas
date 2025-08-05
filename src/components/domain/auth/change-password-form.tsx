@@ -25,7 +25,7 @@ import {
   PasswordRequirement,
   PasswordStrengthBar,
 } from "@/components/domain/auth/password-strength";
-import useCartStore from "@/stores/cartStore";
+import { useCartStore } from "@/stores/cart-store-refactored";
 
 const MIN_LENGTH = 8;
 const REGEX_UPPERCASE = /[A-Z]/;
@@ -82,6 +82,10 @@ export default function ChangePasswordForm() {
       toast.success(result.message || t("notifications.success"));
       useCartStore.getState().clearCart();
       form.reset();
+      // Afficher un message d'information avant la redirection
+      toast.info(t("notifications.redirecting"), {
+        duration: 2000,
+      });
       // Rediriger vers la page de connexion après un court délai
       setTimeout(() => router.push("/login"), 2000);
     } else {

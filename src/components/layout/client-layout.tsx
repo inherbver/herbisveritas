@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { useCartOperations } from "@/lib/store-sync/cart-sync";
+import { useAuthCartSync } from "@/hooks/use-auth-cart-sync";
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -27,6 +28,9 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
 
   // Hook pour les opérations panier
   const { clearCart } = useCartOperations();
+  
+  // Hook pour synchroniser l'authentification avec le panier
+  useAuthCartSync();
   
   // Fonction pour vider le panier de manière sécurisée
   const clearCartSafely = useCallback((reason: string) => {

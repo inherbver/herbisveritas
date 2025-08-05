@@ -17,16 +17,24 @@ export async function getActiveUserId(supabase: SupabaseClientType): Promise<str
   let userId = user?.id;
 
   if (!userId) {
-    const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
-    if (anonError) {
-      console.error("Erreur lors de la connexion anonyme:", anonError.message);
+    // Tentative de connexion anonyme, mais ne pas échouer si cela ne fonctionne pas
+    try {
+      const { data: anonAuthResponse, error: anonError } = await supabase.auth.signInAnonymously();
+      if (anonError) {
+        console.warn("Connexion anonyme non disponible:", anonError.message);
+        console.warn("Le panier ne sera pas persistant pour les utilisateurs non connectés.");
+        return null;
+      }
+      if (!anonAuthResponse?.user) {
+        console.warn("La connexion anonyme n'a pas retourné d'utilisateur.");
+        return null;
+      }
+      userId = anonAuthResponse.user.id;
+    } catch (error) {
+      console.warn("Erreur lors de la tentative de connexion anonyme:", error);
+      console.warn("Le panier ne sera pas persistant pour les utilisateurs non connectés.");
       return null;
     }
-    if (!anonAuthResponse?.user) {
-      console.error("La connexion anonyme n'a pas retourné d'utilisateur.");
-      return null;
-    }
-    userId = anonAuthResponse.user.id;
   }
   return userId;
 }

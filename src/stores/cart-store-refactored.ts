@@ -59,6 +59,7 @@ export interface CartStoreActions {
   setLoading: (operation: keyof LoadingState, loading: boolean) => void;
   setError: (operation: keyof ErrorState, error: string | null) => void;
   clearAllErrors: () => void;
+  clearCart: () => void;
   
   // Optimistic updates
   addItemOptimistic: (item: CartItem) => void;
@@ -169,6 +170,14 @@ export const useCartStore = create<CartStore>()(
             general: null,
           },
         }));
+      },
+      
+      clearCart: () => {
+        set(() => ({
+          ...createInitialState(),
+        }));
+        // Also clear from localStorage
+        localStorage.removeItem("herbisveritas-cart-v2");
       },
       
       // Optimistic updates (for immediate UI feedback)

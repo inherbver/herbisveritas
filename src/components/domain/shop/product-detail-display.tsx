@@ -17,7 +17,7 @@ import {
 import type { CartDataFromServer } from "@/types/cart"; // ✅ Import depuis le bon fichier
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useCartItems } from "@/stores/cart-store-refactored";
+import { useCartItems, useCartStore } from "@/stores/cart-store-refactored";
 import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import { Price } from "@/components/ui/price";
 import clsx from "clsx";
@@ -40,7 +40,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
   const _cartItems = useCartItems();
-  const { syncWithServer: _syncWithServer } = useCartOperations();
+  const { syncWithServer } = useCartOperations();
 
   // ✅ Define a clear, initial state for the action avec le bon type
   const initialState: CartActionResult<CartDataFromServer | null> = React.useMemo(
@@ -61,6 +61,11 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
 
     if (isSuccessResult(state)) {
       toast.success(state.message || t("ProductDetailModal.itemAddedSuccess"));
+      // Mettre à jour le store avec les données du serveur
+      if (state.data?.items) {
+        const { setItems } = useCartStore.getState();
+        setItems(state.data.items);
+      }
       // Synchronisation avec le serveur après succès
       syncWithServer();
     } else if (state.success === false) {
@@ -74,7 +79,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
       }
       toast.error(state.message || errorMessage || t("Global.errors.generic"));
     }
-  }, [state, t]); // Removed syncWithServer from dependencies to prevent infinite loops
+  }, [state, t, syncWithServer]);
 
   useEffect(() => {
     const observerOptions = {

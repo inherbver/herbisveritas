@@ -20,6 +20,7 @@ const namespaces = [
   "CartDisplay",
   "CartSheet",
   "CategoryFilter",
+  "ChangePasswordForm",
   "CheckoutCanceledPage",
   "CheckoutFeedback",
   "CheckoutPage",
