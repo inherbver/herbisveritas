@@ -8,6 +8,38 @@
 const fs = require('fs');
 const path = require('path');
 
+// Fonction utilitaire pour valider l'existence des fichiers
+function validateFileExists(filePath) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Le fichier source n'existe pas: ${filePath}`);
+  }
+  return true;
+}
+
+// Fonction utilitaire pour valider l'existence du répertoire parent
+function validateParentDirectory(filePath) {
+  const parentDir = path.dirname(filePath);
+  if (!fs.existsSync(parentDir)) {
+    logOperation(`Création du répertoire parent: ${parentDir}`);
+    fs.mkdirSync(parentDir, { recursive: true });
+  }
+  return true;
+}
+
+// Fonction utilitaire pour valider les permissions d'écriture
+function validateWritePermissions(filePath) {
+  try {
+    const parentDir = path.dirname(filePath);
+    // Test d'écriture en créant un fichier temporaire
+    const testFile = path.join(parentDir, '.write-test-' + Date.now());
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+    return true;
+  } catch (error) {
+    throw new Error(`Permissions d'écriture insuffisantes pour: ${filePath}`);
+  }
+}
+
 // Configuration des mappings de migration
 const MIGRATION_MAPPINGS = {
   // Infrastructure services -> Adapters
@@ -115,6 +147,11 @@ function analyzeFileDestination(filePath) {
 // Déplacer un fichier avec mise à jour des imports
 function moveFileWithImportUpdate(sourcePath, targetPath) {
   try {
+    // Validation préalable
+    validateFileExists(sourcePath);
+    validateParentDirectory(targetPath);
+    validateWritePermissions(targetPath);
+    
     // Lire le contenu du fichier source
     const content = fs.readFileSync(sourcePath, 'utf8');
     
@@ -164,9 +201,46 @@ function updateImportsInContent(content, sourcePath, targetPath) {
 
 // Calculer le nouveau chemin d'import relatif
 function calculateNewImportPath(importPath, oldFilePath, newFilePath) {
-  // Cette fonction est complexe et nécessite une logique spécifique
-  // Pour l'instant, on retourne l'import original
-  return importPath;
+  const path = require('path');
+  
+  // Si c'est un import absolu avec @/, on utilise updateAbsoluteImportPath
+  if (importPath.startsWith('@/')) {
+    return updateAbsoluteImportPath(importPath);
+  }
+  
+  // Si c'est un import de package externe, on ne change rien
+  if (!importPath.startsWith('./') && !importPath.startsWith('../')) {
+    return importPath;
+  }
+  
+  try {
+    // Calculer le chemin absolu de l'import actuel
+    const oldDir = path.dirname(oldFilePath);
+    const currentImportPath = path.resolve(oldDir, importPath);
+    
+    // Calculer le nouveau chemin relatif depuis le nouveau fichier
+    const newDir = path.dirname(newFilePath);
+    let newRelativePath = path.relative(newDir, currentImportPath);
+    
+    // Normaliser le chemin pour utiliser des slashes forward
+    newRelativePath = newRelativePath.replace(/\\/g, '/');
+    
+    // S'assurer que les imports relatifs commencent par ./ ou ../
+    if (!newRelativePath.startsWith('./') && !newRelativePath.startsWith('../')) {
+      newRelativePath = './' + newRelativePath;
+    }
+    
+    // Supprimer l'extension si elle existe dans l'import original
+    if (!importPath.includes('.')) {
+      newRelativePath = newRelativePath.replace(/\.(ts|js|tsx|jsx)$/, '');
+    }
+    
+    logOperation(`Updated relative import: ${importPath} → ${newRelativePath}`);
+    return newRelativePath;
+  } catch (error) {
+    logOperation(`Failed to calculate import path for ${importPath}: ${error.message}`);
+    return importPath; // Fallback vers l'import original
+  }
 }
 
 // Mettre à jour les imports absolus

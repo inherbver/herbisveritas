@@ -181,7 +181,8 @@ function validateTypeScript() {
     
     const result = execSync('npx tsc --project tsconfig.temp.json --noEmit', {
       encoding: 'utf8',
-      stdio: 'pipe'
+      stdio: 'pipe',
+      timeout: 60000 // Timeout de 60 secondes
     });
     
     console.log('✅ Validation TypeScript réussie');

@@ -99,6 +99,8 @@ function executePhase1() {
     }
   ];
   
+  let hasErrors = false;
+  
   phase1Tasks.forEach((task, index) => {
     console.log(`\n${index + 1}. ${task.name}...`);
     try {
@@ -106,8 +108,16 @@ function executePhase1() {
       console.log(`✅ ${task.name} - COMPLÉTÉ`);
     } catch (error) {
       console.log(`❌ ${task.name} - ERREUR: ${error.message}`);
+      console.log(`   Stack trace: ${error.stack}`);
+      hasErrors = true;
     }
   });
+  
+  if (hasErrors) {
+    console.log('\n⚠️  ATTENTION: Des erreurs ont été détectées en Phase 1');
+    console.log('Veuillez les corriger avant de continuer à la Phase 2');
+    process.exit(1);
+  }
   
   // Validation phase 1
   console.log('\n🧪 VALIDATION PHASE 1...');

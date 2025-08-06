@@ -266,13 +266,17 @@ function validateTests() {
   
   try {
     console.log('1. Test de syntaxe Jest...');
-    const dryRun = execSync('npm test -- --listTests', { encoding: 'utf8' });
+    const dryRun = execSync('npm test -- --listTests', { 
+      encoding: 'utf8',
+      timeout: 30000 // Timeout de 30 secondes
+    });
     console.log(`✅ ${dryRun.split('\n').length - 1} tests détectés`);
     
     console.log('\n2. Exécution d\'un test rapide...');
     execSync('npm test -- --testPathPattern=__tests__ --maxWorkers=1 --bail=1', {
       encoding: 'utf8',
-      stdio: 'inherit'
+      stdio: 'inherit',
+      timeout: 120000 // Timeout de 2 minutes pour les tests
     });
     
     console.log('\n✅ Validation des tests réussie');
@@ -316,7 +320,7 @@ switch (command) {
     console.log('node migration-scripts/04-test-migrator.cjs validate');
     break;
   default:
-    console.log(\`
+    console.log(`
 🧪 OUTIL DE MIGRATION DES TESTS
 
 Commandes disponibles:
@@ -328,5 +332,5 @@ Commandes disponibles:
   full             - Migration complète (sauf exécution)
 
 Usage: node migration-scripts/04-test-migrator.cjs [command]
-    \`);
+    `);
 }
