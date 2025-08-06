@@ -2,7 +2,6 @@
  * Article Content Service
  *
  * Gère la logique métier du contenu d'articles (titre, slug, contenu).
- * Extracted from ArticleSupabaseRepository for better maintainability.
  */
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";

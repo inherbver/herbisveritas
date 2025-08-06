@@ -202,7 +202,7 @@ export class UserService {
             id: user.id,
             email: user.email,
             created_at: user.created_at,
-            last_sign_in_at: user.last_sign_in_at,
+            last_sign_in_at: user.last_sign_in_at || undefined,
             profile: {
               id: user.id, // UserForAdminPanel doesn't have a separate profile, so we use user data
               user_id: user.id,
@@ -210,6 +210,7 @@ export class UserService {
               last_name: user.full_name?.split(" ").slice(1).join(" ") || null,
               phone: null,
               avatar_url: null,
+              role: (user.role as "admin" | "user" | "editor" | "dev") || "user",
               is_admin: user.role === "admin",
               marketing_consent: false,
               created_at: user.created_at,

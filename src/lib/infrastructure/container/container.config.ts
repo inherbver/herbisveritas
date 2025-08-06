@@ -1,6 +1,6 @@
 /**
  * Container Configuration
- * 
+ *
  * Configures the dependency injection container with all application services.
  */
 
@@ -14,7 +14,7 @@ import { logger } from "@/lib/core/logger";
 import { CartDomainService, EventPublisher } from "@/lib/domain/services/cart.service";
 
 // Event System
-import { configureEventSystem, initializeEventSystem } from '../events/event-container-config';
+import { configureEventSystem, initializeEventSystem } from "../events/event-container-config";
 
 // Repositories
 import { SupabaseCartRepository } from "../repositories/cart.repository";
@@ -22,7 +22,6 @@ import { SupabaseProductRepository } from "../repositories/product.repository";
 import { UserSupabaseRepository } from "../repositories/user.supabase.repository";
 import { AddressSupabaseRepository } from "../repositories/address.supabase.repository";
 import { OrderSupabaseRepository } from "../repositories/order.supabase.repository";
-import { ArticleSupabaseRepository } from "../repositories/article.supabase.repository";
 
 // Supabase clients
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -34,12 +33,12 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
 class SimpleEventPublisher implements EventPublisher {
   async publish(event: any): Promise<void> {
     // Log the event for now - in production this would publish to a message queue
-    logger.info('Domain event published', { 
+    logger.info("Domain event published", {
       eventType: event.eventType,
       aggregateId: event.aggregateId,
-      eventData: event.eventData 
+      eventData: event.eventData,
     });
-    
+
     // Here you could integrate with:
     // - Redis pub/sub
     // - Message queues (RabbitMQ, AWS SQS)
@@ -47,7 +46,6 @@ class SimpleEventPublisher implements EventPublisher {
     // - Webhooks
   }
 }
-
 
 /**
  * Container configuration for different environments
@@ -61,56 +59,36 @@ export class ContainerConfiguration {
       const builder = new ContainerBuilder();
 
       // Infrastructure - Supabase Clients
-      builder.addSingleton(
-        SERVICE_TOKENS.SUPABASE_CLIENT,
-        () => createSupabaseServerClient(),
-        []
-      );
+      builder.addSingleton(SERVICE_TOKENS.SUPABASE_CLIENT, () => createSupabaseServerClient(), []);
 
       // Repositories
       builder.addSingleton(
         SERVICE_TOKENS.CART_REPOSITORY,
-        (container) => new SupabaseCartRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
+        (container) =>
+          new SupabaseCartRepository(container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
       builder.addSingleton(
         SERVICE_TOKENS.PRODUCT_REPOSITORY,
-        (container) => new SupabaseProductRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
+        (container) =>
+          new SupabaseProductRepository(container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
-      builder.addSingleton(
-        SERVICE_TOKENS.USER_REPOSITORY,
-        () => new UserSupabaseRepository(),
-        []
-      );
+      builder.addSingleton(SERVICE_TOKENS.USER_REPOSITORY, () => new UserSupabaseRepository(), []);
 
       builder.addSingleton(
         SERVICE_TOKENS.ADDRESS_REPOSITORY,
-        (container) => new AddressSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
+        (container) =>
+          new AddressSupabaseRepository(container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
       builder.addSingleton(
         SERVICE_TOKENS.ORDER_REPOSITORY,
-        (container) => new OrderSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
-        [SERVICE_TOKENS.SUPABASE_CLIENT]
-      );
-
-      builder.addSingleton(
-        SERVICE_TOKENS.ARTICLE_REPOSITORY,
-        (container) => new ArticleSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
+        (container) =>
+          new OrderSupabaseRepository(container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
@@ -122,12 +100,13 @@ export class ContainerConfiguration {
       // Domain Services
       builder.addTransient(
         SERVICE_TOKENS.CART_DOMAIN_SERVICE,
-        (container) => new CartDomainService(
-          container.resolve(SERVICE_TOKENS.CART_REPOSITORY),
-          container.resolve(SERVICE_TOKENS.PRODUCT_REPOSITORY),
-          container.resolve(SERVICE_TOKENS.USER_REPOSITORY),
-          container.resolve(SERVICE_TOKENS.EVENT_PUBLISHER)
-        ),
+        (container) =>
+          new CartDomainService(
+            container.resolve(SERVICE_TOKENS.CART_REPOSITORY),
+            container.resolve(SERVICE_TOKENS.PRODUCT_REPOSITORY),
+            container.resolve(SERVICE_TOKENS.USER_REPOSITORY),
+            container.resolve(SERVICE_TOKENS.EVENT_PUBLISHER)
+          ),
         [
           SERVICE_TOKENS.CART_REPOSITORY,
           SERVICE_TOKENS.PRODUCT_REPOSITORY,
@@ -138,8 +117,8 @@ export class ContainerConfiguration {
 
       return builder.build();
     } catch (error) {
-      logger.error('Failed to configure server container', error);
-      return Result.error(new BusinessError('Container configuration failed', { error }));
+      logger.error("Failed to configure server container", error);
+      return Result.error(new BusinessError("Container configuration failed", { error }));
     }
   }
 
@@ -151,56 +130,36 @@ export class ContainerConfiguration {
       const builder = new ContainerBuilder();
 
       // Infrastructure - Admin Supabase Client
-      builder.addSingleton(
-        SERVICE_TOKENS.SUPABASE_CLIENT,
-        () => createSupabaseAdminClient(),
-        []
-      );
+      builder.addSingleton(SERVICE_TOKENS.SUPABASE_CLIENT, () => createSupabaseAdminClient(), []);
 
       // Repositories (same as server but with admin client)
       builder.addSingleton(
         SERVICE_TOKENS.CART_REPOSITORY,
-        (container) => new SupabaseCartRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
+        (container) =>
+          new SupabaseCartRepository(container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
       builder.addSingleton(
         SERVICE_TOKENS.PRODUCT_REPOSITORY,
-        (container) => new SupabaseProductRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
+        (container) =>
+          new SupabaseProductRepository(container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
-      builder.addSingleton(
-        SERVICE_TOKENS.USER_REPOSITORY,
-        () => new UserSupabaseRepository(),
-        []
-      );
+      builder.addSingleton(SERVICE_TOKENS.USER_REPOSITORY, () => new UserSupabaseRepository(), []);
 
       builder.addSingleton(
         SERVICE_TOKENS.ADDRESS_REPOSITORY,
-        (container) => new AddressSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
+        (container) =>
+          new AddressSupabaseRepository(container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
       builder.addSingleton(
         SERVICE_TOKENS.ORDER_REPOSITORY,
-        (container) => new OrderSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
-        [SERVICE_TOKENS.SUPABASE_CLIENT]
-      );
-
-      builder.addSingleton(
-        SERVICE_TOKENS.ARTICLE_REPOSITORY,
-        (container) => new ArticleSupabaseRepository(
-          container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)
-        ),
+        (container) =>
+          new OrderSupabaseRepository(container.resolve(SERVICE_TOKENS.SUPABASE_CLIENT)),
         [SERVICE_TOKENS.SUPABASE_CLIENT]
       );
 
@@ -212,12 +171,13 @@ export class ContainerConfiguration {
       // Domain Services
       builder.addTransient(
         SERVICE_TOKENS.CART_DOMAIN_SERVICE,
-        (container) => new CartDomainService(
-          container.resolve(SERVICE_TOKENS.CART_REPOSITORY),
-          container.resolve(SERVICE_TOKENS.PRODUCT_REPOSITORY),
-          container.resolve(SERVICE_TOKENS.USER_REPOSITORY),
-          container.resolve(SERVICE_TOKENS.EVENT_PUBLISHER)
-        ),
+        (container) =>
+          new CartDomainService(
+            container.resolve(SERVICE_TOKENS.CART_REPOSITORY),
+            container.resolve(SERVICE_TOKENS.PRODUCT_REPOSITORY),
+            container.resolve(SERVICE_TOKENS.USER_REPOSITORY),
+            container.resolve(SERVICE_TOKENS.EVENT_PUBLISHER)
+          ),
         [
           SERVICE_TOKENS.CART_REPOSITORY,
           SERVICE_TOKENS.PRODUCT_REPOSITORY,
@@ -228,8 +188,8 @@ export class ContainerConfiguration {
 
       return builder.build();
     } catch (error) {
-      logger.error('Failed to configure admin container', error);
-      return Result.error(new BusinessError('Admin container configuration failed', { error }));
+      logger.error("Failed to configure admin container", error);
+      return Result.error(new BusinessError("Admin container configuration failed", { error }));
     }
   }
 
@@ -251,23 +211,20 @@ export class ContainerConfiguration {
       }
 
       if (!mockServices[SERVICE_TOKENS.EVENT_PUBLISHER]) {
-        builder.addSingleton(
-          SERVICE_TOKENS.EVENT_PUBLISHER,
-          () => new SimpleEventPublisher(),
-          []
-        );
+        builder.addSingleton(SERVICE_TOKENS.EVENT_PUBLISHER, () => new SimpleEventPublisher(), []);
       }
 
       // Domain Services (use real implementation with mocked dependencies)
       if (!mockServices[SERVICE_TOKENS.CART_DOMAIN_SERVICE]) {
         builder.addTransient(
           SERVICE_TOKENS.CART_DOMAIN_SERVICE,
-          (container) => new CartDomainService(
-            container.resolve(SERVICE_TOKENS.CART_REPOSITORY),
-            container.resolve(SERVICE_TOKENS.PRODUCT_REPOSITORY),
-            container.resolve(SERVICE_TOKENS.USER_REPOSITORY),
-            container.resolve(SERVICE_TOKENS.EVENT_PUBLISHER)
-          ),
+          (container) =>
+            new CartDomainService(
+              container.resolve(SERVICE_TOKENS.CART_REPOSITORY),
+              container.resolve(SERVICE_TOKENS.PRODUCT_REPOSITORY),
+              container.resolve(SERVICE_TOKENS.USER_REPOSITORY),
+              container.resolve(SERVICE_TOKENS.EVENT_PUBLISHER)
+            ),
           [
             SERVICE_TOKENS.CART_REPOSITORY,
             SERVICE_TOKENS.PRODUCT_REPOSITORY,
@@ -279,8 +236,8 @@ export class ContainerConfiguration {
 
       return builder.build();
     } catch (error) {
-      logger.error('Failed to configure test container', error);
-      return Result.error(new BusinessError('Test container configuration failed', { error }));
+      logger.error("Failed to configure test container", error);
+      return Result.error(new BusinessError("Test container configuration failed", { error }));
     }
   }
 }
@@ -324,11 +281,11 @@ export async function getAdminContainer(): Promise<Container> {
  */
 export async function createRequestScopedContainer(): Promise<{
   container: Container;
-  scope: ReturnType<Container['createScope']>;
+  scope: ReturnType<Container["createScope"]>;
 }> {
   const container = await getServerContainer();
   const scope = container.createScope();
-  
+
   return { container, scope };
 }
 
@@ -354,7 +311,7 @@ export async function resolveAdminService<T>(token: string): Promise<T> {
 export function resetContainers(): void {
   serverContainer = null;
   adminContainer = null;
-  logger.info('Containers reset');
+  logger.info("Containers reset");
 }
 
 /**
@@ -376,7 +333,9 @@ export async function checkContainerHealth(): Promise<{
       serverHealthy = true;
     }
   } catch (error) {
-    errors.push(`Server container error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    errors.push(
+      `Server container error: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 
   try {
@@ -386,7 +345,9 @@ export async function checkContainerHealth(): Promise<{
       adminHealthy = true;
     }
   } catch (error) {
-    errors.push(`Admin container error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    errors.push(
+      `Admin container error: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 
   return {

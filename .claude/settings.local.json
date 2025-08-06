@@ -8,7 +8,8 @@
       "Bash(npm test:*)",
       "Bash(npm run dev:*)",
       "mcp__supabase__list_tables",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(find:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

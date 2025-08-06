@@ -116,7 +116,7 @@ export class ArticleTaxonomyService {
           name: tag.name,
           slug: tag.slug,
           count: Array.isArray(tag.article_tags) ? tag.article_tags.length : 0,
-          created_at: tag.created_at,
+          created_at: tag.created_at || undefined,
         }))
         .sort((a, b) => b.count - a.count);
 
@@ -172,7 +172,7 @@ export class ArticleTaxonomyService {
           name: category.name,
           slug: category.slug,
           count: count || 0,
-          created_at: category.created_at,
+          created_at: category.created_at || undefined,
         });
       }
 
