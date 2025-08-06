@@ -31,7 +31,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, MinusIcon, PlusIcon, XIcon } from "lucide-react";
 import CheckoutAddressForm from "./AddressForm";
-import type { AddressFormData } from "@/lib/validators/address.validator";
 
 interface CheckoutClientPageProps {
   cart: CartData;
@@ -226,8 +225,8 @@ export default function CheckoutClientPage({
         selectedShippingMethodId!
       );
 
-      if (result.success && result.url) {
-        window.location.href = result.url;
+      if (result.success && result.data?.sessionUrl) {
+        window.location.href = result.data.sessionUrl;
       } else {
         toast.error(t("toast.paymentErrorTitle"), { description: result.error });
       }

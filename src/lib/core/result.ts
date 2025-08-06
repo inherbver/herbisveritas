@@ -242,6 +242,8 @@ export interface ServerActionResult<T> {
   data?: T;
   error?: string;
   message?: string;
+  fieldErrors?: Record<string, string[]>;
+  details?: string;
 }
 
 export type ActionResult<T> = ServerActionResult<T>;
@@ -256,9 +258,16 @@ export const ActionResult = {
     message,
   }),
 
-  error: <T>(error: string): ActionResult<T> => ({
+  error: <T>(error: string, details?: string): ActionResult<T> => ({
     success: false,
     error,
+    details,
+  }),
+
+  validationError: <T>(error: string, fieldErrors: Record<string, string[]>): ActionResult<T> => ({
+    success: false,
+    error,
+    fieldErrors,
   }),
 
   fromResult: <T>(result: Result<T, unknown>, successMessage?: string): ActionResult<T> => {
