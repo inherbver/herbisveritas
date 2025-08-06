@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
 
+// Re-export Database type for use in other files
+export type { Database };
+
 // --- Centralized Supabase Client Type ---
 /**
  * A centralized type for the Supabase client to ensure consistency across the app.

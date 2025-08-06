@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Upload, Link2, X, Loader2 } from "lucide-react";
 import type { UploadImageResult } from "@/lib/storage/image-upload";
+import type { ActionResult } from "@/lib/core/result";
 
 interface ImageUploadFieldProps<T extends FieldValues> {
   control: Control<T>;
@@ -17,7 +18,7 @@ interface ImageUploadFieldProps<T extends FieldValues> {
   description?: string;
   placeholder?: string;
   required?: boolean;
-  uploadFunction: (formData: FormData) => Promise<UploadImageResult>;
+  uploadFunction: (formData: FormData) => Promise<ActionResult<UploadImageResult>>;
   translationKey?: string;
 }
 
@@ -44,10 +45,10 @@ export function ImageUploadField<T extends FieldValues>({
       const result = await uploadFunction(formData);
 
       if (result.success) {
-        onChange(result.data.url);
-        toast.success(result.message);
+        onChange(result.data!.url);
+        toast.success(result.message || "Image téléchargée avec succès");
       } else {
-        toast.error(result.message);
+        toast.error(result.error || "Erreur lors du téléchargement");
       }
     } catch (error) {
       console.error("Upload error:", error);

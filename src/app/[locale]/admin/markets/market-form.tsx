@@ -8,7 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -49,7 +55,7 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
     startTransition(async () => {
       try {
         let result;
-        
+
         if (mode === "edit" && market) {
           result = await updateMarket(market.id, formData);
         } else {
@@ -63,7 +69,7 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
             router.push("/admin/markets");
           }, 1500);
         } else {
-          setError(result.error);
+          setError(result.error || null);
         }
       } catch (err) {
         setError("Une erreur inattendue s'est produite");
@@ -74,14 +80,11 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>
-          {mode === "edit" ? "Modifier le marché" : "Nouveau marché"}
-        </CardTitle>
+        <CardTitle>{mode === "edit" ? "Modifier le marché" : "Nouveau marché"}</CardTitle>
         <CardDescription>
-          {mode === "edit" 
-            ? "Modifiez les informations du marché" 
-            : "Remplissez les informations du nouveau marché"
-          }
+          {mode === "edit"
+            ? "Modifiez les informations du marché"
+            : "Remplissez les informations du nouveau marché"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -252,9 +255,9 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
                 />
               </div>
               {market?.hero_image_url && (
-                <img 
-                  src={market.hero_image_url} 
-                  alt="Image principale" 
+                <img
+                  src={market.hero_image_url}
+                  alt="Image principale"
                   className="h-24 w-auto rounded-md"
                 />
               )}
@@ -282,9 +285,9 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
                 />
               </div>
               {market?.image_url && (
-                <img 
-                  src={market.image_url} 
-                  alt="Image secondaire" 
+                <img
+                  src={market.image_url}
+                  alt="Image secondaire"
                   className="h-24 w-auto rounded-md"
                 />
               )}
@@ -293,11 +296,7 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
 
           {/* Statut actif */}
           <div className="flex items-center space-x-2">
-            <Switch
-              id="is_active"
-              name="is_active"
-              defaultChecked={market?.is_active ?? true}
-            />
+            <Switch id="is_active" name="is_active" defaultChecked={market?.is_active ?? true} />
             <Label htmlFor="is_active">Marché actif</Label>
           </div>
 

@@ -1,28 +1,24 @@
 /**
  * Cart Actions V2 - Using Domain Services Architecture
- * 
+ *
  * These actions use the new architecture with domain services,
  * dependency injection, and proper separation of concerns.
  */
 
-'use server';
+"use server";
 
 import { revalidateTag } from "next/cache";
 import { ActionResult } from "@/lib/core/result";
-import { 
-  ErrorUtils 
-} from "@/lib/core/errors";
+import { ErrorUtils } from "@/lib/core/errors";
 import { logger, LogUtils } from "@/lib/core/logger";
-import { 
+import {
   CartValidationCoordinator,
   CartValidationUtils,
   type ProductDetails,
-  type UserContext 
+  type UserContext,
 } from "@/lib/validators/cart-validation-coordinator";
-import { 
-  SERVICE_TOKENS,
-  createRequestScopedContainer 
-} from "@/lib/infrastructure/container/container.config";
+import { SERVICE_TOKENS } from "@/lib/infrastructure/container/container";
+import { createRequestScopedContainer } from "@/lib/infrastructure/container/container.config";
 import { CartDomainService } from "@/lib/domain/services/cart.service";
 import { getActiveUserId } from "@/utils/authUtils";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -34,36 +30,36 @@ async function getUserContext(): Promise<ActionResult<UserContext>> {
   try {
     const supabase = await createSupabaseServerClient();
     const userId = await getActiveUserId(supabase);
-    
+
     if (!userId) {
       return {
         success: false,
-        error: 'Authentification requise'
+        error: "Authentification requise",
       };
     }
 
     // Get user role (simplified - in real app you'd get this from JWT or database)
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
       .single();
 
     const userContext = CartValidationUtils.createUserContext(
       userId,
-      profile?.role || 'user',
+      profile?.role || "user",
       true
     );
 
     return {
       success: true,
-      data: userContext
+      data: userContext,
     };
   } catch (error) {
-    logger.error('Failed to get user context', error);
+    logger.error("Failed to get user context", error);
     return {
       success: false,
-      error: 'Erreur lors de la vérification de l\'utilisateur'
+      error: "Erreur lors de la vérification de l'utilisateur",
     };
   }
 }
@@ -74,10 +70,11 @@ async function getUserContext(): Promise<ActionResult<UserContext>> {
 async function getProductDetails(productId: string): Promise<ActionResult<ProductDetails>> {
   try {
     const supabase = await createSupabaseServerClient();
-    
+
     const { data, error } = await supabase
-      .from('products')
-      .select(`
+      .from("products")
+      .select(
+        `
         id,
         name,
         price,
@@ -85,21 +82,22 @@ async function getProductDetails(productId: string): Promise<ActionResult<Produc
         slug,
         image_url,
         is_active
-      `)
-      .eq('id', productId)
+      `
+      )
+      .eq("id", productId)
       .single();
 
     if (error) {
       return {
         success: false,
-        error: 'Produit non trouvé'
+        error: "Produit non trouvé",
       };
     }
 
     if (!data) {
       return {
         success: false,
-        error: 'Produit non trouvé'
+        error: "Produit non trouvé",
       };
     }
 
@@ -108,20 +106,20 @@ async function getProductDetails(productId: string): Promise<ActionResult<Produc
       name: data.name,
       price: data.price,
       stock: data.stock,
-      image: data.image_url,
-      slug: data.slug,
-      isActive: data.is_active,
+      image: data.image_url ?? undefined,
+      slug: data.slug ?? undefined,
+      isActive: data.is_active ?? false,
     };
 
     return {
       success: true,
-      data: productDetails
+      data: productDetails,
     };
   } catch (error) {
-    logger.error('Failed to get product details', error, { productId });
+    logger.error("Failed to get product details", error, { productId });
     return {
       success: false,
-      error: 'Erreur lors de la récupération du produit'
+      error: "Erreur lors de la récupération du produit",
     };
   }
 }
@@ -133,8 +131,8 @@ export async function addItemToCartV2(
   prevState: unknown,
   formData: FormData
 ): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'add_item_to_cart_v2', 'cart');
-  LogUtils.logOperationStart('addItemToCartV2', context);
+  const context = LogUtils.createUserActionContext("unknown", "add_item_to_cart_v2", "cart");
+  LogUtils.logOperationStart("addItemToCartV2", context);
 
   try {
     // Get user context
@@ -146,11 +144,11 @@ export async function addItemToCartV2(
     context.userId = userContext.id;
 
     // Get product ID from form data for early validation
-    const productId = formData.get('productId') as string;
+    const productId = formData.get("productId") as string;
     if (!productId) {
       return {
         success: false,
-        error: 'ID produit requis'
+        error: "ID produit requis",
       };
     }
 
@@ -172,7 +170,7 @@ export async function addItemToCartV2(
       const error = validationResult.getError();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Données invalides'
+        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : "Données invalides",
       };
     }
 
@@ -191,23 +189,25 @@ export async function addItemToCartV2(
 
     if (addResult.isError()) {
       const error = addResult.getError();
-      LogUtils.logOperationError('addItemToCartV2', error, context);
+      LogUtils.logOperationError("addItemToCartV2", error, context);
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de l\'ajout'
+        error: ErrorUtils.isAppError(error)
+          ? ErrorUtils.formatForUser(error)
+          : "Erreur lors de l'ajout",
       };
     }
 
     const cart = addResult.getValue();
 
     // Revalidate cache
-    revalidateTag('cart');
+    revalidateTag("cart");
 
     // Transform domain entity to API response
     const responseData = {
       id: cart.id,
       userId: cart.userId,
-      items: cart.getItems().map(item => ({
+      items: cart.getItems().map((item) => ({
         id: item.id,
         productId: item.productReference.id,
         productName: item.productReference.name,
@@ -223,22 +223,21 @@ export async function addItemToCartV2(
       updatedAt: cart.updatedAt,
     };
 
-    LogUtils.logOperationSuccess('addItemToCartV2', context);
-    
+    LogUtils.logOperationSuccess("addItemToCartV2", context);
+
     // Clean up scoped services
     scope.dispose();
 
     return {
       success: true,
       data: responseData,
-      message: 'Article ajouté au panier avec succès'
+      message: "Article ajouté au panier avec succès",
     };
-
   } catch (error) {
-    LogUtils.logOperationError('addItemToCartV2', error, context);
+    LogUtils.logOperationError("addItemToCartV2", error, context);
     return {
       success: false,
-      error: 'Une erreur inattendue s\'est produite'
+      error: "Une erreur inattendue s'est produite",
     };
   }
 }
@@ -246,13 +245,13 @@ export async function addItemToCartV2(
 /**
  * Remove item from cart using domain service
  */
-export async function removeItemFromCartV2(
-  input: { cartItemId: string }
-): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'remove_item_from_cart_v2', 'cart', { 
-    cartItemId: input.cartItemId 
+export async function removeItemFromCartV2(input: {
+  cartItemId: string;
+}): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext("unknown", "remove_item_from_cart_v2", "cart", {
+    cartItemId: input.cartItemId,
   });
-  LogUtils.logOperationStart('removeItemFromCartV2', context);
+  LogUtils.logOperationStart("removeItemFromCartV2", context);
 
   try {
     // Get user context
@@ -265,7 +264,7 @@ export async function removeItemFromCartV2(
 
     // Create form data for validation
     const formData = new FormData();
-    formData.append('cartItemId', input.cartItemId);
+    formData.append("cartItemId", input.cartItemId);
 
     // Validate input
     const validationResult = await CartValidationCoordinator.validateRemoveFromCart(
@@ -277,7 +276,7 @@ export async function removeItemFromCartV2(
       const error = validationResult.getError();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Données invalides'
+        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : "Données invalides",
       };
     }
 
@@ -294,24 +293,26 @@ export async function removeItemFromCartV2(
 
     if (removeResult.isError()) {
       const error = removeResult.getError();
-      LogUtils.logOperationError('removeItemFromCartV2', error, context);
+      LogUtils.logOperationError("removeItemFromCartV2", error, context);
       scope.dispose();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la suppression'
+        error: ErrorUtils.isAppError(error)
+          ? ErrorUtils.formatForUser(error)
+          : "Erreur lors de la suppression",
       };
     }
 
     const cart = removeResult.getValue();
 
     // Revalidate cache
-    revalidateTag('cart');
+    revalidateTag("cart");
 
     // Transform response
     const responseData = {
       id: cart.id,
       userId: cart.userId,
-      items: cart.getItems().map(item => ({
+      items: cart.getItems().map((item) => ({
         id: item.id,
         productId: item.productReference.id,
         productName: item.productReference.name,
@@ -327,20 +328,19 @@ export async function removeItemFromCartV2(
       updatedAt: cart.updatedAt,
     };
 
-    LogUtils.logOperationSuccess('removeItemFromCartV2', context);
+    LogUtils.logOperationSuccess("removeItemFromCartV2", context);
     scope.dispose();
 
     return {
       success: true,
       data: responseData,
-      message: 'Article supprimé du panier'
+      message: "Article supprimé du panier",
     };
-
   } catch (error) {
-    LogUtils.logOperationError('removeItemFromCartV2', error, context);
+    LogUtils.logOperationError("removeItemFromCartV2", error, context);
     return {
       success: false,
-      error: 'Une erreur inattendue s\'est produite'
+      error: "Une erreur inattendue s'est produite",
     };
   }
 }
@@ -348,14 +348,20 @@ export async function removeItemFromCartV2(
 /**
  * Update item quantity using domain service
  */
-export async function updateCartItemQuantityV2(
-  input: { cartItemId: string; quantity: number }
-): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'update_cart_item_quantity_v2', 'cart', {
-    cartItemId: input.cartItemId,
-    quantity: input.quantity
-  });
-  LogUtils.logOperationStart('updateCartItemQuantityV2', context);
+export async function updateCartItemQuantityV2(input: {
+  cartItemId: string;
+  quantity: number;
+}): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext(
+    "unknown",
+    "update_cart_item_quantity_v2",
+    "cart",
+    {
+      cartItemId: input.cartItemId,
+      quantity: input.quantity,
+    }
+  );
+  LogUtils.logOperationStart("updateCartItemQuantityV2", context);
 
   try {
     // Get user context
@@ -368,8 +374,8 @@ export async function updateCartItemQuantityV2(
 
     // Create form data for validation
     const formData = new FormData();
-    formData.append('cartItemId', input.cartItemId);
-    formData.append('quantity', input.quantity.toString());
+    formData.append("cartItemId", input.cartItemId);
+    formData.append("quantity", input.quantity.toString());
 
     // Validate input
     const validationResult = await CartValidationCoordinator.validateUpdateQuantity(
@@ -381,7 +387,7 @@ export async function updateCartItemQuantityV2(
       const error = validationResult.getError();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Données invalides'
+        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : "Données invalides",
       };
     }
 
@@ -399,24 +405,26 @@ export async function updateCartItemQuantityV2(
 
     if (updateResult.isError()) {
       const error = updateResult.getError();
-      LogUtils.logOperationError('updateCartItemQuantityV2', error, context);
+      LogUtils.logOperationError("updateCartItemQuantityV2", error, context);
       scope.dispose();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la mise à jour'
+        error: ErrorUtils.isAppError(error)
+          ? ErrorUtils.formatForUser(error)
+          : "Erreur lors de la mise à jour",
       };
     }
 
     const cart = updateResult.getValue();
 
     // Revalidate cache
-    revalidateTag('cart');
+    revalidateTag("cart");
 
     // Transform response
     const responseData = {
       id: cart.id,
       userId: cart.userId,
-      items: cart.getItems().map(item => ({
+      items: cart.getItems().map((item) => ({
         id: item.id,
         productId: item.productReference.id,
         productName: item.productReference.name,
@@ -432,20 +440,19 @@ export async function updateCartItemQuantityV2(
       updatedAt: cart.updatedAt,
     };
 
-    LogUtils.logOperationSuccess('updateCartItemQuantityV2', context);
+    LogUtils.logOperationSuccess("updateCartItemQuantityV2", context);
     scope.dispose();
 
     return {
       success: true,
       data: responseData,
-      message: 'Quantité mise à jour'
+      message: "Quantité mise à jour",
     };
-
   } catch (error) {
-    LogUtils.logOperationError('updateCartItemQuantityV2', error, context);
+    LogUtils.logOperationError("updateCartItemQuantityV2", error, context);
     return {
       success: false,
-      error: 'Une erreur inattendue s\'est produite'
+      error: "Une erreur inattendue s'est produite",
     };
   }
 }
@@ -454,8 +461,8 @@ export async function updateCartItemQuantityV2(
  * Clear cart using domain service
  */
 export async function clearCartV2(): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'clear_cart_v2', 'cart');
-  LogUtils.logOperationStart('clearCartV2', context);
+  const context = LogUtils.createUserActionContext("unknown", "clear_cart_v2", "cart");
+  LogUtils.logOperationStart("clearCartV2", context);
 
   try {
     // Get user context
@@ -474,20 +481,22 @@ export async function clearCartV2(): Promise<ActionResult<unknown>> {
 
     if (clearResult.isError()) {
       const error = clearResult.getError();
-      LogUtils.logOperationError('clearCartV2', error, context);
+      LogUtils.logOperationError("clearCartV2", error, context);
       scope.dispose();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la vidange'
+        error: ErrorUtils.isAppError(error)
+          ? ErrorUtils.formatForUser(error)
+          : "Erreur lors de la vidange",
       };
     }
 
     const cart = clearResult.getValue();
 
     // Revalidate cache
-    revalidateTag('cart');
+    revalidateTag("cart");
 
-    LogUtils.logOperationSuccess('clearCartV2', context);
+    LogUtils.logOperationSuccess("clearCartV2", context);
     scope.dispose();
 
     return {
@@ -500,14 +509,13 @@ export async function clearCartV2(): Promise<ActionResult<unknown>> {
         subtotal: 0,
         updatedAt: cart.updatedAt,
       },
-      message: 'Panier vidé avec succès'
+      message: "Panier vidé avec succès",
     };
-
   } catch (error) {
-    LogUtils.logOperationError('clearCartV2', error, context);
+    LogUtils.logOperationError("clearCartV2", error, context);
     return {
       success: false,
-      error: 'Une erreur inattendue s\'est produite'
+      error: "Une erreur inattendue s'est produite",
     };
   }
 }
@@ -516,7 +524,7 @@ export async function clearCartV2(): Promise<ActionResult<unknown>> {
  * Get cart using domain service
  */
 export async function getCartV2(): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'get_cart_v2', 'cart');
+  const context = LogUtils.createUserActionContext("unknown", "get_cart_v2", "cart");
 
   try {
     // Get user context
@@ -535,11 +543,13 @@ export async function getCartV2(): Promise<ActionResult<unknown>> {
 
     if (cartResult.isError()) {
       const error = cartResult.getError();
-      LogUtils.logOperationError('getCartV2', error, context);
+      LogUtils.logOperationError("getCartV2", error, context);
       scope.dispose();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la récupération'
+        error: ErrorUtils.isAppError(error)
+          ? ErrorUtils.formatForUser(error)
+          : "Erreur lors de la récupération",
       };
     }
 
@@ -558,7 +568,7 @@ export async function getCartV2(): Promise<ActionResult<unknown>> {
           totalItems: 0,
           subtotal: 0,
           updatedAt: null,
-        }
+        },
       };
     }
 
@@ -566,7 +576,7 @@ export async function getCartV2(): Promise<ActionResult<unknown>> {
     const responseData = {
       id: cart.id,
       userId: cart.userId,
-      items: cart.getItems().map(item => ({
+      items: cart.getItems().map((item) => ({
         id: item.id,
         productId: item.productReference.id,
         productName: item.productReference.name,
@@ -587,14 +597,13 @@ export async function getCartV2(): Promise<ActionResult<unknown>> {
 
     return {
       success: true,
-      data: responseData
+      data: responseData,
     };
-
   } catch (error) {
-    LogUtils.logOperationError('getCartV2', error, context);
+    LogUtils.logOperationError("getCartV2", error, context);
     return {
       success: false,
-      error: 'Une erreur inattendue s\'est produite'
+      error: "Une erreur inattendue s'est produite",
     };
   }
 }
@@ -602,13 +611,11 @@ export async function getCartV2(): Promise<ActionResult<unknown>> {
 /**
  * Merge carts (for guest to authenticated user transition)
  */
-export async function mergeCartsV2(
-  input: { guestUserId: string }
-): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'merge_carts_v2', 'cart', {
-    guestUserId: input.guestUserId
+export async function mergeCartsV2(input: { guestUserId: string }): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext("unknown", "merge_carts_v2", "cart", {
+    guestUserId: input.guestUserId,
   });
-  LogUtils.logOperationStart('mergeCartsV2', context);
+  LogUtils.logOperationStart("mergeCartsV2", context);
 
   try {
     // Get authenticated user context
@@ -629,7 +636,7 @@ export async function mergeCartsV2(
       const error = validationResult.getError();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Données invalides'
+        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : "Données invalides",
       };
     }
 
@@ -646,24 +653,26 @@ export async function mergeCartsV2(
 
     if (mergeResult.isError()) {
       const error = mergeResult.getError();
-      LogUtils.logOperationError('mergeCartsV2', error, context);
+      LogUtils.logOperationError("mergeCartsV2", error, context);
       scope.dispose();
       return {
         success: false,
-        error: ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la fusion'
+        error: ErrorUtils.isAppError(error)
+          ? ErrorUtils.formatForUser(error)
+          : "Erreur lors de la fusion",
       };
     }
 
     const cart = mergeResult.getValue();
 
     // Revalidate cache
-    revalidateTag('cart');
+    revalidateTag("cart");
 
     // Transform response
     const responseData = {
       id: cart.id,
       userId: cart.userId,
-      items: cart.getItems().map(item => ({
+      items: cart.getItems().map((item) => ({
         id: item.id,
         productId: item.productReference.id,
         productName: item.productReference.name,
@@ -679,20 +688,19 @@ export async function mergeCartsV2(
       updatedAt: cart.updatedAt,
     };
 
-    LogUtils.logOperationSuccess('mergeCartsV2', context);
+    LogUtils.logOperationSuccess("mergeCartsV2", context);
     scope.dispose();
 
     return {
       success: true,
       data: responseData,
-      message: 'Paniers fusionnés avec succès'
+      message: "Paniers fusionnés avec succès",
     };
-
   } catch (error) {
-    LogUtils.logOperationError('mergeCartsV2', error, context);
+    LogUtils.logOperationError("mergeCartsV2", error, context);
     return {
       success: false,
-      error: 'Une erreur inattendue s\'est produite'
+      error: "Une erreur inattendue s'est produite",
     };
   }
 }
@@ -709,7 +717,7 @@ export async function removeItemFromCartFormActionV2(
   if (!cartItemId) {
     return {
       success: false,
-      error: 'L\'ID de l\'article est requis'
+      error: "L'ID de l'article est requis",
     };
   }
 
@@ -726,7 +734,7 @@ export async function updateCartItemQuantityFormActionV2(
   if (!cartItemId) {
     return {
       success: false,
-      error: 'L\'ID de l\'article est requis'
+      error: "L'ID de l'article est requis",
     };
   }
 
@@ -734,7 +742,7 @@ export async function updateCartItemQuantityFormActionV2(
   if (isNaN(quantity) || quantity < 0) {
     return {
       success: false,
-      error: 'La quantité doit être un nombre positif'
+      error: "La quantité doit être un nombre positif",
     };
   }
 

@@ -13,7 +13,7 @@ export interface LogContext {
 }
 
 export interface LogEntry {
-  level: 'debug' | 'info' | 'warn' | 'error';
+  level: "debug" | "info" | "warn" | "error";
   message: string;
   timestamp: string;
   context?: LogContext;
@@ -34,11 +34,11 @@ export interface Logger {
 
 class ConsoleLogger implements Logger {
   private formatLogEntry(entry: LogEntry): string {
-    return JSON.stringify(entry, null, process.env.NODE_ENV === 'development' ? 2 : 0);
+    return JSON.stringify(entry, null, process.env.NODE_ENV === "development" ? 2 : 0);
   }
 
   private createLogEntry(
-    level: LogEntry['level'],
+    level: LogEntry["level"],
     message: string,
     context?: LogContext,
     error?: Error | unknown
@@ -47,7 +47,7 @@ class ConsoleLogger implements Logger {
       level,
       message,
       timestamp: new Date().toISOString(),
-      context
+      context,
     };
 
     if (error) {
@@ -56,12 +56,12 @@ class ConsoleLogger implements Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as any).code
+          code: (error as any).code,
         };
       } else {
         entry.error = {
-          name: 'UnknownError',
-          message: String(error)
+          name: "UnknownError",
+          message: String(error),
         };
       }
     }
@@ -70,24 +70,24 @@ class ConsoleLogger implements Logger {
   }
 
   debug(message: string, context?: LogContext): void {
-    if (process.env.NODE_ENV === 'development') {
-      const entry = this.createLogEntry('debug', message, context);
+    if (process.env.NODE_ENV === "development") {
+      const entry = this.createLogEntry("debug", message, context);
       console.debug(this.formatLogEntry(entry));
     }
   }
 
   info(message: string, context?: LogContext): void {
-    const entry = this.createLogEntry('info', message, context);
+    const entry = this.createLogEntry("info", message, context);
     console.info(this.formatLogEntry(entry));
   }
 
   warn(message: string, context?: LogContext): void {
-    const entry = this.createLogEntry('warn', message, context);
+    const entry = this.createLogEntry("warn", message, context);
     console.warn(this.formatLogEntry(entry));
   }
 
   error(message: string, error?: Error | unknown, context?: LogContext): void {
-    const entry = this.createLogEntry('error', message, context, error);
+    const entry = this.createLogEntry("error", message, context, error);
     console.error(this.formatLogEntry(entry));
   }
 }
@@ -99,11 +99,11 @@ class DatabaseLogger implements Logger {
     try {
       // Implementation will be added when we have the database service layer
       // For now, we'll use the fallback logger
-      this.fallbackLogger.error('Database logging not implemented yet', undefined, {
-        originalEntry: entry
+      this.fallbackLogger.error("Database logging not implemented yet", undefined, {
+        originalEntry: entry,
       });
     } catch (error) {
-      this.fallbackLogger.error('Failed to persist log to database', error);
+      this.fallbackLogger.error("Failed to persist log to database", error);
     }
   }
 
@@ -118,7 +118,7 @@ class DatabaseLogger implements Logger {
 
   warn(message: string, context?: LogContext): void {
     this.fallbackLogger.warn(message, context);
-    const entry = this.createLogEntry('warn', message, context);
+    const entry = this.createLogEntry("warn", message, context);
     this.persistToDatabase(entry).catch(() => {
       // Already handled in persistToDatabase
     });
@@ -126,14 +126,14 @@ class DatabaseLogger implements Logger {
 
   error(message: string, error?: Error | unknown, context?: LogContext): void {
     this.fallbackLogger.error(message, error, context);
-    const entry = this.createLogEntry('error', message, context, error);
+    const entry = this.createLogEntry("error", message, context, error);
     this.persistToDatabase(entry).catch(() => {
       // Already handled in persistToDatabase
     });
   }
 
   private createLogEntry(
-    level: LogEntry['level'],
+    level: LogEntry["level"],
     message: string,
     context?: LogContext,
     error?: Error | unknown
@@ -142,7 +142,7 @@ class DatabaseLogger implements Logger {
       level,
       message,
       timestamp: new Date().toISOString(),
-      context
+      context,
     };
 
     if (error) {
@@ -151,12 +151,12 @@ class DatabaseLogger implements Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as any).code
+          code: (error as any).code,
         };
       } else {
         entry.error = {
-          name: 'UnknownError',
-          message: String(error)
+          name: "UnknownError",
+          message: String(error),
         };
       }
     }
@@ -171,14 +171,14 @@ let loggerInstance: Logger | null = null;
 export function createLogger(): Logger {
   if (!loggerInstance) {
     const consoleLogger = new ConsoleLogger();
-    
-    if (process.env.NODE_ENV === 'production') {
+
+    if (process.env.NODE_ENV === "production") {
       loggerInstance = new DatabaseLogger(consoleLogger);
     } else {
       loggerInstance = consoleLogger;
     }
   }
-  
+
   return loggerInstance;
 }
 
@@ -221,8 +221,28 @@ export const LogUtils = {
     userId,
     action,
     resource,
-    ...additionalContext
+    ...additionalContext,
   }),
+
+  /**
+   * Creates a context object for an operation
+   */
+  createOperationContext: (
+    operation: string,
+    service?: string,
+    additionalContext?: Record<string, any>
+  ): LogContext => ({
+    operation,
+    service,
+    ...additionalContext,
+  }),
+
+  /**
+   * Logs informational messages
+   */
+  logOperationInfo: (operation: string, message: string, context?: LogContext) => {
+    logger.info(`${operation}: ${message}`, { ...context, operation });
+  },
 
   /**
    * Creates a context object from a request
@@ -232,10 +252,10 @@ export const LogUtils = {
     additionalContext?: Record<string, any>
   ): LogContext => ({
     requestId: crypto.randomUUID(),
-    ip: request.headers.get('x-forwarded-for') || 'unknown',
-    userAgent: request.headers.get('user-agent') || 'unknown',
+    ip: request.headers.get("x-forwarded-for") || "unknown",
+    userAgent: request.headers.get("user-agent") || "unknown",
     method: request.method,
     url: request.url,
-    ...additionalContext
-  })
+    ...additionalContext,
+  }),
 };

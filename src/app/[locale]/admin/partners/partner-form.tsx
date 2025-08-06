@@ -37,7 +37,7 @@ export function PartnerForm({ partner, mode = "create" }: PartnerFormProps) {
     startTransition(async () => {
       try {
         let result;
-        
+
         if (mode === "edit" && partner) {
           result = await updatePartner(partner.id, formData);
         } else {
@@ -51,7 +51,7 @@ export function PartnerForm({ partner, mode = "create" }: PartnerFormProps) {
             router.push("/admin/partners");
           }, 1500);
         } else {
-          setError(result.error);
+          setError(result.error || null);
         }
       } catch (err) {
         setError("Une erreur inattendue s'est produite");
@@ -62,14 +62,11 @@ export function PartnerForm({ partner, mode = "create" }: PartnerFormProps) {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>
-          {mode === "edit" ? "Modifier le partenaire" : "Nouveau partenaire"}
-        </CardTitle>
+        <CardTitle>{mode === "edit" ? "Modifier le partenaire" : "Nouveau partenaire"}</CardTitle>
         <CardDescription>
-          {mode === "edit" 
-            ? "Modifiez les informations du partenaire" 
-            : "Remplissez les informations du nouveau partenaire"
-          }
+          {mode === "edit"
+            ? "Modifiez les informations du partenaire"
+            : "Remplissez les informations du nouveau partenaire"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -152,9 +149,9 @@ export function PartnerForm({ partner, mode = "create" }: PartnerFormProps) {
               />
             </div>
             {partner?.image_url && (
-              <img 
-                src={partner.image_url} 
-                alt="Logo partenaire" 
+              <img
+                src={partner.image_url}
+                alt="Logo partenaire"
                 className="h-24 w-auto rounded-md"
               />
             )}
@@ -190,11 +187,7 @@ export function PartnerForm({ partner, mode = "create" }: PartnerFormProps) {
 
           {/* Statut actif */}
           <div className="flex items-center space-x-2">
-            <Switch
-              id="is_active"
-              name="is_active"
-              defaultChecked={partner?.is_active ?? true}
-            />
+            <Switch id="is_active" name="is_active" defaultChecked={partner?.is_active ?? true} />
             <Label htmlFor="is_active">Partenaire actif</Label>
           </div>
 

@@ -11,10 +11,10 @@ import { Address } from "@/types";
 // New imports for Clean Architecture
 import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
-import { 
-  CheckoutBusinessError, 
+import {
+  CheckoutBusinessError,
   CheckoutErrorCode,
-  CheckoutSessionResult 
+  CheckoutSessionResult,
 } from "@/lib/domain/services/checkout.service";
 import { ProductValidationService } from "@/lib/domain/services/product-validation.service";
 import { AddressValidationService } from "@/lib/domain/services/address-validation.service";
@@ -40,29 +40,41 @@ export async function createStripeCheckoutSession(
   billingAddress: Address,
   shippingMethodId: string
 ): Promise<ActionResult<CheckoutSessionResult>> {
-  const context = LogUtils.createUserActionContext('unknown', 'create_stripe_checkout', 'stripe');
-  LogUtils.logOperationStart('create_stripe_checkout', context);
+  const context = LogUtils.createUserActionContext("unknown", "create_stripe_checkout", "stripe");
+  LogUtils.logOperationStart("create_stripe_checkout", context);
 
   try {
     // Validation des paramètres d'entrée
     if (!shippingAddress) {
-      throw new CheckoutBusinessError(CheckoutErrorCode.INVALID_ADDRESS, "L'adresse de livraison est requise");
+      throw new CheckoutBusinessError(
+        CheckoutErrorCode.INVALID_ADDRESS,
+        "L'adresse de livraison est requise"
+      );
     }
     if (!billingAddress) {
-      throw new CheckoutBusinessError(CheckoutErrorCode.INVALID_ADDRESS, "L'adresse de facturation est requise");
+      throw new CheckoutBusinessError(
+        CheckoutErrorCode.INVALID_ADDRESS,
+        "L'adresse de facturation est requise"
+      );
     }
     if (!shippingMethodId) {
-      throw new CheckoutBusinessError(CheckoutErrorCode.INVALID_SHIPPING_METHOD, "La méthode de livraison est requise");
+      throw new CheckoutBusinessError(
+        CheckoutErrorCode.INVALID_SHIPPING_METHOD,
+        "La méthode de livraison est requise"
+      );
     }
 
-  const supabase = await createSupabaseServerClient();
-  const headersList = await headers();
-  const locale = headersList.get("x-next-intl-locale") || "fr";
+    const supabase = await createSupabaseServerClient();
+    const headersList = await headers();
+    const locale = headersList.get("x-next-intl-locale") || "fr";
 
     // Vérification du panier
     const cartResult = await getCart();
     if (!cartResult.success || !cartResult.data) {
-      throw new CheckoutBusinessError(CheckoutErrorCode.EMPTY_CART, cartResult.message || "Votre panier est vide");
+      throw new CheckoutBusinessError(
+        CheckoutErrorCode.EMPTY_CART,
+        cartResult.message || "Votre panier est vide"
+      );
     }
 
     const cart = cartResult.data;
@@ -73,7 +85,7 @@ export async function createStripeCheckoutSession(
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    
+
     if (user) {
       context.userId = user.id;
     }
@@ -91,12 +103,14 @@ export async function createStripeCheckoutSession(
       user?.id,
       {
         allowGuestAddresses: true,
-        allowedCountries: ["FR", "GB", "DE", "ES", "IT", "US", "CA", "BE", "CH", "LU"]
+        allowedCountries: ["FR", "GB", "DE", "ES", "IT", "US", "CA", "BE", "CH", "LU"],
       }
     );
 
     if (!addressValidationResult.success) {
-      return addressValidationResult;
+      return ActionResult.error(
+        addressValidationResult.message || "Erreur lors de la validation des adresses"
+      );
     }
 
     const processedAddresses = addressValidationResult.data!;
@@ -109,28 +123,30 @@ export async function createStripeCheckoutSession(
 
     // Validation des produits avec le service dédié
     const productValidationService = new ProductValidationService();
-    const cartItems = cart.items.map(item => ({
+    const cartItems = cart.items.map((item) => ({
       productId: item.productId,
-      quantity: item.quantity
+      quantity: item.quantity,
     }));
 
     const productValidationResult = await productValidationService.validateCartProducts(cartItems);
     if (!productValidationResult.success) {
-      return productValidationResult;
+      return ActionResult.error(
+        productValidationResult.message || "Erreur lors de la validation des produits"
+      );
     }
 
     const validatedCart = productValidationResult.data!;
 
     // Création de la map des produits validés
     const productPriceMap = new Map(
-      validatedCart.items.map(item => [
-        item.productId, 
+      validatedCart.items.map((item) => [
+        item.productId,
         {
           id: item.productId,
           name: item.name,
           price: item.price,
-          image_url: null // Sera récupérée plus tard si nécessaire
-        }
+          image_url: null, // Sera récupérée plus tard si nécessaire
+        },
       ])
     );
 
@@ -236,28 +252,28 @@ export async function createStripeCheckoutSession(
 
     const result: CheckoutSessionResult = {
       sessionUrl: session.url,
-      sessionId: session.id
+      sessionId: session.id,
     };
 
-    LogUtils.logOperationSuccess('create_stripe_checkout', {
+    LogUtils.logOperationSuccess("create_stripe_checkout", {
       ...context,
       sessionId: session.id,
       totalAmount: validatedCart.totalAmount,
-      isGuestCheckout: processedAddresses.isGuestCheckout
+      isGuestCheckout: processedAddresses.isGuestCheckout,
     });
 
-    return ActionResult.ok(result, 'Session de checkout créée avec succès');
+    return ActionResult.ok(result, "Session de checkout créée avec succès");
   } catch (error) {
-    LogUtils.logOperationError('create_stripe_checkout', error, context);
-    
+    LogUtils.logOperationError("create_stripe_checkout", error, context);
+
     if (error instanceof CheckoutBusinessError) {
       return ActionResult.error(error.message);
     }
-    
+
     return ActionResult.error(
-      ErrorUtils.isAppError(error) 
-        ? ErrorUtils.formatForUser(error) 
-        : 'Une erreur inattendue est survenue lors du checkout'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Une erreur inattendue est survenue lors du checkout"
     );
   }
 }

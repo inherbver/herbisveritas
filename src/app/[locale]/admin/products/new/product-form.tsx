@@ -128,8 +128,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
             router.push("/admin/products");
           } else {
             toast.error(actionResult.message || "Une erreur inattendue est survenue.");
-            if (actionResult.errors) {
-              console.error("Erreurs de validation:", actionResult.errors);
+            if (actionResult.error) {
+              console.error("Erreurs de validation:", actionResult.error);
             }
           }
         } else {
@@ -292,9 +292,9 @@ export function ProductForm({ initialData }: ProductFormProps) {
                 </div>
               </div>
 
-              <ImageUploadField 
-                control={form.control} 
-                name="image_url" 
+              <ImageUploadField
+                control={form.control}
+                name="image_url"
                 uploadFunction={uploadProductImageCore}
                 translationKey="AdminProducts"
               />

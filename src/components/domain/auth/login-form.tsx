@@ -18,11 +18,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  loginAction,
-  resendConfirmationEmailAction,
-  type AuthActionResult,
-} from "@/actions/authActions";
+import { loginAction, resendConfirmationEmailAction } from "@/actions/authActions";
+import { ActionResult } from "@/lib/core/result";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -43,11 +40,11 @@ function SubmitButton() {
 
 export function LoginForm() {
   const t = useTranslations("Auth.LoginForm");
-  const initialState: AuthActionResult = {
+  const initialState: ActionResult<null> = {
     success: false,
     error: undefined,
     message: undefined,
-    fieldErrors: {},
+    data: null,
   };
   const [state, formAction] = useActionState(loginAction, initialState);
   const [email, setEmail] = React.useState("");
@@ -71,7 +68,10 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="border-border/50 w-full max-w-sm rounded-xl shadow-xl" data-testid="login-form">
+    <Card
+      className="border-border/50 w-full max-w-sm rounded-xl shadow-xl"
+      data-testid="login-form"
+    >
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-2xl font-bold tracking-tight">{t("title")}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
@@ -92,15 +92,19 @@ export function LoginForm() {
               value={email}
               data-testid="email-input"
             />
-            {state.fieldErrors?.email && (
-              <p className="text-sm font-medium text-destructive">
-                {state.fieldErrors.email.join(", ")}
-              </p>
+            {!state.success && state.error && state.error.includes("email") && (
+              <p className="text-sm font-medium text-destructive">{t("invalidEmail")}</p>
             )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("passwordLabel")}</Label>
-            <Input id="password" name="password" type="password" required data-testid="password-input" />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              data-testid="password-input"
+            />
             <div className="text-right">
               <a
                 href="/forgot-password"
@@ -109,10 +113,8 @@ export function LoginForm() {
                 {t("forgotPasswordLink")}
               </a>
             </div>
-            {state.fieldErrors?.password && (
-              <p className="text-sm font-medium text-destructive">
-                {state.fieldErrors.password.join(", ")}
-              </p>
+            {!state.success && state.error && state.error.includes("password") && (
+              <p className="text-sm font-medium text-destructive">{t("invalidPassword")}</p>
             )}
           </div>
           {/* General form error message is now handled by toast */}

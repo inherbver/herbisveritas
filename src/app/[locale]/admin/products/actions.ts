@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
 import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
 import type { Product } from "@/lib/supabase/types";
+import type { Json } from "@/types/supabase";
 
 export const createProduct = withPermissionSafe(
   "products:create",
@@ -131,10 +132,11 @@ export const updateProduct = withPermissionSafe(
       p_unit: productData.unit,
       p_image_url: productData.image_url,
       p_inci_list: productData.inci_list,
+      p_status: productData.status || "draft", // Add status with default value
       p_is_active: productData.is_active,
       p_is_new: productData.is_new,
       p_is_on_promotion: productData.is_on_promotion,
-      p_translations: translations as unknown, // ✅ Cast pour le type unknown de Supabase
+      p_translations: translations as Json, // ✅ Cast to Json instead of unknown
     };
 
     // 3. Call the RPC function

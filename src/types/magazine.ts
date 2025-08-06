@@ -1,5 +1,7 @@
 // Types de base pour le magazine
 
+import { Json } from "./supabase";
+
 // Type pour le contenu TipTap JSON
 export interface TipTapContent {
   type: string;
@@ -10,6 +12,8 @@ export interface TipTapContent {
     type: string;
     attrs?: Record<string, unknown>;
   }>;
+  // Index signature to make it Json-compatible
+  [key: string]: unknown;
 }
 
 export interface Article {
@@ -98,7 +102,7 @@ export interface ArticleFormData {
   category_id?: string;
   tags?: string[]; // IDs des tags
   tag_ids?: string[]; // Alias pour compatibilité
-  status: 'draft' | 'published' | 'archived';
+  status: "draft" | "published" | "archived";
   published_at?: string | Date;
   seo_title?: string;
   seo_description?: string;
@@ -140,7 +144,7 @@ export interface ArticleTagRelation {
 // Props pour les composants UI
 export interface ArticleCardProps {
   article: ArticleDisplay;
-  variant?: 'default' | 'compact' | 'featured';
+  variant?: "default" | "compact" | "featured";
 }
 
 export interface ArticleMetadataProps {
@@ -149,13 +153,13 @@ export interface ArticleMetadataProps {
   readingTime?: number | null;
   viewCount?: number | null;
   className?: string;
-  variant?: 'default' | 'compact';
+  variant?: "default" | "compact";
 }
 
 export interface TagListProps {
   tags: Tag[];
   maxVisible?: number;
-  variant?: 'default' | 'compact' | 'badges';
+  variant?: "default" | "compact" | "badges";
   onTagClick?: (tag: Tag) => void;
   className?: string;
 }
@@ -242,12 +246,12 @@ export interface ArticleCardProps {
 
 export interface CategoryBadgeProps {
   category: Category;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 export interface TagBadgeProps {
   tag: Tag;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 // Types pour l'insertion et la mise à jour
@@ -256,7 +260,7 @@ export interface ArticleInsert {
   title: string;
   slug: string;
   excerpt?: string | null;
-  content: TipTapContent;
+  content: Json;
   content_html?: string | null;
   featured_image?: string | null;
   status?: string | null;
@@ -275,7 +279,7 @@ export interface ArticleUpdate {
   title?: string;
   slug?: string;
   excerpt?: string | null;
-  content?: TipTapContent;
+  content?: Json;
   content_html?: string | null;
   featured_image?: string | null;
   status?: string | null;

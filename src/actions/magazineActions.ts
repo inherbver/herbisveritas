@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Json } from "@/types/supabase";
 import { checkUserPermission } from "@/lib/auth/server-auth";
 import {
   uploadMagazineImageCore,
@@ -25,11 +26,7 @@ import {
 // New imports for Clean Architecture
 import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
-import { 
-  ValidationError, 
-  AuthenticationError,
-  ErrorUtils 
-} from "@/lib/core/errors";
+import { ValidationError, AuthenticationError, ErrorUtils } from "@/lib/core/errors";
 
 // Fonction utilitaire pour nettoyer le contenu TipTap avant sauvegarde
 function sanitizeTipTapContent(content: unknown): TipTapContent {
@@ -68,7 +65,7 @@ function sanitizeTipTapContent(content: unknown): TipTapContent {
 
       return {
         ...node,
-        content: cleanedContent,
+        content: cleanedContent as Json,
       };
     }
 
@@ -108,8 +105,8 @@ function generateSlug(title: string): string {
 /* ==================== ARTICLES ==================== */
 
 export async function createArticle(formData: ArticleFormData): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'create_article', 'magazine');
-  LogUtils.logOperationStart('create_article', context);
+  const context = LogUtils.createUserActionContext("unknown", "create_article", "magazine");
+  LogUtils.logOperationStart("create_article", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -141,7 +138,7 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
       .single();
 
     if (existingArticle) {
-      throw new ValidationError("Un article avec ce slug existe déjà", 'slug');
+      throw new ValidationError("Un article avec ce slug existe déjà", "slug");
     }
 
     // Nettoyage et validation du contenu TipTap
@@ -152,7 +149,7 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
       title: formData.title,
       slug,
       excerpt: formData.excerpt || extractExcerpt(cleanedContent),
-      content: cleanedContent,
+      content: cleanedContent as Json,
       content_html: convertTipTapToHTML(cleanedContent),
       featured_image: formData.featured_image || null,
       status: formData.status || "draft",
@@ -192,7 +189,7 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
       const { error: tagError } = await supabase.from("article_tags").insert(tagRelations);
 
       if (tagError) {
-        LogUtils.logOperationError('add_article_tags', tagError, context);
+        LogUtils.logOperationError("add_article_tags", tagError, context);
         // Ne pas faire échouer la création si les tags échouent
       }
     }
@@ -200,19 +197,30 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
     revalidatePath("/admin/magazine");
     revalidatePath("/magazine");
 
-    LogUtils.logOperationSuccess('create_article', { ...context, articleId: article.id, title: formData.title });
-    return ActionResult.ok(article, 'Article créé avec succès');
+    LogUtils.logOperationSuccess("create_article", {
+      ...context,
+      articleId: article.id,
+      title: formData.title,
+    });
+    return ActionResult.ok(article, "Article créé avec succès");
   } catch (error) {
-    LogUtils.logOperationError('create_article', error, context);
+    LogUtils.logOperationError("create_article", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur inattendue lors de la création'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Erreur inattendue lors de la création"
     );
   }
 }
 
-export async function updateArticle(id: string, formData: ArticleFormData): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'update_article', 'magazine', { articleId: id });
-  LogUtils.logOperationStart('update_article', context);
+export async function updateArticle(
+  id: string,
+  formData: ArticleFormData
+): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext("unknown", "update_article", "magazine", {
+    articleId: id,
+  });
+  LogUtils.logOperationStart("update_article", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -235,7 +243,7 @@ export async function updateArticle(id: string, formData: ArticleFormData): Prom
       .single();
 
     if (existingArticle) {
-      throw new ValidationError("Un autre article avec ce slug existe déjà", 'slug');
+      throw new ValidationError("Un autre article avec ce slug existe déjà", "slug");
     }
 
     // Nettoyage et validation du contenu TipTap
@@ -250,7 +258,7 @@ export async function updateArticle(id: string, formData: ArticleFormData): Prom
       title: formData.title,
       slug,
       excerpt: formData.excerpt || extractExcerpt(cleanedContent),
-      content: cleanedContent,
+      content: cleanedContent as Json,
       content_html: convertTipTapToHTML(cleanedContent),
       featured_image: formData.featured_image || null,
       status: formData.status || "draft",
@@ -295,7 +303,7 @@ export async function updateArticle(id: string, formData: ArticleFormData): Prom
         const { error: tagError } = await supabase.from("article_tags").insert(tagRelations);
 
         if (tagError) {
-          LogUtils.logOperationError('update_article_tags', tagError, context);
+          LogUtils.logOperationError("update_article_tags", tagError, context);
         }
       }
     }
@@ -304,19 +312,23 @@ export async function updateArticle(id: string, formData: ArticleFormData): Prom
     revalidatePath("/magazine");
     revalidatePath(`/magazine/${article.slug}`);
 
-    LogUtils.logOperationSuccess('update_article', { ...context, title: formData.title });
-    return ActionResult.ok(article, 'Article mis à jour avec succès');
+    LogUtils.logOperationSuccess("update_article", { ...context, title: formData.title });
+    return ActionResult.ok(article, "Article mis à jour avec succès");
   } catch (error) {
-    LogUtils.logOperationError('update_article', error, context);
+    LogUtils.logOperationError("update_article", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur inattendue lors de la mise à jour'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Erreur inattendue lors de la mise à jour"
     );
   }
 }
 
 export async function deleteArticle(id: string): Promise<ActionResult<null>> {
-  const context = LogUtils.createUserActionContext('unknown', 'delete_article', 'magazine', { articleId: id });
-  LogUtils.logOperationStart('delete_article', context);
+  const context = LogUtils.createUserActionContext("unknown", "delete_article", "magazine", {
+    articleId: id,
+  });
+  LogUtils.logOperationStart("delete_article", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -336,21 +348,25 @@ export async function deleteArticle(id: string): Promise<ActionResult<null>> {
     revalidatePath("/admin/magazine");
     revalidatePath("/magazine");
 
-    LogUtils.logOperationSuccess('delete_article', context);
-    return ActionResult.ok(null, 'Article supprimé avec succès');
+    LogUtils.logOperationSuccess("delete_article", context);
+    return ActionResult.ok(null, "Article supprimé avec succès");
   } catch (error) {
-    LogUtils.logOperationError('delete_article', error, context);
+    LogUtils.logOperationError("delete_article", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la suppression'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Erreur lors de la suppression"
     );
   }
 }
 
 /* ==================== CATÉGORIES ==================== */
 
-export async function createCategory(data: Omit<CategoryInsert, "id">): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'create_category', 'magazine');
-  LogUtils.logOperationStart('create_category', context);
+export async function createCategory(
+  data: Omit<CategoryInsert, "id">
+): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext("unknown", "create_category", "magazine");
+  LogUtils.logOperationStart("create_category", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -371,12 +387,14 @@ export async function createCategory(data: Omit<CategoryInsert, "id">): Promise<
     }
 
     revalidatePath("/admin/magazine");
-    LogUtils.logOperationSuccess('create_category', { ...context, categoryName: data.name });
-    return ActionResult.ok(category, 'Catégorie créée avec succès');
+    LogUtils.logOperationSuccess("create_category", { ...context, categoryName: data.name });
+    return ActionResult.ok(category, "Catégorie créée avec succès");
   } catch (error) {
-    LogUtils.logOperationError('create_category', error, context);
+    LogUtils.logOperationError("create_category", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la création de la catégorie'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Erreur lors de la création de la catégorie"
     );
   }
 }
@@ -387,8 +405,11 @@ export async function changeArticleStatus(
   articleId: string,
   newStatus: "draft" | "published" | "archived"
 ): Promise<ActionResult<null>> {
-  const context = LogUtils.createUserActionContext('unknown', 'change_article_status', 'magazine', { articleId, newStatus });
-  LogUtils.logOperationStart('change_article_status', context);
+  const context = LogUtils.createUserActionContext("unknown", "change_article_status", "magazine", {
+    articleId,
+    newStatus,
+  });
+  LogUtils.logOperationStart("change_article_status", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -418,7 +439,7 @@ export async function changeArticleStatus(
 
     // Validation pour la publication
     if (newStatus === "published") {
-      const validation = validateArticleForPublication(currentArticle);
+      const validation = validateArticleForPublication(currentArticle as any);
       if (!validation.isValid) {
         return ActionResult.error(
           `L'article ne peut pas être publié: ${validation.errors.join(", ")}`
@@ -451,12 +472,15 @@ export async function changeArticleStatus(
     revalidatePath(`/magazine/${currentArticle.slug}`);
 
     const message = getPublicationActionMessage(action, currentArticle.title);
-    LogUtils.logOperationSuccess('change_article_status', { ...context, articleTitle: currentArticle.title });
+    LogUtils.logOperationSuccess("change_article_status", {
+      ...context,
+      articleTitle: currentArticle.title,
+    });
     return ActionResult.ok(null, message);
   } catch (error) {
-    LogUtils.logOperationError('change_article_status', error, context);
+    LogUtils.logOperationError("change_article_status", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur interne du serveur'
+      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : "Erreur interne du serveur"
     );
   }
 }
@@ -515,8 +539,8 @@ export async function bulkChangeArticleStatus(
 /* ==================== TAGS ==================== */
 
 export async function createTag(data: Omit<TagInsert, "id">): Promise<ActionResult<unknown>> {
-  const context = LogUtils.createUserActionContext('unknown', 'create_tag', 'magazine');
-  LogUtils.logOperationStart('create_tag', context);
+  const context = LogUtils.createUserActionContext("unknown", "create_tag", "magazine");
+  LogUtils.logOperationStart("create_tag", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -533,12 +557,14 @@ export async function createTag(data: Omit<TagInsert, "id">): Promise<ActionResu
     }
 
     revalidatePath("/admin/magazine");
-    LogUtils.logOperationSuccess('create_tag', { ...context, tagName: data.name });
-    return ActionResult.ok(tag, 'Tag créé avec succès');
+    LogUtils.logOperationSuccess("create_tag", { ...context, tagName: data.name });
+    return ActionResult.ok(tag, "Tag créé avec succès");
   } catch (error) {
-    LogUtils.logOperationError('create_tag', error, context);
+    LogUtils.logOperationError("create_tag", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Erreur lors de la création du tag'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Erreur lors de la création du tag"
     );
   }
 }
