@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { redirect } from "next/navigation";
 import AddressForm from "@/components/domain/profile/address-form";
 import { AddressFormData } from "@/lib/validators/address.validator";
-import { countries } from "@/lib/countries";
+import { countries, type Country } from "@/lib/countries";
 
 interface Address {
   id: string;
@@ -184,7 +184,11 @@ export default function AddressesPage({ params }: Props) {
             onCancel={handleCloseForm}
             onSuccess={handleFormSuccess}
             locale={locale}
-            countries={countries}
+            countries={{
+              [locale.toUpperCase()]: [
+                ...(countries[locale.toUpperCase() as keyof typeof countries] || countries.FR),
+              ],
+            }}
           />
         </div>
       )}

@@ -8,7 +8,11 @@ import { DatabaseError } from "@/lib/core/errors";
 /**
  * Generic repository interface
  */
-export interface Repository<TEntity, TCreateInput = Partial<TEntity>, TUpdateInput = Partial<TEntity>> {
+export interface Repository<
+  TEntity,
+  TCreateInput = Partial<TEntity>,
+  TUpdateInput = Partial<TEntity>,
+> {
   /**
    * Find entity by ID
    */
@@ -58,7 +62,7 @@ export interface FindManyOptions<TEntity> {
   select?: (keyof TEntity)[];
   orderBy?: {
     field: keyof TEntity;
-    direction: 'asc' | 'desc';
+    direction: "asc" | "desc";
   }[];
   limit?: number;
   offset?: number;
@@ -109,14 +113,19 @@ export interface Transaction {
 /**
  * Repository with transaction support
  */
-export interface TransactionalRepository<TEntity, TCreateInput = Partial<TEntity>, TUpdateInput = Partial<TEntity>> 
-  extends Repository<TEntity, TCreateInput, TUpdateInput> {
-  
+export interface TransactionalRepository<
+  TEntity,
+  TCreateInput = Partial<TEntity>,
+  TUpdateInput = Partial<TEntity>,
+> extends Repository<TEntity, TCreateInput, TUpdateInput> {
   /**
    * Execute operations within a transaction
    */
   withTransaction<T>(
-    callback: (tx: Transaction, repo: Repository<TEntity, TCreateInput, TUpdateInput>) => Promise<Result<T, DatabaseError>>
+    callback: (
+      tx: Transaction,
+      repo: Repository<TEntity, TCreateInput, TUpdateInput>
+    ) => Promise<Result<T, DatabaseError>>
   ): Promise<Result<T, DatabaseError>>;
 }
 
@@ -124,8 +133,8 @@ export interface TransactionalRepository<TEntity, TCreateInput = Partial<TEntity
  * Repository factory interface
  */
 export interface RepositoryFactory {
-  createCartRepository(): Repository<any>;
-  createProductRepository(): Repository<any>;
-  createUserRepository(): Repository<any>;
-  createOrderRepository(): Repository<any>;
+  createCartRepository(): Repository<unknown>;
+  createProductRepository(): Repository<unknown>;
+  createUserRepository(): Repository<unknown>;
+  createOrderRepository(): Repository<unknown>;
 }

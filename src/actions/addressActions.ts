@@ -156,3 +156,98 @@ export async function updateAddress(
     );
   }
 }
+
+export async function deleteAddress(addressId: string): Promise<ActionResult<unknown>> {
+  const context = LogUtils.createUserActionContext("unknown", "delete_address", "profile", {
+    addressId,
+  });
+  LogUtils.logOperationStart("delete_address", context);
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new AuthenticationError("Utilisateur non authentifié");
+    }
+    context.userId = user.id;
+
+    // Suppression en base (avec sécurité utilisateur)
+    const { error: deleteError } = await supabase
+      .from("addresses")
+      .delete()
+      .eq("id", addressId)
+      .eq("user_id", user.id); // Sécurité : utilisateur ne peut supprimer que ses adresses
+
+    if (deleteError) {
+      throw ErrorUtils.fromSupabaseError(deleteError);
+    }
+
+    // Revalidation des pages
+    revalidatePath("/profile/addresses");
+    revalidatePath("/checkout");
+    revalidatePath("/");
+
+    // Synchronisation du flag billing_address_is_different
+    try {
+      const { syncProfileAddressFlag } = await import("./profileActions");
+      await syncProfileAddressFlag("fr", user.id);
+    } catch (syncError) {
+      LogUtils.logOperationError("sync_profile_address_flag", syncError, context);
+      // Ne pas faire échouer la suppression si la sync échoue
+    }
+
+    LogUtils.logOperationSuccess("delete_address", context);
+    return ActionResult.ok(null, "Adresse supprimée avec succès");
+  } catch (error) {
+    LogUtils.logOperationError("delete_address", error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Erreur lors de la suppression de l'adresse"
+    );
+  }
+}
+
+export async function getUserAddresses(): Promise<ActionResult<unknown[]>> {
+  const context = LogUtils.createUserActionContext("unknown", "get_user_addresses", "profile");
+  LogUtils.logOperationStart("get_user_addresses", context);
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new AuthenticationError("Utilisateur non authentifié");
+    }
+    context.userId = user.id;
+
+    // Récupération des adresses de l'utilisateur
+    const { data: addresses, error: fetchError } = await supabase
+      .from("addresses")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (fetchError) {
+      throw ErrorUtils.fromSupabaseError(fetchError);
+    }
+
+    LogUtils.logOperationSuccess("get_user_addresses", {
+      ...context,
+      count: addresses?.length || 0,
+    });
+    return ActionResult.ok(addresses || []);
+  } catch (error) {
+    LogUtils.logOperationError("get_user_addresses", error, context);
+    return ActionResult.error(
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Erreur lors de la récupération des adresses"
+    );
+  }
+}

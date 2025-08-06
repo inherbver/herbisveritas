@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AutoSaveEditor } from "@/components/magazine/auto-save-editor";
 import { TipTapViewer } from "@/components/magazine/tiptap-viewer";
 import { ImageUploadField } from "@/components/shared/image-upload-field";
-import { uploadMagazineImageCore } from "@/lib/storage/image-upload";
+import { uploadMagazineImageAction } from "@/actions/magazineActions";
 import { createArticle, updateArticle } from "@/actions/magazineActions";
 import { ArticleDisplay, Category, Tag, ArticleFormData, TipTapContent } from "@/types/magazine";
 
@@ -40,10 +40,14 @@ const tipTapContentSchema: z.ZodType<TipTapContent> = z.lazy(() =>
     content: z.array(tipTapContentSchema).optional(),
     attrs: z.record(z.unknown()).optional(),
     text: z.string().optional(),
-    marks: z.array(z.object({
-      type: z.string(),
-      attrs: z.record(z.unknown()).optional(),
-    })).optional(),
+    marks: z
+      .array(
+        z.object({
+          type: z.string(),
+          attrs: z.record(z.unknown()).optional(),
+        })
+      )
+      .optional(),
   })
 );
 
@@ -377,7 +381,7 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
                   name="featured_image"
                   label="Image mise en avant"
                   description="Choisissez une image qui représente bien votre article"
-                  uploadFunction={uploadMagazineImageCore}
+                  uploadFunction={uploadMagazineImageAction}
                   translationKey="AdminMagazine"
                   placeholder="https://example.com/image.jpg"
                 />

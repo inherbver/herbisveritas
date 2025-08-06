@@ -2,7 +2,7 @@
 
 /**
  * Market Server Actions
- * 
+ *
  * Server actions for CRUD operations on markets.
  * Includes authentication, validation, and event emission.
  */
@@ -12,12 +12,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 import { ActionResult } from "@/lib/core/result";
-import type { Market, CreateMarketData, UpdateMarketData } from "@/types/market";
-import { 
-  createMarketSchema, 
-  updateMarketSchema, 
+import type {
+  Market,
+  CreateMarketData as _CreateMarketData,
+  UpdateMarketData as _UpdateMarketData,
+} from "@/types/market";
+import {
+  createMarketSchema,
+  updateMarketSchema,
   validateMarketForm,
-  validateUpdateMarketForm
+  validateUpdateMarketForm,
 } from "@/lib/validators/market";
 import {
   uploadMarketImageCore,
@@ -31,15 +35,17 @@ export async function createMarket(formData: FormData): Promise<ActionResult<{ i
   try {
     // 1. Check admin permissions
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
     const isAdmin = await checkAdminRole(user.id);
     if (!isAdmin) {
-      return { 
-        success: false, 
-        error: "Accès non autorisé. Seuls les administrateurs peuvent créer des marchés." 
+      return {
+        success: false,
+        error: "Accès non autorisé. Seuls les administrateurs peuvent créer des marchés.",
       };
     }
 
@@ -53,9 +59,9 @@ export async function createMarket(formData: FormData): Promise<ActionResult<{ i
     const validation = createMarketSchema.safeParse(validatedData);
     if (!validation.success) {
       const firstError = validation.error.errors[0];
-      return { 
-        success: false, 
-        error: `Validation échouée: ${firstError.message}` 
+      return {
+        success: false,
+        error: `Validation échouée: ${firstError.message}`,
       };
     }
 
@@ -68,9 +74,9 @@ export async function createMarket(formData: FormData): Promise<ActionResult<{ i
 
     if (error) {
       console.error("Database error creating market:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la création du marché en base de données" 
+      return {
+        success: false,
+        error: "Erreur lors de la création du marché en base de données",
       };
     }
 
@@ -81,17 +87,16 @@ export async function createMarket(formData: FormData): Promise<ActionResult<{ i
     // 6. TODO: Emit event (Phase 4)
     // await emitMarketCreatedEvent(data.id, validation.data);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: { id: data.id },
-      message: "Marché créé avec succès"
+      message: "Marché créé avec succès",
     };
-
   } catch (error) {
     console.error("Unexpected error creating market:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la création du marché" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la création du marché",
     };
   }
 }
@@ -99,22 +104,21 @@ export async function createMarket(formData: FormData): Promise<ActionResult<{ i
 /**
  * Update an existing market
  */
-export async function updateMarket(
-  id: string, 
-  formData: FormData
-): Promise<ActionResult<void>> {
+export async function updateMarket(id: string, formData: FormData): Promise<ActionResult<void>> {
   try {
     // 1. Check admin permissions
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
     const isAdmin = await checkAdminRole(user.id);
     if (!isAdmin) {
-      return { 
-        success: false, 
-        error: "Accès non autorisé. Seuls les administrateurs peuvent modifier des marchés." 
+      return {
+        success: false,
+        error: "Accès non autorisé. Seuls les administrateurs peuvent modifier des marchés.",
       };
     }
 
@@ -127,27 +131,24 @@ export async function updateMarket(
     // 3. Validate with schema
     const validation = updateMarketSchema.safeParse({
       id,
-      ...validatedData
+      ...validatedData,
     });
     if (!validation.success) {
       const firstError = validation.error.errors[0];
-      return { 
-        success: false, 
-        error: `Validation échouée: ${firstError.message}` 
+      return {
+        success: false,
+        error: `Validation échouée: ${firstError.message}`,
       };
     }
 
     // 4. Update in database
-    const { error } = await supabase
-      .from("markets")
-      .update(validation.data)
-      .eq("id", id);
+    const { error } = await supabase.from("markets").update(validation.data).eq("id", id);
 
     if (error) {
       console.error("Database error updating market:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la modification du marché" 
+      return {
+        success: false,
+        error: "Erreur lors de la modification du marché",
       };
     }
 
@@ -158,16 +159,15 @@ export async function updateMarket(
     // 6. TODO: Emit event (Phase 4)
     // await emitMarketUpdatedEvent(id, validation.data);
 
-    return { 
+    return {
       success: true,
-      message: "Marché modifié avec succès"
+      message: "Marché modifié avec succès",
     };
-
   } catch (error) {
     console.error("Unexpected error updating market:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la modification du marché" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la modification du marché",
     };
   }
 }
@@ -179,20 +179,22 @@ export async function deleteMarket(id: string): Promise<ActionResult<void>> {
   try {
     // 1. Check admin permissions
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
     const isAdmin = await checkAdminRole(user.id);
     if (!isAdmin) {
-      return { 
-        success: false, 
-        error: "Accès non autorisé. Seuls les administrateurs peuvent supprimer des marchés." 
+      return {
+        success: false,
+        error: "Accès non autorisé. Seuls les administrateurs peuvent supprimer des marchés.",
       };
     }
 
     // 2. Validate ID
-    if (!id || typeof id !== 'string') {
+    if (!id || typeof id !== "string") {
       return { success: false, error: "ID de marché invalide" };
     }
 
@@ -204,23 +206,20 @@ export async function deleteMarket(id: string): Promise<ActionResult<void>> {
       .single();
 
     if (fetchError) {
-      return { 
-        success: false, 
-        error: "Marché non found ou erreur d'accès" 
+      return {
+        success: false,
+        error: "Marché non found ou erreur d'accès",
       };
     }
 
     // 4. Delete from database
-    const { error } = await supabase
-      .from("markets")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("markets").delete().eq("id", id);
 
     if (error) {
       console.error("Database error deleting market:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la suppression du marché" 
+      return {
+        success: false,
+        error: "Erreur lors de la suppression du marché",
       };
     }
 
@@ -231,16 +230,15 @@ export async function deleteMarket(id: string): Promise<ActionResult<void>> {
     // 6. TODO: Emit event (Phase 4)
     // await emitMarketDeletedEvent(id, market);
 
-    return { 
+    return {
       success: true,
-      message: `Marché "${market.name}" supprimé avec succès`
+      message: `Marché "${market.name}" supprimé avec succès`,
     };
-
   } catch (error) {
     console.error("Unexpected error deleting market:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la suppression du marché" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la suppression du marché",
     };
   }
 }
@@ -258,22 +256,21 @@ export async function getMarkets(): Promise<ActionResult<Market[]>> {
 
     if (error) {
       console.error("Database error fetching markets:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la récupération des marchés" 
+      return {
+        success: false,
+        error: "Erreur lors de la récupération des marchés",
       };
     }
 
-    return { 
-      success: true, 
-      data: markets || [] 
+    return {
+      success: true,
+      data: markets || [],
     };
-
   } catch (error) {
     console.error("Unexpected error fetching markets:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la récupération des marchés" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la récupération des marchés",
     };
   }
 }
@@ -283,7 +280,7 @@ export async function getMarkets(): Promise<ActionResult<Market[]>> {
  */
 export async function getMarketById(id: string): Promise<ActionResult<Market>> {
   try {
-    if (!id || typeof id !== 'string') {
+    if (!id || typeof id !== "string") {
       return { success: false, error: "ID de marché invalide" };
     }
 
@@ -296,22 +293,21 @@ export async function getMarketById(id: string): Promise<ActionResult<Market>> {
 
     if (error) {
       console.error("Database error fetching market:", error);
-      return { 
-        success: false, 
-        error: "Marché non trouvé" 
+      return {
+        success: false,
+        error: "Marché non trouvé",
       };
     }
 
-    return { 
-      success: true, 
-      data: market 
+    return {
+      success: true,
+      data: market,
     };
-
   } catch (error) {
     console.error("Unexpected error fetching market:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la récupération du marché" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la récupération du marché",
     };
   }
 }

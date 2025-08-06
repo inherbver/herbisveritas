@@ -1,19 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, usePathname, type AppPathname } from "@/i18n/navigation";
 import { cn } from "@/utils/cn";
 import { ArrowLeft } from "lucide-react";
 
 // Définir un type plus spécifique pour les chemins du profil
-type ProfilePathname =
-  | "/profile/account"
-  | "/profile/addresses"
-  | "/profile/orders"
-  | "/profile/password";
-
+// Using string type to be compatible with Link href prop
 interface NavLinkItem {
-  href: ProfilePathname;
+  href: string;
   labelKey: string;
 }
 
@@ -34,7 +29,7 @@ export default function ProfileNavLinks() {
     <nav aria-label={t("navigationLabel")} className="flex flex-col space-y-4">
       {isSubPage && (
         <Link
-          href={mainLink.href}
+          href={mainLink.href as any}
           className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-accent-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -44,7 +39,7 @@ export default function ProfileNavLinks() {
 
       <div>
         <Link
-          href={mainLink.href}
+          href={mainLink.href as any}
           className={cn(
             "block rounded-md px-3 py-2 text-base font-semibold text-foreground",
             !isSubPage && "bg-accent"
@@ -59,7 +54,7 @@ export default function ProfileNavLinks() {
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                href={link.href as any}
                 className={cn(
                   "block rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                   isActive && "bg-accent font-semibold text-accent-foreground"

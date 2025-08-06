@@ -5,7 +5,7 @@
 export abstract class AppError extends Error {
   abstract readonly code: string;
   abstract readonly statusCode: number;
-  
+
   constructor(
     message: string,
     public readonly context?: Record<string, unknown>
@@ -19,7 +19,7 @@ export abstract class AppError extends Error {
  * Validation errors
  */
 export class ValidationError extends AppError {
-  readonly code = 'VALIDATION_ERROR';
+  readonly code = "VALIDATION_ERROR";
   readonly statusCode = 400;
 
   constructor(
@@ -35,13 +35,10 @@ export class ValidationError extends AppError {
  * Authorization errors
  */
 export class AuthorizationError extends AppError {
-  readonly code = 'AUTHORIZATION_ERROR';
+  readonly code = "AUTHORIZATION_ERROR";
   readonly statusCode = 403;
 
-  constructor(
-    message: string = 'Accès non autorisé',
-    context?: Record<string, unknown>
-  ) {
+  constructor(message: string = "Accès non autorisé", context?: Record<string, unknown>) {
     super(message, context);
   }
 }
@@ -50,13 +47,10 @@ export class AuthorizationError extends AppError {
  * Authentication errors
  */
 export class AuthenticationError extends AppError {
-  readonly code = 'AUTHENTICATION_ERROR';
+  readonly code = "AUTHENTICATION_ERROR";
   readonly statusCode = 401;
 
-  constructor(
-    message: string = 'Authentification requise',
-    context?: Record<string, unknown>
-  ) {
+  constructor(message: string = "Authentification requise", context?: Record<string, unknown>) {
     super(message, context);
   }
 }
@@ -65,15 +59,11 @@ export class AuthenticationError extends AppError {
  * Resource not found errors
  */
 export class NotFoundError extends AppError {
-  readonly code = 'NOT_FOUND_ERROR';
+  readonly code = "NOT_FOUND_ERROR";
   readonly statusCode = 404;
 
-  constructor(
-    resource: string,
-    identifier?: string,
-    context?: Record<string, unknown>
-  ) {
-    const message = identifier 
+  constructor(resource: string, identifier?: string, context?: Record<string, unknown>) {
+    const message = identifier
       ? `${resource} avec l'identifiant "${identifier}" introuvable`
       : `${resource} introuvable`;
     super(message, context);
@@ -84,13 +74,10 @@ export class NotFoundError extends AppError {
  * Business logic errors
  */
 export class BusinessError extends AppError {
-  readonly code = 'BUSINESS_ERROR';
+  readonly code = "BUSINESS_ERROR";
   readonly statusCode = 422;
 
-  constructor(
-    message: string,
-    context?: Record<string, unknown>
-  ) {
+  constructor(message: string, context?: Record<string, unknown>) {
     super(message, context);
   }
 }
@@ -99,7 +86,7 @@ export class BusinessError extends AppError {
  * Database operation errors
  */
 export class DatabaseError extends AppError {
-  readonly code = 'DATABASE_ERROR';
+  readonly code = "DATABASE_ERROR";
   readonly statusCode = 500;
 
   constructor(
@@ -115,7 +102,7 @@ export class DatabaseError extends AppError {
  * External service errors
  */
 export class ExternalServiceError extends AppError {
-  readonly code = 'EXTERNAL_SERVICE_ERROR';
+  readonly code = "EXTERNAL_SERVICE_ERROR";
   readonly statusCode = 502;
 
   constructor(
@@ -132,11 +119,11 @@ export class ExternalServiceError extends AppError {
  * Rate limiting errors
  */
 export class RateLimitError extends AppError {
-  readonly code = 'RATE_LIMIT_ERROR';
+  readonly code = "RATE_LIMIT_ERROR";
   readonly statusCode = 429;
 
   constructor(
-    message: string = 'Trop de requêtes, veuillez réessayer plus tard',
+    message: string = "Trop de requêtes, veuillez réessayer plus tard",
     context?: Record<string, unknown>
   ) {
     super(message, context);
@@ -150,34 +137,34 @@ export const ErrorGuards = {
   isAppError: (error: unknown): error is AppError => {
     return error instanceof AppError;
   },
-  
+
   isValidationError: (error: unknown): error is ValidationError => {
     return error instanceof ValidationError;
   },
-  
+
   isAuthorizationError: (error: unknown): error is AuthorizationError => {
     return error instanceof AuthorizationError;
   },
-  
+
   isAuthenticationError: (error: unknown): error is AuthenticationError => {
     return error instanceof AuthenticationError;
   },
-  
+
   isNotFoundError: (error: unknown): error is NotFoundError => {
     return error instanceof NotFoundError;
   },
-  
+
   isBusinessError: (error: unknown): error is BusinessError => {
     return error instanceof BusinessError;
   },
-  
+
   isDatabaseError: (error: unknown): error is DatabaseError => {
     return error instanceof DatabaseError;
   },
-  
+
   isExternalServiceError: (error: unknown): error is ExternalServiceError => {
     return error instanceof ExternalServiceError;
-  }
+  },
 };
 
 /**
@@ -198,12 +185,12 @@ export const ErrorUtils = {
     if (ErrorGuards.isAppError(error)) {
       return error;
     }
-    
+
     if (error instanceof Error) {
       return new DatabaseError(error.message, error);
     }
-    
-    return new DatabaseError('Erreur inconnue', error);
+
+    return new DatabaseError("Erreur inconnue", error);
   },
 
   /**
@@ -211,27 +198,27 @@ export const ErrorUtils = {
    */
   formatForUser: (error: AppError): string => {
     switch (error.code) {
-      case 'VALIDATION_ERROR':
+      case "VALIDATION_ERROR":
         return error.message;
-      case 'AUTHORIZATION_ERROR':
-        return 'Vous n\'avez pas les permissions nécessaires pour cette action';
-      case 'AUTHENTICATION_ERROR':
-        return 'Veuillez vous connecter pour continuer';
-      case 'NOT_FOUND_ERROR':
+      case "AUTHORIZATION_ERROR":
+        return "Vous n'avez pas les permissions nécessaires pour cette action";
+      case "AUTHENTICATION_ERROR":
+        return "Veuillez vous connecter pour continuer";
+      case "NOT_FOUND_ERROR":
         return error.message;
-      case 'BUSINESS_ERROR':
+      case "BUSINESS_ERROR":
         return error.message;
-      case 'RATE_LIMIT_ERROR':
+      case "RATE_LIMIT_ERROR":
         return error.message;
       default:
-        return 'Une erreur technique s\'est produite. Veuillez réessayer.';
+        return "Une erreur technique s'est produite. Veuillez réessayer.";
     }
   },
 
   /**
    * Formats error for logging
    */
-  formatForLogging: (error: AppError): Record<string, any> => {
+  formatForLogging: (error: AppError): Record<string, unknown> => {
     return {
       name: error.name,
       code: error.code,
@@ -239,32 +226,33 @@ export const ErrorUtils = {
       statusCode: error.statusCode,
       context: error.context,
       stack: error.stack,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   },
 
   /**
    * Creates error from Supabase error
    */
-  fromSupabaseError: (error: any): AppError => {
+  fromSupabaseError: (error: unknown): AppError => {
     if (!error) {
-      return new DatabaseError('Erreur de base de données inconnue');
+      return new DatabaseError("Erreur de base de données inconnue");
     }
 
-    const code = error.code;
-    const message = error.message || 'Erreur de base de données';
+    const code = (error as Record<string, unknown>)?.code;
+    const message =
+      ((error as Record<string, unknown>)?.message as string) || "Erreur de base de données";
 
     switch (code) {
-      case '23505': // unique_violation
-        return new BusinessError('Cette ressource existe déjà');
-      case '23503': // foreign_key_violation
-        return new BusinessError('Référence invalide détectée');
-      case '42501': // insufficient_privilege
-        return new AuthorizationError('Permissions insuffisantes');
-      case 'PGRST116': // Row not found
-        return new NotFoundError('Ressource');
+      case "23505": // unique_violation
+        return new BusinessError("Cette ressource existe déjà");
+      case "23503": // foreign_key_violation
+        return new BusinessError("Référence invalide détectée");
+      case "42501": // insufficient_privilege
+        return new AuthorizationError("Permissions insuffisantes");
+      case "PGRST116": // Row not found
+        return new NotFoundError("Ressource");
       default:
         return new DatabaseError(message, error);
     }
-  }
+  },
 };

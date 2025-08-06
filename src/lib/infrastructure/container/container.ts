@@ -1,6 +1,6 @@
 /**
  * Simple Dependency Injection Container
- * 
+ *
  * Provides a lightweight IoC container for managing dependencies
  * without the complexity of full DI frameworks.
  */
@@ -13,20 +13,20 @@ import { logger } from "@/lib/core/logger";
  * Service lifetime types
  */
 export enum ServiceLifetime {
-  SINGLETON = 'singleton',
-  TRANSIENT = 'transient',
-  SCOPED = 'scoped',
+  SINGLETON = "singleton",
+  TRANSIENT = "transient",
+  SCOPED = "scoped",
 }
 
 /**
  * Service factory function
  */
-export type ServiceFactory<T = any> = (container: Container) => T;
+export type ServiceFactory<T = unknown> = (container: Container) => T;
 
 /**
  * Service registration
  */
-interface ServiceRegistration<T = any> {
+interface ServiceRegistration<T = unknown> {
   factory: ServiceFactory<T>;
   lifetime: ServiceLifetime;
   instance?: T;
@@ -38,7 +38,7 @@ interface ServiceRegistration<T = any> {
  * Container scope for scoped services
  */
 export class ContainerScope {
-  private scopedInstances = new Map<string, any>();
+  private scopedInstances = new Map<string, unknown>();
 
   constructor(private readonly container: Container) {}
 
@@ -49,7 +49,7 @@ export class ContainerScope {
   dispose(): void {
     // Dispose all scoped instances that have a dispose method
     for (const [token, instance] of this.scopedInstances) {
-      if (instance && typeof instance.dispose === 'function') {
+      if (instance && typeof instance.dispose === "function") {
         try {
           instance.dispose();
         } catch (error) {
@@ -66,7 +66,7 @@ export class ContainerScope {
  */
 export class Container {
   private services = new Map<string, ServiceRegistration>();
-  private singletonInstances = new Map<string, any>();
+  private singletonInstances = new Map<string, unknown>();
   private isBuilt = false;
 
   /**
@@ -79,7 +79,7 @@ export class Container {
     tags: string[] = []
   ): Container {
     this.ensureNotBuilt();
-    
+
     this.services.set(token, {
       factory,
       lifetime: ServiceLifetime.SINGLETON,
@@ -100,7 +100,7 @@ export class Container {
     tags: string[] = []
   ): Container {
     this.ensureNotBuilt();
-    
+
     this.services.set(token, {
       factory,
       lifetime: ServiceLifetime.TRANSIENT,
@@ -121,7 +121,7 @@ export class Container {
     tags: string[] = []
   ): Container {
     this.ensureNotBuilt();
-    
+
     this.services.set(token, {
       factory,
       lifetime: ServiceLifetime.SCOPED,
@@ -137,7 +137,7 @@ export class Container {
    */
   registerInstance<T>(token: string, instance: T, tags: string[] = []): Container {
     this.ensureNotBuilt();
-    
+
     this.services.set(token, {
       factory: () => instance,
       lifetime: ServiceLifetime.SINGLETON,
@@ -154,15 +154,15 @@ export class Container {
    */
   registerClass<T>(
     token: string,
-    constructor: new (...args: any[]) => T,
+    constructor: new (...args: unknown[]) => T,
     lifetime: ServiceLifetime = ServiceLifetime.TRANSIENT,
     dependencies: string[] = [],
     tags: string[] = []
   ): Container {
     this.ensureNotBuilt();
-    
+
     const factory: ServiceFactory<T> = (container) => {
-      const deps = dependencies.map(dep => container.resolve(dep));
+      const deps = dependencies.map((dep) => container.resolve(dep));
       return new constructor(...deps);
     };
 
@@ -188,11 +188,11 @@ export class Container {
       }
 
       this.isBuilt = true;
-      logger.info('Container built successfully', { serviceCount: this.services.size });
-      
+      logger.info("Container built successfully", { serviceCount: this.services.size });
+
       return Result.ok(this);
     } catch (error) {
-      return Result.error(new BusinessError('Failed to build container', { error }));
+      return Result.error(new BusinessError("Failed to build container", { error }));
     }
   }
 
@@ -207,7 +207,7 @@ export class Container {
   /**
    * Resolve a service within a scope
    */
-  resolveInScope<T>(token: string, scopedInstances: Map<string, any>): T {
+  resolveInScope<T>(token: string, scopedInstances: Map<string, unknown>): T {
     this.ensureBuilt();
     return this.resolveInternal<T>(token, new Set(), scopedInstances);
   }
@@ -217,7 +217,7 @@ export class Container {
    */
   tryResolve<T>(token: string): T | null {
     this.ensureBuilt();
-    
+
     try {
       return this.resolveInternal<T>(token, new Set());
     } catch {
@@ -237,9 +237,9 @@ export class Container {
    */
   getServicesByTag<T>(tag: string): T[] {
     this.ensureBuilt();
-    
+
     const services: T[] = [];
-    
+
     for (const [token, registration] of this.services) {
       if (registration.tags?.includes(tag)) {
         services.push(this.resolve<T>(token));
@@ -305,11 +305,11 @@ export class Container {
   private resolveInternal<T>(
     token: string,
     resolutionStack: Set<string>,
-    scopedInstances?: Map<string, any>
+    scopedInstances?: Map<string, unknown>
   ): T {
     // Check for circular dependencies
     if (resolutionStack.has(token)) {
-      const cycle = Array.from(resolutionStack).join(' -> ') + ' -> ' + token;
+      const cycle = Array.from(resolutionStack).join(" -> ") + " -> " + token;
       throw new BusinessError(`Circular dependency detected: ${cycle}`);
     }
 
@@ -324,16 +324,16 @@ export class Container {
       switch (registration.lifetime) {
         case ServiceLifetime.SINGLETON:
           return this.resolveSingleton<T>(token, registration, resolutionStack);
-          
+
         case ServiceLifetime.SCOPED:
           if (!scopedInstances) {
             throw new BusinessError(`Scoped service '${token}' requested outside of scope`);
           }
           return this.resolveScoped<T>(token, registration, resolutionStack, scopedInstances);
-          
+
         case ServiceLifetime.TRANSIENT:
           return this.resolveTransient<T>(token, registration, resolutionStack, scopedInstances);
-          
+
         default:
           throw new BusinessError(`Unknown service lifetime: ${registration.lifetime}`);
       }
@@ -372,7 +372,7 @@ export class Container {
     token: string,
     registration: ServiceRegistration<T>,
     resolutionStack: Set<string>,
-    scopedInstances: Map<string, any>
+    scopedInstances: Map<string, unknown>
   ): T {
     if (scopedInstances.has(token)) {
       return scopedInstances.get(token);
@@ -391,7 +391,7 @@ export class Container {
     token: string,
     registration: ServiceRegistration<T>,
     resolutionStack: Set<string>,
-    scopedInstances?: Map<string, any>
+    scopedInstances?: Map<string, unknown>
   ): T {
     return registration.factory(this);
   }
@@ -404,9 +404,11 @@ export class Container {
       if (registration.dependencies) {
         for (const dependency of registration.dependencies) {
           if (!this.services.has(dependency)) {
-            return Result.error(new BusinessError(
-              `Service '${token}' depends on '${dependency}' which is not registered`
-            ));
+            return Result.error(
+              new BusinessError(
+                `Service '${token}' depends on '${dependency}' which is not registered`
+              )
+            );
           }
         }
       }
@@ -414,11 +416,11 @@ export class Container {
       // Check for circular dependencies
       const visited = new Set<string>();
       const recursionStack = new Set<string>();
-      
+
       if (this.hasCircularDependency(token, visited, recursionStack)) {
-        return Result.error(new BusinessError(
-          `Circular dependency detected for service '${token}'`
-        ));
+        return Result.error(
+          new BusinessError(`Circular dependency detected for service '${token}'`)
+        );
       }
     }
 
@@ -462,7 +464,7 @@ export class Container {
    */
   private ensureNotBuilt(): void {
     if (this.isBuilt) {
-      throw new BusinessError('Cannot register services after container is built');
+      throw new BusinessError("Cannot register services after container is built");
     }
   }
 
@@ -471,7 +473,7 @@ export class Container {
    */
   private ensureBuilt(): void {
     if (!this.isBuilt) {
-      throw new BusinessError('Container must be built before resolving services');
+      throw new BusinessError("Container must be built before resolving services");
     }
   }
 }
@@ -481,48 +483,48 @@ export class Container {
  */
 export const SERVICE_TOKENS = {
   // Infrastructure
-  SUPABASE_CLIENT: 'SupabaseClient',
-  
+  SUPABASE_CLIENT: "SupabaseClient",
+
   // Repositories
-  CART_REPOSITORY: 'CartRepository',
-  PRODUCT_REPOSITORY: 'ProductRepository',
-  USER_REPOSITORY: 'UserRepository',
-  ADDRESS_REPOSITORY: 'AddressRepository',
-  ORDER_REPOSITORY: 'OrderRepository',
-  ARTICLE_REPOSITORY: 'ArticleRepository',
-  
+  CART_REPOSITORY: "CartRepository",
+  PRODUCT_REPOSITORY: "ProductRepository",
+  USER_REPOSITORY: "UserRepository",
+  ADDRESS_REPOSITORY: "AddressRepository",
+  ORDER_REPOSITORY: "OrderRepository",
+  ARTICLE_REPOSITORY: "ArticleRepository",
+
   // Domain Services
-  CART_DOMAIN_SERVICE: 'CartDomainService',
-  
+  CART_DOMAIN_SERVICE: "CartDomainService",
+
   // Event System
-  EVENT_PUBLISHER: 'EventPublisher',
-  EVENT_BUS: 'EventBus',
-  EVENT_STORE: 'EventStore',
-  EVENT_PROCESSOR: 'EventProcessor',
-  
+  EVENT_PUBLISHER: "EventPublisher",
+  EVENT_BUS: "EventBus",
+  EVENT_STORE: "EventStore",
+  EVENT_PROCESSOR: "EventProcessor",
+
   // Event Handlers
-  CART_EVENT_HANDLER: 'CartEventHandler',
-  ORDER_EVENT_HANDLER: 'OrderEventHandler',
-  USER_EVENT_HANDLER: 'UserEventHandler',
-  INVENTORY_EVENT_HANDLER: 'InventoryEventHandler',
-  NOTIFICATION_EVENT_HANDLER: 'NotificationEventHandler',
-  AUDIT_EVENT_HANDLER: 'AuditEventHandler',
-  
+  CART_EVENT_HANDLER: "CartEventHandler",
+  ORDER_EVENT_HANDLER: "OrderEventHandler",
+  USER_EVENT_HANDLER: "UserEventHandler",
+  INVENTORY_EVENT_HANDLER: "InventoryEventHandler",
+  NOTIFICATION_EVENT_HANDLER: "NotificationEventHandler",
+  AUDIT_EVENT_HANDLER: "AuditEventHandler",
+
   // Event Listeners (Aggregate Handlers)
-  CART_EVENT_LISTENER: 'CartEventListener',
-  ORDER_WORKFLOW_EVENT_LISTENER: 'OrderWorkflowEventListener',
-  NOTIFICATION_EVENT_LISTENER: 'NotificationEventListener',
-  AUDIT_EVENT_LISTENER: 'AuditEventListener',
-  
+  CART_EVENT_LISTENER: "CartEventListener",
+  ORDER_WORKFLOW_EVENT_LISTENER: "OrderWorkflowEventListener",
+  NOTIFICATION_EVENT_LISTENER: "NotificationEventListener",
+  AUDIT_EVENT_LISTENER: "AuditEventListener",
+
   // Event System
-  EVENT_SYSTEM_INITIALIZER: 'EventSystemInitializer',
-  
+  EVENT_SYSTEM_INITIALIZER: "EventSystemInitializer",
+
   // Infrastructure Services
-  LOGGER: 'Logger',
-  
+  LOGGER: "Logger",
+
   // External Services
-  EMAIL_SERVICE: 'EmailService',
-  PAYMENT_SERVICE: 'PaymentService',
+  EMAIL_SERVICE: "EmailService",
+  PAYMENT_SERVICE: "PaymentService",
 } as const;
 
 /**

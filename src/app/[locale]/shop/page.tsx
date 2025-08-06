@@ -139,7 +139,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
       ctaLabel:
         tHero("ctaLabel", { productName: featuredHeroItem.productName }) ||
         tHero("defaultCtaLabel"),
-      ctaLink: `/products/${featuredHeroItem.productSlug}`,
+      ctaLink: `/products/${featuredHeroItem.productSlug}` as any,
     };
   } else {
     heroPropsForComponent = {
@@ -148,9 +148,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
       imageUrl: undefined,
       imageAlt: tHero("fallbackImageAlt"),
       ctaLabel: tHero("fallbackCtaLabel"),
-      ctaLink: { pathname: "/products" as const } satisfies React.ComponentProps<
-        typeof Link
-      >["href"],
+      ctaLink: "/products" as any,
     };
   }
 

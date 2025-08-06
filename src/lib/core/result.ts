@@ -93,10 +93,7 @@ export abstract class Result<T, E = Error> {
   /**
    * Pattern matching for result handling
    */
-  abstract match<U>(
-    onSuccess: (value: T) => U,
-    onError: (error: E) => U
-  ): U;
+  abstract match<U>(onSuccess: (value: T) => U, onError: (error: E) => U): U;
 
   /**
    * Maps the success value to a new type
@@ -142,7 +139,7 @@ class Success<T, E> extends Result<T, E> {
   }
 
   getError(): E {
-    throw new Error('Cannot get error from successful result');
+    throw new Error("Cannot get error from successful result");
   }
 
   getValueOrUndefined(): T {
@@ -193,7 +190,7 @@ class Failure<T, E> extends Result<T, E> {
   }
 
   getValue(): T {
-    throw new Error('Cannot get value from error result');
+    throw new Error("Cannot get value from error result");
   }
 
   getError(): E {
@@ -256,22 +253,20 @@ export const ActionResult = {
   ok: <T>(value: T, message?: string): ActionResult<T> => ({
     success: true,
     data: value,
-    message
+    message,
   }),
-  
+
   error: <T>(error: string): ActionResult<T> => ({
     success: false,
-    error
+    error,
   }),
-  
+
   fromResult: <T>(result: Result<T, unknown>, successMessage?: string): ActionResult<T> => {
     return result.match(
       (value) => ActionResult.ok(value, successMessage),
-      (error) => ActionResult.error(
-        error instanceof Error ? error.message : String(error)
-      )
+      (error) => ActionResult.error(error instanceof Error ? error.message : String(error))
     );
-  }
+  },
 };
 
 /**
@@ -280,7 +275,7 @@ export const ActionResult = {
 export interface DatabaseError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 export type DatabaseResult<T> = Result<T, DatabaseError>;
@@ -291,11 +286,12 @@ export type DatabaseResult<T> = Result<T, DatabaseError>;
 export const DatabaseResult = {
   ok: <T>(value: T): DatabaseResult<T> => Result.ok(value),
   error: <T>(error: DatabaseError): DatabaseResult<T> => Result.error(error),
-  fromSupabaseError: <T>(error: any): DatabaseResult<T> => {
+  fromSupabaseError: <T>(error: unknown): DatabaseResult<T> => {
+    const errorObj = error as Record<string, unknown>;
     return Result.error({
-      code: error.code || 'UNKNOWN',
-      message: error.message || 'Unknown database error',
-      details: error.details
+      code: (errorObj?.code as string) || "UNKNOWN",
+      message: (errorObj?.message as string) || "Unknown database error",
+      details: errorObj?.details,
     });
-  }
+  },
 };

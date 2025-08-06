@@ -5,6 +5,7 @@ import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
 import { productSchema, type ProductFormValues } from "@/lib/validators/product-validator";
 import { revalidateProductPages } from "@/utils/revalidation";
 import { z } from "zod";
+import { Json } from "@/types/supabase";
 import {
   uploadProductImageCore,
   UploadImageResult as CoreUploadImageResult,
@@ -137,10 +138,10 @@ export const updateProduct = withPermissionSafe(
         p_is_active: productData.status === "active", // Convertir status vers is_active pour compatibilité
         p_is_new: productData.is_new,
         p_is_on_promotion: productData.is_on_promotion,
-        p_translations: translations as unknown, // Cast vers unknown pour Supabase RPC
+        p_translations: translations as Json, // Cast vers Json pour Supabase RPC
       };
 
-      const { error } = await supabase.rpc("update_product_with_translations", params as any);
+      const { error } = await supabase.rpc("update_product_with_translations", params);
 
       if (error) {
         throw ErrorUtils.fromSupabaseError(error);

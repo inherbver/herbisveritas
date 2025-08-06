@@ -1,6 +1,6 @@
 /**
  * Base Supabase Repository Implementation
- * 
+ *
  * Provides common functionality for all Supabase repositories
  * with type safety and error handling.
  */
@@ -9,13 +9,17 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { Result } from "@/lib/core/result";
 import { DatabaseError, NotFoundError, ErrorUtils } from "@/lib/core/errors";
 import { logger } from "@/lib/core/logger";
-import { Repository, FindManyOptions, PaginatedResult } from "@/lib/domain/interfaces/repository.interface";
+import {
+  Repository,
+  FindManyOptions,
+  PaginatedResult,
+} from "@/lib/domain/interfaces/repository.interface";
 
 /**
  * Supabase query builder type helpers
  */
-type SupabaseQueryBuilder = ReturnType<SupabaseClient['from']>;
-type SupabaseSelectBuilder = ReturnType<SupabaseQueryBuilder['select']>;
+type SupabaseQueryBuilder = ReturnType<SupabaseClient["from"]>;
+type SupabaseSelectBuilder = ReturnType<SupabaseQueryBuilder["select"]>;
 
 /**
  * Base repository for Supabase with common operations
@@ -23,9 +27,9 @@ type SupabaseSelectBuilder = ReturnType<SupabaseQueryBuilder['select']>;
 export abstract class BaseSupabaseRepository<
   TEntity,
   TCreateInput = Partial<TEntity>,
-  TUpdateInput = Partial<TEntity>
-> implements Repository<TEntity, TCreateInput, TUpdateInput> {
-  
+  TUpdateInput = Partial<TEntity>,
+> implements Repository<TEntity, TCreateInput, TUpdateInput>
+{
   constructor(
     protected readonly supabase: SupabaseClient,
     protected readonly tableName: string
@@ -34,9 +38,9 @@ export abstract class BaseSupabaseRepository<
   /**
    * Abstract methods that must be implemented by concrete repositories
    */
-  abstract mapFromDatabase(raw: any): Result<TEntity, DatabaseError>;
-  abstract mapToDatabase(entity: TCreateInput): any;
-  abstract mapUpdateToDatabase(entity: TUpdateInput): any;
+  abstract mapFromDatabase(raw: Record<string, unknown>): Result<TEntity, DatabaseError>;
+  abstract mapToDatabase(entity: TCreateInput): Record<string, unknown>;
+  abstract mapUpdateToDatabase(entity: TUpdateInput): Record<string, unknown>;
 
   /**
    * Find entity by ID
@@ -45,8 +49,8 @@ export abstract class BaseSupabaseRepository<
     try {
       const { data, error } = await this.supabase
         .from(this.tableName)
-        .select('*')
-        .eq('id', id)
+        .select("*")
+        .eq("id", id)
         .maybeSingle();
 
       if (error) {
@@ -66,16 +70,18 @@ export abstract class BaseSupabaseRepository<
       return Result.ok(mappingResult.getValue());
     } catch (error) {
       logger.error(`Repository findById exception for ${this.tableName}`, error, { id });
-      return Result.error(new DatabaseError('Database operation failed', error));
+      return Result.error(new DatabaseError("Database operation failed", error));
     }
   }
 
   /**
    * Find multiple entities
    */
-  async findMany(options: FindManyOptions<TEntity> = {}): Promise<Result<TEntity[], DatabaseError>> {
+  async findMany(
+    options: FindManyOptions<TEntity> = {}
+  ): Promise<Result<TEntity[], DatabaseError>> {
     try {
-      let query = this.supabase.from(this.tableName).select('*');
+      let query = this.supabase.from(this.tableName).select("*");
 
       // Apply where conditions
       if (options.where) {
@@ -85,7 +91,7 @@ export abstract class BaseSupabaseRepository<
       // Apply ordering
       if (options.orderBy) {
         for (const order of options.orderBy) {
-          query = query.order(order.field as string, { ascending: order.direction === 'asc' });
+          query = query.order(order.field as string, { ascending: order.direction === "asc" });
         }
       }
 
@@ -113,7 +119,11 @@ export abstract class BaseSupabaseRepository<
       for (const raw of data) {
         const mappingResult = this.mapFromDatabase(raw);
         if (mappingResult.isError()) {
-          logger.warn(`Failed to map entity in findMany for ${this.tableName}`, mappingResult.getError(), { raw });
+          logger.warn(
+            `Failed to map entity in findMany for ${this.tableName}`,
+            mappingResult.getError(),
+            { raw }
+          );
           continue; // Skip invalid entities
         }
         entities.push(mappingResult.getValue());
@@ -122,7 +132,7 @@ export abstract class BaseSupabaseRepository<
       return Result.ok(entities);
     } catch (error) {
       logger.error(`Repository findMany exception for ${this.tableName}`, error, { options });
-      return Result.error(new DatabaseError('Database operation failed', error));
+      return Result.error(new DatabaseError("Database operation failed", error));
     }
   }
 
@@ -145,7 +155,7 @@ export abstract class BaseSupabaseRepository<
   async create(data: TCreateInput): Promise<Result<TEntity, DatabaseError>> {
     try {
       const dbData = this.mapToDatabase(data);
-      
+
       const { data: createdData, error } = await this.supabase
         .from(this.tableName)
         .insert(dbData)
@@ -158,7 +168,7 @@ export abstract class BaseSupabaseRepository<
       }
 
       if (!createdData) {
-        return Result.error(new DatabaseError('Create operation returned no data'));
+        return Result.error(new DatabaseError("Create operation returned no data"));
       }
 
       const mappingResult = this.mapFromDatabase(createdData);
@@ -169,7 +179,7 @@ export abstract class BaseSupabaseRepository<
       return Result.ok(mappingResult.getValue());
     } catch (error) {
       logger.error(`Repository create exception for ${this.tableName}`, error, { data });
-      return Result.error(new DatabaseError('Database operation failed', error));
+      return Result.error(new DatabaseError("Database operation failed", error));
     }
   }
 
@@ -179,11 +189,11 @@ export abstract class BaseSupabaseRepository<
   async update(id: string, data: TUpdateInput): Promise<Result<TEntity, DatabaseError>> {
     try {
       const dbData = this.mapUpdateToDatabase(data);
-      
+
       const { data: updatedData, error } = await this.supabase
         .from(this.tableName)
         .update(dbData)
-        .eq('id', id)
+        .eq("id", id)
         .select()
         .single();
 
@@ -204,7 +214,7 @@ export abstract class BaseSupabaseRepository<
       return Result.ok(mappingResult.getValue());
     } catch (error) {
       logger.error(`Repository update exception for ${this.tableName}`, error, { id, data });
-      return Result.error(new DatabaseError('Database operation failed', error));
+      return Result.error(new DatabaseError("Database operation failed", error));
     }
   }
 
@@ -213,10 +223,7 @@ export abstract class BaseSupabaseRepository<
    */
   async delete(id: string): Promise<Result<boolean, DatabaseError>> {
     try {
-      const { error } = await this.supabase
-        .from(this.tableName)
-        .delete()
-        .eq('id', id);
+      const { error } = await this.supabase.from(this.tableName).delete().eq("id", id);
 
       if (error) {
         logger.error(`Repository delete failed for ${this.tableName}`, error, { id });
@@ -226,7 +233,7 @@ export abstract class BaseSupabaseRepository<
       return Result.ok(true);
     } catch (error) {
       logger.error(`Repository delete exception for ${this.tableName}`, error, { id });
-      return Result.error(new DatabaseError('Database operation failed', error));
+      return Result.error(new DatabaseError("Database operation failed", error));
     }
   }
 
@@ -235,9 +242,7 @@ export abstract class BaseSupabaseRepository<
    */
   async count(criteria?: Partial<TEntity>): Promise<Result<number, DatabaseError>> {
     try {
-      let query = this.supabase
-        .from(this.tableName)
-        .select('*', { count: 'exact', head: true });
+      let query = this.supabase.from(this.tableName).select("*", { count: "exact", head: true });
 
       if (criteria) {
         query = this.applyWhereConditions(query, criteria);
@@ -253,7 +258,7 @@ export abstract class BaseSupabaseRepository<
       return Result.ok(count || 0);
     } catch (error) {
       logger.error(`Repository count exception for ${this.tableName}`, error, { criteria });
-      return Result.error(new DatabaseError('Database operation failed', error));
+      return Result.error(new DatabaseError("Database operation failed", error));
     }
   }
 
@@ -276,7 +281,7 @@ export abstract class BaseSupabaseRepository<
     options: FindManyOptions<TEntity> & { page: number; limit: number }
   ): Promise<Result<PaginatedResult<TEntity>, DatabaseError>> {
     const offset = (options.page - 1) * options.limit;
-    
+
     // Get total count
     const countResult = await this.count(options.where);
     if (countResult.isError()) {
@@ -319,20 +324,22 @@ export abstract class BaseSupabaseRepository<
    */
   async createMany(data: TCreateInput[]): Promise<Result<TEntity[], DatabaseError>> {
     try {
-      const dbData = data.map(item => this.mapToDatabase(item));
-      
+      const dbData = data.map((item) => this.mapToDatabase(item));
+
       const { data: createdData, error } = await this.supabase
         .from(this.tableName)
         .insert(dbData)
         .select();
 
       if (error) {
-        logger.error(`Repository createMany failed for ${this.tableName}`, error, { count: data.length });
+        logger.error(`Repository createMany failed for ${this.tableName}`, error, {
+          count: data.length,
+        });
         return Result.error(ErrorUtils.fromSupabaseError(error) as DatabaseError);
       }
 
       if (!createdData) {
-        return Result.error(new DatabaseError('Batch create operation returned no data'));
+        return Result.error(new DatabaseError("Batch create operation returned no data"));
       }
 
       // Map all entities
@@ -340,7 +347,11 @@ export abstract class BaseSupabaseRepository<
       for (const raw of createdData) {
         const mappingResult = this.mapFromDatabase(raw);
         if (mappingResult.isError()) {
-          logger.warn(`Failed to map entity in createMany for ${this.tableName}`, mappingResult.getError(), { raw });
+          logger.warn(
+            `Failed to map entity in createMany for ${this.tableName}`,
+            mappingResult.getError(),
+            { raw }
+          );
           continue;
         }
         entities.push(mappingResult.getValue());
@@ -348,8 +359,10 @@ export abstract class BaseSupabaseRepository<
 
       return Result.ok(entities);
     } catch (error) {
-      logger.error(`Repository createMany exception for ${this.tableName}`, error, { count: data.length });
-      return Result.error(new DatabaseError('Database operation failed', error));
+      logger.error(`Repository createMany exception for ${this.tableName}`, error, {
+        count: data.length,
+      });
+      return Result.error(new DatabaseError("Database operation failed", error));
     }
   }
 
@@ -358,10 +371,7 @@ export abstract class BaseSupabaseRepository<
    */
   async deleteMany(ids: string[]): Promise<Result<boolean, DatabaseError>> {
     try {
-      const { error } = await this.supabase
-        .from(this.tableName)
-        .delete()
-        .in('id', ids);
+      const { error } = await this.supabase.from(this.tableName).delete().in("id", ids);
 
       if (error) {
         logger.error(`Repository deleteMany failed for ${this.tableName}`, error, { ids });
@@ -371,7 +381,7 @@ export abstract class BaseSupabaseRepository<
       return Result.ok(true);
     } catch (error) {
       logger.error(`Repository deleteMany exception for ${this.tableName}`, error, { ids });
-      return Result.error(new DatabaseError('Database operation failed', error));
+      return Result.error(new DatabaseError("Database operation failed", error));
     }
   }
 
@@ -380,10 +390,10 @@ export abstract class BaseSupabaseRepository<
    */
   protected async executeRawQuery<T>(
     query: string,
-    params?: any[]
+    params?: unknown[]
   ): Promise<Result<T[], DatabaseError>> {
     try {
-      const { data, error } = await this.supabase.rpc('execute_sql', {
+      const { data, error } = await this.supabase.rpc("execute_sql", {
         query,
         params: params || [],
       });
@@ -396,7 +406,7 @@ export abstract class BaseSupabaseRepository<
       return Result.ok(data || []);
     } catch (error) {
       logger.error(`Raw query exception for ${this.tableName}`, error, { query, params });
-      return Result.error(new DatabaseError('Raw query execution failed', error));
+      return Result.error(new DatabaseError("Raw query execution failed", error));
     }
   }
 
@@ -413,26 +423,26 @@ export abstract class BaseSupabaseRepository<
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
           modifiedQuery = modifiedQuery.in(key, value);
-        } else if (typeof value === 'object' && value.hasOwnProperty('operator')) {
+        } else if (typeof value === "object" && value.hasOwnProperty("operator")) {
           // Support for complex operators like { operator: 'gte', value: 100 }
-          const condition = value as { operator: string; value: any };
+          const condition = value as { operator: string; value: unknown };
           switch (condition.operator) {
-            case 'gte':
+            case "gte":
               modifiedQuery = modifiedQuery.gte(key, condition.value);
               break;
-            case 'lte':
+            case "lte":
               modifiedQuery = modifiedQuery.lte(key, condition.value);
               break;
-            case 'gt':
+            case "gt":
               modifiedQuery = modifiedQuery.gt(key, condition.value);
               break;
-            case 'lt':
+            case "lt":
               modifiedQuery = modifiedQuery.lt(key, condition.value);
               break;
-            case 'like':
+            case "like":
               modifiedQuery = modifiedQuery.like(key, condition.value);
               break;
-            case 'ilike':
+            case "ilike":
               modifiedQuery = modifiedQuery.ilike(key, condition.value);
               break;
           }

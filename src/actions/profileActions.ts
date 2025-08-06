@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 "use server";
 
 import { z } from "zod";
@@ -67,18 +67,26 @@ export async function updateUserProfile(
     return {
       success: false,
       message: "Validation failed. Please check the errors.",
-      errors: validationResult.error.flatten().fieldErrors as any,
+      errors: validationResult.error.flatten().fieldErrors,
     };
   }
 
   const accountInfoUpdateData = validationResult.data;
 
-  const dataToUpsert: any = {
+  interface ProfileUpsertData {
+    id: string;
+    updated_at: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    phone_number?: string | null;
+  }
+
+  const dataToUpsert: ProfileUpsertData = {
     id: user.id,
     updated_at: new Date().toISOString(),
-    first_name: accountInfoUpdateData.first_name,
-    last_name: accountInfoUpdateData.last_name,
-    phone_number: accountInfoUpdateData.phone_number,
+    first_name: accountInfoUpdateData.first_name || null,
+    last_name: accountInfoUpdateData.last_name || null,
+    phone_number: accountInfoUpdateData.phone_number || null,
   };
 
   // Removed all address-related logic from dataToUpsert

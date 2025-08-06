@@ -9,7 +9,7 @@ export interface LogContext {
   resource?: string;
   ip?: string;
   userAgent?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface LogEntry {
@@ -56,7 +56,7 @@ class ConsoleLogger implements Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as any).code,
+          code: (error as Record<string, unknown>)?.code as string,
         };
       } else {
         entry.error = {
@@ -151,7 +151,7 @@ class DatabaseLogger implements Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as any).code,
+          code: (error as Record<string, unknown>)?.code as string,
         };
       } else {
         entry.error = {
@@ -216,7 +216,7 @@ export const LogUtils = {
     userId: string,
     action: string,
     resource?: string,
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, unknown>
   ): LogContext => ({
     userId,
     action,
@@ -230,7 +230,7 @@ export const LogUtils = {
   createOperationContext: (
     operation: string,
     service?: string,
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, unknown>
   ): LogContext => ({
     operation,
     service,
@@ -245,11 +245,18 @@ export const LogUtils = {
   },
 
   /**
+   * Logs warning messages for operations
+   */
+  logOperationWarning: (operation: string, message: string, context?: LogContext) => {
+    logger.warn(`${operation}: ${message}`, { ...context, operation });
+  },
+
+  /**
    * Creates a context object from a request
    */
   createRequestContext: (
     request: Request,
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, unknown>
   ): LogContext => ({
     requestId: crypto.randomUUID(),
     ip: request.headers.get("x-forwarded-for") || "unknown",

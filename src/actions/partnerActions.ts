@@ -2,7 +2,7 @@
 
 /**
  * Partner Server Actions
- * 
+ *
  * Server actions for CRUD operations on partners.
  * Includes authentication, validation, and event emission.
  */
@@ -12,13 +12,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 import { ActionResult } from "@/lib/core/result";
-import type { Partner, CreatePartnerData, UpdatePartnerData } from "@/types/partner";
-import { 
-  createPartnerSchema, 
-  updatePartnerSchema, 
+import type {
+  Partner,
+  CreatePartnerData as _CreatePartnerData,
+  UpdatePartnerData as _UpdatePartnerData,
+} from "@/types/partner";
+import {
+  createPartnerSchema,
+  updatePartnerSchema,
   validatePartnerForm,
   updatePartnerOrderSchema,
-  togglePartnerStatusSchema
+  togglePartnerStatusSchema,
 } from "@/lib/validators/partner";
 import {
   uploadPartnerImageCore,
@@ -32,15 +36,17 @@ export async function createPartner(formData: FormData): Promise<ActionResult<{ 
   try {
     // 1. Check admin permissions
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
     const isAdmin = await checkAdminRole(user.id);
     if (!isAdmin) {
-      return { 
-        success: false, 
-        error: "Accès non autorisé. Seuls les administrateurs peuvent créer des partenaires." 
+      return {
+        success: false,
+        error: "Accès non autorisé. Seuls les administrateurs peuvent créer des partenaires.",
       };
     }
 
@@ -54,9 +60,9 @@ export async function createPartner(formData: FormData): Promise<ActionResult<{ 
     const validation = createPartnerSchema.safeParse(validatedData);
     if (!validation.success) {
       const firstError = validation.error.errors[0];
-      return { 
-        success: false, 
-        error: `Validation échouée: ${firstError.message}` 
+      return {
+        success: false,
+        error: `Validation échouée: ${firstError.message}`,
       };
     }
 
@@ -69,9 +75,9 @@ export async function createPartner(formData: FormData): Promise<ActionResult<{ 
 
     if (error) {
       console.error("Database error creating partner:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la création du partenaire en base de données" 
+      return {
+        success: false,
+        error: "Erreur lors de la création du partenaire en base de données",
       };
     }
 
@@ -82,17 +88,16 @@ export async function createPartner(formData: FormData): Promise<ActionResult<{ 
     // 6. TODO: Emit event (Phase 4)
     // await emitPartnerCreatedEvent(data.id, validation.data);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: { id: data.id },
-      message: "Partenaire créé avec succès"
+      message: "Partenaire créé avec succès",
     };
-
   } catch (error) {
     console.error("Unexpected error creating partner:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la création du partenaire" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la création du partenaire",
     };
   }
 }
@@ -100,22 +105,21 @@ export async function createPartner(formData: FormData): Promise<ActionResult<{ 
 /**
  * Update an existing partner
  */
-export async function updatePartner(
-  id: string, 
-  formData: FormData
-): Promise<ActionResult<void>> {
+export async function updatePartner(id: string, formData: FormData): Promise<ActionResult<void>> {
   try {
     // 1. Check admin permissions
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
     const isAdmin = await checkAdminRole(user.id);
     if (!isAdmin) {
-      return { 
-        success: false, 
-        error: "Accès non autorisé. Seuls les administrateurs peuvent modifier des partenaires." 
+      return {
+        success: false,
+        error: "Accès non autorisé. Seuls les administrateurs peuvent modifier des partenaires.",
       };
     }
 
@@ -128,27 +132,24 @@ export async function updatePartner(
     // 3. Validate with schema
     const validation = updatePartnerSchema.safeParse({
       id,
-      ...validatedData
+      ...validatedData,
     });
     if (!validation.success) {
       const firstError = validation.error.errors[0];
-      return { 
-        success: false, 
-        error: `Validation échouée: ${firstError.message}` 
+      return {
+        success: false,
+        error: `Validation échouée: ${firstError.message}`,
       };
     }
 
     // 4. Update in database
-    const { error } = await supabase
-      .from("partners")
-      .update(validation.data)
-      .eq("id", id);
+    const { error } = await supabase.from("partners").update(validation.data).eq("id", id);
 
     if (error) {
       console.error("Database error updating partner:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la modification du partenaire" 
+      return {
+        success: false,
+        error: "Erreur lors de la modification du partenaire",
       };
     }
 
@@ -159,16 +160,15 @@ export async function updatePartner(
     // 6. TODO: Emit event (Phase 4)
     // await emitPartnerUpdatedEvent(id, validation.data);
 
-    return { 
+    return {
       success: true,
-      message: "Partenaire modifié avec succès"
+      message: "Partenaire modifié avec succès",
     };
-
   } catch (error) {
     console.error("Unexpected error updating partner:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la modification du partenaire" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la modification du partenaire",
     };
   }
 }
@@ -180,20 +180,22 @@ export async function deletePartner(id: string): Promise<ActionResult<void>> {
   try {
     // 1. Check admin permissions
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
     const isAdmin = await checkAdminRole(user.id);
     if (!isAdmin) {
-      return { 
-        success: false, 
-        error: "Accès non autorisé. Seuls les administrateurs peuvent supprimer des partenaires." 
+      return {
+        success: false,
+        error: "Accès non autorisé. Seuls les administrateurs peuvent supprimer des partenaires.",
       };
     }
 
     // 2. Validate ID
-    if (!id || typeof id !== 'string') {
+    if (!id || typeof id !== "string") {
       return { success: false, error: "ID de partenaire invalide" };
     }
 
@@ -205,23 +207,20 @@ export async function deletePartner(id: string): Promise<ActionResult<void>> {
       .single();
 
     if (fetchError) {
-      return { 
-        success: false, 
-        error: "Partenaire non trouvé ou erreur d'accès" 
+      return {
+        success: false,
+        error: "Partenaire non trouvé ou erreur d'accès",
       };
     }
 
     // 4. Delete from database
-    const { error } = await supabase
-      .from("partners")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("partners").delete().eq("id", id);
 
     if (error) {
       console.error("Database error deleting partner:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la suppression du partenaire" 
+      return {
+        success: false,
+        error: "Erreur lors de la suppression du partenaire",
       };
     }
 
@@ -232,16 +231,15 @@ export async function deletePartner(id: string): Promise<ActionResult<void>> {
     // 6. TODO: Emit event (Phase 4)
     // await emitPartnerDeletedEvent(id, partner);
 
-    return { 
+    return {
       success: true,
-      message: `Partenaire "${partner.name}" supprimé avec succès`
+      message: `Partenaire "${partner.name}" supprimé avec succès`,
     };
-
   } catch (error) {
     console.error("Unexpected error deleting partner:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la suppression du partenaire" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la suppression du partenaire",
     };
   }
 }
@@ -259,22 +257,21 @@ export async function getPartners(): Promise<ActionResult<Partner[]>> {
 
     if (error) {
       console.error("Database error fetching partners:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la récupération des partenaires" 
+      return {
+        success: false,
+        error: "Erreur lors de la récupération des partenaires",
       };
     }
 
-    return { 
-      success: true, 
-      data: partners || [] 
+    return {
+      success: true,
+      data: partners || [],
     };
-
   } catch (error) {
     console.error("Unexpected error fetching partners:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la récupération des partenaires" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la récupération des partenaires",
     };
   }
 }
@@ -284,7 +281,7 @@ export async function getPartners(): Promise<ActionResult<Partner[]>> {
  */
 export async function getPartnerById(id: string): Promise<ActionResult<Partner>> {
   try {
-    if (!id || typeof id !== 'string') {
+    if (!id || typeof id !== "string") {
       return { success: false, error: "ID de partenaire invalide" };
     }
 
@@ -297,22 +294,21 @@ export async function getPartnerById(id: string): Promise<ActionResult<Partner>>
 
     if (error) {
       console.error("Database error fetching partner:", error);
-      return { 
-        success: false, 
-        error: "Partenaire non trouvé" 
+      return {
+        success: false,
+        error: "Partenaire non trouvé",
       };
     }
 
-    return { 
-      success: true, 
-      data: partner 
+    return {
+      success: true,
+      data: partner,
     };
-
   } catch (error) {
     console.error("Unexpected error fetching partner:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la récupération du partenaire" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la récupération du partenaire",
     };
   }
 }
@@ -326,15 +322,17 @@ export async function updatePartnersOrder(
   try {
     // 1. Check admin permissions
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
     const isAdmin = await checkAdminRole(user.id);
     if (!isAdmin) {
-      return { 
-        success: false, 
-        error: "Accès non autorisé. Seuls les administrateurs peuvent réorganiser les partenaires." 
+      return {
+        success: false,
+        error: "Accès non autorisé. Seuls les administrateurs peuvent réorganiser les partenaires.",
       };
     }
 
@@ -342,28 +340,28 @@ export async function updatePartnersOrder(
     const validation = updatePartnerOrderSchema.safeParse({ partners: partnersOrder });
     if (!validation.success) {
       const firstError = validation.error.errors[0];
-      return { 
-        success: false, 
-        error: `Validation échouée: ${firstError.message}` 
+      return {
+        success: false,
+        error: `Validation échouée: ${firstError.message}`,
       };
     }
 
     // 3. Update in database (batch update)
     const updatePromises = validation.data.partners.map(({ id, display_order }) =>
-      supabase
-        .from("partners")
-        .update({ display_order })
-        .eq("id", id)
+      supabase.from("partners").update({ display_order }).eq("id", id)
     );
 
     const results = await Promise.all(updatePromises);
-    const hasError = results.some(result => result.error);
+    const hasError = results.some((result) => result.error);
 
     if (hasError) {
-      console.error("Database error updating partners order:", results.filter(r => r.error));
-      return { 
-        success: false, 
-        error: "Erreur lors de la mise à jour de l'ordre des partenaires" 
+      console.error(
+        "Database error updating partners order:",
+        results.filter((r) => r.error)
+      );
+      return {
+        success: false,
+        error: "Erreur lors de la mise à jour de l'ordre des partenaires",
       };
     }
 
@@ -374,16 +372,15 @@ export async function updatePartnersOrder(
     // 5. TODO: Emit event (Phase 4)
     // await emitPartnersOrderUpdatedEvent(validation.data.partners);
 
-    return { 
+    return {
       success: true,
-      message: "Ordre des partenaires mis à jour avec succès"
+      message: "Ordre des partenaires mis à jour avec succès",
     };
-
   } catch (error) {
     console.error("Unexpected error updating partners order:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la mise à jour de l'ordre" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la mise à jour de l'ordre",
     };
   }
 }
@@ -392,21 +389,24 @@ export async function updatePartnersOrder(
  * Toggle partner active status
  */
 export async function togglePartnerStatus(
-  id: string, 
+  id: string,
   isActive: boolean
 ): Promise<ActionResult<void>> {
   try {
     // 1. Check admin permissions
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: "Non authentifié" };
     }
     const isAdmin = await checkAdminRole(user.id);
     if (!isAdmin) {
-      return { 
-        success: false, 
-        error: "Accès non autorisé. Seuls les administrateurs peuvent modifier le statut des partenaires." 
+      return {
+        success: false,
+        error:
+          "Accès non autorisé. Seuls les administrateurs peuvent modifier le statut des partenaires.",
       };
     }
 
@@ -414,9 +414,9 @@ export async function togglePartnerStatus(
     const validation = togglePartnerStatusSchema.safeParse({ id, is_active: isActive });
     if (!validation.success) {
       const firstError = validation.error.errors[0];
-      return { 
-        success: false, 
-        error: `Validation échouée: ${firstError.message}` 
+      return {
+        success: false,
+        error: `Validation échouée: ${firstError.message}`,
       };
     }
 
@@ -428,9 +428,9 @@ export async function togglePartnerStatus(
 
     if (error) {
       console.error("Database error toggling partner status:", error);
-      return { 
-        success: false, 
-        error: "Erreur lors de la modification du statut du partenaire" 
+      return {
+        success: false,
+        error: "Erreur lors de la modification du statut du partenaire",
       };
     }
 
@@ -442,16 +442,15 @@ export async function togglePartnerStatus(
     // await emitPartnerStatusChangedEvent(validation.data.id, validation.data.is_active);
 
     const statusText = validation.data.is_active ? "activé" : "désactivé";
-    return { 
+    return {
       success: true,
-      message: `Partenaire ${statusText} avec succès`
+      message: `Partenaire ${statusText} avec succès`,
     };
-
   } catch (error) {
     console.error("Unexpected error toggling partner status:", error);
-    return { 
-      success: false, 
-      error: "Erreur inattendue lors de la modification du statut" 
+    return {
+      success: false,
+      error: "Erreur inattendue lors de la modification du statut",
     };
   }
 }

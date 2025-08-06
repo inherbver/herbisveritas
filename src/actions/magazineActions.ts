@@ -12,6 +12,7 @@ import {
   ArticleInsert,
   ArticleUpdate,
   ArticleFormData,
+  ArticleDisplay,
   CategoryInsert,
   TagInsert,
   TipTapContent,
@@ -65,7 +66,7 @@ function sanitizeTipTapContent(content: unknown): TipTapContent {
 
       return {
         ...node,
-        content: cleanedContent as Json,
+        content: cleanedContent,
       };
     }
 
@@ -149,7 +150,7 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
       title: formData.title,
       slug,
       excerpt: formData.excerpt || extractExcerpt(cleanedContent),
-      content: cleanedContent as Json,
+      content: JSON.parse(JSON.stringify(cleanedContent)) as Json,
       content_html: convertTipTapToHTML(cleanedContent),
       featured_image: formData.featured_image || null,
       status: formData.status || "draft",
@@ -258,7 +259,7 @@ export async function updateArticle(
       title: formData.title,
       slug,
       excerpt: formData.excerpt || extractExcerpt(cleanedContent),
-      content: cleanedContent as Json,
+      content: JSON.parse(JSON.stringify(cleanedContent)) as Json,
       content_html: convertTipTapToHTML(cleanedContent),
       featured_image: formData.featured_image || null,
       status: formData.status || "draft",
@@ -439,7 +440,12 @@ export async function changeArticleStatus(
 
     // Validation pour la publication
     if (newStatus === "published") {
-      const validation = validateArticleForPublication(currentArticle as any);
+      // Convertir en ArticleDisplay avec le content parsé correctement
+      const articleDisplay: Partial<ArticleDisplay> = {
+        ...currentArticle,
+        content: currentArticle.content as TipTapContent,
+      };
+      const validation = validateArticleForPublication(articleDisplay);
       if (!validation.isValid) {
         return ActionResult.error(
           `L'article ne peut pas être publié: ${validation.errors.join(", ")}`
@@ -573,6 +579,18 @@ export async function createTag(data: Omit<TagInsert, "id">): Promise<ActionResu
 
 // Type pour le résultat de l'upload (rétrocompatibilité)
 export type UploadImageResult = CoreUploadImageResult;
+
+// Server action wrapper for uploadMagazineImageCore that returns ActionResult
+export async function uploadMagazineImageAction(
+  formData: FormData
+): Promise<ActionResult<UploadImageResult>> {
+  try {
+    const result = await uploadMagazineImageCore(formData);
+    return ActionResult.ok(result, "Image uploaded successfully");
+  } catch (error) {
+    return ActionResult.error(error instanceof Error ? error.message : "Failed to upload image");
+  }
+}
 
 // Migration vers la fonction centralisée
 export const uploadMagazineImage = uploadMagazineImageCore;

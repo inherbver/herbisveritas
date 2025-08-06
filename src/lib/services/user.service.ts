@@ -24,7 +24,7 @@ import type {
 // Import des anciennes fonctions (fallback)
 // Note: These legacy imports are commented out due to missing exports
 // import { getProfile } from '@/actions/profileActions';
-import { getUsers } from "@/actions/userActions";
+import { getUsers, type UserForAdminPanel } from "@/actions/userActions";
 // import { updateUserRole } from '@/actions/userActions';
 
 export class UserService {
@@ -197,24 +197,26 @@ export class UserService {
       const legacyResult = await getUsers();
 
       if (legacyResult.success && legacyResult.data) {
-        const users = legacyResult.data.map((user: any) => ({
-          id: user.id,
-          email: user.email,
-          created_at: user.created_at,
-          last_sign_in_at: user.last_sign_in_at,
-          profile: user.profile || {
-            id: "",
-            user_id: user.id,
-            first_name: null,
-            last_name: null,
-            phone: null,
-            avatar_url: null,
-            is_admin: false,
-            marketing_consent: false,
+        const users = (legacyResult.data as unknown as UserForAdminPanel[]).map(
+          (user: UserForAdminPanel) => ({
+            id: user.id,
+            email: user.email,
             created_at: user.created_at,
-            updated_at: user.created_at,
-          },
-        }));
+            last_sign_in_at: user.last_sign_in_at,
+            profile: {
+              id: user.id, // UserForAdminPanel doesn't have a separate profile, so we use user data
+              user_id: user.id,
+              first_name: user.full_name?.split(" ")[0] || null,
+              last_name: user.full_name?.split(" ").slice(1).join(" ") || null,
+              phone: null,
+              avatar_url: null,
+              is_admin: user.role === "admin",
+              marketing_consent: false,
+              created_at: user.created_at,
+              updated_at: user.created_at,
+            },
+          })
+        );
 
         LogUtils.logOperationSuccess("getAllUsers", {
           ...context,

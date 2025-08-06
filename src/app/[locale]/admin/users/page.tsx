@@ -1,4 +1,4 @@
-import { getUsers } from "@/actions/userActions";
+import { getUsers, type UserForAdminPanel } from "@/actions/userActions";
 import { columns } from "@/app/[locale]/admin/users/columns";
 import { DataTable } from "@/app/[locale]/admin/users/data-table";
 
@@ -9,7 +9,7 @@ export default async function AdminUsersPage() {
     return <div className="text-red-500">Error: {result.error}</div>;
   }
 
-  const users = result.data;
+  const users = (result.data || []) as UserForAdminPanel[];
 
   return (
     <section className="container mx-auto py-10">
