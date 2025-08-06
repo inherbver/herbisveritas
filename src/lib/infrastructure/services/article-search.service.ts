@@ -151,11 +151,24 @@ export class ArticleSearchService {
       // Pagination
       query = query.range(offset, offset + limit - 1);
 
-      // Count total en parallèle
-      const countQuery = this.buildQuery(publishedFilters).select("id", {
-        count: "exact",
-        head: true,
-      });
+      // Count total en parallèle - nouvelle requête séparée
+      let countQuery = this.adminClient
+        .from("articles")
+        .select("*", { count: "exact", head: true });
+
+      // Appliquer les mêmes filtres que pour la requête principale
+      if (publishedFilters.status) {
+        countQuery = countQuery.eq("status", publishedFilters.status);
+      }
+      if (publishedFilters.author_id) {
+        countQuery = countQuery.eq("author_id", publishedFilters.author_id);
+      }
+      if (publishedFilters.published_after) {
+        countQuery = countQuery.gte("published_at", publishedFilters.published_after);
+      }
+      if (publishedFilters.published_before) {
+        countQuery = countQuery.lte("published_at", publishedFilters.published_before);
+      }
 
       const [articlesResult, countResult] = await Promise.all([query, countQuery]);
 
