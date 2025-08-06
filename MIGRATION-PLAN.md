@@ -69,6 +69,18 @@ node migration-scripts/02-phase-scripts.cjs validate1
 - Tests domain isolés et fonctionnels
 - Backup de la structure originale
 
+### ⚠️ État des Scripts Migration
+
+**STATUT:** ✅ Scripts corrigés et prêts (v1.1)
+
+**Corrections appliquées:**
+
+- ✅ Dépendance `glob` ajoutée (v11.0.3)
+- ✅ Erreurs template literal corrigées
+- ✅ Logique `calculateNewImportPath` implémentée
+- ✅ Validation existence fichiers ajoutée
+- ✅ Gestion d'erreurs robuste avec timeouts
+
 ---
 
 ## 🏗️ PHASE 2: INFRASTRUCTURE → ADAPTERS (5-7 jours)
@@ -387,6 +399,25 @@ npm run build && npm test && npm run lint
 
 ---
 
-_Plan créé le: $(date)_  
-_Version: 1.0_  
-_Statut: PRÊT POUR EXÉCUTION_
+---
+
+## 📋 HISTORIQUE DES MISES À JOUR
+
+### Version 1.1 - Janvier 2025
+
+- ✅ Scripts de migration corrigés et validés
+- ✅ Agents wshobson configurés et opérationnels
+- ✅ Dépendances manquantes ajoutées
+- ✅ Validation robuste implémentée
+
+### Version 1.0 - Janvier 2025
+
+- 📋 Plan initial de migration Clean Architecture
+- 🏗️ Structure cible définie
+- ⏱️ Timeline et ressources planifiées
+
+---
+
+_Plan créé le: Janvier 2025_  
+_Version: 1.1_  
+_Statut: ✅ SCRIPTS PRÊTS - MIGRATION EXÉCUTABLE_
