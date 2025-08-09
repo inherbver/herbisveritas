@@ -33,7 +33,9 @@
       "Bash(git checkout:*)",
       "Bash(git stash:*)",
       "Bash(mkdir:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "mcp__playwright__start_codegen_session",
+      "mcp__playwright__playwright_fill"
     ]
   },
   "enableAllProjectMcpServers": true,

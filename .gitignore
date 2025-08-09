@@ -44,7 +44,7 @@ next-env.d.ts
 # playwright reports and test results
 /playwright-report/
 /test-results/
-/tests/screenshots/
+/tests/
 
 nul
 ~/
