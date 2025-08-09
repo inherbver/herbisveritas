@@ -4,8 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
 import { useCartItemsHydrated, useCartSubtotalHydrated } from "@/hooks/use-cart-hydrated";
-import { useCartStore } from "@/stores/cart-store-refactored";
-import { useCartOperations } from "@/lib/store-sync/cart-sync";
+import { useCartStore } from "@/stores/cartStore";
 import {
   removeItemFromCartFormAction,
   updateCartItemQuantityFormAction,
@@ -72,7 +71,6 @@ export default function CheckoutClientPage({
   // Cart state from refactored store
   const items = useCartItemsHydrated();
   const subtotal = useCartSubtotalHydrated();
-  const { syncWithServer } = useCartOperations();
 
   // Local UI state
   const [shippingAddress, setShippingAddress] = useState<Address | AddressFormData | null>(
@@ -88,11 +86,6 @@ export default function CheckoutClientPage({
   );
 
   useEffect(() => {
-    // Synchronisation initiale du panier si nécessaire
-    if (cart?.items) {
-      syncWithServer();
-    }
-
     if (isUserAuthenticated && !initialShippingAddress) {
       setEditingAddressType("shipping");
     }
@@ -155,7 +148,7 @@ export default function CheckoutClientPage({
     if (isSuccessResult(result)) {
       toast.success(result.message || tCart("itemRemovedSuccess"));
       if (result.data?.items && result.data.id) {
-        useCartStore.getState().setItems(result.data.items);
+        useCartStore.getState()._setItems(result.data.items);
       }
     } else {
       toast.error(result.message || tGlobal("genericError"));
@@ -182,10 +175,10 @@ export default function CheckoutClientPage({
 
     if (isSuccessResult(result) && result.data?.items && result.data.id) {
       // Les données result.data.items sont déjà transformées
-      useCartStore.getState().setItems(result.data.items);
+      useCartStore.getState()._setItems(result.data.items);
     } else {
       toast.error(result.message || tGlobal("genericError"));
-      useCartStore.getState().setItems(previousState); // Rollback on error
+      useCartStore.getState()._setItems(previousState); // Rollback on error
     }
   };
 

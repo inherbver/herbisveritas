@@ -13,7 +13,7 @@ import {
   type CartActionResult,
 } from "@/lib/cart-helpers";
 import { getCart } from "@/lib/cartReader";
-import { createSupabaseAdminClient } from "@/lib/supabase/server-admin";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 // ✅ Utiliser CartData depuis types/cart.ts
 import type { CartData } from "@/types/cart";

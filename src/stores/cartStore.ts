@@ -225,6 +225,16 @@ const useCartStore = create<CartStore>()(
 );
 
 export default useCartStore;
+export { useCartStore };
+
+// Hooks pour utilisation directe
+export const useCartItems = () => useCartStore((state) => state.items);
+export const useCartTotalItems = () =>
+  useCartStore((state) => state.items.reduce((total, item) => total + item.quantity, 0));
+export const useCartSubtotal = () =>
+  useCartStore((state) =>
+    state.items.reduce((total, item) => total + item.price * item.quantity, 0)
+  );
 
 // Sélecteurs améliorés avec memoization
 export const selectCartItems = (state: CartState): CartItem[] => state.items;

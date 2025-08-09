@@ -14,18 +14,18 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ShoppingBagIcon } from "lucide-react";
-import { useCartTotalItems } from "@/stores/cart-store-refactored";
+import { useCartTotalItems } from "@/stores/cartStore";
 import { CartDisplay } from "./cart-display";
 import { cn } from "@/utils/cn";
 
 export function CartSheet() {
   const t = useTranslations("CartSheet"); // Pour les textes comme le titre du sheet
   const tGlobal = useTranslations("Global"); // Pour les textes globaux comme "Panier"
-  
+
   // Utiliser le store Zustand pour récupérer le nombre total d'articles
   const totalItems = useCartTotalItems();
   const [isOpen, setIsOpen] = React.useState(false);
-  
+
   // Gestion d'hydratation pour éviter les erreurs SSR/Client
   const [isHydrated, setIsHydrated] = React.useState(false);
   React.useEffect(() => {

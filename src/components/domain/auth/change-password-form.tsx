@@ -25,7 +25,7 @@ import {
   PasswordRequirement,
   PasswordStrengthBar,
 } from "@/components/domain/auth/password-strength";
-import { useCartStore } from "@/stores/cart-store-refactored";
+import { useCartStore } from "@/stores/cartStore";
 
 const MIN_LENGTH = 8;
 const REGEX_UPPERCASE = /[A-Z]/;

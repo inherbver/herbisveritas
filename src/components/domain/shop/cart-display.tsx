@@ -4,13 +4,12 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Link as NextLink } from "@/i18n/navigation";
-import { 
-  useCartItemsHydrated, 
-  useCartTotalItemsHydrated, 
-  useCartSubtotalHydrated 
+import {
+  useCartItemsHydrated,
+  useCartTotalItemsHydrated,
+  useCartSubtotalHydrated,
 } from "@/hooks/use-cart-hydrated";
-import { useCartStore } from "@/stores/cart-store-refactored";
-import { useCartOperations } from "@/lib/store-sync/cart-sync";
+import { useCartStore } from "@/stores/cartStore";
 import {
   removeItemFromCart,
   updateCartItemQuantity as updateCartItemQuantityAction,
@@ -43,8 +42,6 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
   const totalItems = useCartTotalItemsHydrated();
   const subtotal = useCartSubtotalHydrated();
 
-  const { syncWithServer: _syncWithServer } = useCartOperations();
-
   const handleRemoveItem = async (cartItemId: string) => {
     if (!cartItemId) {
       toast.error(tGlobal("genericError"));
@@ -57,18 +54,21 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemRemovedSuccess"));
       if (result.data?.items) {
-        useCartStore.getState().setItems(result.data.items);
+        useCartStore.getState()._setItems(result.data.items);
       }
     } else {
       // Gestion spéciale pour les erreurs d'authentification
-      const isAuthError = result.message?.includes("identifier l'utilisateur") || 
-                         result.message?.includes("not authenticated") ||
-                         result.message?.includes("User identification failed");
-      
+      const isAuthError =
+        result.message?.includes("identifier l'utilisateur") ||
+        result.message?.includes("not authenticated") ||
+        result.message?.includes("User identification failed");
+
       if (isAuthError) {
         console.warn("User not authenticated during remove operation. Clearing cart.");
         useCartStore.getState().clearCart();
-        toast.info(tGlobal("Cart.sessionExpired") || "Votre session a expiré. Le panier a été vidé.");
+        toast.info(
+          tGlobal("Cart.sessionExpired") || "Votre session a expiré. Le panier a été vidé."
+        );
       } else {
         toast.error(result.message || tGlobal("genericError"));
       }
@@ -104,7 +104,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
       .map((item) => (item.id === cartItemId ? { ...item, quantity: newQuantity } : item))
       .filter((item) => item.quantity > 0); // Retirer si quantity <= 0
 
-    useCartStore.getState().setItems(optimisticItems);
+    useCartStore.getState()._setItems(optimisticItems);
     console.log(
       `${logPrefix} Applied optimistic update (${optimisticItems.length} items after update)`
     );
@@ -127,28 +127,31 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
           console.log(
             `${logPrefix} Server action SUCCESS. Syncing with server data (${result.data.items.length} items)`
           );
-          useCartStore.getState().setItems(result.data.items);
+          useCartStore.getState()._setItems(result.data.items);
         } else {
           console.log(`${logPrefix} Server action SUCCESS but no data - keeping optimistic update`);
         }
         toast.success(result.message || t("itemQuantityUpdatedSuccess"));
       } else {
         // 3b. ERREUR SERVEUR - Gestion spéciale pour les erreurs d'authentification
-        const isAuthError = result.message?.includes("identifier l'utilisateur") || 
-                           result.message?.includes("not authenticated") ||
-                           result.message?.includes("User identification failed");
-        
+        const isAuthError =
+          result.message?.includes("identifier l'utilisateur") ||
+          result.message?.includes("not authenticated") ||
+          result.message?.includes("User identification failed");
+
         if (isAuthError) {
           // L'utilisateur n'est plus authentifié - vider le panier silencieusement
           console.warn(`${logPrefix} User not authenticated. Clearing cart.`);
           useCartStore.getState().clearCart();
-          toast.info(tGlobal("Cart.sessionExpired") || "Votre session a expiré. Le panier a été vidé.");
+          toast.info(
+            tGlobal("Cart.sessionExpired") || "Votre session a expiré. Le panier a été vidé."
+          );
         } else {
           // Autres erreurs serveur - Rollback à l'état précédent
           console.error(
             `${logPrefix} Server action FAILED. Error: ${result.message}. Rolling back to previous state.`
           );
-          useCartStore.getState().setItems(previousState);
+          useCartStore.getState()._setItems(previousState);
 
           // Log des détails d'erreur pour debugging
           if ("fieldErrors" in result && result.fieldErrors) {
@@ -176,7 +179,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
         console.error(`${logPrefix} Additional error details (non-Error object):`, error);
       }
 
-      useCartStore.getState().setItems(previousState);
+      useCartStore.getState()._setItems(previousState);
       toast.error(tGlobal("genericError"));
     }
   };

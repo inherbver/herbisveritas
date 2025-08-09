@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { ProductGrid, ProductData } from "@/components/domain/shop/product-grid";
 import type { ProductListItem } from "@/app/[locale]/shop/page";
 import type { CartData } from "@/types/cart";
-import { useCartStore } from "@/stores/cart-store-refactored";
+import { useCartStore } from "@/stores/cartStore";
 
 interface ShopClientContentProps {
   initialProducts: ProductListItem[];
@@ -17,22 +17,22 @@ export const ShopClientContent: React.FC<ShopClientContentProps> = ({
   initialCart,
 }) => {
   const t = useTranslations("ShopPage");
-  const { setItems, setLoading, setError } = useCartStore();
+  const { _setItems, _setIsLoading, _setError } = useCartStore();
 
   useEffect(() => {
     if (initialCart) {
-      setItems(initialCart.items || []);
-      setLoading('sync', false); // Assuming loading is finished
-      setError('sync', null); // Clear any previous errors
+      _setItems(initialCart.items || []);
+      _setIsLoading(false); // Assuming loading is finished
+      _setError(null); // Clear any previous errors
     } else {
       // If there's no initial cart (e.g., guest user, first visit, or fetch error server-side),
       // ensure the store reflects a non-loading, non-error, empty state for items.
       // This might already be the default, but explicit can be good.
       // _setItems([]); // Only if you want to force empty if not provided. Current store default is empty.
-      setLoading('sync', false);
-      setError('sync', null);
+      _setIsLoading(false);
+      _setError(null);
     }
-  }, [initialCart, setItems, setLoading, setError]);
+  }, [initialCart, _setItems, _setIsLoading, _setError]);
 
   const productGridData: ProductData[] = initialProducts
     .filter((product) => product.price !== null)

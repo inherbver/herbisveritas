@@ -17,8 +17,7 @@ import {
 import type { CartDataFromServer } from "@/types/cart"; // ✅ Import depuis le bon fichier
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useCartItems, useCartStore } from "@/stores/cart-store-refactored";
-import { useCartOperations } from "@/lib/store-sync/cart-sync";
+import { useCartItems, useCartStore } from "@/stores/cartStore";
 import { Price } from "@/components/ui/price";
 import clsx from "clsx";
 
@@ -40,7 +39,6 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
   const _cartItems = useCartItems();
-  const { syncWithServer } = useCartOperations();
 
   // ✅ Define a clear, initial state for the action avec le bon type
   const initialState: CartActionResult<CartDataFromServer | null> = React.useMemo(
@@ -63,11 +61,9 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
       toast.success(state.message || t("ProductDetailModal.itemAddedSuccess"));
       // Mettre à jour le store avec les données du serveur
       if (state.data?.items) {
-        const { setItems } = useCartStore.getState();
-        setItems(state.data.items);
+        const { _setItems } = useCartStore.getState();
+        _setItems(state.data.items);
       }
-      // Synchronisation avec le serveur après succès
-      syncWithServer();
     } else if (state.success === false) {
       let errorMessage: string | undefined;
 
@@ -79,7 +75,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
       }
       toast.error(state.message || errorMessage || t("Global.errors.generic"));
     }
-  }, [state, t, syncWithServer]);
+  }, [state, t]);
 
   useEffect(() => {
     const observerOptions = {
@@ -151,8 +147,13 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
             </p>
 
             {/* Price & Action Box */}
-            <section className="my-4 rounded-xl bg-background p-4 shadow-lg sm:my-6 sm:p-6" aria-labelledby="product-purchase">
-              <h2 id="product-purchase" className="sr-only">Achat du produit</h2>
+            <section
+              className="my-4 rounded-xl bg-background p-4 shadow-lg sm:my-6 sm:p-6"
+              aria-labelledby="product-purchase"
+            >
+              <h2 id="product-purchase" className="sr-only">
+                Achat du produit
+              </h2>
               <form action={formAction}>
                 <input type="hidden" name="productId" value={product.id} />
                 <input type="hidden" name="quantity" value={quantity} />
@@ -182,7 +183,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
 
           {/* Tabs Navigation (at the bottom of the column) */}
           <nav className="mt-auto w-full border-b pt-6" aria-label="Tabs">
-            <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide sm:space-x-6 lg:space-x-8">
+            <div className="scrollbar-hide flex space-x-4 overflow-x-auto pb-2 sm:space-x-6 lg:space-x-8">
               {tabs.map((tab) => (
                 <a
                   key={tab.id}

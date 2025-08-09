@@ -7,8 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { ThemeProvider } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
-import { useCartOperations } from "@/lib/store-sync/cart-sync";
 import { useAuthCartSync } from "@/hooks/use-auth-cart-sync";
+import useCartStore from "@/stores/cartStore";
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -27,17 +27,20 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
   const lastSessionState = useRef<Session | null | undefined>(undefined);
 
   // Hook pour les opérations panier
-  const { clearCart } = useCartOperations();
-  
+  const clearCart = useCartStore((state) => state.clearCart);
+
   // Hook pour synchroniser l'authentification avec le panier
   useAuthCartSync();
-  
+
   // Fonction pour vider le panier de manière sécurisée
-  const clearCartSafely = useCallback((reason: string) => {
-    console.log(`ClientLayout: Clearing cart - ${reason}`);
-    clearCart();
-    console.log("ClientLayout: Cart cleared successfully");
-  }, [clearCart]);
+  const clearCartSafely = useCallback(
+    (reason: string) => {
+      console.log(`ClientLayout: Clearing cart - ${reason}`);
+      clearCart();
+      console.log("ClientLayout: Cart cleared successfully");
+    },
+    [clearCart]
+  );
 
   // Fonction helper pour les appels Supabase avec timeout et retry
   const supabaseCallWithTimeout = useCallback(
