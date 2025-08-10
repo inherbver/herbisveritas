@@ -42,10 +42,8 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <ClientLayout locale={currentLocale} messages={messages} timeZone={timeZone}>
-      <Container>
-        <Header />
-        {children}
-      </Container>
+      <Header />
+      <Container>{children}</Container>
       <Footer />
       <Toaster richColors position="bottom-right" />
     </ClientLayout>

@@ -9,16 +9,21 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-        primary: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        default:
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 dark:hover:bg-primary/80 dark:shadow-md dark:shadow-black/20",
+        primary:
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 dark:hover:bg-primary/80 dark:shadow-md dark:shadow-black/20",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/80 dark:hover:bg-destructive/70",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
-        support: "bg-support text-support-foreground shadow-xs hover:bg-support/90",
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-[var(--surface-base)] dark:border-border/60 dark:hover:bg-[var(--surface-elevated)] dark:hover:border-primary/30",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 dark:hover:bg-secondary/70 dark:shadow-md dark:shadow-black/20",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-[var(--surface-elevated)] dark:hover:text-foreground",
+        link: "text-primary underline-offset-4 hover:underline dark:text-primary dark:hover:text-primary/80",
+        support:
+          "bg-support text-support-foreground shadow-xs hover:bg-support/90 dark:hover:bg-support/80 dark:shadow-md dark:shadow-black/20",
       },
       size: {
         default: "h-10 px-4 py-2 has-[>svg]:px-3",

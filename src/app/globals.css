@@ -31,8 +31,8 @@
 @layer utilities {
   /* Hide scrollbar for Chrome, Safari and Opera */
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
@@ -291,60 +291,76 @@
 }
 
 .dark {
-  /* Surfaces & texte de base */
-  --background: oklch(0.2 0.02 240); /* gris bleuté très sombre */
-  --foreground: oklch(0.9 0.005 240); /* quasi-blanc, léger ton froid */
+  /* Surfaces & texte de base - Améliorés pour réduire la fatigue oculaire */
+  --background: oklch(0.15 0.01 260); /* Fond principal légèrement plus clair */
+  --foreground: oklch(0.95 0.002 260); /* Texte blanc cassé doux */
 
-  /* Couleur marque (lavande, éclaircie pour vibrer sur fond sombre) */
-  --primary: oklch(0.85 0.09 298);
-  --primary-foreground: oklch(0.18 0.004 49); /* graphite (contraste 5.2:1) */
+  /* Niveaux de surface pour créer de la profondeur */
+  --surface-base: oklch(0.18 0.01 260); /* Surface de base */
+  --surface-elevated: oklch(0.22 0.01 260); /* Surface élevée (cards, modals) */
+  --surface-sunken: oklch(0.12 0.01 260); /* Surface enfoncée (inputs, wells) */
 
-  /* Secondaire (olive adoucie) */
-  --secondary: oklch(0.7 0.08 122);
-  --secondary-foreground: oklch(0.15 0.004 49);
+  /* Couleur marque (lavande optimisée pour le dark mode) */
+  --primary: oklch(0.75 0.12 298); /* Lavande vibrante mais pas éblouissante */
+  --primary-foreground: oklch(0.98 0 0); /* Blanc pur pour contraste optimal */
 
-  /* Accent (ocre plus lumineux) */
-  --accent: oklch(0.86 0.12 63);
-  --accent-foreground: oklch(0.18 0.004 49);
+  /* Secondaire (olive équilibrée) */
+  --secondary: oklch(0.65 0.09 122);
+  --secondary-foreground: oklch(0.98 0 0);
 
-  /* Support (terre cuite éclaircie) */
-  --support: oklch(0.63 0.14 55);
-  --support-foreground: oklch(0.18 0.004 49);
+  /* Accent (ocre doré chaleureux) */
+  --accent: oklch(0.25 0.02 260); /* Surface d'accent subtile */
+  --accent-foreground: oklch(0.75 0.12 63); /* Texte ocre doré */
 
-  /* Variables shadcn/ui mappées sur la nouvelle palette */
-  --card: var(--background);
+  /* Support (terre cuite ajustée) */
+  --support: oklch(0.68 0.12 45);
+  --support-foreground: oklch(0.98 0 0);
+
+  /* Variables shadcn/ui optimisées */
+  --card: oklch(0.18 0.01 260); /* Cards avec légère élévation */
   --card-foreground: var(--foreground);
-  --popover: var(--background);
+  --popover: oklch(0.22 0.01 260); /* Popovers plus élevés */
   --popover-foreground: var(--foreground);
-  --muted: oklch(0.25 0.02 240);
-  --muted-foreground: oklch(0.7 0.01 240);
-  --destructive: oklch(0.65 0.18 15);
-  --destructive-foreground: oklch(0.9 0.005 240);
-  --border: oklch(0.3 0.02 240);
-  --input: oklch(0.3 0.02 240);
-  --ring: var(--primary);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.216 0.006 56.043);
-  --sidebar-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-accent: oklch(0.268 0.007 34.298);
-  --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.553 0.013 58.071);
+  --muted: oklch(0.25 0.015 260); /* Surfaces mutées */
+  --muted-foreground: oklch(0.65 0.01 260); /* Texte secondaire */
+  --destructive: oklch(0.55 0.22 25); /* Rouge d'erreur adapté */
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.28 0.015 260); /* Bordures visibles mais subtiles */
+  --input: oklch(0.16 0.01 260); /* Inputs légèrement enfoncés */
+  --ring: oklch(0.75 0.12 298); /* Ring de focus lavande */
+
+  /* Charts avec meilleur contraste */
+  --chart-1: oklch(0.75 0.12 298);
+  --chart-2: oklch(0.65 0.15 180);
+  --chart-3: oklch(0.75 0.18 70);
+  --chart-4: oklch(0.65 0.2 340);
+  --chart-5: oklch(0.7 0.15 30);
+
+  /* Sidebar optimisé */
+  --sidebar: oklch(0.16 0.01 260);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: oklch(0.75 0.12 298);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.22 0.01 260);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: oklch(0.25 0.015 260);
+  --sidebar-ring: var(--ring);
 }
 
 @layer base {
   * {
     outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
     border-color: var(--border);
+    /* Transition douce pour le changement de thème */
+    @apply transition-colors duration-200;
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Désactiver les transitions lors du changement de thème pour éviter le flash */
+  html.theme-transitioning * {
+    @apply !transition-none;
   }
 }
 

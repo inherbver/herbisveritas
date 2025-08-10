@@ -28,6 +28,7 @@ import { useSafeTranslations, useSafePathname, useSafeRouter } from "@/hooks/use
 import LocaleSwitcher from "./locale-switcher";
 import { useScroll } from "@/hooks/use-scroll";
 import { motion } from "framer-motion";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const Logo = () => {
   const tGlobal = useSafeTranslations("Global");
@@ -194,6 +195,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
 
         {/* 5. Actions Utilisateur (Desktop) */}
         <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
           <LocaleSwitcher />
           <CartSheet />
           {isLoading ? (
@@ -230,7 +232,9 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
           )}
         </div>
         {/* Mobile Actions: Cart + Menu */}
-        <div className="flex items-center gap-4 md:hidden">
+        <div className="flex items-center gap-2 md:hidden">
+          {/* Theme toggle for mobile */}
+          <ThemeToggle variant="toggle" />
           {/* Panier mobile - visible directement */}
           <CartSheet />
 

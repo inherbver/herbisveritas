@@ -53,7 +53,7 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="bg-background/95 supports-[backdrop-filter]:bg-background/60 fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur sm:hidden"
+      className="bg-background/95 supports-[backdrop-filter]:bg-background/60 dark:bg-[var(--surface-base)]/95 dark:border-border/50 fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur sm:hidden"
     >
       <div className="pb-safe flex h-16 items-center justify-around px-2">
         {navItems.map((item) => {
@@ -67,8 +67,8 @@ export function MobileBottomNav() {
               className={cn(
                 "flex min-h-[44px] flex-1 touch-manipulation flex-col items-center justify-center rounded-lg px-1 py-2 transition-colors active:scale-95",
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground dark:text-muted-foreground dark:hover:bg-[var(--surface-elevated)] dark:hover:text-foreground"
               )}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
