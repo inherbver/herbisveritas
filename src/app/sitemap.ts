@@ -1,69 +1,112 @@
-import { MetadataRoute } from 'next'
-import { getArticles, getCategories, getTags } from "@/lib/magazine/queries"
+import { MetadataRoute } from "next";
+import { getArticles, getCategories, getTags } from "@/lib/magazine/queries";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { locales } from "@/i18n-config";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://herbisveritas.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://herbisveritas.com";
+  const defaultLocale = "fr";
 
-  // Pages statiques
+  // Helper to generate URLs for all locales
+  const generateLocalizedUrls = (
+    path: string,
+    lastModified: Date,
+    changeFrequency: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never",
+    priority: number
+  ) => {
+    return locales.map((locale) => ({
+      url: locale === defaultLocale ? `${baseUrl}${path}` : `${baseUrl}/${locale}${path}`,
+      lastModified,
+      changeFrequency,
+      priority,
+      alternates: {
+        languages: Object.fromEntries(
+          locales.map((l) => [
+            l,
+            l === defaultLocale ? `${baseUrl}${path}` : `${baseUrl}/${l}${path}`,
+          ])
+        ),
+      },
+    }));
+  };
+
+  // Pages statiques avec support multilingue
   const staticPages = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/magazine`,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/shop`,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 0.9,
-    },
-  ]
+    // Home page
+    ...generateLocalizedUrls("/", new Date(), "daily", 1.0),
 
-  // Articles du magazine
+    // Main sections
+    ...generateLocalizedUrls("/shop", new Date(), "daily", 0.9),
+    ...generateLocalizedUrls("/magazine", new Date(), "daily", 0.8),
+    ...generateLocalizedUrls("/about", new Date(), "monthly", 0.7),
+    ...generateLocalizedUrls("/contact", new Date(), "monthly", 0.6),
+
+    // Legal pages
+    ...generateLocalizedUrls("/privacy-policy", new Date(), "yearly", 0.3),
+    ...generateLocalizedUrls("/terms", new Date(), "yearly", 0.3),
+  ];
+
   try {
-    const [
-      { articles },
-      categories,
-      tags
-    ] = await Promise.all([
-      getArticles({ status: 'published' }, 1, 1000),
+    // Fetch dynamic content
+    const [{ articles }, categories, tags, productsResult] = await Promise.all([
+      getArticles({ status: "published" }, 1, 1000),
       getCategories(),
-      getTags()
-    ])
-    
-    const articlePages = articles.map((article) => ({
-      url: `${baseUrl}/magazine/${article.slug}`,
-      lastModified: new Date(article.updated_at || article.created_at || new Date()),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }))
+      getTags(),
+      // Fetch products
+      (async () => {
+        try {
+          const supabase = createAdminClient();
+          const { data } = await supabase
+            .from("products")
+            .select("slug, updated_at, created_at")
+            .eq("active", true)
+            .order("created_at", { ascending: false })
+            .limit(1000);
+          return data || [];
+        } catch (error) {
+          console.error("Error fetching products for sitemap:", error);
+          return [];
+        }
+      })(),
+    ]);
 
-    // Pages de catégories
-    const categoryPages = categories.map((category) => ({
-      url: `${baseUrl}/magazine/category/${category.slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.6,
-    }))
+    // Generate product pages for all locales
+    const productPages = productsResult.flatMap((product) =>
+      generateLocalizedUrls(
+        `/products/${product.slug}`,
+        new Date(product.updated_at || product.created_at || new Date()),
+        "weekly",
+        0.8
+      )
+    );
 
-    // Pages de tags
-    const tagPages = tags.map((tag) => ({
-      url: `${baseUrl}/magazine/tag/${tag.slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.5,
-    }))
+    // Generate article pages for all locales
+    const articlePages = articles.flatMap((article) =>
+      generateLocalizedUrls(
+        `/magazine/${article.slug}`,
+        new Date(article.updated_at || article.created_at || new Date()),
+        "weekly",
+        0.7
+      )
+    );
 
-    return [...staticPages, ...articlePages, ...categoryPages, ...tagPages]
+    // Generate category pages for all locales
+    const categoryPages = categories.flatMap((category) =>
+      generateLocalizedUrls(`/magazine/category/${category.slug}`, new Date(), "weekly", 0.6)
+    );
+
+    // Generate tag pages for all locales
+    const tagPages = tags.flatMap((tag) =>
+      generateLocalizedUrls(`/magazine/tag/${tag.slug}`, new Date(), "monthly", 0.5)
+    );
+
+    return [...staticPages, ...productPages, ...articlePages, ...categoryPages, ...tagPages];
   } catch (error) {
-    console.error('Erreur lors de la génération du sitemap:', error)
-    return staticPages
+    console.error("Error generating sitemap:", error);
+    // Return at least static pages on error
+    return staticPages;
   }
 }
+
+// Optional: Configure revalidation
+export const revalidate = 3600; // Revalidate every hour
