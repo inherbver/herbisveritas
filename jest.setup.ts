@@ -225,9 +225,9 @@ jest.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: jest.fn(() => createMockSupabaseClient()),
 }));
 
-// Mock Supabase server admin
-jest.mock("@/lib/supabase/server-admin", () => ({
-  createSupabaseAdminClient: jest.fn(() => createMockSupabaseClient()),
+// Mock Supabase admin
+jest.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: jest.fn(() => createMockSupabaseClient()),
 }));
 
 // =====================================

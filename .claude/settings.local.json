@@ -37,7 +37,9 @@
       "mcp__playwright__start_codegen_session",
       "mcp__playwright__playwright_fill",
       "Bash(cp:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(npm run test:*)",
+      "Bash(npx jest:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

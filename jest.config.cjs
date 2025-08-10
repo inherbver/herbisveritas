@@ -18,24 +18,67 @@ const customJestConfig = {
       "<rootDir>/__mocks__/fileMock.js",
   },
 
-  testMatch: ["<rootDir>/src/**/*.test.ts", "<rootDir>/src/**/*.test.tsx"],
+  testMatch: [
+    "<rootDir>/src/**/__tests__/**/*.{ts,tsx}",
+    "<rootDir>/src/**/*.test.{ts,tsx}",
+    "<rootDir>/src/**/*.spec.{ts,tsx}"
+  ],
 
   // Performance et stabilité
   maxWorkers: "50%",
   testTimeout: 15000, // Augmenté pour les composants avec des effets async
 
-  // Coverage (optionnel)
+  // Coverage configuration
   collectCoverageFrom: [
-    "src/**/*.{js,ts,tsx}",
+    "src/**/*.{ts,tsx}",
     "!src/**/*.d.ts",
-    "!src/**/*.test.{js,ts,tsx}",
+    "!src/**/*.stories.tsx",
+    "!src/**/*.test.{ts,tsx}",
     "!src/**/__tests__/**",
     "!src/**/jest.setup.ts",
+    "!src/app/layout.tsx",
+    "!src/app/**/layout.tsx",
+    "!src/app/**/loading.tsx",
+    "!src/app/**/not-found.tsx",
+    "!src/i18n/**",
+    "!src/types/**",
+    "!src/test-utils/**",
+    "!src/mocks/**"
   ],
 
-  // Logs plus silencieux pour les tests
+  coverageThreshold: {
+    global: {
+      statements: 30,  // Start with achievable goals, increase over time
+      branches: 25,
+      functions: 30,
+      lines: 30
+    },
+    "./src/stores/": {
+      statements: 80,  // Critical: Cart store must be well tested
+      branches: 75,
+      functions: 80,
+      lines: 80
+    },
+    "./src/actions/authActions.ts": {
+      statements: 80,  // Critical: Authentication
+      branches: 75,
+      functions: 80,
+      lines: 80
+    },
+    "./src/actions/cartActions.ts": {
+      statements: 80,  // Critical: Cart operations
+      branches: 75,
+      functions: 80,
+      lines: 80
+    }
+  },
+
+  coverageReporters: ["text", "lcov", "html", "json-summary"],
+  coverageDirectory: "coverage",
+
+  // Logs configuration
   silent: false,
-  verbose: false,
+  verbose: true,  // Show individual test results
 };
 
 module.exports = createJestConfig(customJestConfig);
