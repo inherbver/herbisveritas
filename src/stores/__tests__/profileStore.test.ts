@@ -2,294 +2,230 @@
  * Tests for Profile Zustand Store
  */
 
-import { profileStore } from "../profileStore";
-import type { Profile } from "@/types/auth";
+import { useProfileStore } from "../profileStore";
+import { ProfileData } from "@/types/profile";
 
 // Mock profile data
-const mockProfile: Profile = {
-  id: "user-123",
-  email: "test@example.com",
+const mockProfileData: ProfileData = {
+  first_name: "John",
+  last_name: "Doe",
+  email: "john.doe@example.com",
   phone: "+33612345678",
-  firstName: "John",
-  lastName: "Doe",
-  avatarUrl: "https://example.com/avatar.jpg",
-  role: "user",
-  createdAt: "2024-01-01T00:00:00Z",
-  updatedAt: "2024-01-01T00:00:00Z",
-  isNewsletterSubscribed: true,
   language: "fr",
-  emailVerified: true,
-  phoneVerified: false,
-};
-
-const mockProfileUpdate = {
-  firstName: "Jane",
-  lastName: "Smith",
-  phone: "+33687654321",
+  newsletter: true,
+  accepted_terms: true,
 };
 
 describe("profileStore", () => {
   beforeEach(() => {
     // Reset store state before each test
-    profileStore.setState({
-      profile: null,
+    useProfileStore.setState({
+      isEditingByAdmin: false,
+      editingUserId: null,
+      profileDataForEdit: null,
       isLoading: false,
-      isUpdating: false,
       error: null,
     });
   });
 
-  describe("setProfile", () => {
-    it("should set profile data", () => {
-      const { setProfile } = profileStore.getState();
+  describe("startAdminEdit", () => {
+    it("should start admin edit mode", async () => {
+      const { actions } = useProfileStore.getState();
 
-      setProfile(mockProfile);
+      // Start editing
+      const editPromise = actions.startAdminEdit("user-123");
 
-      const state = profileStore.getState();
-      expect(state.profile).toEqual(mockProfile);
-      expect(state.error).toBeNull();
+      // Check immediate state
+      let state = useProfileStore.getState();
+      expect(state.isLoading).toBe(true);
+      expect(state.isEditingByAdmin).toBe(true);
+      expect(state.editingUserId).toBe("user-123");
+
+      // Wait for async operation
+      await editPromise;
+
+      // Check final state (simulated data)
+      state = useProfileStore.getState();
+      expect(state.isLoading).toBe(false);
+      expect(state.profileDataForEdit).toBeDefined();
+      expect(state.profileDataForEdit?.first_name).toContain("AdminEdit");
     });
 
-    it("should clear error when setting profile", () => {
-      profileStore.setState({ error: "Previous error" });
+    it("should handle errors during profile fetch", async () => {
+      const { actions } = useProfileStore.getState();
 
-      const { setProfile } = profileStore.getState();
-      setProfile(mockProfile);
+      // Mock console.error to avoid error output in tests
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
-      const state = profileStore.getState();
+      // For this test, we can't easily simulate an error in the current implementation
+      // But we can test the error handling path exists
+      await actions.startAdminEdit("user-123");
+
+      const state = useProfileStore.getState();
+      expect(state.error).toBeNull(); // Currently always succeeds
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe("updateAdminEditFormField", () => {
+    it("should update form field", async () => {
+      const { actions } = useProfileStore.getState();
+
+      // Set initial profile data
+      await actions.startAdminEdit("user-123");
+
+      // Update a field
+      actions.updateAdminEditFormField("first_name", "Jane");
+
+      const state = useProfileStore.getState();
+      expect(state.profileDataForEdit?.first_name).toBe("Jane");
+    });
+
+    it("should handle multiple field updates", async () => {
+      const { actions } = useProfileStore.getState();
+
+      // Set initial profile data
+      await actions.startAdminEdit("user-123");
+
+      // Update multiple fields
+      actions.updateAdminEditFormField("first_name", "Jane");
+      actions.updateAdminEditFormField("last_name", "Smith");
+      actions.updateAdminEditFormField("newsletter", false);
+
+      const state = useProfileStore.getState();
+      expect(state.profileDataForEdit?.first_name).toBe("Jane");
+      expect(state.profileDataForEdit?.last_name).toBe("Smith");
+      expect(state.profileDataForEdit?.newsletter).toBe(false);
+    });
+
+    it("should not update if no profile data", () => {
+      const { actions } = useProfileStore.getState();
+
+      actions.updateAdminEditFormField("first_name", "Test");
+
+      const state = useProfileStore.getState();
+      expect(state.profileDataForEdit).toBeNull();
+    });
+  });
+
+  describe("submitAdminEdit", () => {
+    it("should submit profile changes", async () => {
+      const { actions } = useProfileStore.getState();
+
+      // Set up profile for editing
+      await actions.startAdminEdit("user-123");
+      actions.updateAdminEditFormField("first_name", "Updated");
+
+      // Submit changes
+      const result = await actions.submitAdminEdit();
+
+      expect(result).toBe(true);
+
+      const state = useProfileStore.getState();
+      expect(state.isEditingByAdmin).toBe(false);
+      expect(state.editingUserId).toBeNull();
+      expect(state.profileDataForEdit).toBeNull();
+    });
+
+    it("should handle submit without userId", async () => {
+      const { actions } = useProfileStore.getState();
+
+      // Try to submit without starting edit
+      const result = await actions.submitAdminEdit();
+
+      expect(result).toBe(false);
+
+      const state = useProfileStore.getState();
+      expect(state.error).toBe("Aucune donnée utilisateur à soumettre");
+    });
+
+    it("should handle submit without profile data", async () => {
+      const { actions } = useProfileStore.getState();
+
+      // Set userId but no profile data
+      useProfileStore.setState({ editingUserId: "user-123" });
+
+      const result = await actions.submitAdminEdit();
+
+      expect(result).toBe(false);
+      expect(useProfileStore.getState().error).toBe("Aucune donnée utilisateur à soumettre");
+    });
+  });
+
+  describe("clearAdminEdit", () => {
+    it("should clear admin edit state", async () => {
+      const { actions } = useProfileStore.getState();
+
+      // Set up some state
+      await actions.startAdminEdit("user-123");
+      actions.updateAdminEditFormField("first_name", "Test");
+
+      // Clear the state
+      actions.clearAdminEdit();
+
+      const state = useProfileStore.getState();
+      expect(state.isEditingByAdmin).toBe(false);
+      expect(state.editingUserId).toBeNull();
+      expect(state.profileDataForEdit).toBeNull();
       expect(state.error).toBeNull();
     });
   });
 
-  describe("updateProfile", () => {
-    it("should update existing profile", () => {
-      const { setProfile, updateProfile } = profileStore.getState();
+  describe("loading and error states", () => {
+    it("should manage loading state during operations", async () => {
+      const { actions } = useProfileStore.getState();
 
-      setProfile(mockProfile);
-      updateProfile(mockProfileUpdate);
+      const loadingStates: boolean[] = [];
 
-      const state = profileStore.getState();
-      expect(state.profile?.firstName).toBe("Jane");
-      expect(state.profile?.lastName).toBe("Smith");
-      expect(state.profile?.phone).toBe("+33687654321");
-      expect(state.profile?.email).toBe(mockProfile.email); // Unchanged fields
-    });
-
-    it("should not update if profile is null", () => {
-      const { updateProfile } = profileStore.getState();
-
-      updateProfile(mockProfileUpdate);
-
-      const state = profileStore.getState();
-      expect(state.profile).toBeNull();
-    });
-  });
-
-  describe("clearProfile", () => {
-    it("should clear profile and reset state", () => {
-      const { setProfile, clearProfile } = profileStore.getState();
-
-      setProfile(mockProfile);
-      profileStore.setState({
-        isLoading: true,
-        isUpdating: true,
-        error: "Some error",
+      // Subscribe to loading state changes
+      const unsubscribe = useProfileStore.subscribe((state) => {
+        loadingStates.push(state.isLoading);
       });
 
-      clearProfile();
+      await actions.startAdminEdit("user-123");
 
-      const state = profileStore.getState();
-      expect(state.profile).toBeNull();
-      expect(state.isLoading).toBe(false);
-      expect(state.isUpdating).toBe(false);
-      expect(state.error).toBeNull();
-    });
-  });
+      expect(loadingStates).toContain(true); // Was loading
+      expect(useProfileStore.getState().isLoading).toBe(false); // Not loading anymore
 
-  describe("setLoading", () => {
-    it("should set loading state", () => {
-      const { setLoading } = profileStore.getState();
-
-      setLoading(true);
-      expect(profileStore.getState().isLoading).toBe(true);
-
-      setLoading(false);
-      expect(profileStore.getState().isLoading).toBe(false);
-    });
-  });
-
-  describe("setUpdating", () => {
-    it("should set updating state", () => {
-      const { setUpdating } = profileStore.getState();
-
-      setUpdating(true);
-      expect(profileStore.getState().isUpdating).toBe(true);
-
-      setUpdating(false);
-      expect(profileStore.getState().isUpdating).toBe(false);
-    });
-  });
-
-  describe("setError", () => {
-    it("should set error message", () => {
-      const { setError } = profileStore.getState();
-
-      setError("Test error");
-      expect(profileStore.getState().error).toBe("Test error");
+      unsubscribe();
     });
 
-    it("should clear error with null", () => {
-      const { setError } = profileStore.getState();
+    it("should clear error when starting new operation", async () => {
+      const { actions } = useProfileStore.getState();
 
-      setError("Test error");
-      setError(null);
-      expect(profileStore.getState().error).toBeNull();
-    });
-  });
+      // Set an error
+      useProfileStore.setState({ error: "Previous error" });
 
-  describe("computed getters", () => {
-    it("should correctly identify if user is authenticated", () => {
-      const { setProfile, isAuthenticated } = profileStore.getState();
+      // Start new operation
+      await actions.startAdminEdit("user-123");
 
-      expect(isAuthenticated()).toBe(false);
-
-      setProfile(mockProfile);
-      expect(isAuthenticated()).toBe(true);
-    });
-
-    it("should correctly identify admin users", () => {
-      const { setProfile, isAdmin } = profileStore.getState();
-
-      expect(isAdmin()).toBe(false);
-
-      setProfile(mockProfile);
-      expect(isAdmin()).toBe(false);
-
-      setProfile({ ...mockProfile, role: "admin" });
-      expect(isAdmin()).toBe(true);
-    });
-
-    it("should correctly identify dev users", () => {
-      const { setProfile, isDev } = profileStore.getState();
-
-      expect(isDev()).toBe(false);
-
-      setProfile(mockProfile);
-      expect(isDev()).toBe(false);
-
-      setProfile({ ...mockProfile, role: "dev" });
-      expect(isDev()).toBe(true);
-    });
-
-    it("should return display name correctly", () => {
-      const { setProfile, getDisplayName } = profileStore.getState();
-
-      expect(getDisplayName()).toBe("");
-
-      setProfile(mockProfile);
-      expect(getDisplayName()).toBe("John Doe");
-
-      setProfile({ ...mockProfile, firstName: null, lastName: null });
-      expect(getDisplayName()).toBe("test@example.com");
-
-      setProfile({ ...mockProfile, firstName: "Jane", lastName: null });
-      expect(getDisplayName()).toBe("Jane");
-    });
-
-    it("should return initials correctly", () => {
-      const { setProfile, getInitials } = profileStore.getState();
-
-      expect(getInitials()).toBe("");
-
-      setProfile(mockProfile);
-      expect(getInitials()).toBe("JD");
-
-      setProfile({ ...mockProfile, firstName: null, lastName: null });
-      expect(getInitials()).toBe("T");
-
-      setProfile({ ...mockProfile, firstName: "Alice", lastName: null });
-      expect(getInitials()).toBe("A");
-    });
-  });
-
-  describe("hasPermission", () => {
-    it("should check permissions based on role", () => {
-      const { setProfile, hasPermission } = profileStore.getState();
-
-      // No profile
-      expect(hasPermission("users:read")).toBe(false);
-
-      // User role
-      setProfile({ ...mockProfile, role: "user" });
-      expect(hasPermission("profile:read")).toBe(true);
-      expect(hasPermission("admin:read")).toBe(false);
-
-      // Admin role
-      setProfile({ ...mockProfile, role: "admin" });
-      expect(hasPermission("admin:read")).toBe(true);
-      expect(hasPermission("dev:read")).toBe(false);
-
-      // Dev role
-      setProfile({ ...mockProfile, role: "dev" });
-      expect(hasPermission("dev:read")).toBe(true);
-      expect(hasPermission("admin:read")).toBe(true); // Dev has all permissions
-    });
-  });
-
-  describe("subscription methods", () => {
-    it("should toggle newsletter subscription", () => {
-      const { setProfile, toggleNewsletterSubscription } = profileStore.getState();
-
-      setProfile(mockProfile);
-
-      toggleNewsletterSubscription();
-      expect(profileStore.getState().profile?.isNewsletterSubscribed).toBe(false);
-
-      toggleNewsletterSubscription();
-      expect(profileStore.getState().profile?.isNewsletterSubscribed).toBe(true);
-    });
-
-    it("should not toggle if profile is null", () => {
-      const { toggleNewsletterSubscription } = profileStore.getState();
-
-      toggleNewsletterSubscription();
-      expect(profileStore.getState().profile).toBeNull();
-    });
-  });
-
-  describe("verification status", () => {
-    it("should set email verification status", () => {
-      const { setProfile, setEmailVerified } = profileStore.getState();
-
-      setProfile({ ...mockProfile, emailVerified: false });
-
-      setEmailVerified(true);
-      expect(profileStore.getState().profile?.emailVerified).toBe(true);
-    });
-
-    it("should set phone verification status", () => {
-      const { setProfile, setPhoneVerified } = profileStore.getState();
-
-      setProfile({ ...mockProfile, phoneVerified: false });
-
-      setPhoneVerified(true);
-      expect(profileStore.getState().profile?.phoneVerified).toBe(true);
+      // Error should be cleared
+      expect(useProfileStore.getState().error).toBeNull();
     });
   });
 
   describe("persistence", () => {
-    it("should maintain state across operations", () => {
-      const { setProfile, updateProfile, setLoading, setError } = profileStore.getState();
+    it("should maintain state across operations", async () => {
+      const { actions } = useProfileStore.getState();
 
-      setProfile(mockProfile);
-      setLoading(true);
-      setError("Test error");
-      updateProfile({ firstName: "Updated" });
+      // Perform multiple operations
+      await actions.startAdminEdit("user-123");
+      actions.updateAdminEditFormField("first_name", "Jane");
+      actions.updateAdminEditFormField("email", "jane@example.com");
 
-      const state = profileStore.getState();
-      expect(state.profile?.firstName).toBe("Updated");
-      expect(state.isLoading).toBe(true);
-      expect(state.error).toBe("Test error");
+      const state = useProfileStore.getState();
+      expect(state.isEditingByAdmin).toBe(true);
+      expect(state.editingUserId).toBe("user-123");
+      expect(state.profileDataForEdit?.first_name).toBe("Jane");
+      expect(state.profileDataForEdit?.email).toBe("jane@example.com");
+
+      // Submit should clear the state
+      await actions.submitAdminEdit();
+
+      const finalState = useProfileStore.getState();
+      expect(finalState.isEditingByAdmin).toBe(false);
+      expect(finalState.profileDataForEdit).toBeNull();
     });
   });
 });

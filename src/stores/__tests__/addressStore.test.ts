@@ -2,294 +2,265 @@
  * Tests for Address Zustand Store
  */
 
-import { addressStore } from "../addressStore";
-import type { Address } from "@/types/address";
+import useAddressStore from "../addressStore";
+import { Address } from "@/types";
 
 // Mock address data
 const mockAddress1: Address = {
   id: "addr-1",
   user_id: "user-123",
-  name: "Home",
-  street: "123 Main St",
+  first_name: "John",
+  last_name: "Doe",
+  address_line1: "123 Main St",
+  address_line2: null,
   city: "Paris",
   state: "Île-de-France",
   postal_code: "75001",
   country: "France",
+  phone: "+33123456789",
+  address_type: "shipping",
   is_default: true,
-  is_billing: false,
-  is_shipping: true,
-  phone: "+33612345678",
-  created_at: "2024-01-01T00:00:00Z",
-  updated_at: "2024-01-01T00:00:00Z",
+  created_at: "2024-01-01",
+  updated_at: "2024-01-01",
 };
 
 const mockAddress2: Address = {
   id: "addr-2",
   user_id: "user-123",
-  name: "Office",
-  street: "456 Work Ave",
+  first_name: "Jane",
+  last_name: "Smith",
+  address_line1: "456 Elm St",
+  address_line2: "Apt 2B",
   city: "Lyon",
-  state: "Auvergne-Rhône-Alpes",
+  state: "Rhône",
   postal_code: "69001",
   country: "France",
+  phone: "+33987654321",
+  address_type: "billing",
   is_default: false,
-  is_billing: true,
-  is_shipping: false,
-  phone: "+33687654321",
-  created_at: "2024-01-02T00:00:00Z",
-  updated_at: "2024-01-02T00:00:00Z",
+  created_at: "2024-01-02",
+  updated_at: "2024-01-02",
+};
+
+const mockAddress3: Address = {
+  id: "addr-3",
+  user_id: "user-123",
+  first_name: "Bob",
+  last_name: "Johnson",
+  address_line1: "789 Oak Ave",
+  address_line2: null,
+  city: "Marseille",
+  state: "Bouches-du-Rhône",
+  postal_code: "13001",
+  country: "France",
+  phone: "+33555555555",
+  address_type: "shipping",
+  is_default: false,
+  created_at: "2024-01-03",
+  updated_at: "2024-01-03",
 };
 
 describe("addressStore", () => {
   beforeEach(() => {
     // Reset store state before each test
-    addressStore.setState({
+    useAddressStore.setState({
       addresses: [],
-      selectedAddressId: null,
+      shippingAddress: null,
+      billingAddress: null,
       isLoading: false,
       error: null,
     });
   });
 
   describe("setAddresses", () => {
-    it("should set multiple addresses", () => {
-      const { setAddresses } = addressStore.getState();
+    it("should set multiple addresses and auto-detect shipping/billing", () => {
+      const { setAddresses } = useAddressStore.getState();
 
-      setAddresses([mockAddress1, mockAddress2]);
+      setAddresses([mockAddress1, mockAddress2, mockAddress3]);
 
-      const state = addressStore.getState();
-      expect(state.addresses).toHaveLength(2);
-      expect(state.addresses[0]).toEqual(mockAddress1);
-      expect(state.addresses[1]).toEqual(mockAddress2);
+      const state = useAddressStore.getState();
+      expect(state.addresses).toHaveLength(3);
+      expect(state.shippingAddress).toEqual(mockAddress1); // First shipping address
+      expect(state.billingAddress).toEqual(mockAddress2); // First billing address
     });
 
     it("should clear addresses with empty array", () => {
-      const { setAddresses } = addressStore.getState();
+      const { setAddresses } = useAddressStore.getState();
 
       setAddresses([mockAddress1]);
       setAddresses([]);
 
-      const state = addressStore.getState();
+      const state = useAddressStore.getState();
       expect(state.addresses).toHaveLength(0);
+      expect(state.shippingAddress).toBeNull();
+      expect(state.billingAddress).toBeNull();
     });
   });
 
   describe("addAddress", () => {
     it("should add a new address", () => {
-      const { addAddress } = addressStore.getState();
+      const { addAddress } = useAddressStore.getState();
 
       addAddress(mockAddress1);
 
-      const state = addressStore.getState();
+      const state = useAddressStore.getState();
       expect(state.addresses).toHaveLength(1);
       expect(state.addresses[0]).toEqual(mockAddress1);
+      expect(state.shippingAddress).toEqual(mockAddress1);
     });
 
-    it("should add multiple addresses", () => {
-      const { addAddress } = addressStore.getState();
+    it("should add multiple addresses and update shipping/billing", () => {
+      const { addAddress } = useAddressStore.getState();
 
       addAddress(mockAddress1);
       addAddress(mockAddress2);
 
-      const state = addressStore.getState();
+      const state = useAddressStore.getState();
       expect(state.addresses).toHaveLength(2);
+      expect(state.shippingAddress).toEqual(mockAddress1);
+      expect(state.billingAddress).toEqual(mockAddress2);
     });
   });
 
   describe("updateAddress", () => {
     it("should update an existing address", () => {
-      const { setAddresses, updateAddress } = addressStore.getState();
+      const { setAddresses, updateAddress } = useAddressStore.getState();
 
       setAddresses([mockAddress1, mockAddress2]);
-      updateAddress("addr-1", { name: "Updated Home", street: "789 New St" });
+      const updatedAddress = { ...mockAddress1, address_line1: "789 New St" };
+      updateAddress("addr-1", updatedAddress);
 
-      const state = addressStore.getState();
-      expect(state.addresses[0].name).toBe("Updated Home");
-      expect(state.addresses[0].street).toBe("789 New St");
-      expect(state.addresses[0].city).toBe("Paris"); // Unchanged
+      const state = useAddressStore.getState();
+      expect(state.addresses[0].address_line1).toBe("789 New St");
+      expect(state.shippingAddress?.address_line1).toBe("789 New St");
     });
 
-    it("should not update non-existent address", () => {
-      const { setAddresses, updateAddress } = addressStore.getState();
+    it("should update shipping/billing references when type changes", () => {
+      const { setAddresses, updateAddress } = useAddressStore.getState();
 
-      setAddresses([mockAddress1]);
-      updateAddress("non-existent", { name: "Test" });
+      setAddresses([mockAddress1, mockAddress2]);
+      const updatedAddress = { ...mockAddress1, address_type: "billing" as const };
+      updateAddress("addr-1", updatedAddress);
 
-      const state = addressStore.getState();
-      expect(state.addresses[0]).toEqual(mockAddress1);
+      const state = useAddressStore.getState();
+      expect(state.billingAddress?.id).toBe("addr-1");
     });
   });
 
   describe("removeAddress", () => {
     it("should remove an address by id", () => {
-      const { setAddresses, removeAddress } = addressStore.getState();
+      const { setAddresses, removeAddress } = useAddressStore.getState();
 
       setAddresses([mockAddress1, mockAddress2]);
       removeAddress("addr-1");
 
-      const state = addressStore.getState();
+      const state = useAddressStore.getState();
       expect(state.addresses).toHaveLength(1);
       expect(state.addresses[0].id).toBe("addr-2");
+      expect(state.shippingAddress).toBeNull(); // Was removed
     });
 
-    it("should clear selected address if removed", () => {
-      const { setAddresses, setSelectedAddressId, removeAddress } = addressStore.getState();
+    it("should clear shipping address if removed", () => {
+      const { setAddresses, removeAddress } = useAddressStore.getState();
 
       setAddresses([mockAddress1, mockAddress2]);
-      setSelectedAddressId("addr-1");
       removeAddress("addr-1");
 
-      const state = addressStore.getState();
-      expect(state.selectedAddressId).toBeNull();
+      const state = useAddressStore.getState();
+      expect(state.shippingAddress).toBeNull();
+      expect(state.billingAddress).toEqual(mockAddress2); // Unchanged
     });
 
-    it("should not clear selected address if different address removed", () => {
-      const { setAddresses, setSelectedAddressId, removeAddress } = addressStore.getState();
+    it("should clear billing address if removed", () => {
+      const { setAddresses, removeAddress } = useAddressStore.getState();
 
       setAddresses([mockAddress1, mockAddress2]);
-      setSelectedAddressId("addr-1");
       removeAddress("addr-2");
 
-      const state = addressStore.getState();
-      expect(state.selectedAddressId).toBe("addr-1");
+      const state = useAddressStore.getState();
+      expect(state.billingAddress).toBeNull();
+      expect(state.shippingAddress).toEqual(mockAddress1); // Unchanged
     });
   });
 
-  describe("setDefaultAddress", () => {
-    it("should set an address as default", () => {
-      const { setAddresses, setDefaultAddress } = addressStore.getState();
+  describe("setShippingAddress", () => {
+    it("should set shipping address", () => {
+      const { setShippingAddress } = useAddressStore.getState();
 
-      setAddresses([mockAddress1, mockAddress2]);
-      setDefaultAddress("addr-2");
+      setShippingAddress(mockAddress1);
+      expect(useAddressStore.getState().shippingAddress).toEqual(mockAddress1);
 
-      const state = addressStore.getState();
-      expect(state.addresses[0].is_default).toBe(false);
-      expect(state.addresses[1].is_default).toBe(true);
-    });
-
-    it("should only have one default address", () => {
-      const { setAddresses, setDefaultAddress } = addressStore.getState();
-
-      setAddresses([
-        { ...mockAddress1, is_default: true },
-        { ...mockAddress2, is_default: true },
-      ]);
-
-      setDefaultAddress("addr-2");
-
-      const state = addressStore.getState();
-      const defaultAddresses = state.addresses.filter((a) => a.is_default);
-      expect(defaultAddresses).toHaveLength(1);
-      expect(defaultAddresses[0].id).toBe("addr-2");
+      setShippingAddress(null);
+      expect(useAddressStore.getState().shippingAddress).toBeNull();
     });
   });
 
-  describe("setSelectedAddressId", () => {
-    it("should set selected address id", () => {
-      const { setSelectedAddressId } = addressStore.getState();
+  describe("setBillingAddress", () => {
+    it("should set billing address", () => {
+      const { setBillingAddress } = useAddressStore.getState();
 
-      setSelectedAddressId("addr-1");
-      expect(addressStore.getState().selectedAddressId).toBe("addr-1");
+      setBillingAddress(mockAddress2);
+      expect(useAddressStore.getState().billingAddress).toEqual(mockAddress2);
 
-      setSelectedAddressId(null);
-      expect(addressStore.getState().selectedAddressId).toBeNull();
+      setBillingAddress(null);
+      expect(useAddressStore.getState().billingAddress).toBeNull();
     });
   });
 
   describe("clearAddresses", () => {
     it("should clear all addresses and reset state", () => {
-      const { setAddresses, setSelectedAddressId, clearAddresses } = addressStore.getState();
+      const { setAddresses, setError, clearAddresses } = useAddressStore.getState();
 
       setAddresses([mockAddress1, mockAddress2]);
-      setSelectedAddressId("addr-1");
-      addressStore.setState({ error: "Some error" });
+      setError("Some error");
 
       clearAddresses();
 
-      const state = addressStore.getState();
+      const state = useAddressStore.getState();
       expect(state.addresses).toHaveLength(0);
-      expect(state.selectedAddressId).toBeNull();
+      expect(state.shippingAddress).toBeNull();
+      expect(state.billingAddress).toBeNull();
       expect(state.error).toBeNull();
-    });
-  });
-
-  describe("computed getters", () => {
-    it("should get default address", () => {
-      const { setAddresses, getDefaultAddress } = addressStore.getState();
-
-      expect(getDefaultAddress()).toBeUndefined();
-
-      setAddresses([mockAddress1, mockAddress2]);
-      expect(getDefaultAddress()?.id).toBe("addr-1");
-    });
-
-    it("should get selected address", () => {
-      const { setAddresses, setSelectedAddressId, getSelectedAddress } = addressStore.getState();
-
-      expect(getSelectedAddress()).toBeUndefined();
-
-      setAddresses([mockAddress1, mockAddress2]);
-      setSelectedAddressId("addr-2");
-      expect(getSelectedAddress()?.id).toBe("addr-2");
-    });
-
-    it("should get billing addresses", () => {
-      const { setAddresses, getBillingAddresses } = addressStore.getState();
-
-      setAddresses([mockAddress1, mockAddress2]);
-      const billingAddresses = getBillingAddresses();
-
-      expect(billingAddresses).toHaveLength(1);
-      expect(billingAddresses[0].id).toBe("addr-2");
-    });
-
-    it("should get shipping addresses", () => {
-      const { setAddresses, getShippingAddresses } = addressStore.getState();
-
-      setAddresses([mockAddress1, mockAddress2]);
-      const shippingAddresses = getShippingAddresses();
-
-      expect(shippingAddresses).toHaveLength(1);
-      expect(shippingAddresses[0].id).toBe("addr-1");
     });
   });
 
   describe("loading and error states", () => {
     it("should set loading state", () => {
-      const { setLoading } = addressStore.getState();
+      const { setIsLoading } = useAddressStore.getState();
 
-      setLoading(true);
-      expect(addressStore.getState().isLoading).toBe(true);
+      setIsLoading(true);
+      expect(useAddressStore.getState().isLoading).toBe(true);
 
-      setLoading(false);
-      expect(addressStore.getState().isLoading).toBe(false);
+      setIsLoading(false);
+      expect(useAddressStore.getState().isLoading).toBe(false);
     });
 
     it("should set error state", () => {
-      const { setError } = addressStore.getState();
+      const { setError } = useAddressStore.getState();
 
       setError("Test error");
-      expect(addressStore.getState().error).toBe("Test error");
+      expect(useAddressStore.getState().error).toBe("Test error");
 
       setError(null);
-      expect(addressStore.getState().error).toBeNull();
+      expect(useAddressStore.getState().error).toBeNull();
     });
   });
 
   describe("persistence", () => {
     it("should maintain state across operations", () => {
-      const { setAddresses, addAddress, updateAddress, setSelectedAddressId } =
-        addressStore.getState();
+      const { setAddresses, addAddress, updateAddress, setShippingAddress } =
+        useAddressStore.getState();
 
       setAddresses([mockAddress1]);
       addAddress(mockAddress2);
-      updateAddress("addr-1", { name: "Updated" });
-      setSelectedAddressId("addr-2");
+      const updatedAddress = { ...mockAddress1, city: "Nice" };
+      updateAddress("addr-1", updatedAddress);
+      setShippingAddress(mockAddress3);
 
-      const state = addressStore.getState();
+      const state = useAddressStore.getState();
       expect(state.addresses).toHaveLength(2);
-      expect(state.addresses[0].name).toBe("Updated");
-      expect(state.selectedAddressId).toBe("addr-2");
+      expect(state.addresses[0].city).toBe("Nice");
+      expect(state.shippingAddress).toEqual(mockAddress3);
     });
   });
 });
