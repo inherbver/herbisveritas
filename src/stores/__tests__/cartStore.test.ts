@@ -98,7 +98,7 @@ describe("cartStore", () => {
   });
 
   describe("removeItem", () => {
-    it("should handle removal attempts", () => {
+    it("should remove item from cart by productId", () => {
       const { addItem, removeItem } = useCartStore.getState();
       const itemDetails = {
         productId: mockCartItem.productId,
@@ -110,12 +110,9 @@ describe("cartStore", () => {
       const { items } = useCartStore.getState();
       expect(items).toHaveLength(1);
 
-      // Note: removeItem expects item.id but items don't have id field
-      // This is a known issue in the cartStore implementation
-      // For now, test that remove with productId doesn't crash
+      // Now removeItem works with productId
       removeItem(items[0].productId);
-      // Item won't be removed due to the bug, but shouldn't crash
-      expect(() => removeItem("non-existent")).not.toThrow();
+      expect(useCartStore.getState().items).toHaveLength(0);
     });
 
     it("should handle removing non-existent item", () => {
@@ -127,6 +124,27 @@ describe("cartStore", () => {
   });
 
   describe("quantity management", () => {
+    it("should handle quantity changes through updateQuantity", () => {
+      const { addItem, updateQuantity } = useCartStore.getState();
+      const itemDetails = {
+        productId: "test-qty",
+        name: "Test Quantity",
+        price: 10,
+      };
+
+      // Add item
+      addItem(itemDetails, 2);
+      expect(useCartStore.getState().items[0].quantity).toBe(2);
+
+      // Update quantity
+      updateQuantity("test-qty", 5);
+      expect(useCartStore.getState().items[0].quantity).toBe(5);
+
+      // Remove by setting quantity to 0
+      updateQuantity("test-qty", 0);
+      expect(useCartStore.getState().items).toHaveLength(0);
+    });
+
     it("should handle quantity changes through add operations", () => {
       const { addItem, clearCart } = useCartStore.getState();
       const itemDetails = {

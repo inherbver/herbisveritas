@@ -570,7 +570,7 @@ export class CartDomainService {
   /**
    * Validate user exists and is active
    */
-  private async validateUser(userId: string): Promise<Result<void, BusinessError>> {
+  private async validateUser(userId: string): Promise<Result<void, BusinessError | NotFoundError>> {
     const [existsResult, isActiveResult] = await Promise.all([
       this.userRepository.exists(userId),
       this.userRepository.isActive(userId),
@@ -581,7 +581,7 @@ export class CartDomainService {
     }
 
     if (!existsResult.getValue()) {
-      return Result.error(new BusinessError("Utilisateur non trouvé"));
+      return Result.error(new NotFoundError("Utilisateur", userId));
     }
 
     if (!isActiveResult.getValue()) {

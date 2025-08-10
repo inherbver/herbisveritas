@@ -48,9 +48,9 @@ export async function getArticles(
     let query = supabase.from("articles").select(`
         *,
         author:profiles!articles_author_id_fkey(id, first_name, last_name),
-        category:categories(id, name, slug, color),
+        category:categories(id, name, slug, description, color, created_at, updated_at),
         article_tags(
-          tag:tags(id, name, slug)
+          tag:tags(id, name, slug, created_at)
         )
       `);
 
@@ -199,9 +199,9 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDisplay | n
         `
         *,
         author:profiles!articles_author_id_fkey(id, first_name, last_name),
-        category:categories(id, name, slug, color),
+        category:categories(id, name, slug, description, color, created_at, updated_at),
         article_tags(
-          tag:tags(id, name, slug)
+          tag:tags(id, name, slug, created_at)
         )
       `
       )
@@ -249,9 +249,9 @@ export async function getArticleById(id: string): Promise<ArticleDisplay | null>
         `
         *,
         author:profiles!articles_author_id_fkey(id, first_name, last_name),
-        category:categories(id, name, slug, color),
+        category:categories(id, name, slug, description, color, created_at, updated_at),
         article_tags(
-          tag:tags(id, name, slug)
+          tag:tags(id, name, slug, created_at)
         )
       `
       )

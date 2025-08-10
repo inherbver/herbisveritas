@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 import { getArticles, getCategories, getTags } from "@/lib/magazine/queries";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { locales } from "@/i18n-config";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -55,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // Fetch products
       (async () => {
         try {
-          const supabase = createAdminClient();
+          const supabase = createSupabaseAdminClient();
           const { data } = await supabase
             .from("products")
             .select("slug, updated_at, created_at")

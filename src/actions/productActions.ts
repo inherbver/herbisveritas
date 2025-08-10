@@ -288,3 +288,187 @@ export type UploadImageResult = CoreUploadImageResult;
 
 // Migration vers la fonction centralisée
 export const uploadProductImage = uploadProductImageCore;
+
+// ===== GET PRODUCTS =====
+export async function getProducts(filters?: {
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  page?: number;
+  pageSize?: number;
+}): Promise<ActionResult<any[]>> {
+  const context = LogUtils.createUserActionContext("anonymous", "get_products", "products");
+  LogUtils.logOperationStart("get_products", context);
+
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    let query = supabase
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (filters?.category) {
+      query = query.eq("category", filters.category);
+    }
+
+    if (filters?.minPrice) {
+      query = query.gte("price", filters.minPrice);
+    }
+
+    if (filters?.maxPrice) {
+      query = query.lte("price", filters.maxPrice);
+    }
+
+    if (filters?.inStock) {
+      query = query.gt("stock", 0);
+    }
+
+    const limit = filters?.pageSize || 20;
+    const offset = ((filters?.page || 1) - 1) * limit;
+
+    query = query.limit(limit);
+
+    if (offset > 0) {
+      query = query.range(offset, offset + limit - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      LogUtils.logOperationError("get_products", error, context);
+      return {
+        success: false,
+        data: [],
+        error: error.message,
+      };
+    }
+
+    LogUtils.logOperationSuccess("get_products", { ...context, count: data?.length || 0 });
+    return {
+      success: true,
+      data: data || [],
+      error: undefined,
+    };
+  } catch (error) {
+    LogUtils.logOperationError("get_products", error, context);
+    return {
+      success: false,
+      data: [],
+      error: ErrorUtils.formatForUser(ErrorUtils.toAppError(error)),
+    };
+  }
+}
+
+// ===== GET PRODUCT BY SLUG =====
+export async function getProductBySlug(slug: string): Promise<ActionResult<any>> {
+  const context = LogUtils.createUserActionContext("anonymous", "get_product_by_slug", "products");
+  LogUtils.logOperationStart("get_product_by_slug", { ...context, slug });
+
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .single();
+
+    if (error) {
+      LogUtils.logOperationError("get_product_by_slug", error, context);
+      if (error.code === "PGRST116") {
+        return {
+          success: false,
+          data: null,
+          error: "Product not found",
+        };
+      }
+      return {
+        success: false,
+        data: null,
+        error: error.message,
+      };
+    }
+
+    LogUtils.logOperationSuccess("get_product_by_slug", { ...context, productId: data?.id });
+    return {
+      success: true,
+      data,
+      error: undefined,
+    };
+  } catch (error) {
+    LogUtils.logOperationError("get_product_by_slug", error, context);
+    return {
+      success: false,
+      data: null,
+      error: ErrorUtils.formatForUser(ErrorUtils.toAppError(error)),
+    };
+  }
+}
+
+// ===== TOGGLE PRODUCT STATUS =====
+export async function toggleProductStatus(productId: string): Promise<ActionResult<any>> {
+  const context = LogUtils.createUserActionContext("unknown", "toggle_product_status", "products");
+  LogUtils.logOperationStart("toggle_product_status", { ...context, productId });
+
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    // First get current status
+    const { data: product, error: fetchError } = await supabase
+      .from("products")
+      .select("is_active")
+      .eq("id", productId)
+      .single();
+
+    if (fetchError) {
+      LogUtils.logOperationError("toggle_product_status", fetchError, context);
+      return {
+        success: false,
+        data: null,
+        error: fetchError.message,
+      };
+    }
+
+    // Toggle the status
+    const newStatus = !product.is_active;
+    const { data, error } = await supabase
+      .from("products")
+      .update({ is_active: newStatus })
+      .eq("id", productId)
+      .select()
+      .single();
+
+    if (error) {
+      LogUtils.logOperationError("toggle_product_status", error, context);
+      return {
+        success: false,
+        data: null,
+        error: error.message.includes("update") ? "Concurrent update" : error.message,
+      };
+    }
+
+    LogUtils.logOperationSuccess("toggle_product_status", { ...context, newStatus });
+    await revalidateProductPages({
+      productId,
+      slug: data?.slug,
+      action: "updateStatus",
+    });
+
+    return {
+      success: true,
+      data,
+      error: undefined,
+    };
+  } catch (error) {
+    LogUtils.logOperationError("toggle_product_status", error, context);
+    return {
+      success: false,
+      data: null,
+      error: ErrorUtils.formatForUser(ErrorUtils.toAppError(error)),
+    };
+  }
+}

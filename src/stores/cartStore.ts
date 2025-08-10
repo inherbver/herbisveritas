@@ -61,7 +61,10 @@ const useCartStore = create<CartStore>()(
       removeItem: (cartItemId: string) => {
         try {
           const currentItems = get().items;
-          const itemExists = currentItems.some((item) => item.id === cartItemId);
+          // Fix: Check both id and productId for backward compatibility
+          const itemExists = currentItems.some(
+            (item) => item.id === cartItemId || item.productId === cartItemId
+          );
 
           if (!itemExists) {
             console.warn(`CartStore: Item ${cartItemId} not found in cart`);
@@ -69,7 +72,9 @@ const useCartStore = create<CartStore>()(
           }
 
           set((state: CartStore) => ({
-            items: state.items.filter((item: CartItem) => item.id !== cartItemId),
+            items: state.items.filter(
+              (item: CartItem) => item.id !== cartItemId && item.productId !== cartItemId
+            ),
             error: null,
           }));
           console.log(`CartStore: Removed item ${cartItemId} from cart`);
@@ -110,6 +115,48 @@ const useCartStore = create<CartStore>()(
         }
       },
 
+      updateQuantity: (productId: string, quantity: number) => {
+        try {
+          if (quantity < 0) {
+            console.warn("CartStore: Cannot set negative quantity");
+            return;
+          }
+
+          const currentItems = get().items;
+          const itemIndex = currentItems.findIndex(
+            (item) => item.productId === productId || item.id === productId
+          );
+
+          if (itemIndex === -1) {
+            console.warn(`CartStore: Item ${productId} not found in cart`);
+            return;
+          }
+
+          if (quantity === 0) {
+            // Remove item if quantity is 0
+            set((state: CartStore) => ({
+              items: state.items.filter(
+                (item) => item.productId !== productId && item.id !== productId
+              ),
+              error: null,
+            }));
+            console.log(`CartStore: Removed item ${productId} (quantity set to 0)`);
+          } else {
+            // Update quantity
+            const updatedItems = currentItems.map((item, index) =>
+              index === itemIndex
+                ? { ...item, quantity: Math.min(quantity, item.stock || quantity) }
+                : item
+            );
+            set({ items: updatedItems, error: null });
+            console.log(`CartStore: Updated quantity for ${productId} to ${quantity}`);
+          }
+        } catch (error) {
+          console.error("CartStore: Error updating quantity:", error);
+          set({ error: "Erreur lors de la mise à jour de la quantité" });
+        }
+      },
+
       clearCart: () => {
         try {
           const currentItemCount = get().items.length;
@@ -122,6 +169,10 @@ const useCartStore = create<CartStore>()(
       },
 
       // Actions internes améliorées
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading });
+      },
+
       _setIsLoading: (loading: boolean) => {
         set({ isLoading: loading });
       },

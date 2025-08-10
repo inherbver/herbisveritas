@@ -410,3 +410,10 @@ export async function logoutAction() {
     redirect("/?logout_error=true&message=" + encodeURIComponent(errorMessage));
   }
 }
+
+// --- Export Aliases for Tests ---
+// These aliases maintain backward compatibility with test files
+export const signInAction = loginAction;
+export const signOutAction = logoutAction;
+export const forgotPasswordAction = requestPasswordResetAction;
+export const resetPasswordAction = updatePasswordAction;

@@ -87,7 +87,11 @@ export interface CartActions {
   addItem: (itemDetails: Omit<CartItem, "quantity">, quantityToAdd?: number) => void;
   removeItem: (cartItemId: string) => void;
   updateItemQuantity: (cartItemId: string, newQuantity: number) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+
+  // Public actions for state management
+  setLoading: (loading: boolean) => void;
 
   // Internal actions for state management
   _setIsLoading: (loading: boolean) => void;
