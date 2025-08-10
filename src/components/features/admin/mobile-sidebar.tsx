@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Home, Package, Users } from "lucide-react";
+import { Menu, Home, Package, Users, FileText, MapPin, Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -18,6 +18,9 @@ import { cn } from "@/utils/cn";
 const navItems = [
   { href: "/admin", label: "Vue d'ensemble", icon: Home },
   { href: "/admin/products", label: "Produits", icon: Package },
+  { href: "/admin/magazine", label: "Magazine", icon: FileText },
+  { href: "/admin/markets", label: "Marchés", icon: MapPin },
+  { href: "/admin/partners", label: "Partenaires", icon: Handshake },
   { href: "/admin/users", label: "Gestions utilisateurs", icon: Users },
   // { href: '/admin/orders', label: 'Commandes', icon: ShoppingCart }, // Future
 ];
@@ -39,7 +42,11 @@ export function MobileSidebar() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="md:hidden">
+        <Button
+          variant="outline"
+          size="icon"
+          className="min-h-[44px] min-w-[44px] touch-manipulation active:scale-95 md:hidden"
+        >
           <Menu className="h-5 w-5" />
           <span className="sr-only">Ouvrir le menu</span>
         </Button>
@@ -59,7 +66,7 @@ export function MobileSidebar() {
               href={item.href}
               onClick={() => setIsOpen(false)}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary",
+                "flex min-h-[44px] touch-manipulation items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors active:scale-95 hover:bg-muted hover:text-primary",
                 activePath === item.href && "bg-muted text-primary"
               )}
             >

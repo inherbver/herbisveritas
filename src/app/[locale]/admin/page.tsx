@@ -1,7 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { Locale } from "@/i18n-config";
 import { DashboardShell } from "@/components/features/admin/dashboard-shell";
-
+import {
+  MobileDashboardGrid,
+  DesktopDashboardGrid,
+} from "@/components/features/admin/mobile-dashboard-grid";
 import { ActivityLog } from "@/components/features/admin/ActivityLog";
 import { getRecentActivityLogs } from "@/lib/admin/dashboard";
 
@@ -20,6 +23,18 @@ export default async function AdminDashboardPage({ params }: AdminPageProps) {
 
   return (
     <DashboardShell title={t("title")}>
+      {/* Mobile Dashboard Grid - Visible only on mobile */}
+      <section className="mb-6">
+        <h2 className="mb-4 text-lg font-semibold md:hidden">Navigation rapide</h2>
+        <MobileDashboardGrid />
+      </section>
+
+      {/* Desktop Dashboard Grid - Visible only on desktop */}
+      <section className="mb-8">
+        <h2 className="mb-4 hidden text-lg font-semibold md:block">Sections du tableau de bord</h2>
+        <DesktopDashboardGrid />
+      </section>
+
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* <Card>
           <CardHeader>

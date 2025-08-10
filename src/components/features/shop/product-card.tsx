@@ -120,28 +120,37 @@ export function ProductCard({
   } as const;
 
   if (isLoading) {
-    return <Skeleton className="aspect-square w-full rounded-2xl xl:aspect-[4/5]" />;
+    return (
+      <Skeleton className="aspect-square w-full rounded-2xl sm:aspect-[4/5] xl:aspect-[4/5]" />
+    );
   }
 
   return (
     <article
       className={cn(
         "focus-within:ring-primary/40 group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm transition-shadow duration-300 focus-within:outline-none focus-within:ring-2 hover:shadow-lg",
+        "cursor-pointer touch-manipulation md:cursor-default", // Make card clickable on mobile
         isOutOfStock && "opacity-70",
         className
       )}
       aria-label={`Product: ${title}`}
       itemScope
       itemType="https://schema.org/Product"
+      onClick={(e) => {
+        // Only handle click on mobile when not clicking on buttons
+        if (window.innerWidth < 768 && !(e.target as HTMLElement).closest("button, form")) {
+          window.location.href = `/products/${slug}`;
+        }
+      }}
     >
       {/* Image Container with Link */}
       <NextLink href={linkHref} className="contents" aria-label={`View details for ${title}`}>
-        <figure className="relative aspect-square w-full overflow-hidden rounded-t-2xl xl:aspect-[4/5]">
+        <figure className="relative aspect-square w-full overflow-hidden rounded-t-2xl sm:aspect-[4/5] xl:aspect-[4/5]">
           <Image
             src={imageSrc}
             alt={imageAlt}
             fill
-            sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw"
+            sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, (min-width: 640px) 50vw, 90vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             itemProp="image"
             loading="lazy"
@@ -242,7 +251,8 @@ export function ProductCard({
                 aria-disabled={isPending || isOutOfStock}
                 aria-describedby={isOutOfStock ? `${id}-out-of-stock` : undefined}
                 variant="secondary"
-                className="w-full rounded-xl"
+                className="min-h-[44px] w-full touch-manipulation rounded-xl text-sm font-medium transition-transform duration-200 active:scale-95 md:min-h-[36px]"
+                onClick={(e) => e.stopPropagation()} // Prevent card click on mobile
               >
                 {isPending ? t("addingToCart") : isOutOfStock ? t("outOfStock") : t("addToCart")}
               </Button>

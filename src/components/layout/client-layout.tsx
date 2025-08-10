@@ -10,6 +10,7 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { useAuthCartSync } from "@/hooks/use-auth-cart-sync";
 import { useAuthErrorHandler } from "@/hooks/use-auth-error-handler";
 import useCartStore from "@/stores/cartStore";
+import { MobileBottomNav, MobileBottomNavSpacer } from "@/components/layout/mobile-bottom-nav";
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -251,6 +252,11 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
         {children}
+        {/* Mobile Bottom Navigation - Only visible on mobile */}
+        <div className="sm:hidden">
+          <MobileBottomNav />
+          <MobileBottomNavSpacer />
+        </div>
       </NextIntlClientProvider>
     </ThemeProvider>
   );

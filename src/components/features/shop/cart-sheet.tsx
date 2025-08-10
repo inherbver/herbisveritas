@@ -37,7 +37,11 @@ export function CartSheet() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <Button
+          variant="outline"
+          size="icon"
+          className="relative min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95 md:min-h-[40px] md:min-w-[40px]"
+        >
           <ShoppingBagIcon className="h-5 w-5" />
           {isHydrated && totalItems > 0 && (
             <span
@@ -54,13 +58,21 @@ export function CartSheet() {
           <span className="sr-only">{tGlobal("Cart.openCart")}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-lg">
-        <SheetHeader className="p-6 pb-4">
-          <SheetTitle>{t("yourCartTitle")}</SheetTitle>
-          {/* TODO: S'assurer que le texte de description est pertinent et traduit */}
-          <SheetDescription>{t("cartDescription")}</SheetDescription>
+      <SheetContent
+        side="right"
+        className="flex h-[85vh] max-h-screen w-full flex-col p-0 sm:h-screen sm:max-w-lg"
+      >
+        <SheetHeader className="border-b p-4 pb-3 sm:p-6 sm:pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <SheetTitle className="text-lg font-semibold">{t("yourCartTitle")}</SheetTitle>
+              <SheetDescription className="text-sm text-muted-foreground">
+                {t("cartDescription")}
+              </SheetDescription>
+            </div>
+          </div>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           <CartDisplay onClose={handleClose} />
         </div>
         {/* Vous pourriez ajouter un SheetFooter ici avec un bouton de checkout plus proéminent si nécessaire */}

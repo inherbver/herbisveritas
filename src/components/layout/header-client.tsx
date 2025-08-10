@@ -230,7 +230,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
           )}
         </div>
         {/* Mobile Actions: Cart + Menu */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-4 md:hidden">
           {/* Panier mobile - visible directement */}
           <CartSheet />
 
@@ -240,15 +240,15 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="hover:bg-accent/50 touch-manipulation transition-transform duration-200 active:scale-95"
+                className="hover:bg-accent/50 min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95"
               >
                 <Menu className="h-6 w-6" />
-                <span className="sr-only">{tGlobal("Header.mobileMenuAriaLabel")}</span>{" "}
+                <span className="sr-only">{tGlobal("Header.mobileMenuAriaLabel")}</span>
               </Button>
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[300px] transform-gpu touch-manipulation pt-10 will-change-transform sm:w-[350px]"
+              className="w-[85vw] max-w-[350px] transform-gpu touch-manipulation pt-10 will-change-transform"
             >
               <SheetHeader className="mb-6 text-center">
                 {/* Ajout du logo ici, centré et avec une marge en bas */}
@@ -264,7 +264,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                 <SheetClose asChild>
                   <Link
                     href="/shop"
-                    className="text-foreground/80 active:bg-accent/80 touch-manipulation rounded-md px-3 py-3 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                    className="text-foreground/80 active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                   >
                     {tGlobal("Header.home")}
                   </Link>
@@ -272,7 +272,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                 <SheetClose asChild>
                   <Link
                     href="/magazine"
-                    className="text-foreground/80 active:bg-accent/80 touch-manipulation rounded-md px-3 py-3 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                    className="text-foreground/80 active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                   >
                     Magazine
                   </Link>
@@ -280,7 +280,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                 <SheetClose asChild>
                   <Link
                     href="/contact"
-                    className="text-foreground/80 active:bg-accent/80 touch-manipulation rounded-md px-3 py-3 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                    className="text-foreground/80 active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                   >
                     {tGlobal("Header.contactLink")}
                   </Link>
@@ -288,7 +288,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                 <SheetClose asChild>
                   <Link
                     href="/about"
-                    className="text-foreground/80 active:bg-accent/80 touch-manipulation rounded-md px-3 py-3 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                    className="text-foreground/80 active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                   >
                     {tGlobal("Header.aboutLink")}
                   </Link>
@@ -303,7 +303,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                     <SheetClose asChild>
                       <Link
                         href="/profile/account"
-                        className="text-foreground/80 active:bg-accent/80 -mx-3 block touch-manipulation rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                        className="text-foreground/80 active:bg-accent/80 -mx-3 block flex min-h-[44px] touch-manipulation items-center rounded-lg px-4 py-4 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                       >
                         {tGlobal("Header.accountAriaLabel")}
                       </Link>
@@ -312,7 +312,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                       <SheetClose asChild>
                         <Link
                           href="/admin"
-                          className="text-foreground/80 active:bg-accent/80 -mx-3 block touch-manipulation rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                          className="text-foreground/80 active:bg-accent/80 -mx-3 block flex min-h-[44px] touch-manipulation items-center rounded-lg px-4 py-4 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                         >
                           Admin
                         </Link>
@@ -324,7 +324,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                     <SheetClose asChild>
                       <Link
                         href="/login"
-                        className="text-foreground/80 active:bg-accent/80 -mx-3 block touch-manipulation rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                        className="text-foreground/80 active:bg-accent/80 -mx-3 block flex min-h-[44px] touch-manipulation items-center rounded-lg px-4 py-4 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                       >
                         {tGlobal("Header.login")}
                       </Link>
@@ -332,7 +332,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                     <SheetClose asChild>
                       <Link
                         href="/register"
-                        className="text-foreground/80 active:bg-accent/80 -mx-3 block touch-manipulation rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                        className="text-foreground/80 active:bg-accent/80 -mx-3 block flex min-h-[44px] touch-manipulation items-center rounded-lg px-4 py-4 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                       >
                         {tGlobal("Header.register")}
                       </Link>

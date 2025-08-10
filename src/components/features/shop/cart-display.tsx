@@ -264,7 +264,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8"
+                        className="min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95 md:h-8 md:w-8"
                         onClick={() => {
                           if (item.id) handleUpdateItemQuantity(item.id, item.quantity - 1);
                         }}
@@ -278,7 +278,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8"
+                        className="min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95 md:h-8 md:w-8"
                         onClick={() => {
                           if (item.id) handleUpdateItemQuantity(item.id, item.quantity + 1);
                         }}
@@ -299,7 +299,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                             toast.error("Impossible de supprimer l'article : ID manquant.");
                           }
                         }}
-                        className="hover:text-destructive/80 font-medium text-destructive"
+                        className="hover:text-destructive/80 min-h-[44px] touch-manipulation font-medium text-destructive transition-transform duration-200 active:scale-95 md:min-h-[36px]"
                         aria-label={t("removeItem", { itemName: item.name })}
                       >
                         <XIcon className="mr-1 h-4 w-4" />
