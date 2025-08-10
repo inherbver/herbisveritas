@@ -1,4 +1,4 @@
-import { DashboardShell } from "@/components/admin/dashboard-shell";
+import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ProductForm } from "./product-form";
 import { getTranslations } from "next-intl/server";

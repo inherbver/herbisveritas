@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import ValuesSection from "@/components/domain/about/ValuesSection";
-import { Hero } from "@/components/shared/hero"; // Utiliser le Hero partagé avec une importation nommée
+import { Hero } from "@/components/common/hero"; // Utiliser le Hero partagé avec une importation nommée
 import { StorySection } from "@/components/domain/about/story-section"; // Import de la nouvelle section
 import { PhotoGallerySection } from "@/components/domain/about/photo-gallery-section"; // Import de la nouvelle section
 

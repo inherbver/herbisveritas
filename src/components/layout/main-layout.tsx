@@ -1,7 +1,7 @@
 import React from "react";
 // Header is no longer rendered here
 // Footer is no longer rendered here
-import { SkipNavTarget } from "@/components/primitives";
+import { SkipNavTarget } from "@/components/common";
 
 interface MainLayoutProps {
   children: React.ReactNode;

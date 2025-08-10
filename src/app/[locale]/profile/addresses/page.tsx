@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { Locale } from "@/i18n-config";
 import { createClient } from "@/lib/supabase/client";
 import { redirect } from "next/navigation";
-import AddressForm from "@/components/domain/profile/address-form";
+import AddressForm from "@/components/forms/address-form";
 import { AddressFormData } from "@/lib/validators/address.validator";
 import { countries, type Country } from "@/lib/countries";
 

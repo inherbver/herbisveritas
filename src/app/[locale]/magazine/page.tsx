@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Metadata } from "next";
-import { ArticleCard, MagazineHero } from "@/components/magazine";
+import { ArticleCard, MagazineHero } from "@/components/features/magazine";
 
 // Génération des données structurées JSON-LD pour la page magazine
 function generateMagazineStructuredData(baseUrl: string) {

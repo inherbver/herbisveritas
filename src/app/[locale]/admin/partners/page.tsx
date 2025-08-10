@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAllPartners } from "@/lib/markets/queries";
-import { DashboardShell } from "@/components/admin/dashboard-shell";
+import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,18 +10,20 @@ import { Badge } from "@/components/ui/badge";
 
 /**
  * Admin Partners Page
- * 
+ *
  * Liste et gestion des partenaires pour les administrateurs
  */
 export default async function AdminPartnersPage() {
   // 1. Check admin permissions
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
     redirect("/auth/login");
   }
-  
+
   const isAdmin = await checkAdminRole(user.id);
   if (!isAdmin) {
     redirect("/");
@@ -45,9 +47,7 @@ export default async function AdminPartnersPage() {
           <Card>
             <CardHeader>
               <CardTitle>Aucun partenaire</CardTitle>
-              <CardDescription>
-                Aucun partenaire n'est configuré pour le moment.
-              </CardDescription>
+              <CardDescription>Aucun partenaire n'est configuré pour le moment.</CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/admin/partners/new">
@@ -66,9 +66,7 @@ export default async function AdminPartnersPage() {
                       <Badge variant={partner.isActive ? "default" : "secondary"}>
                         {partner.isActive ? "Actif" : "Inactif"}
                       </Badge>
-                      <Badge variant="outline">
-                        Ordre: {partner.displayOrder}
-                      </Badge>
+                      <Badge variant="outline">Ordre: {partner.displayOrder}</Badge>
                     </CardTitle>
                     <CardDescription>{partner.address}</CardDescription>
                   </div>
@@ -83,15 +81,13 @@ export default async function AdminPartnersPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    {partner.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{partner.description}</p>
                   {partner.facebookUrl && (
                     <div className="text-sm">
                       <span className="font-medium">Facebook:</span>{" "}
-                      <a 
-                        href={partner.facebookUrl} 
-                        target="_blank" 
+                      <a
+                        href={partner.facebookUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline"
                       >
@@ -102,9 +98,9 @@ export default async function AdminPartnersPage() {
                   {partner.imageUrl && (
                     <div className="text-sm">
                       <span className="font-medium">Image:</span>{" "}
-                      <a 
-                        href={partner.imageUrl} 
-                        target="_blank" 
+                      <a
+                        href={partner.imageUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline"
                       >

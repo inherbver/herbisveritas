@@ -8,8 +8,8 @@ import { motion } from "framer-motion";
 import { Link } from "@/i18n/navigation";
 
 // Vous pourrez décommenter Header/Footer quand ils seront intégrés
-// import { Header } from '@/components/shared/header';
-// import { Footer } from '@/components/shared/footer';
+// import { Header } from '@/components/common/header';
+// import { Footer } from '@/components/common/footer';
 
 export default function HomePage() {
   const t = useTranslations("HomePage");

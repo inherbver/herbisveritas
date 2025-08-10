@@ -15,9 +15,9 @@ import {
   CheckoutBusinessError,
   CheckoutErrorCode,
   CheckoutSessionResult,
-} from "@/lib/domain/services/checkout.service";
-import { ProductValidationService } from "@/lib/domain/services/product-validation.service";
-import { AddressValidationService } from "@/lib/domain/services/address-validation.service";
+} from "@/services/checkout.service";
+import { ProductValidationService } from "@/services/product-validation.service";
+import { AddressValidationService } from "@/services/address-validation.service";
 import { ErrorUtils } from "@/lib/core/errors";
 
 // interface Product - plus nécessaire, remplacé par ProductValidationService

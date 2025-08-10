@@ -1,5 +1,5 @@
 import React from "react";
-import { Logo } from "@/components/primitives/logo"; // Optional: Add logo
+import { Logo } from "@/components/common/logo"; // Optional: Add logo
 import Link from "next/link";
 
 interface AuthLayoutProps {

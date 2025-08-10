@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { Locale } from "@/i18n-config";
-import { DashboardShell } from "@/components/admin/dashboard-shell";
+import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 
-import { ActivityLog } from "@/components/admin/ActivityLog";
+import { ActivityLog } from "@/components/features/admin/ActivityLog";
 import { getRecentActivityLogs } from "@/lib/admin/dashboard";
 
 // Disable caching to ensure real-time event updates

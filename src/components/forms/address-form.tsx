@@ -1,0 +1,402 @@
+"use client";
+
+import React, { useState, useEffect, useRef, useTransition, FC } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { addAddress, updateAddress } from "@/actions/addressActions";
+import { useAddressAutocomplete, BanFeature } from "@/hooks/useAddressAutocomplete";
+import { useLocale, useTranslations } from "next-intl";
+import { countries } from "@/lib/countries";
+import type { Address } from "@/types";
+import { AddressFormData, addressSchema } from "@/lib/validators/address.validator";
+
+interface AddressFormProps {
+  addressType: "shipping" | "billing";
+  existingAddress?: Address | Partial<AddressFormData & { id?: string }> | null; // ✅ Support des deux types
+  onCancel?: () => void;
+  onSuccess?: () => void; // For server action success
+  onSubmit?: (data: AddressFormData) => void; // For custom checkout submission
+  isSubmitting?: boolean; // To control loading state from parent
+  // ✅ Propriétés optionnelles pour la page de profil
+  translations?: ReturnType<typeof useTranslations>;
+  locale?: string;
+  countries?: Record<string, Array<{ code: string; name: string }>>;
+}
+
+const AddressForm: FC<AddressFormProps> = ({
+  addressType,
+  existingAddress,
+  onCancel,
+  onSuccess,
+  onSubmit: customOnSubmit,
+  isSubmitting = false,
+  // ✅ Propriétés optionnelles pour la page de profil
+  translations: externalTranslations,
+  locale: externalLocale,
+  countries: _externalCountries,
+}) => {
+  // ✅ Utiliser les traductions externes si fournies, sinon les hooks par défaut
+  const defaultT = useTranslations("AddressForm");
+  const defaultLocale = useLocale();
+  const t = externalTranslations || defaultT;
+  const locale = externalLocale || defaultLocale;
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const isLoading = isSubmitting || isPending;
+  const isEditing = !!existingAddress?.id;
+  const [showAddressLine2, setShowAddressLine2] = useState(!!existingAddress?.address_line2);
+  const [isSelectingAddress, setIsSelectingAddress] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+
+  const form = useForm<AddressFormData>({
+    resolver: zodResolver(addressSchema),
+    defaultValues: {
+      address_type: addressType,
+      first_name: existingAddress?.first_name || "",
+      last_name: existingAddress?.last_name || "",
+      email: existingAddress?.email || "",
+      company_name: existingAddress?.company_name || "",
+      street_number: existingAddress?.street_number || "",
+      address_line1: existingAddress?.address_line1 || "",
+      address_line2: existingAddress?.address_line2 || "",
+      postal_code: existingAddress?.postal_code || "",
+      city: existingAddress?.city || "",
+      country_code: existingAddress?.country_code || "FR",
+      state_province_region: existingAddress?.state_province_region || "",
+      phone_number: existingAddress?.phone_number || "",
+    },
+  });
+
+  const { control, handleSubmit, watch, setValue, setError } = form;
+
+  const countryList = countries[locale.toUpperCase() as keyof typeof countries] || countries.EN;
+  const addressLine1Value = watch("address_line1");
+  const streetNumberValue = watch("street_number"); // 👈 Surveiller le numéro de rue existant
+  const watchedCountry = watch("country_code");
+  const {
+    suggestions: addressSuggestions,
+    isLoading: isAddressLoading,
+    setSuggestions: setAddressSuggestions,
+    error: addressError,
+  } = useAddressAutocomplete(
+    isSelectingAddress || !hasUserInteracted ? "" : addressLine1Value,
+    watchedCountry
+  );
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setAddressSuggestions([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [setAddressSuggestions]);
+
+  const handleSelectAddress = (address: BanFeature["properties"]) => {
+    setIsSelectingAddress(true);
+
+    // 🚀 LOGIQUE AMÉLIORÉE : Préserver le numéro existant si déjà saisi
+    const currentStreetNumber = streetNumberValue?.trim();
+    let apiStreetNumber = address.housenumber?.trim();
+
+    // 🔍 Si pas de housenumber, essayer d'extraire depuis le label ou name
+    if (!apiStreetNumber && (address.label || address.name)) {
+      const labelToCheck = address.label || address.name || "";
+      // Regex pour extraire le numéro au début du label (ex: "123 Rue de la Paix")
+      const numberMatch = labelToCheck.match(/^(\d+(?:\s*[a-zA-Z])?)\s+/);
+      if (numberMatch) {
+        apiStreetNumber = numberMatch[1].trim();
+      }
+    }
+
+    // Utiliser le numéro existant S'IL EXISTE, sinon utiliser celui extrait de l'API
+    const finalStreetNumber =
+      currentStreetNumber && currentStreetNumber !== ""
+        ? currentStreetNumber
+        : apiStreetNumber || "";
+
+    // ✅ S'assurer que le numéro de rue est bien défini
+    setValue("street_number", finalStreetNumber, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    // 🔍 Pour address_line1, utiliser street ou name, mais retirer le numéro s'il était au début
+    let streetName = address.street || address.name || "";
+    if (apiStreetNumber && streetName.startsWith(apiStreetNumber)) {
+      streetName = streetName.replace(new RegExp(`^${apiStreetNumber}\\s+`), "").trim();
+    }
+
+    setValue("address_line1", streetName, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setValue("postal_code", address.postcode, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setValue("city", address.city, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    // Fermer immédiatement les suggestions
+    setAddressSuggestions([]);
+    // Réactiver l'autocomplétion après un délai
+    setTimeout(() => {
+      setIsSelectingAddress(false);
+    }, 500);
+  };
+
+  const processSubmit = (data: AddressFormData) => {
+    if (customOnSubmit) {
+      customOnSubmit(data);
+      return;
+    }
+
+    startTransition(async () => {
+      const result =
+        isEditing && existingAddress?.id
+          ? await updateAddress(existingAddress.id, data, locale)
+          : await addAddress(data, locale);
+
+      if (result.success) {
+        toast.success(t(isEditing ? "updateSuccess" : "addSuccess"));
+        // Force refresh des données pour synchroniser checkout et profile
+        router.refresh();
+        onSuccess?.();
+        form.reset();
+      } else {
+        toast.error(typeof result.error === "string" ? result.error : t("genericError"));
+      }
+    });
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <FormField
+            control={control}
+            name="first_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fieldLabels.first_name")}</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder={t("placeholders.first_name")} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="last_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fieldLabels.last_name")}</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder={t("placeholders.last_name")} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <FormField
+            control={control}
+            name="street_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fieldLabels.street_number")}</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder={t("placeholders.street_number")}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="address_line1"
+            render={({ field }) => (
+              <FormItem className="md:col-span-3">
+                <div ref={suggestionsRef} className="relative">
+                  <FormLabel>{t("fieldLabels.address_line1")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder={t("placeholders.address_line1")}
+                      autoComplete="off"
+                      onFocus={() => setHasUserInteracted(true)}
+                      onChange={(e) => {
+                        setHasUserInteracted(true);
+                        field.onChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  {isAddressLoading && (
+                    <p className="text-sm text-muted-foreground">{t("addressLoading")}</p>
+                  )}
+                  {addressError && <p className="text-sm text-red-600">{addressError}</p>}
+                  {addressSuggestions.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-background shadow-lg">
+                      {addressSuggestions.map((feature: BanFeature) => (
+                        <button
+                          key={feature.properties.id}
+                          type="button"
+                          className="w-full p-2 text-left hover:bg-accent"
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // Empêche le mousedown de déclencher handleClickOutside
+                          }}
+                          onClick={() => handleSelectAddress(feature.properties)}
+                        >
+                          {feature.properties.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="show_address_line2_checkbox"
+            onCheckedChange={(checked) => {
+              const isChecked = checked as boolean;
+              setShowAddressLine2(isChecked);
+              if (!isChecked) setValue("address_line2", "", { shouldValidate: true });
+            }}
+            checked={showAddressLine2}
+          />
+          <Label htmlFor="show_address_line2_checkbox" className="cursor-pointer">
+            {t("fieldLabels.address_line2")}
+          </Label>
+        </div>
+
+        {showAddressLine2 && (
+          <FormField
+            control={control}
+            name="address_line2"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fieldLabels.address_line2")}</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder={t("placeholders.address_line2")}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <FormField
+            control={control}
+            name="postal_code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fieldLabels.postal_code")}</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder={t("placeholders.postal_code")} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="city"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>{t("fieldLabels.city")}</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder={t("placeholders.city")} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={control}
+          name="country_code"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("fieldLabels.country_code")}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("placeholders.country_code")} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {countryList.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex items-center justify-end space-x-4">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+              {t("buttons.cancel")}
+            </Button>
+          )}
+          <Button type="submit" disabled={isLoading || isAddressLoading}>
+            {(isLoading || isAddressLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditing ? t("buttons.save") : t("buttons.save")}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
+export default AddressForm;

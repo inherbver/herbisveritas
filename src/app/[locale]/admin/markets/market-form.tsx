@@ -19,7 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Market } from "@/types/market";
-import { ImageUploadButton } from "@/components/shared/image-upload-button";
+import { ImageUploadButton } from "@/components/common/image-upload-button";
 import { uploadMarketImageCore } from "@/lib/storage/image-upload";
 
 interface MarketFormProps {

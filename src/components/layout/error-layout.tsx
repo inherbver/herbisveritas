@@ -2,8 +2,8 @@ import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Container } from "./container";
-import { Heading } from "@/components/primitives/heading";
-import { Text } from "@/components/primitives/text";
+import { Heading } from "@/components/common/heading";
+import { Text } from "@/components/common/text";
 
 interface ErrorLayoutProps {
   statusCode: number;

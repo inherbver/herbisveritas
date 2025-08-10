@@ -1,13 +1,15 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { EventType, EventSeverity } from "./dashboard";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 
 /**
  * Service pour logger des événements dans audit_logs
  */
 export class EventLogger {
-  private supabase: ReturnType<typeof createSupabaseServerClient>;
+  private supabase: SupabaseClient<Database>;
 
-  constructor(supabase: ReturnType<typeof createSupabaseServerClient>) {
+  constructor(supabase: SupabaseClient<Database>) {
     this.supabase = supabase;
   }
 
@@ -24,7 +26,7 @@ export class EventLogger {
       const { error } = await this.supabase.from("audit_logs").insert({
         event_type: eventType,
         user_id: userId || null,
-        data: data || null,
+        data: (data as any) || null,
         severity,
       });
 

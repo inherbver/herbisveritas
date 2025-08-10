@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, MinusIcon, PlusIcon, XIcon } from "lucide-react";
-import CheckoutAddressForm from "./AddressForm";
+import AddressForm from "@/components/forms/address-form";
 
 interface CheckoutClientPageProps {
   cart: CartData;
@@ -126,7 +126,7 @@ export default function CheckoutClientPage({
         }
         toast.success(t("toast.addressSaved"));
       } else {
-        toast.error(result.error?.message || "Erreur lors de la sauvegarde");
+        toast.error(result.error || "Erreur lors de la sauvegarde");
       }
     } catch (error) {
       console.error("Erreur lors de la sauvegarde de l'adresse:", error);
@@ -234,7 +234,7 @@ export default function CheckoutClientPage({
       return (
         <section className="mt-4">
           <h3 className="mb-4 text-lg font-semibold">{title}</h3>
-          <CheckoutAddressForm
+          <AddressForm
             addressType={type}
             onSubmit={handleAddressFormSubmit}
             isSubmitting={isPending}

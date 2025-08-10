@@ -36,7 +36,7 @@ import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createProduct, updateProduct } from "@/actions/productActions";
-import { ImageUploadField } from "@/components/shared/image-upload-field";
+import { ImageUploadField } from "@/components/common/image-upload-field";
 import { uploadProductImageCore } from "@/lib/storage/image-upload";
 import { type ProductWithTranslations } from "@/lib/supabase/queries/products";
 import { type Database } from "@/types/supabase";

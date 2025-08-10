@@ -35,7 +35,9 @@
       "Bash(mkdir:*)",
       "Bash(npx next:*)",
       "mcp__playwright__start_codegen_session",
-      "mcp__playwright__playwright_fill"
+      "mcp__playwright__playwright_fill",
+      "Bash(cp:*)",
+      "Bash(sed:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

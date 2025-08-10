@@ -56,7 +56,7 @@ class ConsoleLogger implements Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as Record<string, unknown>)?.code as string,
+          code: (error as any)?.code as string,
         };
       } else {
         entry.error = {
@@ -151,7 +151,7 @@ class DatabaseLogger implements Logger {
           name: error.name,
           message: error.message,
           stack: error.stack,
-          code: (error as Record<string, unknown>)?.code as string,
+          code: (error as any)?.code as string,
         };
       } else {
         entry.error = {

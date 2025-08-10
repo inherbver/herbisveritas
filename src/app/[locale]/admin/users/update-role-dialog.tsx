@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { type UserForAdminPanel } from "@/actions/userActions";
-import { RoleManager } from "@/components/admin/role-manager";
+import { RoleManager } from "@/components/features/admin/role-manager";
 import {
   Dialog,
   DialogContent,

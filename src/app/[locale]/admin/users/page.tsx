@@ -6,13 +6,16 @@ export default async function AdminUsersPage() {
   const result = await getUsers();
 
   if (!result.success || !result.data) {
-    return <div className="text-red-500">Error: {result.error || "No data"}</div>;
+    return <div className="text-red-500">Error: No data</div>;
   }
+
+  // Extract the nested data from the permission wrapper
+  const usersData = result.data.success && result.data.data ? result.data.data : [];
 
   return (
     <section className="container mx-auto py-10">
       <h1 className="mb-6 text-3xl font-bold">User Management</h1>
-      <DataTable columns={columns} data={result.data} />
+      <DataTable columns={columns} data={usersData} />
     </section>
   );
 }

@@ -1,6 +1,6 @@
 // src/app/[locale]/contact/page.tsx
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Hero, type HeroProps } from "@/components/shared/hero";
+import { Hero, type HeroProps } from "@/components/common/hero";
 import { getNextUpcomingMarket, getAllMarketsSorted } from "@/lib/market-utils";
 import type { AppPathname } from "@/i18n/navigation";
 

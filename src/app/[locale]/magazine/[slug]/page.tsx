@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TipTapViewer } from "@/components/magazine/tiptap-viewer";
+import { TipTapViewer } from "@/components/features/magazine/tiptap-viewer";
 import { ArticleDisplay, Tag } from "@/types/magazine";
 import { Calendar, User, Clock, Eye, ArrowLeft, Facebook, Twitter, Linkedin } from "lucide-react";
 import Link from "next/link";

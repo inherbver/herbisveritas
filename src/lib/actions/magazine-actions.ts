@@ -7,8 +7,8 @@ import {
   magazineService,
   type CreateArticleData,
   type UpdateArticleData,
-} from "@/lib/services/magazine.service";
-import { getUser } from "@/lib/auth/server";
+} from "@/services/magazine.service";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // === VALIDATION SCHEMAS ===
 
@@ -72,7 +72,10 @@ export async function createArticleAction(
 ): Promise<ActionResult> {
   try {
     // 1. Check authentication
-    const user = await getUser();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return {
         success: false,
@@ -165,7 +168,10 @@ export async function updateArticleAction(
 ): Promise<ActionResult> {
   try {
     // 1. Check authentication
-    const user = await getUser();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return {
         success: false,
@@ -275,7 +281,10 @@ export async function deleteArticleAction(
 ): Promise<ActionResult> {
   try {
     // 1. Check authentication
-    const user = await getUser();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return {
         success: false,
@@ -347,7 +356,10 @@ export async function publishArticleAction(
   formData: FormData
 ): Promise<ActionResult> {
   try {
-    const user = await getUser();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return {
         success: false,
@@ -403,7 +415,10 @@ export async function unpublishArticleAction(
   formData: FormData
 ): Promise<ActionResult> {
   try {
-    const user = await getUser();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return {
         success: false,

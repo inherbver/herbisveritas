@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Partner } from "@/types/partner";
-import { ImageUploadButton } from "@/components/shared/image-upload-button";
+import { ImageUploadButton } from "@/components/common/image-upload-button";
 import { uploadPartnerImageCore } from "@/lib/storage/image-upload";
 
 interface PartnerFormProps {

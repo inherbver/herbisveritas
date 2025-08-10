@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMarketsFromDb } from "@/lib/markets/queries";
-import { DashboardShell } from "@/components/admin/dashboard-shell";
+import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,18 +10,20 @@ import { Badge } from "@/components/ui/badge";
 
 /**
  * Admin Markets Page
- * 
+ *
  * Liste et gestion des marchés pour les administrateurs
  */
 export default async function AdminMarketsPage() {
   // 1. Check admin permissions
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
     redirect("/auth/login");
   }
-  
+
   const isAdmin = await checkAdminRole(user.id);
   if (!isAdmin) {
     redirect("/");
@@ -45,9 +47,7 @@ export default async function AdminMarketsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Aucun marché</CardTitle>
-              <CardDescription>
-                Aucun marché n'est configuré pour le moment.
-              </CardDescription>
+              <CardDescription>Aucun marché n'est configuré pour le moment.</CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/admin/markets/new">
@@ -88,17 +88,20 @@ export default async function AdminMarketsPage() {
                     {new Date(market.end_date).toLocaleDateString("fr-FR")}
                   </div>
                   <div>
-                    <span className="font-medium">Horaires:</span>{" "}
-                    {market.start_time} - {market.end_time}
+                    <span className="font-medium">Horaires:</span> {market.start_time} -{" "}
+                    {market.end_time}
                   </div>
                   <div>
                     <span className="font-medium">Jour:</span>{" "}
-                    {["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"][market.day_of_week]}
+                    {
+                      ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"][
+                        market.day_of_week
+                      ]
+                    }
                   </div>
                   {market.description && (
                     <div className="col-span-2">
-                      <span className="font-medium">Description:</span>{" "}
-                      {market.description}
+                      <span className="font-medium">Description:</span> {market.description}
                     </div>
                   )}
                 </div>

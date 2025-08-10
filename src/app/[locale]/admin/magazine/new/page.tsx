@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ArticleForm } from "@/components/admin/magazine/article-form";
+import { ArticleForm } from "@/components/features/admin/magazine/article-form";
 import { getCategories, getTags } from "@/lib/magazine/queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

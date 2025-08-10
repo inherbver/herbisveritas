@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { MainLayout } from "@/components/layout/main-layout";
 import { getProductBySlug } from "@/lib/supabase/queries/products";
-import ProductDetailDisplay from "@/components/domain/shop/product-detail-display";
+import ProductDetailDisplay from "@/components/features/shop/product-detail-display";
 import { ProductDetailData } from "@/types/product-types";
 import { Locale } from "@/i18n-config";
 

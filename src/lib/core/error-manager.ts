@@ -178,7 +178,7 @@ class GlobalErrorManager {
           return { resolved: true, action: "NOTIFY" };
         }
 
-        if (status >= 500) {
+        if (status && status >= 500) {
           if (context.retryCount < 3) {
             return { resolved: false, action: "RETRY" };
           }

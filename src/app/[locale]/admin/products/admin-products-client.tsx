@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { DashboardShell } from "@/components/admin/dashboard-shell";
+import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-import { ProductFilters } from "@/components/admin/ProductFilters";
+import { ProductFilters } from "@/components/features/admin/ProductFilters";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import {

@@ -3,10 +3,11 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { errorManager } from "@/lib/core/error-manager";
+import { ErrorDomain } from "@/lib/core/error-manager";
 
 /**
- * Hook pour gérer les erreurs d'authentification, notamment les problèmes de refresh token
+ * Hook pour gérer les erreurs d'authentification via le système centralisé
  */
 export function useAuthErrorHandler() {
   const router = useRouter();
@@ -14,25 +15,12 @@ export function useAuthErrorHandler() {
   useEffect(() => {
     const supabase = createClient();
 
-    // Intercepter les erreurs d'authentification
-    const handleAuthError = async (error: any) => {
-      if (error?.message?.includes("Refresh Token") || error?.message?.includes("refresh_token")) {
-        console.warn("Refresh token error detected, clearing session...");
-
-        // Nettoyer la session locale
-        await supabase.auth.signOut();
-
-        // Nettoyer le localStorage manuellement si nécessaire
-        const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const storageKey = `sb-${url.replace("https://", "").split(".")[0]}-auth-token`;
-        localStorage.removeItem(storageKey);
-
-        // Informer l'utilisateur
-        toast.error("Votre session a expiré. Veuillez vous reconnecter.");
-
-        // Rediriger vers la page de connexion
-        router.push("/login");
-      }
+    // Utiliser le gestionnaire d'erreurs centralisé
+    const handleAuthError = async (error: unknown) => {
+      await errorManager.handleError(error, {
+        router,
+        component: "auth-hook",
+      });
     };
 
     // Écouter les changements d'état d'authentification

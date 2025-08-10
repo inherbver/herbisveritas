@@ -22,7 +22,7 @@ import {
   SheetHeader,
 } from "@/components/ui/sheet";
 import { Menu, Info } from "lucide-react";
-import { CartSheet } from "@/components/domain/shop/cart-sheet";
+import { CartSheet } from "@/components/features/shop/cart-sheet";
 import { cn } from "@/utils/cn";
 import { useSafeTranslations, useSafePathname, useSafeRouter } from "@/hooks/use-safe-intl";
 import LocaleSwitcher from "./locale-switcher";
@@ -58,7 +58,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
   const pathname = useSafePathname();
   const tGlobal = useSafeTranslations("Global");
   const router = useSafeRouter();
-  
+
   const [authState, setAuthState] = useState<AuthState>({
     session: null,
     isLoading: true,
@@ -179,7 +179,11 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
               })}
               {isAdmin && (
                 <NavigationMenuItem>
-                  <Link href="/admin" className={navigationMenuTriggerStyle()} data-testid="admin-nav-link">
+                  <Link
+                    href="/admin"
+                    className={navigationMenuTriggerStyle()}
+                    data-testid="admin-nav-link"
+                  >
                     Admin
                   </Link>
                 </NavigationMenuItem>
@@ -215,7 +219,9 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
           ) : (
             <>
               <Button asChild variant="ghost" size="sm" className="rounded-2xl">
-                <Link href="/login" data-testid="login-link">{tGlobal("Header.login")}</Link>
+                <Link href="/login" data-testid="login-link">
+                  {tGlobal("Header.login")}
+                </Link>
               </Button>
               <Button asChild variant="primary" size="sm" className="rounded-2xl">
                 <Link href="/register">{tGlobal("Header.register")}</Link>
@@ -227,114 +233,114 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
         <div className="flex items-center gap-2 md:hidden">
           {/* Panier mobile - visible directement */}
           <CartSheet />
-          
+
           {/* Mobile Menu Trigger (Hamburger) */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
-                className="touch-manipulation transition-transform duration-200 active:scale-95 hover:bg-accent/50"
+                className="hover:bg-accent/50 touch-manipulation transition-transform duration-200 active:scale-95"
               >
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">{tGlobal("Header.mobileMenuAriaLabel")}</span>{" "}
               </Button>
             </SheetTrigger>
-          <SheetContent 
-            side="left" 
-            className="w-[300px] pt-10 sm:w-[350px] touch-manipulation transform-gpu will-change-transform"
-          >
-            <SheetHeader className="mb-6 text-center">
-              {/* Ajout du logo ici, centré et avec une marge en bas */}
-              <div className="mx-auto mb-4 w-fit">
-                <Logo />
-              </div>
-              <SheetTitle className="text-2xl font-bold">
-                {tGlobal("Header.mobileSheetTitle")}
-              </SheetTitle>{" "}
-              <SheetDescription>{tGlobal("Header.mobileSheetDescription")}</SheetDescription>{" "}
-            </SheetHeader>
-            <nav className="flex flex-col gap-4 px-4">
-              <SheetClose asChild>
-                <Link
-                  href="/shop"
-                  className="text-foreground/80 rounded-md px-3 py-3 text-base font-medium transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
-                >
-                  {tGlobal("Header.home")}
-                </Link>
-              </SheetClose>
-              <SheetClose asChild>
-                <Link
-                  href="/magazine"
-                  className="text-foreground/80 rounded-md px-3 py-3 text-base font-medium transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
-                >
-                  Magazine
-                </Link>
-              </SheetClose>
-              <SheetClose asChild>
-                <Link
-                  href="/contact"
-                  className="text-foreground/80 rounded-md px-3 py-3 text-base font-medium transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
-                >
-                  {tGlobal("Header.contactLink")}
-                </Link>
-              </SheetClose>
-              <SheetClose asChild>
-                <Link
-                  href="/about"
-                  className="text-foreground/80 rounded-md px-3 py-3 text-base font-medium transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
-                >
-                  {tGlobal("Header.aboutLink")}
-                </Link>
-              </SheetClose>
+            <SheetContent
+              side="left"
+              className="w-[300px] transform-gpu touch-manipulation pt-10 will-change-transform sm:w-[350px]"
+            >
+              <SheetHeader className="mb-6 text-center">
+                {/* Ajout du logo ici, centré et avec une marge en bas */}
+                <div className="mx-auto mb-4 w-fit">
+                  <Logo />
+                </div>
+                <SheetTitle className="text-2xl font-bold">
+                  {tGlobal("Header.mobileSheetTitle")}
+                </SheetTitle>{" "}
+                <SheetDescription>{tGlobal("Header.mobileSheetDescription")}</SheetDescription>{" "}
+              </SheetHeader>
+              <nav className="flex flex-col gap-4 px-4">
+                <SheetClose asChild>
+                  <Link
+                    href="/shop"
+                    className="text-foreground/80 active:bg-accent/80 touch-manipulation rounded-md px-3 py-3 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {tGlobal("Header.home")}
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/magazine"
+                    className="text-foreground/80 active:bg-accent/80 touch-manipulation rounded-md px-3 py-3 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                  >
+                    Magazine
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/contact"
+                    className="text-foreground/80 active:bg-accent/80 touch-manipulation rounded-md px-3 py-3 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {tGlobal("Header.contactLink")}
+                  </Link>
+                </SheetClose>
+                <SheetClose asChild>
+                  <Link
+                    href="/about"
+                    className="text-foreground/80 active:bg-accent/80 touch-manipulation rounded-md px-3 py-3 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {tGlobal("Header.aboutLink")}
+                  </Link>
+                </SheetClose>
 
-              <hr className="my-4 border-border" />
+                <hr className="my-4 border-border" />
 
-              {isLoading ? (
-                <div className="mb-2 h-10 w-full animate-pulse rounded-md bg-gray-200"></div>
-              ) : isLoggedIn ? (
-                <>
-                  <SheetClose asChild>
-                    <Link
-                      href="/profile/account"
-                      className="text-foreground/80 -mx-3 block rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {tGlobal("Header.accountAriaLabel")}
-                    </Link>
-                  </SheetClose>
-                  {isAdmin && (
+                {isLoading ? (
+                  <div className="mb-2 h-10 w-full animate-pulse rounded-md bg-gray-200"></div>
+                ) : isLoggedIn ? (
+                  <>
                     <SheetClose asChild>
                       <Link
-                        href="/admin"
-                        className="text-foreground/80 -mx-3 block rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
+                        href="/profile/account"
+                        className="text-foreground/80 active:bg-accent/80 -mx-3 block touch-manipulation rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
                       >
-                        Admin
+                        {tGlobal("Header.accountAriaLabel")}
                       </Link>
                     </SheetClose>
-                  )}
-                </>
-              ) : (
-                <>
-                  <SheetClose asChild>
-                    <Link
-                      href="/login"
-                      className="text-foreground/80 -mx-3 block rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {tGlobal("Header.login")}
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/register"
-                      className="text-foreground/80 -mx-3 block rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 touch-manipulation active:scale-[0.98] active:bg-accent/80 hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {tGlobal("Header.register")}
-                    </Link>
-                  </SheetClose>
-                </>
-              )}
-            </nav>
-          </SheetContent>
+                    {isAdmin && (
+                      <SheetClose asChild>
+                        <Link
+                          href="/admin"
+                          className="text-foreground/80 active:bg-accent/80 -mx-3 block touch-manipulation rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                        >
+                          Admin
+                        </Link>
+                      </SheetClose>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <SheetClose asChild>
+                      <Link
+                        href="/login"
+                        className="text-foreground/80 active:bg-accent/80 -mx-3 block touch-manipulation rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                      >
+                        {tGlobal("Header.login")}
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Link
+                        href="/register"
+                        className="text-foreground/80 active:bg-accent/80 -mx-3 block touch-manipulation rounded-lg px-3 py-3 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                      >
+                        {tGlobal("Header.register")}
+                      </Link>
+                    </SheetClose>
+                  </>
+                )}
+              </nav>
+            </SheetContent>
           </Sheet>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMarketById } from "@/lib/markets/queries";
-import { DashboardShell } from "@/components/admin/dashboard-shell";
+import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { MarketForm } from "../../market-form";
@@ -13,7 +13,7 @@ interface EditMarketPageProps {
 
 /**
  * Edit Market Page
- * 
+ *
  * Page de modification d'un marché existant
  */
 export default async function EditMarketPage({ params }: EditMarketPageProps) {
@@ -21,12 +21,14 @@ export default async function EditMarketPage({ params }: EditMarketPageProps) {
 
   // 1. Check admin permissions
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
     redirect("/auth/login");
   }
-  
+
   const isAdmin = await checkAdminRole(user.id);
   if (!isAdmin) {
     redirect("/");
@@ -34,7 +36,7 @@ export default async function EditMarketPage({ params }: EditMarketPageProps) {
 
   // 2. Fetch market data
   const market = await getMarketById(id);
-  
+
   if (!market) {
     notFound();
   }

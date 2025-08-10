@@ -92,14 +92,16 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
   const validateSession = useCallback(async () => {
     try {
       // Utilise getUser() pour une validation côté serveur, plus sécurisée
-      const {
-        data: { user },
-        error: userError,
-      } = await supabaseCallWithTimeout(
+      const result = (await supabaseCallWithTimeout(
         supabase.auth.getUser(),
         2500, // Timeout de 2.5 secondes
         1 // 1 retry seulement pour ne pas trop ralentir
-      );
+      )) as { data: { user: any }; error: any };
+
+      const {
+        data: { user },
+        error: userError,
+      } = result;
 
       if (userError || !user) {
         // Pas d'utilisateur authentifié côté serveur
@@ -107,13 +109,15 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
       }
 
       // Si l'utilisateur est validé, on peut récupérer la session locale en toute confiance
-      const {
-        data: { session },
-      } = await supabaseCallWithTimeout(
+      const sessionResult = (await supabaseCallWithTimeout(
         supabase.auth.getSession(),
         2000, // Timeout plus court pour getSession
         1
-      );
+      )) as { data: { session: any } };
+
+      const {
+        data: { session },
+      } = sessionResult;
       return session;
     } catch (error) {
       if (

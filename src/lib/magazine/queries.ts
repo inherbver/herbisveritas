@@ -165,7 +165,8 @@ export async function getArticles(
       articles?.map((article) => ({
         ...article,
         content: ensureContentIsObject(article.content),
-        tags: article.article_tags?.map((at: { tag: Tag }) => at.tag) || [],
+        tags: article.article_tags?.map((at) => at.tag) || [],
+        category: article.category || undefined,
       })) || [];
 
     const pagination: ArticlePagination = {
@@ -176,7 +177,7 @@ export async function getArticles(
     };
 
     return {
-      articles: articlesWithTags as ArticleDisplay[],
+      articles: articlesWithTags,
       pagination,
     };
   } catch (error) {

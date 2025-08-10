@@ -7,9 +7,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { DashboardShell } from "@/components/admin/dashboard-shell";
-import { AdminStatus } from "@/components/admin/AdminStatus";
+import { AdminSidebar } from "@/components/features/admin/admin-sidebar";
+import { DashboardShell } from "@/components/features/admin/dashboard-shell";
+import { AdminStatus } from "@/components/features/admin/AdminStatus";
 
 interface AdminLayoutProps {
   children: ReactNode;
