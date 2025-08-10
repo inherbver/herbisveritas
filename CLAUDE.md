@@ -11,13 +11,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Start production**: `npm start`
 - **Run tests**: `npm run test`
 - **Lint code**: `npm run lint`
+- **Type check**: `npm run typecheck`
 - **Format code**: Prettier is configured with lint-staged hooks
 - **Admin role audit**: `npm run audit-roles`
 
 ### Testing
 
-- Foreach new feature you've to build tests
-- Those tests have to passed before commiting
+- For each new feature you must build tests
+- Tests must pass before committing
 - Jest is configured for unit tests in `__tests__` directories
 - Run specific test: `npm test -- --testPathPattern=filename`
 - MSW (Mock Service Worker) is available for API mocking
@@ -39,18 +40,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 src/
 ├── app/[locale]/          # Next.js App Router with i18n
-├── components/            # React components organized by domain
+├── components/            # React components organized by purpose
 │   ├── admin/            # Admin panel components
 │   ├── auth/             # Authentication & authorization
-│   ├── domain/           # Business domain components
+│   ├── common/           # Shared reusable components
+│   ├── features/         # Feature-specific components
+│   ├── forms/            # Form components
 │   ├── layout/           # Layout and navigation
-│   ├── ui/               # shadcn/ui components
-│   └── shared/           # Reusable components
+│   └── ui/               # shadcn/ui components
 ├── actions/              # Server Actions for API logic
 ├── lib/                  # Utilities and services
 │   ├── auth/             # Authentication utilities
+│   ├── core/             # Core utilities and error management
 │   ├── supabase/         # Database clients and queries
+│   ├── storage/          # File upload and storage
 │   └── stripe/           # Payment processing
+├── services/             # Business logic services
 ├── stores/               # Zustand state stores
 ├── types/                # TypeScript type definitions
 └── middleware.ts         # Route protection and i18n
@@ -70,7 +75,7 @@ src/
 
 - Use Server Components for data fetching with Supabase
 - Client-side: `createClient()` from `@/lib/supabase/client`
-- Server-side: `createServerClient()` from `@/lib/supabase/server`
+- Server-side: `createSupabaseServerClient()` from `@/lib/supabase/server`
 - Admin operations: `createAdminClient()` from `@/lib/supabase/admin`
 - Types defined in `@/lib/supabase/types` with utility helpers
 
@@ -144,26 +149,16 @@ src/
 
 ### Best Practices
 
-- These guidelines extend the above and should be enforced by Claude Code when providing code suggestions:
+These guidelines should be enforced by Claude Code when providing code suggestions:
 
-- No artifacts.
-
-- Less code is better than more code.
-
-No fallback mechanisms—they hide the real errors.
-
-Refactor existing components instead of adding new ones.
-
-Mark deprecated files to keep the codebase lightweight.
-
-Avoid race conditions at all costs.
-
-Always show the full component unless otherwise specified.
-
-Never say “X remains unchanged”—always show the code.
-
-Specify where code snippets belong (e.g., under “abc”, above “xyz”).
-
-If only one function changes, show only that one.
-
-Take your time to think deeply—thinking is cheaper than debugging.
+- **No artifacts** - Direct code implementation only
+- **Less code is better** - Prefer simplicity over complexity
+- **No fallback mechanisms** - They hide real errors
+- **Refactor existing components** - Avoid creating new ones unnecessarily
+- **Mark deprecated files** - Keep codebase lightweight
+- **Avoid race conditions** - Design with concurrency in mind
+- **Show full components** - Unless specifically requested otherwise
+- **Always show code changes** - Never say "X remains unchanged"
+- **Specify code location** - Indicate where snippets belong (e.g., "under X", "above Y")
+- **Show only changed functions** - If only one function changes
+- **Think deeply before coding** - Thinking is cheaper than debugging
