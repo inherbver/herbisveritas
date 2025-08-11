@@ -142,87 +142,150 @@ export type ProductWithTranslations = Database["public"]["Tables"]["products"]["
   product_translations: Database["public"]["Tables"]["product_translations"]["Row"][];
 };
 
+// Helper function for Supabase calls with timeout
+async function supabaseCallWithTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number = 5000
+): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("Supabase_Query_Timeout")), timeoutMs)
+  );
+
+  return Promise.race([promise, timeoutPromise]);
+}
+
 // --- NEW FUNCTION for Admin Panel ---
 export async function getProductsForAdmin(
   filters?: ProductFilters
 ): Promise<ProductWithTranslations[]> {
-  const supabase = await createSupabaseServerClient();
+  try {
+    const supabase = await createSupabaseServerClient();
 
-  let query = supabase.from("products").select(`
-      *,
-      product_translations (*)
-    `);
+    let query = supabase.from("products").select(`
+        *,
+        product_translations (*)
+      `);
 
-  // Appliquer les filtres si fournis
-  if (filters) {
-    // Filtrage par status
-    if (filters.status.length > 0) {
-      query = query.in("status", filters.status);
-    }
+    // Appliquer les filtres si fournis
+    if (filters) {
+      // Filtrage par status
+      if (filters.status.length > 0) {
+        query = query.in("status", filters.status);
+      }
 
-    // Filtrage par catégories
-    if (filters.categories.length > 0) {
-      query = query.in("category", filters.categories);
-    }
+      // Filtrage par catégories
+      if (filters.categories.length > 0) {
+        query = query.in("category", filters.categories);
+      }
 
-    // Filtrage par recherche textuelle
-    if (filters.search.trim()) {
-      query = query.ilike("name", `%${filters.search.trim()}%`);
-    }
+      // Filtrage par recherche textuelle
+      if (filters.search.trim()) {
+        query = query.ilike("name", `%${filters.search.trim()}%`);
+      }
 
-    // Filtrage par prix
-    if (filters.priceRange) {
-      query = query.gte("price", filters.priceRange.min);
-      if (filters.priceRange.max !== Infinity) {
-        query = query.lte("price", filters.priceRange.max);
+      // Filtrage par prix
+      if (filters.priceRange) {
+        query = query.gte("price", filters.priceRange.min);
+        if (filters.priceRange.max !== Infinity) {
+          query = query.lte("price", filters.priceRange.max);
+        }
+      }
+
+      // Filtrage par stock
+      if (filters.inStock === true) {
+        query = query.gt("stock", 0);
+      } else if (filters.inStock === false) {
+        query = query.eq("stock", 0);
+      }
+
+      // Filtrage par tags/labels
+      if (filters.tags.length > 0) {
+        query = query.overlaps("labels", filters.tags);
       }
     }
 
-    // Filtrage par stock
-    if (filters.inStock === true) {
-      query = query.gt("stock", 0);
-    } else if (filters.inStock === false) {
-      query = query.eq("stock", 0);
+    const { data, error } = await supabaseCallWithTimeout(query, 8000);
+
+    if (error) {
+      console.error("Error fetching products for admin:", error.message);
+      return [];
     }
 
-    // Filtrage par tags/labels
-    if (filters.tags.length > 0) {
-      query = query.overlaps("labels", filters.tags);
+    return (data as ProductWithTranslations[]) || [];
+  } catch (e) {
+    if (e instanceof Error) {
+      if (e.message === "Supabase_Query_Timeout") {
+        console.warn("Supabase query timeout in getProductsForAdmin. Returning empty array.");
+        return [];
+      } else if (
+        e.message.includes("fetch") ||
+        e.message.includes("network") ||
+        e.message.includes("Failed to fetch")
+      ) {
+        console.warn("Network error during getProductsForAdmin. Returning empty array:", e.message);
+        return [];
+      } else {
+        console.error("Unexpected error in getProductsForAdmin:", e);
+        return [];
+      }
     }
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("Error fetching products for admin:", error.message);
+    console.error("Unknown error in getProductsForAdmin:", e);
     return [];
   }
-
-  return (data as ProductWithTranslations[]) || [];
 }
 
 export async function getProductByIdForAdmin(
   productId: string
 ): Promise<ProductWithTranslations | null> {
-  const supabase = await createSupabaseServerClient();
+  try {
+    const supabase = await createSupabaseServerClient();
 
-  const { data, error } = await supabase
-    .from("products")
-    .select(
+    const query = supabase
+      .from("products")
+      .select(
+        `
+        *,
+        product_translations (*)
       `
-      *,
-      product_translations (*)
-    `
-    )
-    .eq("id", productId)
-    .single();
+      )
+      .eq("id", productId)
+      .single();
 
-  if (error) {
-    console.error(`Error fetching product by ID for admin (${productId}):`, error.message);
+    const { data, error } = await supabaseCallWithTimeout(query, 8000);
+
+    if (error) {
+      if (error.code !== "PGRST116") {
+        console.error(`Error fetching product by ID for admin (${productId}):`, error.message);
+      }
+      return null;
+    }
+
+    return data as ProductWithTranslations | null;
+  } catch (e) {
+    if (e instanceof Error) {
+      if (e.message === "Supabase_Query_Timeout") {
+        console.warn(
+          `Supabase query timeout in getProductByIdForAdmin (${productId}). Returning null.`
+        );
+        return null;
+      } else if (
+        e.message.includes("fetch") ||
+        e.message.includes("network") ||
+        e.message.includes("Failed to fetch")
+      ) {
+        console.warn(
+          `Network error during getProductByIdForAdmin (${productId}). Returning null:`,
+          e.message
+        );
+        return null;
+      } else {
+        console.error(`Unexpected error in getProductByIdForAdmin (${productId}):`, e);
+        return null;
+      }
+    }
+    console.error(`Unknown error in getProductByIdForAdmin (${productId}):`, e);
     return null;
   }
-
-  return data as ProductWithTranslations | null;
 }
 
 // --- Important Next Steps ---

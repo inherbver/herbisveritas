@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
 import { Upload, Link2, X, Loader2 } from "lucide-react";
 import type { UploadImageResult } from "@/lib/storage/image-upload";
 import type { ActionResult } from "@/lib/core/result";
@@ -19,7 +18,6 @@ interface ImageUploadFieldProps<T extends FieldValues> {
   placeholder?: string;
   required?: boolean;
   uploadFunction: (formData: FormData) => Promise<ActionResult<UploadImageResult>>;
-  translationKey?: string;
 }
 
 export function ImageUploadField<T extends FieldValues>({
@@ -30,9 +28,7 @@ export function ImageUploadField<T extends FieldValues>({
   placeholder = "https://exemple.com/image.jpg",
   required = false,
   uploadFunction,
-  translationKey = "Common",
 }: ImageUploadFieldProps<T>) {
-  const t = useTranslations(translationKey);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleImageUpload = async (file: File, onChange: (url: string) => void) => {
@@ -44,11 +40,32 @@ export function ImageUploadField<T extends FieldValues>({
 
       const result = await uploadFunction(formData);
 
-      if (result.success && result.data && "url" in result.data) {
-        onChange((result.data as any).url);
-        toast.success(result.message || "Image téléchargée avec succès");
+      if (result.success) {
+        // Handle both ActionResult<UploadImageResult> and UploadImageResult
+        let url: string;
+        let message: string;
+
+        if (
+          result.data &&
+          typeof result.data === "object" &&
+          "data" in result.data &&
+          "url" in result.data.data
+        ) {
+          // ActionResult<UploadImageResult> format (products) - result.data is UploadImageResult
+          url = result.data.data.url;
+          message = result.data.message || "Image téléchargée avec succès";
+        } else if (result.data && "url" in result.data) {
+          // Direct UploadImageResult format (markets, magazines)
+          url = (result.data as any).url;
+          message = result.message || "Image téléchargée avec succès";
+        } else {
+          throw new Error("Format de réponse inattendu");
+        }
+
+        onChange(url);
+        toast.success(message);
       } else {
-        toast.error("Erreur lors du téléchargement");
+        toast.error(result.error || "Erreur lors du téléchargement");
       }
     } catch (error) {
       console.error("Upload error:", error);

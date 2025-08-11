@@ -40,9 +40,22 @@
       "Bash(sed:*)",
       "Bash(npm run test:*)",
       "Bash(npx jest:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(npm run:*)",
+      "Bash(timeout 30 npm run build)",
+      "Bash(echo $APPDATA)",
+      "mcp__playwright__end_codegen_session",
+      "Bash(npx playwright test:*)",
+      "mcp__playwright__playwright_hover",
+      "Bash(echo $NODE_ENV)"
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["supabase"]
+  "enabledMcpjsonServers": ["supabase"],
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
 }

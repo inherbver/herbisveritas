@@ -382,7 +382,6 @@ export function ArticleForm({ article, categories, tags, mode }: ArticleFormProp
                   label="Image mise en avant"
                   description="Choisissez une image qui représente bien votre article"
                   uploadFunction={uploadMagazineImageAction}
-                  translationKey="AdminMagazine"
                   placeholder="https://example.com/image.jpg"
                 />
 

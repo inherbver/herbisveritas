@@ -10,7 +10,7 @@ import { Mail, Phone, MapPin } from "lucide-react"; // Icônes pour les coordonn
 import { MarketCalendarView } from "@/components/domain/market/MarketCalendarView"; // Import du nouveau composant calendrier
 import { SocialFollow } from "@/components/domain/social/SocialFollow"; // Import du composant pour les réseaux sociaux
 import { PartnerShopCard, PartnerShop } from "@/components/domain/partner/PartnerShopCard";
-import partnersData from "@/data/partners.json"; // Import du composant pour les réseaux sociaux
+import { getPartners } from "@/actions/partnerActions";
 
 type Props = {
   params: Promise<{ locale: string }>; // ✅ Changement pour Next.js 15
@@ -51,7 +51,19 @@ export default async function ContactPage({ params }: Props) {
     heroProps.ctaLink = { pathname: targetPath, hash: "marches" };
   }
 
-  const partners: PartnerShop[] = partnersData;
+  // Récupération des partenaires depuis la base de données
+  const partnersResult = await getPartners();
+  const partners: PartnerShop[] = partnersResult.success
+    ? partnersResult.data
+        .filter((partner) => partner.is_active)
+        .map((partner) => ({
+          name: partner.name,
+          description: partner.description,
+          address: partner.address,
+          imageUrl: partner.image_url,
+          facebookUrl: partner.facebook_url,
+        }))
+    : [];
 
   return (
     <>

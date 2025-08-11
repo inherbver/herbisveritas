@@ -152,6 +152,12 @@ const nextConfig = {
         port: "",
         pathname: "/storage/v1/object/public/contact/**",
       },
+      {
+        protocol: "https",
+        hostname: "esgirafriwoildqcwtjm.supabase.co",
+        port: "",
+        pathname: "/storage/v1/object/public/magazine/**",
+      },
       // Fallback général pour autres contenus si nécessaire
       {
         protocol: "https",
@@ -161,9 +167,11 @@ const nextConfig = {
       },
     ],
 
-    // Optimisations avancées (timeout n'est pas supporté dans Next.js 15)
+    // Optimisations pour réduire les timeouts
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ["image/webp", "image/avif"],
+    minimumCacheTTL: 60,
   },
 };
 

@@ -6,34 +6,38 @@ import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
 import type { SupabaseClientType } from "@/lib/supabase/types";
 
-// createSupabaseServerClient redevient async pour gérer correctement le typage de cookies()
+// createSupabaseServerClient avec gestion sécurisée pour le build statique
 export async function createSupabaseServerClient(): Promise<SupabaseClientType> {
-  const cookieStore = await cookies(); // await est nécessaire pour le typage correct
-
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
+        async get(name: string) {
           try {
-            cookieStore.set({ name, value, ...options });
+            const cookieStore = await cookies();
+            return cookieStore.get(name)?.value;
           } catch (_error) {
-            // Le bloc `set` peut échouer si appelé depuis une Server Component.
-            // Ceci est attendu car ils ne peuvent pas définir de cookies.
-            // Les Server Actions et les Route Handlers PEUVENT définir des cookies.
+            // Échec lors du build statique - retourner undefined
+            return undefined;
           }
         },
-        remove(name: string, options: CookieOptions) {
+        async set(name: string, value: string, options: CookieOptions) {
           try {
-            // Utilisation de cookieStore.delete() pour la clarté et la sémantique
+            const cookieStore = await cookies();
+            cookieStore.set({ name, value, ...options });
+          } catch (_error) {
+            // Le bloc `set` peut échouer si appelé depuis une Server Component
+            // ou lors du build statique - c'est attendu
+          }
+        },
+        async remove(name: string, options: CookieOptions) {
+          try {
+            const cookieStore = await cookies();
             cookieStore.delete({ name, ...options });
           } catch (_error) {
-            // Le bloc `delete` peut échouer si appelé depuis une Server Component.
-            // Voir la note ci-dessus dans le bloc `set`.
+            // Le bloc `delete` peut échouer si appelé depuis une Server Component
+            // ou lors du build statique - c'est attendu
           }
         },
       },

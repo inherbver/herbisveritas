@@ -1,5 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Leaf, ShieldCheck, HeartHandshake } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/utils/cn";
 
 interface ValueItem {
   id: string;
@@ -40,25 +42,29 @@ export default function ValuesSection() {
   );
 
   return (
-    <ul className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3 xl:gap-12">
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3 xl:gap-12">
       {valuesData.map((value) => {
         const IconComponent = value.icon;
         return (
-          <li
+          <Card
             key={value.id}
-            className="flex flex-col items-center space-y-3 rounded-xl bg-gray-100 p-6 text-center dark:bg-gray-800"
+            className={cn(
+              "group transition-all duration-300 hover:shadow-lg",
+              "border-border/50 bg-card text-card-foreground"
+            )}
           >
-            <span className="inline-block rounded-full bg-blue-100 p-3 text-blue-500 dark:bg-blue-500 dark:text-white">
-              <IconComponent className="h-6 w-6" />
-            </span>
-            <h3 className="text-xl font-semibold capitalize text-gray-700 dark:text-white">
-              {t(value.titleKey)}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-300">{t(value.descriptionKey)}</p>
-            {/* Lien 'read more' omis pour l'instant */}
-          </li>
+            <CardContent className="flex flex-col items-center space-y-4 p-8 text-center">
+              <div className="bg-primary/10 group-hover:bg-primary/20 rounded-full p-4 transition-colors duration-300">
+                <IconComponent className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground">{t(value.titleKey)}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {t(value.descriptionKey)}
+              </p>
+            </CardContent>
+          </Card>
         );
       })}
-    </ul>
+    </div>
   );
 }
