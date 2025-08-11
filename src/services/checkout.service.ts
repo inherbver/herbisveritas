@@ -54,8 +54,11 @@ export enum CheckoutErrorCode {
 }
 
 export class CheckoutBusinessError extends BusinessError {
+  public readonly code: CheckoutErrorCode;
+
   constructor(code: CheckoutErrorCode, message: string, context?: Record<string, unknown>) {
-    super(code, message, context);
+    super(message, context);
+    this.code = code;
     this.name = "CheckoutBusinessError";
   }
 }

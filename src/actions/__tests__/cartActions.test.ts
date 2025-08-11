@@ -343,35 +343,58 @@ describe("cartActions", () => {
     });
 
     it("should handle same user scenario", async () => {
+      // Clear all previous mocks to ensure clean state
+      jest.clearAllMocks();
+
+      // Use valid UUIDs - same UUID for both guest and authenticated user
+      const sameUserId = "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc";
+
+      // Setup fresh mocks
+      (getActiveUserId as jest.Mock).mockResolvedValue(sameUserId);
+
+      // For same user scenario, getCart should return success
+      (getCart as jest.Mock).mockResolvedValue({
+        success: true,
+        data: buildMockCart(),
+      });
+
+      // Mock a fresh Supabase client that won't be called
+      const freshMock = createSupabaseMock();
+      (createSupabaseServerClient as jest.Mock).mockResolvedValue(freshMock);
+
       const result = await migrateAndGetCart({
-        guestUserId: "user-123", // Same as authenticated user
+        guestUserId: sameUserId, // Same as authenticated user
       });
 
       expectSuccessResult(result);
-      expect(mockSupabase.from).not.toHaveBeenCalled();
+      // The from method should not be called for same user scenario
+      expect(freshMock.from).not.toHaveBeenCalled();
     });
   });
 
   describe("clearCartAction", () => {
     it("should clear cart successfully", async () => {
-      // First chain: select cart by user_id -> returns cart-123
-      mockSupabase.select.mockReturnValue(mockSupabase);
-      mockSupabase.eq.mockReturnValue(mockSupabase);
+      // Create separate mock for the second chain to avoid conflicts
+      const mockSupabaseForDelete = createSupabaseMock();
+      mockSupabaseForDelete.delete.mockReturnValue(mockSupabaseForDelete);
+      mockSupabaseForDelete.eq.mockResolvedValue({ error: null });
+
+      // First mock returns cart lookup
       mockSupabase.maybeSingle.mockResolvedValue({
         data: { id: "cart-123" },
         error: null,
       });
 
-      // Second chain: delete cart items by cart_id -> success
-      mockSupabase.delete.mockReturnValue(mockSupabase);
-      // Need to set up eq for the second call specifically
-      mockSupabase.eq.mockResolvedValue({ error: null });
+      // Second from() call should return our delete mock
+      mockSupabase.from
+        .mockReturnValueOnce(mockSupabase) // First call for cart lookup
+        .mockReturnValueOnce(mockSupabaseForDelete); // Second call for delete
 
       const result = await clearCartAction(null);
 
       expectSuccessResult(result, "Panier vidé avec succès");
-      expect(mockSupabase.delete).toHaveBeenCalled();
-      expect(mockSupabase.eq).toHaveBeenCalledWith("cart_id", "cart-123");
+      expect(mockSupabaseForDelete.delete).toHaveBeenCalled();
+      expect(mockSupabaseForDelete.eq).toHaveBeenCalledWith("cart_id", "cart-123");
       expect(revalidateTag).toHaveBeenCalledWith("cart");
     });
 

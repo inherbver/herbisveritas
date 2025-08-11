@@ -39,7 +39,8 @@
       "Bash(cp:*)",
       "Bash(sed:*)",
       "Bash(npm run test:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(rg:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

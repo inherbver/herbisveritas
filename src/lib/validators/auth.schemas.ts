@@ -15,25 +15,22 @@ const passwordSchema = z
 
 // Login schema
 export const loginSchema = z.object({
-  email: z.string().email("Email invalide").trim().toLowerCase(),
+  email: z.string().trim().toLowerCase().email("Email invalide"),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
 });
 
 // Signup schema
 export const signupSchema = z
   .object({
-    email: z.string().email("Email invalide").trim().toLowerCase(),
+    email: z.string().trim().toLowerCase().email("Email invalide"),
     password: passwordSchema,
     confirmPassword: z.string(),
-    firstName: z.string().min(1, "Le prénom est requis").trim(),
-    lastName: z.string().min(1, "Le nom est requis").trim(),
+    firstName: z.string().trim().min(1, "Le prénom est requis"),
+    lastName: z.string().trim().min(1, "Le nom est requis"),
     phone: z
       .string()
       .optional()
-      .refine(
-        (val) => !val || val.length >= 10,
-        "Le numéro de téléphone doit contenir au moins 10 chiffres"
-      ),
+      .refine((val) => !val || /^\+?[\d\s\-()]{10,}$/.test(val), "Format de téléphone invalide"),
     acceptTerms: z
       .boolean()
       .refine((val) => val === true, "Vous devez accepter les conditions d'utilisation"),
@@ -45,7 +42,7 @@ export const signupSchema = z
 
 // Forgot password schema
 export const forgotPasswordSchema = z.object({
-  email: z.string().email("Email invalide").trim().toLowerCase(),
+  email: z.string().trim().toLowerCase().email("Email invalide"),
 });
 
 // Reset password schema (with current password)
@@ -73,15 +70,12 @@ export const updatePasswordSchema = z
 
 // Profile update schema
 export const profileUpdateSchema = z.object({
-  firstName: z.string().min(1, "Le prénom est requis").trim().optional(),
-  lastName: z.string().min(1, "Le nom est requis").trim().optional(),
+  firstName: z.string().trim().min(1, "Le prénom est requis").optional(),
+  lastName: z.string().trim().min(1, "Le nom est requis").optional(),
   phone: z
     .string()
     .optional()
-    .refine(
-      (val) => !val || val.length >= 10,
-      "Le numéro de téléphone doit contenir au moins 10 chiffres"
-    ),
+    .refine((val) => !val || /^\+?[\d\s\-()]{10,}$/.test(val), "Format de téléphone invalide"),
   language: z.enum(["fr", "en", "de", "es"]).optional(),
   newsletter: z.boolean().optional(),
 });

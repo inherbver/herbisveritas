@@ -4,7 +4,7 @@ import { MobileTouchArea, MobileTouchButton } from "../mobile-touch-area";
 describe("MobileTouchArea", () => {
   it("renders children correctly", () => {
     render(
-      <MobileTouchArea aria-label="Test touch area">
+      <MobileTouchArea aria-label="Test touch area" onClick={() => {}}>
         <span>Touch me</span>
       </MobileTouchArea>
     );
@@ -15,7 +15,7 @@ describe("MobileTouchArea", () => {
 
   it("applies mobile-first touch styles", () => {
     render(
-      <MobileTouchArea aria-label="Test">
+      <MobileTouchArea aria-label="Test" onClick={() => {}}>
         <span>Test</span>
       </MobileTouchArea>
     );
@@ -26,7 +26,7 @@ describe("MobileTouchArea", () => {
 
   it("handles disabled state", () => {
     render(
-      <MobileTouchArea disabled aria-label="Disabled">
+      <MobileTouchArea disabled aria-label="Disabled" onClick={() => {}}>
         <span>Disabled</span>
       </MobileTouchArea>
     );
@@ -38,7 +38,7 @@ describe("MobileTouchArea", () => {
 
   it("applies different intensity levels", () => {
     const { rerender } = render(
-      <MobileTouchArea intensity="light" aria-label="Light">
+      <MobileTouchArea intensity="light" aria-label="Light" onClick={() => {}}>
         <span>Light</span>
       </MobileTouchArea>
     );
@@ -46,7 +46,7 @@ describe("MobileTouchArea", () => {
     expect(screen.getByRole("button")).toHaveClass("active:scale-[0.98]");
 
     rerender(
-      <MobileTouchArea intensity="strong" aria-label="Strong">
+      <MobileTouchArea intensity="strong" aria-label="Strong" onClick={() => {}}>
         <span>Strong</span>
       </MobileTouchArea>
     );

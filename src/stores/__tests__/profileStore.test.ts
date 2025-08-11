@@ -137,7 +137,7 @@ describe("profileStore", () => {
       expect(result).toBe(false);
 
       const state = useProfileStore.getState();
-      expect(state.error).toBe("Aucune donnée utilisateur à soumettre");
+      expect(state.error).toBe("Aucun profil en cours d'édition ou données manquantes.");
     });
 
     it("should handle submit without profile data", async () => {
@@ -149,7 +149,9 @@ describe("profileStore", () => {
       const result = await actions.submitAdminEdit();
 
       expect(result).toBe(false);
-      expect(useProfileStore.getState().error).toBe("Aucune donnée utilisateur à soumettre");
+      expect(useProfileStore.getState().error).toBe(
+        "Aucun profil en cours d'édition ou données manquantes."
+      );
     });
   });
 
