@@ -1,508 +1,395 @@
 /**
- * Tests for Cart Server Actions
+ * Tests for Cart Actions - Server Actions with FormData
  */
 
 import {
-  addToCartAction,
-  removeFromCartAction,
-  updateQuantityAction,
+  addItemToCart,
+  removeItemFromCart,
+  updateCartItemQuantity,
+  removeItemFromCartFormAction,
+  updateCartItemQuantityFormAction,
+  migrateAndGetCart,
   clearCartAction,
-  getCartAction,
-  syncCartAction,
 } from "../cartActions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getCart } from "@/lib/cartReader";
+import { getActiveUserId } from "@/utils/authUtils";
+import { revalidateTag } from "next/cache";
+import {
+  createFormData,
+  createSupabaseMock,
+  expectSuccessResult,
+  expectErrorResult,
+  expectValidationErrorResult,
+  buildMockCart,
+} from "@/test-utils/formDataHelpers";
 
 // Mock dependencies
 jest.mock("@/lib/supabase/server");
-jest.mock("next/cache", () => ({
-  revalidatePath: jest.fn(),
+jest.mock("@/lib/supabase/admin", () => ({
+  createSupabaseAdminClient: jest.fn(),
+}));
+jest.mock("@/lib/cartReader");
+jest.mock("@/utils/authUtils");
+jest.mock("next/cache");
+jest.mock("@/lib/core/logger", () => ({
+  LogUtils: {
+    createUserActionContext: jest.fn(() => ({ userId: "user-123" })),
+    logOperationStart: jest.fn(),
+    logOperationSuccess: jest.fn(),
+    logOperationError: jest.fn(),
+  },
 }));
 
-const mockSupabaseClient = {
-  auth: {
-    getUser: jest.fn(),
-  },
-  from: jest.fn(() => mockSupabaseClient),
-  select: jest.fn(() => mockSupabaseClient),
-  eq: jest.fn(() => mockSupabaseClient),
-  single: jest.fn(),
-  insert: jest.fn(() => mockSupabaseClient),
-  update: jest.fn(() => mockSupabaseClient),
-  delete: jest.fn(() => mockSupabaseClient),
-  upsert: jest.fn(() => mockSupabaseClient),
-};
-
-(createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
-
-// Mock cart data
-const mockCart = {
-  id: "cart-123",
-  user_id: "user-123",
-  items: [
-    {
-      id: "item-1",
-      product_id: "prod-1",
-      quantity: 2,
-      price: 29.99,
-      product: {
-        id: "prod-1",
-        name: "Test Product",
-        price: 29.99,
-        stock: 100,
-        image_url: "test.jpg",
-      },
-    },
-  ],
-  created_at: "2024-01-01",
-  updated_at: "2024-01-01",
-};
-
-const mockProduct = {
-  id: "prod-1",
-  name: "Test Product",
-  slug: "test-product",
-  price: 29.99,
-  stock: 100,
-  is_active: true,
-  image_url: "test.jpg",
-};
-
 describe("cartActions", () => {
+  let mockSupabase: ReturnType<typeof createSupabaseMock>;
+  let mockSupabaseAdmin: ReturnType<typeof createSupabaseMock>;
+
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Setup Supabase mocks
+    mockSupabase = createSupabaseMock();
+    mockSupabaseAdmin = createSupabaseMock();
+
+    (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabase);
+    const { createSupabaseAdminClient } = require("@/lib/supabase/admin");
+    createSupabaseAdminClient.mockReturnValue(mockSupabaseAdmin);
+
+    // Setup default user
+    (getActiveUserId as jest.Mock).mockResolvedValue("user-123");
+
+    // Setup default cart response - must return success for successful operations
+    (getCart as jest.Mock).mockResolvedValue({
+      success: true,
+      data: buildMockCart(),
+    });
   });
 
-  describe("addToCartAction", () => {
-    it("should add item to cart for authenticated user", async () => {
-      const formData = new FormData();
-      formData.append("productId", "prod-1");
-      formData.append("quantity", "2");
-
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
+  describe("addItemToCart", () => {
+    it("should add item to existing cart successfully", async () => {
+      // Arrange - existing cart found
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: { id: "cart-123" },
         error: null,
       });
 
-      // Mock product fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockProduct,
-        error: null,
+      mockSupabase.rpc.mockResolvedValue({ error: null });
+
+      const formData = createFormData({
+        productId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
+        quantity: "2",
       });
 
-      // Mock existing cart
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockCart,
-        error: null,
+      // Act
+      const result = await addItemToCart(null, formData);
+
+      // Assert
+      expectSuccessResult(result, "Article ajouté au panier");
+      expect(mockSupabase.rpc).toHaveBeenCalledWith("add_or_update_cart_item", {
+        p_cart_id: "cart-123",
+        p_product_id: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
+        p_quantity_to_add: 2,
       });
-
-      // Mock cart update
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { ...mockCart, items: [...mockCart.items] },
-        error: null,
-      });
-
-      const result = await addToCartAction(undefined, formData);
-
-      expect(result.success).toBe(true);
-      expect(mockSupabaseClient.from).toHaveBeenCalledWith("products");
-      expect(revalidatePath).toHaveBeenCalledWith("/cart");
+      expect(revalidateTag).toHaveBeenCalledWith("cart");
     });
 
-    it("should add item to guest cart", async () => {
-      const formData = new FormData();
-      formData.append("productId", "prod-1");
-      formData.append("quantity", "1");
-      formData.append("guestCartId", "guest-123");
-
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: null },
-        error: null,
-      });
-
-      // Mock product fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockProduct,
-        error: null,
-      });
-
-      // Mock guest cart operations
-      mockSupabaseClient.single.mockResolvedValueOnce({
+    it("should create new cart if none exists", async () => {
+      // Arrange - no existing cart
+      mockSupabase.maybeSingle.mockResolvedValue({
         data: null,
-        error: { code: "PGRST116" }, // Not found
+        error: null,
       });
 
       // Mock cart creation
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { id: "guest-123", items: [] },
+      mockSupabase.single.mockResolvedValue({
+        data: { id: "new-cart-123" },
         error: null,
       });
 
-      const result = await addToCartAction(undefined, formData);
+      mockSupabase.rpc.mockResolvedValue({ error: null });
 
-      expect(result.success).toBe(true);
-      expect(result.data?.cartId).toBe("guest-123");
+      const formData = createFormData({
+        productId: "12345678-1234-1234-1234-123456789013",
+        quantity: "1",
+      });
+
+      // Act
+      const result = await addItemToCart(null, formData);
+
+      // Assert
+      expectSuccessResult(result);
+      expect(mockSupabase.insert).toHaveBeenCalledWith({ user_id: "user-123" });
+      expect(mockSupabase.rpc).toHaveBeenCalledWith("add_or_update_cart_item", {
+        p_cart_id: "new-cart-123",
+        p_product_id: "12345678-1234-1234-1234-123456789013",
+        p_quantity_to_add: 1,
+      });
     });
 
-    it("should validate quantity", async () => {
-      const formData = new FormData();
-      formData.append("productId", "prod-1");
-      formData.append("quantity", "-1");
+    it("should handle validation errors", async () => {
+      const formData = createFormData({
+        productId: "", // Invalid
+        quantity: "0", // Invalid
+      });
 
-      const result = await addToCartAction(undefined, formData);
+      const result = await addItemToCart(null, formData);
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("quantité");
+      expectValidationErrorResult(result);
+      expect(result.message).toContain("Erreur de validation");
+      expect(mockSupabase.rpc).not.toHaveBeenCalled();
     });
 
-    it("should check product stock", async () => {
-      const formData = new FormData();
-      formData.append("productId", "prod-1");
-      formData.append("quantity", "200");
+    it("should handle user identification failure", async () => {
+      (getActiveUserId as jest.Mock).mockResolvedValue(null);
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
+      const formData = createFormData({
+        productId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc", // Valid UUID
+        quantity: "1",
       });
 
-      // Mock product with low stock
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { ...mockProduct, stock: 5 },
-        error: null,
-      });
+      const result = await addItemToCart(null, formData);
 
-      const result = await addToCartAction(undefined, formData);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("stock");
-    });
-  });
-
-  describe("removeFromCartAction", () => {
-    it("should remove item from cart", async () => {
-      const formData = new FormData();
-      formData.append("itemId", "item-1");
-
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
-      });
-
-      // Mock cart fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockCart,
-        error: null,
-      });
-
-      // Mock item deletion
-      mockSupabaseClient.eq.mockReturnValue(mockSupabaseClient);
-      mockSupabaseClient.delete.mockReturnValue({
-        error: null,
-      });
-
-      const result = await removeFromCartAction(undefined, formData);
-
-      expect(result.success).toBe(true);
-      expect(mockSupabaseClient.delete).toHaveBeenCalled();
-      expect(revalidatePath).toHaveBeenCalledWith("/cart");
+      expectErrorResult(result, "User identification failed");
     });
 
-    it("should handle item not found", async () => {
-      const formData = new FormData();
-      formData.append("itemId", "non-existent");
-
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
+    it("should handle RPC errors", async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: { id: "cart-123" },
         error: null,
       });
 
-      // Mock cart fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { ...mockCart, items: [] },
-        error: null,
+      mockSupabase.rpc.mockResolvedValue({
+        error: { message: "Product not found" },
       });
 
-      const result = await removeFromCartAction(undefined, formData);
+      const formData = createFormData({
+        productId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc", // Valid UUID
+        quantity: "1",
+      });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("Article non trouvé");
+      const result = await addItemToCart(null, formData);
+
+      expectErrorResult(result, "Erreur lors de l'ajout au panier");
     });
   });
 
-  describe("updateQuantityAction", () => {
-    it("should update item quantity", async () => {
-      const formData = new FormData();
-      formData.append("itemId", "item-1");
-      formData.append("quantity", "5");
+  describe("removeItemFromCart", () => {
+    it("should remove cart item successfully", async () => {
+      // The key is that after the delete chain, we need to resolve with success
+      // The mock chain should end with a resolved value, not the intermediate steps
+      mockSupabase.delete.mockReturnValue(mockSupabase); // Return for chaining
+      mockSupabase.eq.mockResolvedValue({ error: null }); // Final resolution
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
+      const result = await removeItemFromCart({
+        cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
       });
 
-      // Mock cart item fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockCart.items[0],
-        error: null,
-      });
-
-      // Mock product fetch for stock check
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockProduct,
-        error: null,
-      });
-
-      // Mock update
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { ...mockCart.items[0], quantity: 5 },
-        error: null,
-      });
-
-      const result = await updateQuantityAction(undefined, formData);
-
-      expect(result.success).toBe(true);
-      expect(mockSupabaseClient.update).toHaveBeenCalled();
+      expectSuccessResult(result, "Article supprimé");
+      expect(mockSupabase.delete).toHaveBeenCalled();
+      expect(mockSupabase.eq).toHaveBeenCalledWith("id", "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc");
+      expect(revalidateTag).toHaveBeenCalledWith("cart");
     });
 
-    it("should remove item if quantity is 0", async () => {
-      const formData = new FormData();
-      formData.append("itemId", "item-1");
-      formData.append("quantity", "0");
+    it("should handle validation errors", async () => {
+      const result = await removeItemFromCart({ cartItemId: "" });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
-      });
-
-      // Mock cart item fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockCart.items[0],
-        error: null,
-      });
-
-      // Mock deletion
-      mockSupabaseClient.delete.mockReturnValue({
-        error: null,
-      });
-
-      const result = await updateQuantityAction(undefined, formData);
-
-      expect(result.success).toBe(true);
-      expect(mockSupabaseClient.delete).toHaveBeenCalled();
+      expectValidationErrorResult(result);
+      expect(result.message).toContain("Erreur de validation");
     });
 
-    it("should validate quantity against stock", async () => {
-      const formData = new FormData();
-      formData.append("itemId", "item-1");
-      formData.append("quantity", "150");
-
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
+    it("should handle delete errors", async () => {
+      mockSupabase.delete.mockReturnValue(mockSupabase);
+      mockSupabase.eq.mockResolvedValue({
+        error: { message: "Item not found" },
       });
 
-      // Mock cart item fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockCart.items[0],
-        error: null,
+      const result = await removeItemFromCart({
+        cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
       });
 
-      // Mock product with limited stock
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { ...mockProduct, stock: 10 },
-        error: null,
+      expectErrorResult(result, "Erreur lors de la suppression");
+    });
+  });
+
+  describe("updateCartItemQuantity", () => {
+    it("should update quantity successfully", async () => {
+      mockSupabase.update.mockReturnValue(mockSupabase);
+      mockSupabase.eq.mockResolvedValue({ error: null });
+
+      const result = await updateCartItemQuantity({
+        cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
+        quantity: 5,
       });
 
-      const result = await updateQuantityAction(undefined, formData);
+      expectSuccessResult(result, "Quantité mise à jour");
+      expect(mockSupabase.update).toHaveBeenCalledWith({ quantity: 5 });
+      expect(mockSupabase.eq).toHaveBeenCalledWith("id", "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc");
+    });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("stock");
+    it("should remove item when quantity is 0", async () => {
+      mockSupabase.delete.mockReturnValue(mockSupabase);
+      mockSupabase.eq.mockResolvedValue({ error: null });
+
+      const result = await updateCartItemQuantity({
+        cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
+        quantity: 0,
+      });
+
+      expectSuccessResult(result, "Article supprimé");
+      expect(mockSupabase.delete).toHaveBeenCalled();
+    });
+
+    it("should handle validation errors", async () => {
+      const result = await updateCartItemQuantity({
+        cartItemId: "",
+        quantity: -1,
+      });
+
+      expectValidationErrorResult(result);
+      expect(result.message).toContain("Erreur de validation");
+    });
+  });
+
+  describe("Form Actions", () => {
+    describe("removeItemFromCartFormAction", () => {
+      it("should process FormData and remove item", async () => {
+        mockSupabase.delete.mockReturnValue(mockSupabase);
+        mockSupabase.eq.mockResolvedValue({ error: null });
+
+        const formData = createFormData({ cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc" });
+        const result = await removeItemFromCartFormAction(null, formData);
+
+        expectSuccessResult(result, "Article supprimé");
+      });
+
+      it("should handle missing cartItemId", async () => {
+        const formData = createFormData({});
+        const result = await removeItemFromCartFormAction(null, formData);
+
+        expectErrorResult(result, "ID de l'article est requis");
+      });
+    });
+
+    describe("updateCartItemQuantityFormAction", () => {
+      it("should process FormData and update quantity", async () => {
+        mockSupabase.update.mockReturnValue(mockSupabase);
+        mockSupabase.eq.mockResolvedValue({ error: null });
+
+        const formData = createFormData({
+          cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
+          quantity: "3",
+        });
+        const result = await updateCartItemQuantityFormAction(null, formData);
+
+        expectSuccessResult(result, "Quantité mise à jour");
+      });
+
+      it("should handle invalid quantity", async () => {
+        const formData = createFormData({
+          cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
+          quantity: "invalid",
+        });
+        const result = await updateCartItemQuantityFormAction(null, formData);
+
+        expectErrorResult(result, "nombre positif");
+      });
+    });
+  });
+
+  describe("migrateAndGetCart", () => {
+    it("should migrate guest cart to authenticated user", async () => {
+      // Mock guest cart exists
+      mockSupabase.maybeSingle
+        .mockResolvedValueOnce({ data: { id: "guest-cart-123" }, error: null }) // guest cart
+        .mockResolvedValueOnce({ data: { id: "auth-cart-123" }, error: null }); // auth cart
+
+      mockSupabase.rpc.mockResolvedValue({ error: null });
+      mockSupabaseAdmin.auth.admin.deleteUser.mockResolvedValue({ error: null });
+
+      const result = await migrateAndGetCart({
+        guestUserId: "12345678-1234-1234-1234-123456789014",
+      });
+
+      expectSuccessResult(result);
+      expect(mockSupabase.rpc).toHaveBeenCalledWith("merge_carts", {
+        p_guest_cart_id: "guest-cart-123",
+        p_auth_cart_id: "auth-cart-123",
+      });
+      expect(mockSupabaseAdmin.auth.admin.deleteUser).toHaveBeenCalledWith(
+        "12345678-1234-1234-1234-123456789014"
+      );
+    });
+
+    it("should handle no guest cart scenario", async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+      const result = await migrateAndGetCart({
+        guestUserId: "12345678-1234-1234-1234-123456789014",
+      });
+
+      expectSuccessResult(result);
+      expect(mockSupabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it("should handle validation errors", async () => {
+      const result = await migrateAndGetCart({
+        guestUserId: "invalid-uuid",
+      });
+
+      expectValidationErrorResult(result);
+      expect(result.message).toContain("ID invité invalide");
+    });
+
+    it("should handle same user scenario", async () => {
+      const result = await migrateAndGetCart({
+        guestUserId: "user-123", // Same as authenticated user
+      });
+
+      expectSuccessResult(result);
+      expect(mockSupabase.from).not.toHaveBeenCalled();
     });
   });
 
   describe("clearCartAction", () => {
-    it("should clear all cart items", async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
+    it("should clear cart successfully", async () => {
+      // First chain: select cart by user_id -> returns cart-123
+      mockSupabase.select.mockReturnValue(mockSupabase);
+      mockSupabase.eq.mockReturnValue(mockSupabase);
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: { id: "cart-123" },
         error: null,
       });
 
-      // Mock cart fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockCart,
-        error: null,
-      });
+      // Second chain: delete cart items by cart_id -> success
+      mockSupabase.delete.mockReturnValue(mockSupabase);
+      // Need to set up eq for the second call specifically
+      mockSupabase.eq.mockResolvedValue({ error: null });
 
-      // Mock items deletion
-      mockSupabaseClient.delete.mockReturnValue({
-        error: null,
-      });
+      const result = await clearCartAction(null);
 
-      const result = await clearCartAction();
-
-      expect(result.success).toBe(true);
-      expect(mockSupabaseClient.delete).toHaveBeenCalled();
-      expect(revalidatePath).toHaveBeenCalledWith("/cart");
+      expectSuccessResult(result, "Panier vidé avec succès");
+      expect(mockSupabase.delete).toHaveBeenCalled();
+      expect(mockSupabase.eq).toHaveBeenCalledWith("cart_id", "cart-123");
+      expect(revalidateTag).toHaveBeenCalledWith("cart");
     });
 
-    it("should handle empty cart", async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
-      });
+    it("should handle no active cart", async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
-      // Mock empty cart
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: { ...mockCart, items: [] },
-        error: null,
-      });
+      const result = await clearCartAction(null);
 
-      const result = await clearCartAction();
-
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("déjà vide");
-    });
-  });
-
-  describe("getCartAction", () => {
-    it("should fetch user cart", async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
-      });
-
-      mockSupabaseClient.single.mockResolvedValue({
-        data: mockCart,
-        error: null,
-      });
-
-      const result = await getCartAction();
-
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockCart);
-      expect(mockSupabaseClient.from).toHaveBeenCalledWith("carts");
+      expectSuccessResult(result, "Aucun panier actif à vider");
+      expect(mockSupabase.delete).not.toHaveBeenCalled();
     });
 
-    it("should fetch guest cart", async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: null },
-        error: null,
-      });
+    it("should handle unauthenticated user", async () => {
+      (getActiveUserId as jest.Mock).mockResolvedValue(null);
 
-      const formData = new FormData();
-      formData.append("guestCartId", "guest-123");
+      const result = await clearCartAction(null);
 
-      mockSupabaseClient.single.mockResolvedValue({
-        data: { ...mockCart, user_id: null, id: "guest-123" },
-        error: null,
-      });
-
-      const result = await getCartAction(undefined, formData);
-
-      expect(result.success).toBe(true);
-      expect(result.data?.id).toBe("guest-123");
-    });
-
-    it("should return empty cart if not found", async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
-      });
-
-      mockSupabaseClient.single.mockResolvedValue({
-        data: null,
-        error: { code: "PGRST116" },
-      });
-
-      const result = await getCartAction();
-
-      expect(result.success).toBe(true);
-      expect(result.data).toBeNull();
-    });
-  });
-
-  describe("syncCartAction", () => {
-    it("should sync guest cart to user cart", async () => {
-      const formData = new FormData();
-      formData.append("guestCartId", "guest-123");
-
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
-      });
-
-      // Mock guest cart
-      const guestCart = {
-        ...mockCart,
-        id: "guest-123",
-        user_id: null,
-        items: [
-          {
-            id: "guest-item-1",
-            product_id: "prod-2",
-            quantity: 1,
-            price: 19.99,
-          },
-        ],
-      };
-
-      // Mock guest cart fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: guestCart,
-        error: null,
-      });
-
-      // Mock user cart fetch
-      mockSupabaseClient.single.mockResolvedValueOnce({
-        data: mockCart,
-        error: null,
-      });
-
-      // Mock merge operations
-      mockSupabaseClient.insert.mockReturnValue({
-        select: () => ({ error: null }),
-      });
-
-      // Mock guest cart deletion
-      mockSupabaseClient.delete.mockReturnValue({
-        error: null,
-      });
-
-      const result = await syncCartAction(undefined, formData);
-
-      expect(result.success).toBe(true);
-      expect(mockSupabaseClient.delete).toHaveBeenCalled();
-      expect(revalidatePath).toHaveBeenCalledWith("/cart");
-    });
-
-    it("should handle sync without guest cart", async () => {
-      const formData = new FormData();
-      // No guestCartId provided
-
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: "user-123" } },
-        error: null,
-      });
-
-      const result = await syncCartAction(undefined, formData);
-
-      expect(result.success).toBe(true);
-      expect(result.message).toContain("Aucun panier");
-    });
-
-    it("should handle sync for non-authenticated user", async () => {
-      const formData = new FormData();
-      formData.append("guestCartId", "guest-123");
-
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: null },
-        error: null,
-      });
-
-      const result = await syncCartAction(undefined, formData);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("authentifié");
+      expectErrorResult(result, "User not authenticated");
     });
   });
 });

@@ -18,6 +18,11 @@ const customJestConfig = {
       "<rootDir>/__mocks__/fileMock.js",
   },
 
+  // Fix ESM issues with Supabase dependencies
+  transformIgnorePatterns: [
+    "node_modules/(?!(isows|@supabase/realtime-js|@supabase/supabase-js)/)"
+  ],
+
   testMatch: [
     "<rootDir>/src/**/__tests__/**/*.{ts,tsx}",
     "<rootDir>/src/**/*.test.{ts,tsx}",

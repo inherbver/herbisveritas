@@ -1,348 +1,334 @@
+/**
+ * Tests for Auth Actions
+ */
+
 import {
-  signInAction,
+  loginAction,
   signUpAction,
-  signOutAction,
-  forgotPasswordAction,
+  requestPasswordResetAction,
   updatePasswordAction,
-  resetPasswordAction,
+  resendConfirmationEmailAction,
+  logoutAction,
 } from "../authActions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { migrateAndGetCart } from "@/actions/cartActions";
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
-// Mock Next.js modules
-jest.mock("next/navigation", () => ({
-  redirect: jest.fn((path: string) => {
-    throw new Error(`NEXT_REDIRECT:${path}`);
-  }),
+// Mock dependencies
+jest.mock("@/lib/supabase/server");
+jest.mock("@/actions/cartActions");
+jest.mock("next/navigation");
+jest.mock("next-intl/server");
+jest.mock("@/lib/core/logger", () => ({
+  LogUtils: {
+    createUserActionContext: jest.fn(() => ({ userId: "user-123" })),
+    logOperationStart: jest.fn(),
+    logOperationSuccess: jest.fn(),
+    logOperationError: jest.fn(),
+  },
 }));
 
-jest.mock("next-intl/server", () => ({
-  getTranslations: jest.fn(() => {
-    return jest.fn((key: string) => {
-      const translations: Record<string, string> = {
-        emailInvalid: "Invalid email",
-        emailAlreadyExists: "Email already exists",
-        genericSignupError: "Signup error",
-        passwordsDoNotMatch: "Passwords do not match",
-        successMessage: "Success",
-      };
-      return translations[key] || key;
-    });
-  }),
-}));
-
-// Mock Supabase
 const mockSupabaseClient = {
   auth: {
+    getUser: jest.fn(),
     signInWithPassword: jest.fn(),
     signUp: jest.fn(),
-    signOut: jest.fn(),
     resetPasswordForEmail: jest.fn(),
     updateUser: jest.fn(),
-    getUser: jest.fn(),
     resend: jest.fn(),
+    signOut: jest.fn(),
   },
-  from: jest.fn(() => ({
-    insert: jest.fn(() => ({ error: null })),
-  })),
+  from: jest.fn(() => mockSupabaseClient),
+  insert: jest.fn(),
 };
 
-jest.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: jest.fn(() => mockSupabaseClient),
-}));
+(createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
+(getTranslations as jest.Mock).mockImplementation(() => Promise.resolve((key: string) => key));
+(redirect as jest.Mock).mockImplementation(() => {
+  throw new Error("NEXT_REDIRECT");
+});
+(migrateAndGetCart as jest.Mock).mockResolvedValue({ success: true });
 
-// Mock cart actions
-jest.mock("@/actions/cartActions", () => ({
-  migrateAndGetCart: jest.fn(() => Promise.resolve({ success: true, data: null })),
-}));
-
-const mockUser = {
-  id: "user-123",
-  email: "test@example.com",
-  is_anonymous: false,
+// Mock FormData
+const createFormData = (data: Record<string, string>): FormData => {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    formData.append(key, value);
+  });
+  return formData;
 };
 
 describe("authActions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.NEXT_PUBLIC_BASE_URL = "https://example.com";
   });
 
-  describe("signInAction", () => {
-    it("should successfully sign in a user", async () => {
-      const formData = new FormData();
-      formData.append("email", "test@example.com");
-      formData.append("password", "ValidPass123!");
-
+  describe("loginAction", () => {
+    it("should login user successfully", async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: null },
-        error: null,
       });
       mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
-        data: {
-          user: mockUser,
-          session: { access_token: "token", refresh_token: "refresh" },
-        },
         error: null,
       });
 
-      // loginAction redirects on success
-      await expect(signInAction(undefined, formData)).rejects.toThrow("NEXT_REDIRECT");
+      const formData = createFormData({
+        email: "test@example.com",
+        password: "password123",
+      });
+
+      try {
+        await loginAction(undefined, formData);
+      } catch (error) {
+        // Expected redirect
+        expect(error).toEqual(new Error("NEXT_REDIRECT"));
+      }
 
       expect(mockSupabaseClient.auth.signInWithPassword).toHaveBeenCalledWith({
         email: "test@example.com",
-        password: "ValidPass123!",
+        password: "password123",
       });
+      expect(redirect).toHaveBeenCalledWith("/fr/profile/account");
     });
 
-    it("should handle invalid credentials", async () => {
-      const formData = new FormData();
-      formData.append("email", "test@example.com");
-      formData.append("password", "wrongpassword");
+    it("should handle login validation errors", async () => {
+      const formData = createFormData({
+        email: "invalid-email",
+        password: "short",
+      });
 
+      const result = await loginAction(undefined, formData);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Données de connexion invalides");
+    });
+
+    it("should handle authentication errors", async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: null },
-        error: null,
       });
       mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
-        data: { user: null, session: null },
         error: { message: "Invalid login credentials" },
       });
 
-      const result = await signInAction(undefined, formData);
+      const formData = createFormData({
+        email: "test@example.com",
+        password: "wrongpassword",
+      });
+
+      const result = await loginAction(undefined, formData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      expect(result.error).toBe("Veuillez vous connecter pour continuer");
     });
 
-    it("should validate email format", async () => {
-      const formData = new FormData();
-      formData.append("email", "notanemail");
-      formData.append("password", "password123");
+    it("should migrate cart for guest users", async () => {
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: { id: "guest-123", is_anonymous: true } },
+      });
+      mockSupabaseClient.auth.signInWithPassword.mockResolvedValue({
+        error: null,
+      });
 
-      const result = await signInAction(undefined, formData);
+      const formData = createFormData({
+        email: "test@example.com",
+        password: "password123",
+      });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(mockSupabaseClient.auth.signInWithPassword).not.toHaveBeenCalled();
-    });
+      try {
+        await loginAction(undefined, formData);
+      } catch (error) {
+        // Expected redirect
+      }
 
-    it("should validate password minimum length", async () => {
-      const formData = new FormData();
-      formData.append("email", "test@example.com");
-      formData.append("password", "short");
-
-      const result = await signInAction(undefined, formData);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(mockSupabaseClient.auth.signInWithPassword).not.toHaveBeenCalled();
+      expect(migrateAndGetCart).toHaveBeenCalledWith({ guestUserId: "guest-123" });
     });
   });
 
   describe("signUpAction", () => {
-    it("should successfully register a new user", async () => {
-      const formData = new FormData();
-      formData.append("email", "newuser@example.com");
-      formData.append("password", "SecurePass123!");
-      formData.append("confirmPassword", "SecurePass123!");
-      formData.append("locale", "fr");
-
+    it("should signup user successfully", async () => {
       mockSupabaseClient.auth.signUp.mockResolvedValue({
-        data: {
-          user: { id: "new-user-id", email: "newuser@example.com" },
-          session: null,
-        },
+        data: { user: { id: "user-123", email: "test@example.com" } },
         error: null,
+      });
+      mockSupabaseClient.insert.mockResolvedValue({ error: null });
+
+      const formData = createFormData({
+        email: "test@example.com",
+        password: "Password123!",
+        confirmPassword: "Password123!",
+        locale: "fr",
       });
 
       const result = await signUpAction(undefined, formData);
 
-      expect(mockSupabaseClient.auth.signUp).toHaveBeenCalled();
       expect(result.success).toBe(true);
+      expect(result.message).toContain("Inscription réussie");
+      expect(mockSupabaseClient.auth.signUp).toHaveBeenCalledWith({
+        email: "test@example.com",
+        password: "Password123!",
+        options: {
+          emailRedirectTo: "https://example.com/fr/auth/callback?type=signup&next=/fr/shop",
+        },
+      });
     });
 
-    it("should validate password confirmation", async () => {
-      const formData = new FormData();
-      formData.append("email", "test@example.com");
-      formData.append("password", "SecurePass123!");
-      formData.append("confirmPassword", "DifferentPass123!");
-      formData.append("locale", "fr");
+    it("should handle signup validation errors", async () => {
+      const formData = createFormData({
+        email: "invalid-email",
+        password: "short",
+        confirmPassword: "different",
+        locale: "fr",
+      });
 
       const result = await signUpAction(undefined, formData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(mockSupabaseClient.auth.signUp).not.toHaveBeenCalled();
+      expect(result.error).toContain("Données d'inscription invalides");
     });
 
-    it("should handle duplicate email registration", async () => {
-      const formData = new FormData();
-      formData.append("email", "existing@example.com");
-      formData.append("password", "SecurePass123!");
-      formData.append("confirmPassword", "SecurePass123!");
-      formData.append("locale", "fr");
-
+    it("should handle existing user error", async () => {
       mockSupabaseClient.auth.signUp.mockResolvedValue({
-        data: { user: null, session: null },
         error: { message: "User already registered" },
       });
 
+      const formData = createFormData({
+        email: "existing@example.com",
+        password: "password123",
+        confirmPassword: "password123",
+        locale: "fr",
+      });
+
       const result = await signUpAction(undefined, formData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
     });
   });
 
-  describe("signOutAction", () => {
-    it("should successfully sign out a user", async () => {
-      mockSupabaseClient.auth.signOut.mockResolvedValue({
-        error: null,
-      });
-
-      // signOutAction redirects which throws a Next.js redirect error
-      await expect(signOutAction()).rejects.toThrow("NEXT_REDIRECT");
-
-      expect(mockSupabaseClient.auth.signOut).toHaveBeenCalled();
-    });
-
-    it("should handle sign out errors", async () => {
-      mockSupabaseClient.auth.signOut.mockResolvedValue({
-        error: { message: "Failed to sign out" },
-      });
-
-      // signOutAction redirects even on error
-      await expect(signOutAction()).rejects.toThrow("NEXT_REDIRECT");
-
-      expect(mockSupabaseClient.auth.signOut).toHaveBeenCalled();
-    });
-  });
-
-  describe("forgotPasswordAction", () => {
+  describe("requestPasswordResetAction", () => {
     it("should send password reset email", async () => {
-      const formData = new FormData();
-      formData.append("email", "test@example.com");
-      formData.append("locale", "fr");
-
       mockSupabaseClient.auth.resetPasswordForEmail.mockResolvedValue({
-        data: null,
         error: null,
       });
 
-      const result = await forgotPasswordAction(undefined, formData);
+      const formData = createFormData({
+        email: "test@example.com",
+        locale: "fr",
+      });
 
+      const result = await requestPasswordResetAction(undefined, formData);
+
+      expect(result.success).toBe(true);
       expect(mockSupabaseClient.auth.resetPasswordForEmail).toHaveBeenCalledWith(
         "test@example.com",
-        expect.objectContaining({
-          redirectTo: expect.stringContaining("/update-password"),
-        })
+        { redirectTo: "https://example.com/fr/update-password" }
       );
-      expect(result.success).toBe(true);
     });
 
-    it("should validate email format", async () => {
-      const formData = new FormData();
-      formData.append("email", "invalid-email");
-      formData.append("locale", "fr");
-
-      const result = await forgotPasswordAction(undefined, formData);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(mockSupabaseClient.auth.resetPasswordForEmail).not.toHaveBeenCalled();
-    });
-
-    it("should handle non-existent email gracefully", async () => {
-      const formData = new FormData();
-      formData.append("email", "nonexistent@example.com");
-      formData.append("locale", "fr");
-
-      mockSupabaseClient.auth.resetPasswordForEmail.mockResolvedValue({
-        data: null,
-        error: { message: "User not found" },
+    it("should handle invalid email", async () => {
+      const formData = createFormData({
+        email: "invalid-email",
+        locale: "fr",
       });
 
-      const result = await forgotPasswordAction(undefined, formData);
+      const result = await requestPasswordResetAction(undefined, formData);
 
-      // Should still return success for security reasons
-      expect(result.success).toBe(true);
-      expect(result.message).toBeDefined();
+      expect(result.success).toBe(false);
     });
   });
 
   describe("updatePasswordAction", () => {
-    it("should update user password", async () => {
-      const formData = new FormData();
-      formData.append("password", "NewSecurePass123!");
-      formData.append("confirmPassword", "NewSecurePass123!");
-      formData.append("locale", "fr");
-
+    it("should update password successfully", async () => {
       mockSupabaseClient.auth.updateUser.mockResolvedValue({
-        data: { user: mockUser },
         error: null,
       });
 
-      const result = await updatePasswordAction(undefined, formData);
-
-      expect(mockSupabaseClient.auth.updateUser).toHaveBeenCalledWith({
-        password: "NewSecurePass123!",
+      const formData = createFormData({
+        password: "NewPassword123!",
+        confirmPassword: "NewPassword123!",
+        locale: "fr",
       });
+
+      const result = await updatePasswordAction(undefined, formData);
+
       expect(result.success).toBe(true);
+      expect(mockSupabaseClient.auth.updateUser).toHaveBeenCalledWith({
+        password: "NewPassword123!",
+      });
     });
 
-    it("should validate password confirmation", async () => {
-      const formData = new FormData();
-      formData.append("password", "NewSecurePass123!");
-      formData.append("confirmPassword", "DifferentPass123!");
-      formData.append("locale", "fr");
+    it("should handle password validation errors", async () => {
+      const formData = createFormData({
+        password: "short",
+        confirmPassword: "different",
+        locale: "fr",
+      });
 
       const result = await updatePasswordAction(undefined, formData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(mockSupabaseClient.auth.updateUser).not.toHaveBeenCalled();
-    });
-
-    it("should enforce password strength requirements", async () => {
-      const formData = new FormData();
-      formData.append("password", "weak");
-      formData.append("confirmPassword", "weak");
-      formData.append("locale", "fr");
-
-      const result = await updatePasswordAction(undefined, formData);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(mockSupabaseClient.auth.updateUser).not.toHaveBeenCalled();
     });
   });
 
-  describe("resetPasswordAction", () => {
-    it("should reset password with valid token", async () => {
-      const formData = new FormData();
-      formData.append("password", "NewSecurePass123!");
-      formData.append("confirmPassword", "NewSecurePass123!");
-      formData.append("locale", "fr");
-
-      mockSupabaseClient.auth.updateUser.mockResolvedValue({
-        data: { user: mockUser },
+  describe("resendConfirmationEmailAction", () => {
+    it("should resend confirmation email", async () => {
+      mockSupabaseClient.auth.resend.mockResolvedValue({
         error: null,
       });
 
-      const result = await resetPasswordAction(undefined, formData);
+      const result = await resendConfirmationEmailAction("test@example.com");
 
       expect(result.success).toBe(true);
+      expect(result.message).toContain("Email de confirmation renvoyé");
+      expect(mockSupabaseClient.auth.resend).toHaveBeenCalledWith({
+        type: "signup",
+        email: "test@example.com",
+      });
     });
 
-    it("should reject incorrect current password", async () => {
-      const formData = new FormData();
-      formData.append("password", "weak");
-      formData.append("confirmPassword", "weak");
-      formData.append("locale", "fr");
+    it("should handle resend errors", async () => {
+      mockSupabaseClient.auth.resend.mockResolvedValue({
+        error: { message: "Error sending email" },
+      });
 
-      const result = await resetPasswordAction(undefined, formData);
+      const result = await resendConfirmationEmailAction("test@example.com");
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+    });
+  });
+
+  describe("logoutAction", () => {
+    it("should logout successfully", async () => {
+      mockSupabaseClient.auth.signOut.mockResolvedValue({
+        error: null,
+      });
+
+      try {
+        await logoutAction();
+      } catch (error) {
+        // Expected redirect
+        expect(error).toEqual(new Error("NEXT_REDIRECT"));
+      }
+
+      expect(mockSupabaseClient.auth.signOut).toHaveBeenCalled();
+      expect(redirect).toHaveBeenCalledWith("/?logged_out=true");
+    });
+
+    it("should handle logout errors", async () => {
+      mockSupabaseClient.auth.signOut.mockResolvedValue({
+        error: { message: "Logout failed" },
+      });
+
+      try {
+        await logoutAction();
+      } catch (error) {
+        // Expected redirect
+        expect(error).toEqual(new Error("NEXT_REDIRECT"));
+      }
+
+      expect(redirect).toHaveBeenCalledWith("/?logout_error=true&message=Logout%20failed");
     });
   });
 });

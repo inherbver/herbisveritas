@@ -11,6 +11,10 @@ global.TextDecoder = TextDecoder as any;
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://esgirafriwoildqcwtjm.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
+process.env.STRIPE_SECRET_KEY = "sk_test_123456789";
+process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_123456789";
+process.env.NEXT_PUBLIC_BASE_URL = "https://example.com";
+process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
 
 // Mock Next.js cache et revalidation functions
 jest.mock("next/cache", () => ({
@@ -183,25 +187,38 @@ const createMockSupabaseClient = () => ({
       data: { subscription: { unsubscribe: jest.fn() } },
     })),
   },
-  from: jest.fn(() => ({
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    in: jest.fn().mockReturnThis(),
-    ilike: jest.fn().mockReturnThis(),
-    overlaps: jest.fn().mockReturnThis(),
-    or: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue({ data: null, error: null }),
-    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    gt: jest.fn().mockReturnThis(),
-    lt: jest.fn().mockReturnThis(),
-    gte: jest.fn().mockReturnThis(),
-    lte: jest.fn().mockReturnThis(),
-  })),
+  from: jest.fn(() => {
+    const queryMethods = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      ilike: jest.fn().mockReturnThis(),
+      overlaps: jest.fn().mockReturnThis(),
+      or: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      range: jest.fn().mockResolvedValue({ data: [], error: null }),
+      gt: jest.fn().mockReturnThis(),
+      lt: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      lte: jest.fn().mockReturnThis(),
+      // Make the query object awaitable for direct await queries
+      then: jest.fn().mockResolvedValue({ data: [], error: null }),
+      catch: jest.fn().mockReturnThis(),
+    };
+
+    // Make queryMethods thenable
+    Object.assign(queryMethods, {
+      [Symbol.toStringTag]: "Promise",
+    });
+
+    return queryMethods;
+  }),
   rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
   storage: {
     from: jest.fn(() => ({
@@ -329,4 +346,81 @@ afterAll(() => {
   console.error = originalError;
 });
 
-console.log("Jest setup fully loaded with complete next-intl and Supabase mocks");
+// =====================================
+// MOCKS STRIPE
+// =====================================
+
+// Mock global Request and Response for API routes
+global.Request = class MockRequest {
+  constructor(
+    public input: any,
+    public init?: any
+  ) {}
+  async text() {
+    return this.init?.body || "";
+  }
+  async json() {
+    return JSON.parse(this.init?.body || "{}");
+  }
+} as any;
+
+global.Response = class MockResponse {
+  constructor(
+    public body?: any,
+    public init?: any
+  ) {}
+  get status() {
+    return this.init?.status || 200;
+  }
+  async json() {
+    return typeof this.body === "string" ? JSON.parse(this.body) : this.body;
+  }
+  async text() {
+    return typeof this.body === "string" ? this.body : JSON.stringify(this.body);
+  }
+} as any;
+
+// Mock Stripe
+jest.mock("stripe", () => {
+  return jest.fn().mockImplementation(() => ({
+    webhooks: {
+      constructEvent: jest.fn(),
+    },
+    checkout: {
+      sessions: {
+        create: jest.fn(),
+        retrieve: jest.fn(),
+      },
+    },
+    customers: {
+      create: jest.fn(),
+      update: jest.fn(),
+      list: jest.fn(),
+    },
+    refunds: {
+      create: jest.fn(),
+    },
+    paymentIntents: {
+      retrieve: jest.fn(),
+    },
+    paymentMethods: {
+      create: jest.fn(),
+      attach: jest.fn(),
+    },
+    getApiField: jest.fn((field) => {
+      switch (field) {
+        case "version":
+          return "2025-06-30.basil";
+        case "typescript":
+          return true;
+        case "timeout":
+          return 80000;
+        default:
+          return null;
+      }
+    }),
+    getMaxNetworkRetries: jest.fn(() => 2),
+  }));
+});
+
+console.log("Jest setup fully loaded with complete next-intl, Supabase and Stripe mocks");

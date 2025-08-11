@@ -2,391 +2,280 @@
  * Tests for Address Validation Service
  */
 
-import {
-  validateAddress,
-  formatAddress,
-  normalizeAddress,
-  validatePostalCode,
-  validatePhoneNumber,
-  suggestAddressCorrections,
-  geocodeAddress,
-} from "../address-validation.service";
+import { AddressValidationService } from "../address-validation.service";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Address } from "@/types";
 
-// Mock external API calls
-global.fetch = jest.fn();
+// Mock dependencies
+jest.mock("@/lib/supabase/server");
+jest.mock("@/lib/core/logger", () => ({
+  LogUtils: {
+    createUserActionContext: jest.fn(() => ({ userId: "user-123" })),
+    logOperationStart: jest.fn(),
+    logOperationSuccess: jest.fn(),
+    logOperationError: jest.fn(),
+  },
+}));
+
+const mockSupabaseClient = {
+  from: jest.fn(() => mockSupabaseClient),
+  select: jest.fn(() => mockSupabaseClient),
+  eq: jest.fn(() => mockSupabaseClient),
+  single: jest.fn(),
+  insert: jest.fn(() => mockSupabaseClient),
+  order: jest.fn(() => mockSupabaseClient),
+};
+
+// Mock data
+const mockValidShippingAddress: Address = {
+  id: "addr-1",
+  user_id: "user-123",
+  first_name: "John",
+  last_name: "Doe",
+  address_line1: "123 Main St", // mapped to "street" field
+  address_line2: null,
+  city: "Paris",
+  state: "Île-de-France",
+  postal_code: "75001",
+  country: "FR",
+  phone: "+33123456789",
+  address_type: "shipping",
+  is_default: true,
+  created_at: "2024-01-01",
+  updated_at: "2024-01-01",
+} as Address & { street: string };
+
+const mockValidBillingAddress: Address = {
+  ...mockValidShippingAddress,
+  id: "addr-2",
+  address_type: "billing",
+  email: "test@example.com",
+} as Address & { street: string; email: string };
+
+// Fix the type issue by adding the missing "street" field
+const createAddressWithStreet = (address: Address): Address & { street: string } => ({
+  ...address,
+  street: address.address_line1 || "",
+});
 
 describe("AddressValidationService", () => {
+  let service: AddressValidationService;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
+    service = new AddressValidationService();
   });
 
-  describe("validateAddress", () => {
-    it("should validate a complete French address", async () => {
-      const address = {
-        first_name: "John",
-        last_name: "Doe",
-        address_line1: "123 Rue de la République",
-        address_line2: "",
-        city: "Paris",
-        state: "Île-de-France",
-        postal_code: "75001",
-        country: "France",
-        phone: "+33612345678",
-      };
-
-      const result = await validateAddress(address);
-
-      expect(result.isValid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
-
-    it("should detect missing required fields", async () => {
-      const address = {
-        first_name: "",
-        last_name: "",
-        address_line1: "",
-        city: "",
-        postal_code: "",
-        country: "",
-        phone: "",
-      };
-
-      const result = await validateAddress(address);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain("Prénom requis");
-      expect(result.errors).toContain("Nom requis");
-      expect(result.errors).toContain("Adresse requise");
-      expect(result.errors).toContain("Ville requise");
-      expect(result.errors).toContain("Code postal requis");
-    });
-
-    it("should validate international addresses", async () => {
-      const address = {
-        first_name: "Jane",
-        last_name: "Smith",
-        address_line1: "456 Main Street",
-        city: "New York",
-        state: "NY",
-        postal_code: "10001",
-        country: "United States",
-        phone: "+12125551234",
-      };
-
-      const result = await validateAddress(address);
-
-      expect(result.isValid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
-
-    it("should detect invalid characters", async () => {
-      const address = {
-        first_name: "John<script>",
-        last_name: "Doe';DROP TABLE",
-        address_line1: "123 Rue",
-        city: "Paris",
-        postal_code: "75001",
-        country: "France",
-        phone: "+33612345678",
-      };
-
-      const result = await validateAddress(address);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain("Caractères invalides dans le prénom");
-      expect(result.errors).toContain("Caractères invalides dans le nom");
-    });
-  });
-
-  describe("validatePostalCode", () => {
-    it("should validate French postal codes", () => {
-      expect(validatePostalCode("75001", "FR")).toBe(true);
-      expect(validatePostalCode("69001", "FR")).toBe(true);
-      expect(validatePostalCode("13001", "FR")).toBe(true);
-      expect(validatePostalCode("97400", "FR")).toBe(true); // DOM-TOM
-    });
-
-    it("should reject invalid French postal codes", () => {
-      expect(validatePostalCode("123", "FR")).toBe(false);
-      expect(validatePostalCode("ABC12", "FR")).toBe(false);
-      expect(validatePostalCode("00000", "FR")).toBe(false);
-      expect(validatePostalCode("100000", "FR")).toBe(false);
-    });
-
-    it("should validate US ZIP codes", () => {
-      expect(validatePostalCode("10001", "US")).toBe(true);
-      expect(validatePostalCode("90210", "US")).toBe(true);
-      expect(validatePostalCode("10001-1234", "US")).toBe(true); // ZIP+4
-    });
-
-    it("should validate UK postcodes", () => {
-      expect(validatePostalCode("SW1A 1AA", "GB")).toBe(true);
-      expect(validatePostalCode("EC1A 1BB", "GB")).toBe(true);
-      expect(validatePostalCode("W1A 0AX", "GB")).toBe(true);
-    });
-
-    it("should validate German postal codes", () => {
-      expect(validatePostalCode("10115", "DE")).toBe(true);
-      expect(validatePostalCode("80331", "DE")).toBe(true);
-    });
-
-    it("should validate Spanish postal codes", () => {
-      expect(validatePostalCode("28001", "ES")).toBe(true);
-      expect(validatePostalCode("08001", "ES")).toBe(true);
-    });
-  });
-
-  describe("validatePhoneNumber", () => {
-    it("should validate French phone numbers", () => {
-      expect(validatePhoneNumber("+33612345678", "FR")).toBe(true);
-      expect(validatePhoneNumber("0612345678", "FR")).toBe(true);
-      expect(validatePhoneNumber("+33 6 12 34 56 78", "FR")).toBe(true);
-      expect(validatePhoneNumber("06.12.34.56.78", "FR")).toBe(true);
-    });
-
-    it("should reject invalid French phone numbers", () => {
-      expect(validatePhoneNumber("123", "FR")).toBe(false);
-      expect(validatePhoneNumber("+33312345678", "FR")).toBe(false); // Invalid prefix
-      expect(validatePhoneNumber("0812345678", "FR")).toBe(false); // Invalid mobile prefix
-    });
-
-    it("should validate US phone numbers", () => {
-      expect(validatePhoneNumber("+12125551234", "US")).toBe(true);
-      expect(validatePhoneNumber("2125551234", "US")).toBe(true);
-      expect(validatePhoneNumber("(212) 555-1234", "US")).toBe(true);
-    });
-
-    it("should validate international formats", () => {
-      expect(validatePhoneNumber("+447700900123", "GB")).toBe(true);
-      expect(validatePhoneNumber("+4915112345678", "DE")).toBe(true);
-      expect(validatePhoneNumber("+34612345678", "ES")).toBe(true);
-    });
-  });
-
-  describe("formatAddress", () => {
-    it("should format French address correctly", () => {
-      const address = {
-        first_name: "Jean",
-        last_name: "Dupont",
-        address_line1: "123 Rue de la République",
-        address_line2: "Bâtiment A",
-        city: "Paris",
-        postal_code: "75001",
-        country: "France",
-      };
-
-      const formatted = formatAddress(address);
-
-      expect(formatted).toContain("Jean Dupont");
-      expect(formatted).toContain("123 Rue de la République");
-      expect(formatted).toContain("Bâtiment A");
-      expect(formatted).toContain("75001 Paris");
-      expect(formatted).toContain("France");
-    });
-
-    it("should handle missing optional fields", () => {
-      const address = {
-        first_name: "Jean",
-        last_name: "Dupont",
-        address_line1: "123 Rue de la République",
-        city: "Paris",
-        postal_code: "75001",
-        country: "France",
-      };
-
-      const formatted = formatAddress(address);
-
-      expect(formatted).not.toContain("undefined");
-      expect(formatted).not.toContain("null");
-    });
-
-    it("should format US address correctly", () => {
-      const address = {
-        first_name: "John",
-        last_name: "Doe",
-        address_line1: "456 Main Street",
-        address_line2: "Apt 2B",
-        city: "New York",
-        state: "NY",
-        postal_code: "10001",
-        country: "United States",
-      };
-
-      const formatted = formatAddress(address, "US");
-
-      expect(formatted).toContain("John Doe");
-      expect(formatted).toContain("456 Main Street");
-      expect(formatted).toContain("Apt 2B");
-      expect(formatted).toContain("New York, NY 10001");
-      expect(formatted).toContain("United States");
-    });
-  });
-
-  describe("normalizeAddress", () => {
-    it("should normalize address fields", () => {
-      const address = {
-        first_name: "  jean  ",
-        last_name: "DUPONT",
-        address_line1: "  123   rue de la république  ",
-        city: "paris",
-        postal_code: " 75001 ",
-        country: "france",
-        phone: "06 12 34 56 78",
-      };
-
-      const normalized = normalizeAddress(address);
-
-      expect(normalized.first_name).toBe("Jean");
-      expect(normalized.last_name).toBe("Dupont");
-      expect(normalized.address_line1).toBe("123 Rue de la République");
-      expect(normalized.city).toBe("Paris");
-      expect(normalized.postal_code).toBe("75001");
-      expect(normalized.country).toBe("France");
-      expect(normalized.phone).toBe("+33612345678");
-    });
-
-    it("should handle special characters", () => {
-      const address = {
-        first_name: "Jean-François",
-        last_name: "D'Artagnan",
-        address_line1: "Château de l'Élysée",
-        city: "Saint-Étienne",
-        postal_code: "42000",
-        country: "France",
-      };
-
-      const normalized = normalizeAddress(address);
-
-      expect(normalized.first_name).toBe("Jean-François");
-      expect(normalized.last_name).toBe("D'Artagnan");
-      expect(normalized.city).toBe("Saint-Étienne");
-    });
-
-    it("should normalize abbreviations", () => {
-      const address = {
-        address_line1: "123 bd République",
-        city: "Paris",
-        postal_code: "75001",
-        country: "France",
-      };
-
-      const normalized = normalizeAddress(address);
-
-      expect(normalized.address_line1).toBe("123 Boulevard République");
-    });
-  });
-
-  describe("suggestAddressCorrections", () => {
-    it("should suggest postal code corrections", async () => {
-      const address = {
-        address_line1: "123 Rue de la République",
-        city: "Paris",
-        postal_code: "75000", // Invalid
-        country: "France",
-      };
-
-      const suggestions = await suggestAddressCorrections(address);
-
-      expect(suggestions).toHaveLength(0); // Would return suggestions if API was mocked
-    });
-
-    it("should suggest city name corrections", async () => {
-      const address = {
-        address_line1: "123 Rue de la République",
-        city: "Pari", // Typo
-        postal_code: "75001",
-        country: "France",
-      };
-
-      const suggestions = await suggestAddressCorrections(address);
-
-      expect(suggestions).toBeDefined();
-      // In real implementation, would suggest "Paris"
-    });
-
-    it("should handle API errors gracefully", async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
-
-      const address = {
-        address_line1: "123 Rue",
-        city: "Paris",
-        postal_code: "75001",
-        country: "France",
-      };
-
-      const suggestions = await suggestAddressCorrections(address);
-
-      expect(suggestions).toEqual([]);
-    });
-  });
-
-  describe("geocodeAddress", () => {
-    it("should geocode valid address", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          results: [
-            {
-              geometry: {
-                location: {
-                  lat: 48.8566,
-                  lng: 2.3522,
-                },
-              },
-            },
-          ],
-        }),
+  describe("validateAndProcessAddresses", () => {
+    it("should validate and process addresses for authenticated user", async () => {
+      // Create addresses without existing IDs to force creation
+      const shippingAddress = createAddressWithStreet({
+        ...mockValidShippingAddress,
+        id: undefined as any, // Force creation
+      });
+      const billingAddress = createAddressWithStreet({
+        ...mockValidBillingAddress,
+        id: undefined as any, // Force creation
       });
 
-      const address = {
-        address_line1: "123 Rue de la République",
-        city: "Paris",
-        postal_code: "75001",
-        country: "France",
-      };
+      // Mock address insertion - note that we need to mock the select().single() chain
+      mockSupabaseClient.single
+        .mockResolvedValueOnce({ data: { id: "new-shipping-1" }, error: null })
+        .mockResolvedValueOnce({ data: { id: "new-billing-1" }, error: null });
 
-      const result = await geocodeAddress(address);
+      const result = await service.validateAndProcessAddresses(
+        shippingAddress,
+        billingAddress,
+        "user-123",
+        { allowGuestAddresses: true }
+      );
 
       expect(result.success).toBe(true);
-      expect(result.coordinates?.lat).toBeCloseTo(48.8566);
-      expect(result.coordinates?.lng).toBeCloseTo(2.3522);
+      expect(result.data?.shippingAddressId).toBe("new-shipping-1");
+      expect(result.data?.billingAddressId).toBe("new-billing-1");
+      expect(result.data?.isGuestCheckout).toBe(false);
     });
 
-    it("should handle geocoding failure", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          results: [],
-        }),
+    it("should process guest addresses", async () => {
+      const shippingAddress = createAddressWithStreet(mockValidShippingAddress);
+      const billingAddress = createAddressWithStreet(mockValidBillingAddress);
+
+      const result = await service.validateAndProcessAddresses(
+        shippingAddress,
+        billingAddress,
+        undefined,
+        { allowGuestAddresses: true }
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data?.shippingAddressId).toBe(null);
+      expect(result.data?.billingAddressId).toBe(null);
+      expect(result.data?.isGuestCheckout).toBe(true);
+    });
+
+    it("should reject guest checkout when not allowed", async () => {
+      const shippingAddress = createAddressWithStreet(mockValidShippingAddress);
+      const billingAddress = createAddressWithStreet(mockValidBillingAddress);
+
+      const result = await service.validateAndProcessAddresses(
+        shippingAddress,
+        billingAddress,
+        undefined,
+        { allowGuestAddresses: false }
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Checkout invité non autorisé");
+    });
+
+    it("should validate required address fields", async () => {
+      const invalidAddress = createAddressWithStreet({
+        ...mockValidShippingAddress,
+        first_name: "", // Missing required field
+      });
+      const billingAddress = createAddressWithStreet(mockValidBillingAddress);
+
+      const result = await service.validateAndProcessAddresses(
+        invalidAddress,
+        billingAddress,
+        "user-123"
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Champ manquant");
+    });
+
+    it("should validate French postal codes", async () => {
+      const invalidAddress = createAddressWithStreet({
+        ...mockValidShippingAddress,
+        postal_code: "ABC123", // Invalid French postal code
+        country: "FR",
+      });
+      const billingAddress = createAddressWithStreet(mockValidBillingAddress);
+
+      const result = await service.validateAndProcessAddresses(
+        invalidAddress,
+        billingAddress,
+        "user-123"
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Format de code postal français invalide");
+    });
+
+    it("should validate email format in billing address", async () => {
+      const shippingAddress = createAddressWithStreet(mockValidShippingAddress);
+      const invalidBillingAddress = createAddressWithStreet({
+        ...mockValidBillingAddress,
+        email: "invalid-email",
       });
 
-      const address = {
-        address_line1: "Invalid Address",
-        city: "Nowhere",
-        postal_code: "00000",
-        country: "Neverland",
-      };
-
-      const result = await geocodeAddress(address);
+      const result = await service.validateAndProcessAddresses(
+        shippingAddress,
+        invalidBillingAddress,
+        "user-123"
+      );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("introuvable");
+      expect(result.error).toContain("Format d'email invalide");
     });
 
-    it("should handle API errors", async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("API error"));
+    it("should validate allowed countries", async () => {
+      const shippingAddress = createAddressWithStreet({
+        ...mockValidShippingAddress,
+        country: "XX", // Not in allowed countries
+      });
+      const billingAddress = createAddressWithStreet(mockValidBillingAddress);
 
-      const address = {
-        address_line1: "123 Rue",
-        city: "Paris",
-        postal_code: "75001",
-        country: "France",
-      };
-
-      const result = await geocodeAddress(address);
+      const result = await service.validateAndProcessAddresses(
+        shippingAddress,
+        billingAddress,
+        "user-123",
+        { allowedCountries: ["FR", "DE", "ES"] }
+      );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain("géocodage");
+      expect(result.error).toContain("Livraison non disponible pour le pays");
+    });
+
+    it("should use existing address IDs", async () => {
+      const existingShipping = createAddressWithStreet({
+        ...mockValidShippingAddress,
+        id: "existing-shipping-123",
+      });
+      const existingBilling = createAddressWithStreet({
+        ...mockValidBillingAddress,
+        id: "existing-billing-123",
+      });
+
+      const result = await service.validateAndProcessAddresses(
+        existingShipping,
+        existingBilling,
+        "user-123"
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data?.shippingAddressId).toBe("existing-shipping-123");
+      expect(result.data?.billingAddressId).toBe("existing-billing-123");
+      expect(mockSupabaseClient.insert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getAvailableShippingMethods", () => {
+    it("should return available shipping methods", async () => {
+      const mockShippingMethods = [
+        { id: "standard", name: "Standard Delivery", price: 5.99 },
+        { id: "express", name: "Express Delivery", price: 9.99 },
+      ];
+
+      // Reset the mockSupabaseClient for this specific test
+      const freshMockClient = {
+        from: jest.fn(() => freshMockClient),
+        select: jest.fn(() => freshMockClient),
+        eq: jest.fn(() => freshMockClient),
+        order: jest.fn(() => freshMockClient),
+      };
+
+      freshMockClient.from.mockReturnValue(freshMockClient);
+      freshMockClient.select.mockReturnValue(freshMockClient);
+      freshMockClient.eq.mockReturnValue(freshMockClient);
+      freshMockClient.order.mockResolvedValue({
+        data: mockShippingMethods,
+        error: null,
+      });
+
+      (createSupabaseServerClient as jest.Mock).mockResolvedValue(freshMockClient);
+
+      const address = createAddressWithStreet(mockValidShippingAddress);
+      const result = await service.getAvailableShippingMethods(address);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockShippingMethods);
+      expect(freshMockClient.eq).toHaveBeenCalledWith("is_active", true);
+      expect(freshMockClient.order).toHaveBeenCalledWith("price", { ascending: true });
+    });
+
+    it("should handle shipping methods query error", async () => {
+      const freshMockClient = {
+        from: jest.fn(() => freshMockClient),
+        select: jest.fn(() => freshMockClient),
+        eq: jest.fn(() => freshMockClient),
+        order: jest.fn(() => freshMockClient),
+      };
+
+      freshMockClient.order.mockResolvedValue({
+        data: null,
+        error: { message: "Database error" },
+      });
+
+      (createSupabaseServerClient as jest.Mock).mockResolvedValue(freshMockClient);
+
+      const address = createAddressWithStreet(mockValidShippingAddress);
+      const result = await service.getAvailableShippingMethods(address);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("récupération des méthodes de livraison");
     });
   });
 });
