@@ -1,0 +1,38 @@
+{
+  "title": "Newsletter",
+  "description": "Gérez les abonnés et les campagnes de votre newsletter",
+  "stats": {
+    "totalSubscribers": "Total Abonnés",
+    "activeSubscribers": "Actifs",
+    "inactiveSubscribers": "Inactifs",
+    "recentSubscriptions": "Ce mois"
+  },
+  "dashboard": {
+    "title": "Gestion des Abonnés",
+    "description": "Gérez vos abonnés newsletter",
+    "searchPlaceholder": "Rechercher par email...",
+    "filterAll": "Tous",
+    "filterActive": "Actifs",
+    "filterInactive": "Inactifs",
+    "exportCsv": "Export CSV",
+    "noSubscribers": "Aucun abonné pour le moment",
+    "noSubscribersFiltered": "Aucun abonné trouvé avec ces critères"
+  },
+  "table": {
+    "email": "Email",
+    "status": "Statut",
+    "subscriptionDate": "Date d'inscription",
+    "source": "Source",
+    "actions": "Actions",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "activate": "Réactiver",
+    "deactivate": "Désactiver"
+  },
+  "messages": {
+    "activateSuccess": "Abonné réactivé avec succès",
+    "deactivateSuccess": "Abonné désactivé avec succès",
+    "exportSuccess": "Export CSV téléchargé",
+    "error": "Une erreur est survenue"
+  }
+}

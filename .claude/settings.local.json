@@ -47,7 +47,8 @@
       "mcp__playwright__end_codegen_session",
       "Bash(npx playwright test:*)",
       "mcp__playwright__playwright_hover",
-      "Bash(echo $NODE_ENV)"
+      "Bash(echo $NODE_ENV)",
+      "mcp__supabase__apply_migration"
     ]
   },
   "enableAllProjectMcpServers": true,

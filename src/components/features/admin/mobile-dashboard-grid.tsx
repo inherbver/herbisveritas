@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Package, FileText, MapPin, Handshake, Users, ShoppingCart } from "lucide-react";
+import { Package, FileText, MapPin, Handshake, Users, ShoppingCart, Mail } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/utils/cn";
 
@@ -49,6 +49,13 @@ const dashboardItems: DashboardItem[] = [
     description: "Gestion des comptes",
     icon: Users,
     color: "text-pink-600 bg-pink-100",
+  },
+  {
+    href: "/admin/newsletter",
+    label: "Newsletter",
+    description: "Abonnés newsletter",
+    icon: Mail,
+    color: "text-indigo-600 bg-indigo-100",
   },
   {
     href: "/admin/orders",

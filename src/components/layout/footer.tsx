@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { Instagram, Facebook } from "lucide-react";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
+import { NewsletterSignupForm } from "@/components/features/newsletter/newsletter-signup-form";
 
 const socialLinks = [
   {
@@ -108,26 +109,7 @@ export function Footer() {
               <p className="text-foreground/80 mt-2 text-sm">
                 Inscrivez-vous à notre newsletter pour des offres exclusives et nos nouveautés.
               </p>
-              <form className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                <label htmlFor="email-address" className="sr-only">
-                  Adresse e-mail
-                </label>
-                <input
-                  id="email-address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="bg-background-muted flex-1 rounded-md border-border px-3.5 py-2 text-foreground shadow-sm ring-1 ring-inset ring-border focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
-                  placeholder="votre.email@example.com"
-                />
-                <button
-                  type="submit"
-                  className="hover:bg-primary/90 focus-visible:ring-primary/40 rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm focus-visible:outline-primary focus-visible:ring-2"
-                >
-                  S'inscrire
-                </button>
-              </form>
+              <NewsletterSignupForm variant="inline" className="mt-4" />
             </div>
             <div className="flex items-center gap-4">
               {socialLinks.map((item) => (
