@@ -1,11 +1,15 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { headers } from "next/headers";
 import { MainLayout } from "@/components/layout/main-layout";
 import { getProductBySlug } from "@/lib/supabase/queries/products";
 import ProductDetailDisplay from "@/components/features/shop/product-detail-display";
 import { ProductDetailData } from "@/types/product-types";
 import { Locale } from "@/i18n-config";
+import { logEvent } from "@/lib/admin/event-logger";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getActiveUserId } from "@/utils/authUtils";
 
 type Props = {
   params: Promise<{ slug: string; locale: Locale }>;
@@ -65,6 +69,35 @@ export default async function ProductDetailPage({ params }: Props) {
     usageInstructions: translation?.usage_instructions ?? undefined,
     inciList: productData.inci_list ?? [],
   };
+
+  // Log la vue produit (async, sans attendre)
+  const logProductView = async () => {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const userId = await getActiveUserId(supabase);
+      const headersList = await headers();
+
+      await logEvent(
+        "PRODUCT_VIEWED",
+        userId || undefined,
+        {
+          product_id: productData.id,
+          product_name: productForDisplay.name,
+          product_price: productData.price,
+          page_url: `/products/${slug}`,
+          user_agent: headersList.get("user-agent") || undefined,
+          referrer: headersList.get("referer") || undefined,
+          message: `Vue produit: ${productForDisplay.name} (${productData.price}€)`,
+        },
+        "INFO"
+      );
+    } catch (error) {
+      console.error("Error logging product view:", error);
+    }
+  };
+
+  // Exécuter le logging sans bloquer le rendu
+  logProductView();
 
   return (
     <MainLayout>

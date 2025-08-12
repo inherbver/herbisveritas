@@ -201,7 +201,7 @@ export function ProductCard({
 
         <div className="h-[3.75rem]">
           {short_description ? (
-            <HoverCard open={isClamped ? undefined : false}>
+            <HoverCard>
               <HoverCardTrigger asChild>
                 <p
                   ref={descriptionRef}

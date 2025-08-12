@@ -14,6 +14,7 @@ const namespaces = [
   "AdminDashboard",
   "AdminLayout",
   "AdminMagazine",
+  "AdminNewsletter",
   "AdminProducts",
   "Auth",
   "AuthCallback",

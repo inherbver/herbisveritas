@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { logEvent } from "@/lib/admin/event-logger";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -37,6 +38,22 @@ export async function POST(req: Request) {
     console.error(`❌ Error message: ${errorMessage}`);
     return new NextResponse(`Webhook Error: ${errorMessage}`, { status: 400 });
   }
+
+  // Log tous les webhooks reçus
+  await logEvent(
+    "STRIPE_WEBHOOK_RECEIVED",
+    undefined,
+    {
+      event_type: event.type,
+      stripe_event_id: event.id,
+      amount:
+        event.type === "checkout.session.completed"
+          ? (event.data.object as Stripe.Checkout.Session).amount_total
+          : 0,
+      message: `Webhook Stripe reçu: ${event.type}`,
+    },
+    "INFO"
+  );
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
@@ -190,6 +207,21 @@ export async function POST(req: Request) {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unknown processing error";
       console.error("[STRIPE_WEBHOOK_PROCESSING_ERROR]", error);
+
+      // Log l'échec du webhook
+      await logEvent(
+        "STRIPE_WEBHOOK_FAILED",
+        undefined,
+        {
+          event_type: event.type,
+          stripe_event_id: event.id,
+          error: errorMessage,
+          session_id: session.id,
+          message: `Échec traitement webhook: ${errorMessage}`,
+        },
+        "ERROR"
+      );
+
       return new NextResponse(`Webhook handler failed: ${errorMessage}`, { status: 500 });
     }
   }

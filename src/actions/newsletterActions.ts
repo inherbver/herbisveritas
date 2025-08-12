@@ -12,6 +12,7 @@ import { revalidatePath } from "next/cache";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 import { ActionResult } from "@/lib/core/result";
 import { headers } from "next/headers";
+import { logEvent } from "@/lib/admin/event-logger";
 import type {
   NewsletterSubscriber,
   NewsletterStats,
@@ -88,7 +89,20 @@ export async function subscribeToNewsletter(
       };
     }
 
-    // 6. Revalidate relevant pages
+    // 6. Log the subscription event
+    await logEvent(
+      "NEWSLETTER_SUBSCRIPTION",
+      undefined, // No user ID for newsletter subscriptions from footer
+      {
+        email: data.email,
+        source: subscriptionData.source,
+        ip_address: subscriptionData.ip_address,
+        message: `Nouvelle inscription newsletter: ${data.email}`,
+      },
+      "INFO"
+    );
+
+    // 7. Revalidate relevant pages
     revalidatePath("/");
 
     return {
@@ -136,7 +150,18 @@ export async function unsubscribeFromNewsletter(email: string): Promise<ActionRe
       };
     }
 
-    // 3. Revalidate relevant pages
+    // 3. Log the unsubscription event
+    await logEvent(
+      "NEWSLETTER_UNSUBSCRIPTION",
+      undefined, // No user ID for newsletter unsubscriptions
+      {
+        email: validation.data.email,
+        message: `Désabonnement newsletter: ${validation.data.email}`,
+      },
+      "INFO"
+    );
+
+    // 4. Revalidate relevant pages
     revalidatePath("/admin/newsletter");
 
     return {

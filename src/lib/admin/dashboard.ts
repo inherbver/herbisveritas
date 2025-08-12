@@ -22,11 +22,24 @@ export type EventType =
   | "PAYMENT_SUCCEEDED"
   | "PAYMENT_FAILED"
   | "ORDER_STATUS_CHANGED"
-  // Profils
-  | "PROFILE_UPDATED"
-  | "ADDRESS_ADDED"
-  | "ADDRESS_UPDATED"
+  // Profils (événements critiques uniquement)
   | "PROFILE_RECOVERY"
+  // Newsletter
+  | "NEWSLETTER_SUBSCRIPTION"
+  | "NEWSLETTER_UNSUBSCRIPTION"
+  // E-commerce & Conversion (Phase 1)
+  | "CART_ITEM_ADDED"
+  | "CART_ITEM_REMOVED"
+  | "PRODUCT_VIEWED"
+  | "CHECKOUT_STARTED"
+  // Phase 2 - E-commerce avancé
+  | "CART_ABANDONED"
+  | "CHECKOUT_ABANDONED"
+  | "SEARCH_PERFORMED"
+  | "FILTER_APPLIED"
+  // Webhooks & Intégrations (Phase 1)
+  | "STRIPE_WEBHOOK_RECEIVED"
+  | "STRIPE_WEBHOOK_FAILED"
   // Sécurité
   | "unauthorized_admin_access"
   | "successful_admin_login"
@@ -49,7 +62,29 @@ type AuditLog = {
   id: string;
   created_at: string;
   event_type: EventType;
-  data: { message: string } | null;
+  data: {
+    message: string;
+    // Context enrichi (Phase 1)
+    session_id?: string;
+    ip_address?: string;
+    user_agent?: string;
+    page_url?: string;
+    referrer?: string;
+    // Données business
+    product_id?: string;
+    product_name?: string;
+    product_price?: number;
+    quantity?: number;
+    cart_total?: number;
+    order_value?: number;
+    email?: string;
+    // Données techniques
+    response_time?: number;
+    error_code?: string;
+    event_type?: string;
+    stripe_event_id?: string;
+    amount?: number;
+  } | null;
   user_id: string | null;
   severity: EventSeverity;
 };
@@ -127,14 +162,32 @@ function getEventDescription(eventType: EventType, data: Record<string, unknown>
       return `Échec du paiement pour la commande ${data?.order_number || ""}`;
     case "ORDER_STATUS_CHANGED":
       return `Commande ${data?.order_number || ""}: ${data?.old_status || ""} → ${data?.new_status || ""}`;
-    case "PROFILE_UPDATED":
-      return "Profil utilisateur mis à jour";
     case "PROFILE_RECOVERY":
-      return `Récupération de profil manquant (${data?.recovery_reason || "raison inconnue"})`;
-    case "ADDRESS_ADDED":
-      return `Nouvelle adresse ${data?.address_type || ""} ajoutée`;
-    case "ADDRESS_UPDATED":
-      return `Adresse ${data?.address_type || ""} modifiée`;
+      return `⚠️ Récupération de profil manquant (${data?.recovery_reason || "raison inconnue"})`;
+    case "NEWSLETTER_SUBSCRIPTION":
+      return `Nouvel abonné newsletter: ${data?.email || ""}`;
+    case "NEWSLETTER_UNSUBSCRIPTION":
+      return `Désabonnement newsletter: ${data?.email || ""}`;
+    case "CART_ITEM_ADDED":
+      return `🛒 Ajout panier: ${data?.product_name || "produit"} (${data?.quantity || 1}x)`;
+    case "CART_ITEM_REMOVED":
+      return `🗑️ Suppression panier: ${data?.product_name || "produit"}`;
+    case "PRODUCT_VIEWED":
+      return `👁️ Vue produit: ${data?.product_name || "produit"} (${data?.price || 0}€)`;
+    case "CHECKOUT_STARTED":
+      return `💳 Début commande: ${data?.cart_total || 0}€ (${data?.items_count || 0} articles)`;
+    case "STRIPE_WEBHOOK_RECEIVED":
+      return `✅ Webhook Stripe: ${data?.event_type || "événement"} - ${data?.amount || 0}€`;
+    case "STRIPE_WEBHOOK_FAILED":
+      return `❌ Échec webhook Stripe: ${data?.event_type || "événement"} - ${data?.error || "erreur inconnue"}`;
+    case "CART_ABANDONED":
+      return `🛒💔 Panier abandonné: ${data?.cart_total || 0}€ (${data?.items_count || 0} articles)`;
+    case "CHECKOUT_ABANDONED":
+      return `💳💔 Checkout abandonné: ${data?.cart_total || 0}€ à l'étape ${data?.checkout_step || "inconnue"}`;
+    case "SEARCH_PERFORMED":
+      return `🔍 Recherche: "${data?.search_query || ""}" (${data?.results_count || 0} résultats)`;
+    case "FILTER_APPLIED":
+      return `🎛️ Filtre appliqué: ${data?.filter_type || ""} = ${data?.filter_value || ""}`;
     case "unauthorized_admin_access":
       return "Tentative d'accès admin non autorisée";
     case "successful_admin_login":

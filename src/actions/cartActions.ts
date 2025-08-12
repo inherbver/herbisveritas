@@ -15,6 +15,7 @@ import {
 import { getCart } from "@/lib/cartReader";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logEvent } from "@/lib/admin/event-logger";
 // ✅ Utiliser CartData depuis types/cart.ts
 import type { CartData } from "@/types/cart";
 import {
@@ -50,6 +51,13 @@ export async function addItemToCart(
     const { productId, quantity } = validatedFields.data;
 
     const supabase = await createSupabaseServerClient();
+
+    // Récupérer les infos du produit pour le logging
+    const { data: product } = await supabase
+      .from("products")
+      .select("name, price")
+      .eq("id", productId)
+      .single();
     const activeUserId = await getActiveUserId(supabase);
     if (!activeUserId) {
       return createGeneralErrorResult(
@@ -104,6 +112,20 @@ export async function addItemToCart(
       }
     }
 
+    // Log l'ajout au panier
+    await logEvent(
+      "CART_ITEM_ADDED",
+      activeUserId,
+      {
+        product_id: productId,
+        product_name: product?.name || "Produit inconnu",
+        product_price: product?.price || 0,
+        quantity: quantity,
+        message: `Ajout panier: ${product?.name || "produit"} (${quantity}x)`,
+      },
+      "INFO"
+    );
+
     return createSuccessResult(updatedCart.data, "Article ajouté au panier avec succès.");
   } catch (error: unknown) {
     const errorMessage = (error as Error).message;
@@ -134,6 +156,13 @@ export async function removeItemFromCart(
       );
     }
 
+    // Récupérer les infos de l'article avant suppression pour le logging
+    const { data: cartItem } = await supabase
+      .from("cart_items")
+      .select("product_id, quantity, product:products(name, price)")
+      .eq("id", cartItemId)
+      .single();
+
     const { error: deleteError } = await supabase.from("cart_items").delete().eq("id", cartItemId);
 
     if (deleteError) {
@@ -153,6 +182,22 @@ export async function removeItemFromCart(
           "Une erreur inattendue est survenue lors de la récupération du panier mis à jour."
         );
       }
+    }
+
+    // Log la suppression du panier
+    if (cartItem) {
+      await logEvent(
+        "CART_ITEM_REMOVED",
+        activeUserId,
+        {
+          product_id: cartItem.product_id,
+          product_name: (cartItem.product as any)?.name || "Produit inconnu",
+          product_price: (cartItem.product as any)?.price || 0,
+          quantity: cartItem.quantity,
+          message: `Suppression panier: ${(cartItem.product as any)?.name || "produit"}`,
+        },
+        "INFO"
+      );
     }
 
     return createSuccessResult(updatedCart.data, "Article supprimé du panier.");

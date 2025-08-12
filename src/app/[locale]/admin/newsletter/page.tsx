@@ -131,7 +131,7 @@ export default async function AdminNewsletterPage({ params }: Props) {
       )}
 
       {/* Newsletter Dashboard */}
-      <NewsletterDashboard subscribers={subscribers} />
+      <NewsletterDashboard subscribers={subscribers || []} />
     </div>
   );
 }

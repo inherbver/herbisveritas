@@ -15,7 +15,7 @@ export interface PartnerShop {
   description: string;
   address: string;
   imageUrl: string;
-  facebookUrl: string;
+  facebookUrl: string | null;
 }
 
 interface PartnerShopCardProps {
@@ -44,14 +44,16 @@ export function PartnerShopCard({ partner }: PartnerShopCardProps) {
         <CardContent className="flex-grow">
           <address className="text-sm not-italic text-muted-foreground">{address}</address>
         </CardContent>
-        <CardFooter>
-          <Button asChild className="w-full">
-            <a href={facebookUrl} target="_blank" rel="noopener noreferrer">
-              <Facebook className="mr-2 h-5 w-5" />
-              Découvrir sur Facebook
-            </a>
-          </Button>
-        </CardFooter>
+        {facebookUrl && (
+          <CardFooter>
+            <Button asChild className="w-full">
+              <a href={facebookUrl} target="_blank" rel="noopener noreferrer">
+                <Facebook className="mr-2 h-5 w-5" />
+                Découvrir sur Facebook
+              </a>
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </article>
   );

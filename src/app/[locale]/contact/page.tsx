@@ -53,17 +53,18 @@ export default async function ContactPage({ params }: Props) {
 
   // Récupération des partenaires depuis la base de données
   const partnersResult = await getPartners();
-  const partners: PartnerShop[] = partnersResult.success
-    ? partnersResult.data
-        .filter((partner) => partner.is_active)
-        .map((partner) => ({
-          name: partner.name,
-          description: partner.description,
-          address: partner.address,
-          imageUrl: partner.image_url,
-          facebookUrl: partner.facebook_url,
-        }))
-    : [];
+  const partners: PartnerShop[] =
+    partnersResult.success && partnersResult.data
+      ? partnersResult.data
+          .filter((partner) => partner.is_active)
+          .map((partner) => ({
+            name: partner.name,
+            description: partner.description,
+            address: partner.address,
+            imageUrl: partner.image_url,
+            facebookUrl: partner.facebook_url,
+          }))
+      : [];
 
   return (
     <>
