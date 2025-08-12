@@ -44,7 +44,7 @@ const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
                   </span>
                 )}
                 <Link
-                  href={item.href}
+                  href={item.href as Parameters<typeof Link>[0]["href"]}
                   // Les éléments non actifs (sauf le dernier) sont des liens
                   // Le dernier élément est juste du texte (ou un lien non cliquable)
                   className={cn(

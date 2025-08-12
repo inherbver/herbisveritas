@@ -156,7 +156,7 @@ export class MagazineService {
       updateData.reading_time_minutes = this.calculateReadingTime(data.content);
     }
 
-    updateData.updated_at = new Date().toISOString();
+    (updateData as { updated_at?: string }).updated_at = new Date().toISOString();
 
     const supabase = await this.getSupabase();
     const { data: article, error } = await supabase
@@ -404,7 +404,7 @@ export class MagazineService {
     }
 
     const allTags = new Set<string>();
-    data?.forEach((article: Article) => {
+    data?.forEach((article: { tags?: string[] }) => {
       article.tags?.forEach((tag: string) => allTags.add(tag));
     });
 
@@ -424,7 +424,7 @@ export class MagazineService {
     }
 
     const allCategories = new Set<string>();
-    data?.forEach((article: Article) => {
+    data?.forEach((article: { categories?: string[] }) => {
       article.categories?.forEach((category: string) => allCategories.add(category));
     });
 
@@ -500,26 +500,26 @@ export class MagazineService {
 
   private mapToArticle(data: Record<string, unknown>): Article {
     return {
-      id: data.id,
-      title: data.title,
-      slug: data.slug,
-      content: data.content,
-      excerpt: data.excerpt,
-      featured_image_url: data.featured_image_url,
-      featured_image_alt: data.featured_image_alt,
-      status: data.status,
-      type: data.type,
-      author_id: data.author_id,
-      published_at: data.published_at ? new Date(data.published_at) : undefined,
-      scheduled_at: data.scheduled_at ? new Date(data.scheduled_at) : undefined,
-      view_count: data.view_count || 0,
-      like_count: data.like_count || 0,
-      tags: data.tags || [],
-      categories: data.categories || [],
-      is_featured: data.is_featured || false,
-      reading_time_minutes: data.reading_time_minutes,
-      created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at),
+      id: data.id as string,
+      title: data.title as string,
+      slug: data.slug as string,
+      content: data.content as string,
+      excerpt: data.excerpt as string | undefined,
+      featured_image_url: data.featured_image_url as string | undefined,
+      featured_image_alt: data.featured_image_alt as string | undefined,
+      status: data.status as ArticleStatus,
+      type: data.type as ArticleType,
+      author_id: data.author_id as string,
+      published_at: data.published_at ? new Date(data.published_at as string) : undefined,
+      scheduled_at: data.scheduled_at ? new Date(data.scheduled_at as string) : undefined,
+      view_count: (data.view_count as number) || 0,
+      like_count: (data.like_count as number) || 0,
+      tags: (data.tags as string[]) || [],
+      categories: (data.categories as string[]) || [],
+      is_featured: (data.is_featured as boolean) || false,
+      reading_time_minutes: data.reading_time_minutes as number | undefined,
+      created_at: new Date(data.created_at as string),
+      updated_at: new Date(data.updated_at as string),
     };
   }
 }

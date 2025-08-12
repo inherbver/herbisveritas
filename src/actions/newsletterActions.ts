@@ -26,6 +26,137 @@ import {
   bulkNewsletterOperationSchema as _bulkNewsletterOperationSchema,
 } from "@/lib/validators/newsletter";
 
+// Newsletter table operations helper - typed wrapper for missing table in schema
+const newsletterTable = {
+  async insert(
+    supabase: unknown,
+    data: NewsletterSubscriptionData
+  ): Promise<{
+    data: { email: string } | null;
+    error: { code?: string; message?: string } | null;
+  }> {
+    return await (
+      supabase as {
+        from: (table: string) => {
+          insert: (data: unknown) => {
+            select: (columns: string) => {
+              single: () => Promise<{
+                data: { email: string } | null;
+                error: { code?: string; message?: string } | null;
+              }>;
+            };
+          };
+        };
+      }
+    )
+      .from("newsletter_subscribers")
+      .insert(data)
+      .select("email")
+      .single();
+  },
+
+  async update(
+    supabase: unknown,
+    updates: { is_active: boolean },
+    email: string
+  ): Promise<{ error: { code?: string; message?: string } | null }> {
+    return await (
+      supabase as {
+        from: (table: string) => {
+          update: (data: unknown) => {
+            eq: (
+              column: string,
+              value: unknown
+            ) => {
+              eq: (
+                column: string,
+                value: unknown
+              ) => Promise<{ error: { code?: string; message?: string } | null }>;
+            };
+          };
+        };
+      }
+    )
+      .from("newsletter_subscribers")
+      .update(updates)
+      .eq("email", email)
+      .eq("is_active", true);
+  },
+
+  async selectAll(
+    supabase: unknown
+  ): Promise<{
+    data: NewsletterSubscriber[] | null;
+    error: { code?: string; message?: string } | null;
+  }> {
+    return await (
+      supabase as {
+        from: (table: string) => {
+          select: (columns: string) => {
+            order: (
+              column: string,
+              options: { ascending: boolean }
+            ) => Promise<{
+              data: NewsletterSubscriber[] | null;
+              error: { code?: string; message?: string } | null;
+            }>;
+          };
+        };
+      }
+    )
+      .from("newsletter_subscribers")
+      .select("*")
+      .order("subscribed_at", { ascending: false });
+  },
+
+  async count(
+    supabase: unknown,
+    filter?: { is_active?: boolean; since?: string }
+  ): Promise<{ count: number | null; error: { code?: string; message?: string } | null }> {
+    let query = (
+      supabase as {
+        from: (table: string) => {
+          select: (
+            columns: string,
+            options: { count: "exact"; head: boolean }
+          ) => {
+            eq?: (
+              column: string,
+              value: unknown
+            ) => {
+              gte?: (
+                column: string,
+                value: unknown
+              ) => Promise<{
+                count: number | null;
+                error: { code?: string; message?: string } | null;
+              }>;
+            };
+            gte?: (
+              column: string,
+              value: unknown
+            ) => Promise<{
+              count: number | null;
+              error: { code?: string; message?: string } | null;
+            }>;
+          };
+        };
+      }
+    )
+      .from("newsletter_subscribers")
+      .select("*", { count: "exact", head: true });
+
+    if (filter?.is_active !== undefined) {
+      query = query.eq!("is_active", filter.is_active);
+    }
+    if (filter?.since) {
+      query = query.gte!("subscribed_at", filter.since);
+    }
+
+    return await query;
+  },
+};
+
 /**
  * Subscribe to newsletter
  */
@@ -66,11 +197,7 @@ export async function subscribeToNewsletter(
 
     // 5. Insert into database
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from("newsletter_subscribers")
-      .insert(validation.data)
-      .select("email")
-      .single();
+    const { data, error } = await newsletterTable.insert(supabase, validation.data);
 
     if (error) {
       // Handle duplicate email gracefully
@@ -83,6 +210,13 @@ export async function subscribeToNewsletter(
       }
 
       console.error("Database error subscribing to newsletter:", error);
+      return {
+        success: false,
+        error: "Erreur lors de l'inscription à la newsletter",
+      };
+    }
+
+    if (!data?.email) {
       return {
         success: false,
         error: "Erreur lors de l'inscription à la newsletter",
@@ -136,11 +270,11 @@ export async function unsubscribeFromNewsletter(email: string): Promise<ActionRe
 
     // 2. Update subscription status
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase
-      .from("newsletter_subscribers")
-      .update({ is_active: false })
-      .eq("email", validation.data.email)
-      .eq("is_active", true);
+    const { error } = await newsletterTable.update(
+      supabase,
+      { is_active: false },
+      validation.data.email
+    );
 
     if (error) {
       console.error("Database error unsubscribing from newsletter:", error);
@@ -199,10 +333,7 @@ export async function getNewsletterSubscribers(): Promise<ActionResult<Newslette
     }
 
     // 2. Fetch subscribers
-    const { data: subscribers, error } = await supabase
-      .from("newsletter_subscribers")
-      .select("*")
-      .order("subscribed_at", { ascending: false });
+    const { data: subscribers, error } = await newsletterTable.selectAll(supabase);
 
     if (error) {
       console.error("Database error fetching newsletter subscribers:", error);
@@ -248,15 +379,11 @@ export async function getNewsletterStats(): Promise<ActionResult<NewsletterStats
 
     // 2. Get stats using individual queries
     const [totalResult, activeResult, recentResult] = await Promise.all([
-      supabase.from("newsletter_subscribers").select("*", { count: "exact", head: true }),
-      supabase
-        .from("newsletter_subscribers")
-        .select("*", { count: "exact", head: true })
-        .eq("is_active", true),
-      supabase
-        .from("newsletter_subscribers")
-        .select("*", { count: "exact", head: true })
-        .gte("subscribed_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+      newsletterTable.count(supabase),
+      newsletterTable.count(supabase, { is_active: true }),
+      newsletterTable.count(supabase, {
+        since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      }),
     ]);
 
     return {
@@ -312,7 +439,19 @@ export async function toggleNewsletterSubscriber(
     }
 
     // 3. Update subscriber status
-    const { error } = await supabase
+    // Note: For newsletter_subscribers table, we need to update is_active field directly
+    const { error } = await (
+      supabase as {
+        from: (table: string) => {
+          update: (data: unknown) => {
+            eq: (
+              column: string,
+              value: unknown
+            ) => Promise<{ error: { code?: string; message?: string } | null }>;
+          };
+        };
+      }
+    )
       .from("newsletter_subscribers")
       .update({ is_active: validation.data.is_active })
       .eq("id", validation.data.id);

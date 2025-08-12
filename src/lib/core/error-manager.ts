@@ -141,17 +141,18 @@ class GlobalErrorManager {
     this.registerHandler({
       domain: ErrorDomain.AUTH,
       canHandle: (error) => {
-        const msg = error?.message?.toLowerCase() || "";
+        const msg = (error as { message?: string })?.message?.toLowerCase() || "";
         return msg.includes("auth") || msg.includes("token") || msg.includes("session");
       },
       handle: async (error, context) => {
-        if (error.code === "REFRESH_TOKEN_ERROR") {
+        const typedError = error as { code?: string; message?: string };
+        if (typedError.code === "REFRESH_TOKEN_ERROR") {
           toast.error("Session expirée", {
             description: "Veuillez vous reconnecter",
           });
 
           setTimeout(() => {
-            context.router?.push("/login");
+            (context.router as { push?: (url: string) => void })?.push?.("/login");
           }, 2000);
 
           return { resolved: true, action: "REDIRECT" };
@@ -166,7 +167,8 @@ class GlobalErrorManager {
     this.registerHandler({
       domain: ErrorDomain.API,
       canHandle: (error) => {
-        return error?.response || error?.status || error?.statusCode;
+        const typedError = error as { response?: unknown; status?: unknown; statusCode?: unknown };
+        return typedError?.response || typedError?.status || typedError?.statusCode;
       },
       handle: async (error, context) => {
         const status = error.metadata.statusCode;
@@ -203,16 +205,18 @@ class GlobalErrorManager {
     this.registerHandler({
       domain: ErrorDomain.PAYMENT,
       canHandle: (error) => {
-        const msg = error?.message?.toLowerCase() || "";
+        const msg = (error as { message?: string })?.message?.toLowerCase() || "";
         return msg.includes("stripe") || msg.includes("payment") || msg.includes("card");
       },
       handle: async (error, context) => {
-        if (error.code === "CARD_DECLINED") {
+        const typedError = error as { code?: string };
+        if (typedError.code === "CARD_DECLINED") {
           toast.error("Paiement refusé", {
             description: "Veuillez vérifier vos informations de paiement",
             action: {
               label: "Réessayer",
-              onClick: () => context.router?.push("/checkout"),
+              onClick: () =>
+                (context.router as { push?: (url: string) => void })?.push?.("/checkout"),
             },
           });
           return { resolved: true, action: "NOTIFY" };
@@ -230,11 +234,8 @@ class GlobalErrorManager {
     this.registerHandler({
       domain: ErrorDomain.NETWORK,
       canHandle: (error) => {
-        return (
-          !this.isOnline ||
-          error?.message?.includes("NetworkError") ||
-          error?.message?.includes("Failed to fetch")
-        );
+        const msg = (error as { message?: string })?.message || "";
+        return !this.isOnline || msg.includes("NetworkError") || msg.includes("Failed to fetch");
       },
       handle: async (error, context) => {
         if (!this.isOnline) {
@@ -264,7 +265,8 @@ class GlobalErrorManager {
     this.registerHandler({
       domain: ErrorDomain.VALIDATION,
       canHandle: (error) => {
-        return error?.validation || error?.code?.includes("VALIDATION");
+        const typedError = error as { validation?: unknown; code?: string };
+        return typedError?.validation || typedError?.code?.includes("VALIDATION");
       },
       handle: async (error, context) => {
         // Les erreurs de validation sont généralement gérées localement
@@ -452,26 +454,38 @@ class GlobalErrorManager {
   private normalizeError(error: unknown): ApplicationError {
     const id = `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    const typedError = error as {
+      code?: string;
+      message?: string;
+      metadata?: Record<string, unknown>;
+    };
+
     return {
       id,
       domain: this.determineDomain(error),
-      code: error?.code || "UNKNOWN",
-      message: error?.message || "Une erreur est survenue",
+      code: typedError?.code || "UNKNOWN",
+      message: typedError?.message || "Une erreur est survenue",
       severity: this.determineSeverity(error),
       retryable: this.isRetryable(error),
       metadata: {
         timestamp: new Date(),
-        userAgent: navigator.userAgent,
-        url: window.location.href,
-        ...error?.metadata,
+        userAgent: typeof window !== "undefined" ? navigator.userAgent : undefined,
+        url: typeof window !== "undefined" ? window.location.href : undefined,
+        ...typedError?.metadata,
       },
       originalError: error,
     };
   }
 
   private determineDomain(error: unknown): ErrorDomain {
-    const message = error?.message?.toLowerCase() || "";
-    const code = error?.code?.toLowerCase() || "";
+    const typedError = error as {
+      message?: string;
+      code?: string;
+      response?: unknown;
+      status?: unknown;
+    };
+    const message = typedError?.message?.toLowerCase() || "";
+    const code = typedError?.code?.toLowerCase() || "";
 
     if (message.includes("auth") || message.includes("token")) return ErrorDomain.AUTH;
     if (message.includes("payment") || message.includes("stripe")) return ErrorDomain.PAYMENT;
@@ -484,37 +498,44 @@ class GlobalErrorManager {
     if (message.includes("database") || message.includes("sql")) return ErrorDomain.DATABASE;
     if (message.includes("storage") || message.includes("upload")) return ErrorDomain.STORAGE;
 
-    if (error?.response || error?.status) return ErrorDomain.API;
+    if (typedError?.response || typedError?.status) return ErrorDomain.API;
 
     return ErrorDomain.UNKNOWN;
   }
 
   private determineSeverity(error: unknown): ErrorSeverity {
-    const status = error?.status || error?.statusCode;
+    const typedError = error as { status?: number; statusCode?: number; severity?: ErrorSeverity };
+    const status = typedError?.status || typedError?.statusCode;
 
-    if (status >= 500) return ErrorSeverity.CRITICAL;
+    if (status && status >= 500) return ErrorSeverity.CRITICAL;
     if (status === 403 || status === 401) return ErrorSeverity.HIGH;
-    if (status >= 400) return ErrorSeverity.MEDIUM;
+    if (status && status >= 400) return ErrorSeverity.MEDIUM;
 
-    if (error?.severity) return error.severity;
+    if (typedError?.severity) return typedError.severity;
 
     return ErrorSeverity.MEDIUM;
   }
 
   private isRetryable(error: unknown): boolean {
-    const status = error?.status || error?.statusCode;
+    const typedError = error as {
+      status?: number;
+      statusCode?: number;
+      message?: string;
+      code?: string;
+    };
+    const status = typedError?.status || typedError?.statusCode;
 
     // Erreurs réseau toujours retryables
-    if (error?.message?.includes("network")) return true;
+    if (typedError?.message?.includes("network")) return true;
 
     // Erreurs serveur (5xx) retryables
-    if (status >= 500) return true;
+    if (status && status >= 500) return true;
 
     // Rate limiting retryable après délai
     if (status === 429) return true;
 
     // Timeout retryable
-    if (error?.code === "TIMEOUT") return true;
+    if (typedError?.code === "TIMEOUT") return true;
 
     return false;
   }
@@ -646,7 +667,10 @@ class GlobalErrorManager {
   }
 
   getErrorStats(): Record<ErrorDomain, { count: number; lastOccurred?: Date }> {
-    const stats: Record<ErrorDomain, { count: number; lastOccurred?: Date }> = {} as any;
+    const stats: Record<ErrorDomain, { count: number; lastOccurred?: Date }> = {} as Record<
+      ErrorDomain,
+      { count: number; lastOccurred?: Date }
+    >;
 
     Object.values(ErrorDomain).forEach((domain) => {
       const errors = this.getErrorsByDomain(domain);
