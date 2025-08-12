@@ -10,6 +10,7 @@ import {
   uploadProductImageCore,
   UploadImageResult as CoreUploadImageResult,
 } from "@/lib/storage/image-upload";
+import { type Product } from "@/lib/supabase/types";
 
 // New imports for Clean Architecture
 import { ActionResult } from "@/lib/core/result";
@@ -297,7 +298,7 @@ export async function getProducts(filters?: {
   inStock?: boolean;
   page?: number;
   pageSize?: number;
-}): Promise<ActionResult<any[]>> {
+}): Promise<ActionResult<Product[]>> {
   const context = LogUtils.createUserActionContext("anonymous", "get_products", "products");
   LogUtils.logOperationStart("get_products", context);
 

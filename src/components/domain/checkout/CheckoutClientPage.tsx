@@ -56,7 +56,7 @@ const DisplayAddress = ({ address }: { address: Address | AddressFormData }) => 
 );
 
 export default function CheckoutClientPage({
-  cart,
+  cart: _cart,
   shippingAddress: initialShippingAddress,
   billingAddress: initialBillingAddress,
   shippingMethods,

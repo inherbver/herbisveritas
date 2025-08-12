@@ -52,6 +52,7 @@ export interface CreateArticleData {
 
 export interface UpdateArticleData extends Partial<CreateArticleData> {
   slug?: string;
+  published_at?: Date | null;
 }
 
 export interface ArticleFilters {
@@ -90,12 +91,16 @@ export class ValidationError extends Error {
  * Centralise toute la logique métier des articles
  */
 export class MagazineService {
-  private supabase: SupabaseClient;
+  private supabasePromise: Promise<SupabaseClient>;
   private adminClient: SupabaseClient;
 
-  constructor(useAdminClient = false) {
-    this.supabase = createSupabaseServerClient();
+  constructor() {
+    this.supabasePromise = createSupabaseServerClient();
     this.adminClient = createSupabaseAdminClient();
+  }
+
+  private async getSupabase(): Promise<SupabaseClient> {
+    return this.supabasePromise;
   }
 
   // === CRUD OPERATIONS ===
@@ -119,7 +124,8 @@ export class MagazineService {
       is_featured: data.is_featured || false,
     };
 
-    const { data: article, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data: article, error } = await supabase
       .from("articles")
       .insert(articleData)
       .select()
@@ -136,7 +142,9 @@ export class MagazineService {
   async updateArticle(id: string, data: UpdateArticleData): Promise<Article> {
     this.validateArticleData(data);
 
-    const updateData: any = { ...data };
+    const updateData: Partial<
+      UpdateArticleData & { slug?: string; reading_time_minutes?: number }
+    > = { ...data };
 
     // Regenerate slug if title changed
     if (data.title) {
@@ -150,7 +158,8 @@ export class MagazineService {
 
     updateData.updated_at = new Date().toISOString();
 
-    const { data: article, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data: article, error } = await supabase
       .from("articles")
       .update(updateData)
       .eq("id", id)
@@ -166,11 +175,8 @@ export class MagazineService {
   }
 
   async getArticleById(id: string): Promise<Article | null> {
-    const { data, error } = await this.supabase
-      .from("articles")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase.from("articles").select("*").eq("id", id).maybeSingle();
 
     if (error) {
       console.error("Error fetching article:", error);
@@ -181,7 +187,8 @@ export class MagazineService {
   }
 
   async getArticleBySlug(slug: string): Promise<Article | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("articles")
       .select("*")
       .eq("slug", slug)
@@ -203,10 +210,8 @@ export class MagazineService {
   }
 
   async deleteArticle(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from("articles")
-      .update({ status: "archived" })
-      .eq("id", id);
+    const supabase = await this.getSupabase();
+    const { error } = await supabase.from("articles").update({ status: "archived" }).eq("id", id);
 
     if (error) {
       console.error("Error archiving article:", error);
@@ -223,7 +228,8 @@ export class MagazineService {
     articles: Article[];
     totalCount: number;
   }> {
-    let queryBuilder = this.supabase.from("articles").select("*", { count: "exact" });
+    const supabase = await this.getSupabase();
+    let queryBuilder = supabase.from("articles").select("*", { count: "exact" });
 
     // Text search
     if (query) {
@@ -348,12 +354,8 @@ export class MagazineService {
   // === ANALYTICS ===
 
   async incrementViewCount(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from("articles")
-      .update({
-        view_count: this.supabase.raw("view_count + 1"),
-      })
-      .eq("id", id);
+    const supabase = await this.getSupabase();
+    const { error } = await supabase.rpc("increment_article_view_count", { article_id: id });
 
     if (error) {
       console.error("Error incrementing view count:", error);
@@ -361,12 +363,8 @@ export class MagazineService {
   }
 
   async incrementLikeCount(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from("articles")
-      .update({
-        like_count: this.supabase.raw("like_count + 1"),
-      })
-      .eq("id", id);
+    const supabase = await this.getSupabase();
+    const { error } = await supabase.rpc("increment_article_like_count", { article_id: id });
 
     if (error) {
       console.error("Error incrementing like count:", error);
@@ -394,7 +392,8 @@ export class MagazineService {
   // === TAXONOMIES ===
 
   async getAllTags(): Promise<string[]> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("articles")
       .select("tags")
       .eq("status", "published");
@@ -405,7 +404,7 @@ export class MagazineService {
     }
 
     const allTags = new Set<string>();
-    data?.forEach((article) => {
+    data?.forEach((article: Article) => {
       article.tags?.forEach((tag: string) => allTags.add(tag));
     });
 
@@ -413,7 +412,8 @@ export class MagazineService {
   }
 
   async getAllCategories(): Promise<string[]> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("articles")
       .select("categories")
       .eq("status", "published");
@@ -424,7 +424,7 @@ export class MagazineService {
     }
 
     const allCategories = new Set<string>();
-    data?.forEach((article) => {
+    data?.forEach((article: Article) => {
       article.categories?.forEach((category: string) => allCategories.add(category));
     });
 
@@ -465,7 +465,8 @@ export class MagazineService {
     let counter = 1;
 
     while (true) {
-      let query = this.supabase.from("articles").select("id").eq("slug", slug);
+      const supabase = await this.getSupabase();
+      let query = supabase.from("articles").select("id").eq("slug", slug);
 
       if (excludeId) {
         query = query.neq("id", excludeId);
@@ -497,7 +498,7 @@ export class MagazineService {
     return Math.ceil(wordCount / 200);
   }
 
-  private mapToArticle(data: any): Article {
+  private mapToArticle(data: Record<string, unknown>): Article {
     return {
       id: data.id,
       title: data.title,

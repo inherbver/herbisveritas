@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { redirect } from "next/navigation";
 import AddressForm from "@/components/forms/address-form";
 import { AddressFormData } from "@/lib/validators/address.validator";
-import { countries, type Country } from "@/lib/countries";
+import { countries } from "@/lib/countries";
 
 interface Address {
   id: string;

@@ -76,7 +76,7 @@ test.describe("Mobile UI/UX Improvements", () => {
     await page.goto("http://localhost:3004/fr/shop");
 
     // Add item to cart
-    await page.click('button:has-text("Ajouter au panier")').first();
+    await page.locator('button:has-text("Ajouter au panier")').first().click();
 
     // Open cart
     const cartButton = page.locator("button:has(svg.lucide-shopping-cart)").first();
@@ -100,7 +100,7 @@ test.describe("Mobile UI/UX Improvements", () => {
     await page.goto("http://localhost:3004/fr/shop");
 
     // Add item to cart
-    await page.click('button:has-text("Ajouter au panier")').first();
+    await page.locator('button:has-text("Ajouter au panier")').first().click();
 
     // Open cart
     const cartButton = page.locator("button:has(svg.lucide-shopping-cart)").first();

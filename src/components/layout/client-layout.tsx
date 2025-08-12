@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 // import { Toaster } from "@/components/ui/sonner"; // Toaster est déjà dans LocaleLayout
 import { ThemeProvider } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User, AuthError } from "@supabase/supabase-js";
 import { useAuthCartSync } from "@/hooks/use-auth-cart-sync";
 import { useAuthErrorHandler } from "@/hooks/use-auth-error-handler";
 import useCartStore from "@/stores/cartStore";
@@ -97,7 +97,7 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
         supabase.auth.getUser(),
         2500, // Timeout de 2.5 secondes
         1 // 1 retry seulement pour ne pas trop ralentir
-      )) as { data: { user: any }; error: any };
+      )) as { data: { user: User | null }; error: AuthError | null };
 
       const {
         data: { user },
@@ -114,7 +114,7 @@ export default function ClientLayout({ children, locale, messages, timeZone }: C
         supabase.auth.getSession(),
         2000, // Timeout plus court pour getSession
         1
-      )) as { data: { session: any } };
+      )) as { data: { session: Session | null } };
 
       const {
         data: { session },

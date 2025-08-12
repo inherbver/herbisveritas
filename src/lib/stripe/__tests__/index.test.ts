@@ -3,7 +3,7 @@
  */
 
 import { stripe } from "../index";
-import Stripe from "stripe";
+// import Stripe from "stripe";
 
 // Mock environment variables
 const originalEnv = process.env;
@@ -30,11 +30,11 @@ describe("Stripe Client", () => {
     it("should throw error if STRIPE_SECRET_KEY is not set", () => {
       delete process.env.STRIPE_SECRET_KEY;
 
-      expect(() => {
-        jest.isolateModules(() => {
-          require("../index");
+      expect(async () => {
+        jest.isolateModules(async () => {
+          await import("../index");
         });
-      }).toThrow("STRIPE_SECRET_KEY is not set in the environment variables");
+      }).rejects.toThrow("STRIPE_SECRET_KEY is not set in the environment variables");
     });
 
     it("should use TypeScript configuration", () => {

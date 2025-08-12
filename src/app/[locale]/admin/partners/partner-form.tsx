@@ -53,7 +53,7 @@ export function PartnerForm({ partner, mode = "create" }: PartnerFormProps) {
         } else {
           setError(result.error || null);
         }
-      } catch (err) {
+      } catch (_err) {
         setError("Une erreur inattendue s'est produite");
       }
     });

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { errorManager } from "@/lib/core/error-manager";
-import { ErrorDomain } from "@/lib/core/error-manager";
+// import { ErrorDomain } from "@/lib/core/error-manager";
 
 /**
  * Hook pour gérer les erreurs d'authentification via le système centralisé

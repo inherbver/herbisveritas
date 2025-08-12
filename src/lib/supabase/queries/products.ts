@@ -204,7 +204,8 @@ export async function getProductsForAdmin(
       }
     }
 
-    const { data, error } = await supabaseCallWithTimeout(query, 8000);
+    const result = await supabaseCallWithTimeout(Promise.resolve(query), 8000);
+    const { data, error } = result;
 
     if (error) {
       console.error("Error fetching products for admin:", error.message);
@@ -251,7 +252,7 @@ export async function getProductByIdForAdmin(
       .eq("id", productId)
       .single();
 
-    const { data, error } = await supabaseCallWithTimeout(query, 8000);
+    const { data, error } = await supabaseCallWithTimeout(Promise.resolve(query), 8000);
 
     if (error) {
       if (error.code !== "PGRST116") {

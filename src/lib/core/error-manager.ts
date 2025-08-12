@@ -40,7 +40,7 @@ export interface ErrorMetadata {
   stack?: string;
   userAgent?: string;
   timestamp: Date;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ApplicationError {
@@ -51,12 +51,12 @@ export interface ApplicationError {
   severity: ErrorSeverity;
   retryable: boolean;
   metadata: ErrorMetadata;
-  originalError?: any;
+  originalError?: Error | unknown;
 }
 
 export interface ErrorHandlerConfig {
   domain: ErrorDomain;
-  canHandle: (error: any) => boolean;
+  canHandle: (error: unknown) => boolean;
   handle: (error: ApplicationError, context: ErrorContext) => Promise<ErrorResolution>;
   priority: number;
   retryConfig?: RetryConfig;
@@ -71,7 +71,7 @@ export interface RetryConfig {
 }
 
 export interface ErrorContext {
-  router?: any;
+  router?: { push: (url: string) => void; replace: (url: string) => void } | unknown;
   retryCount: number;
   lastAttempt?: Date;
   userAction?: string;
@@ -321,7 +321,7 @@ class GlobalErrorManager {
   // Gestion des Erreurs
   // ============================================
 
-  async handleError(error: any, context?: Partial<ErrorContext>): Promise<ErrorResolution> {
+  async handleError(error: unknown, context?: Partial<ErrorContext>): Promise<ErrorResolution> {
     const appError = this.normalizeError(error);
     const fullContext: ErrorContext = {
       retryCount: 0,
@@ -449,7 +449,7 @@ class GlobalErrorManager {
   // Normalisation et Logging
   // ============================================
 
-  private normalizeError(error: any): ApplicationError {
+  private normalizeError(error: unknown): ApplicationError {
     const id = `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     return {
@@ -469,7 +469,7 @@ class GlobalErrorManager {
     };
   }
 
-  private determineDomain(error: any): ErrorDomain {
+  private determineDomain(error: unknown): ErrorDomain {
     const message = error?.message?.toLowerCase() || "";
     const code = error?.code?.toLowerCase() || "";
 
@@ -489,7 +489,7 @@ class GlobalErrorManager {
     return ErrorDomain.UNKNOWN;
   }
 
-  private determineSeverity(error: any): ErrorSeverity {
+  private determineSeverity(error: unknown): ErrorSeverity {
     const status = error?.status || error?.statusCode;
 
     if (status >= 500) return ErrorSeverity.CRITICAL;
@@ -501,7 +501,7 @@ class GlobalErrorManager {
     return ErrorSeverity.MEDIUM;
   }
 
-  private isRetryable(error: any): boolean {
+  private isRetryable(error: unknown): boolean {
     const status = error?.status || error?.statusCode;
 
     // Erreurs réseau toujours retryables
@@ -698,7 +698,7 @@ export function createAppError(
 // Hook React pour utiliser l'error manager
 export function useErrorManager() {
   return {
-    handleError: (error: any, context?: Partial<ErrorContext>) =>
+    handleError: (error: unknown, context?: Partial<ErrorContext>) =>
       errorManager.handleError(error, context),
     subscribe: (callback: (error: ApplicationError) => void) => errorManager.subscribe(callback),
     getRecentErrors: () => errorManager.getRecentErrors(),

@@ -139,7 +139,7 @@ describe("authActions", () => {
 
       try {
         await loginAction(undefined, formData);
-      } catch (error) {
+      } catch (_error) {
         // Expected redirect
       }
 

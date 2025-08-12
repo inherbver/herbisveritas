@@ -60,12 +60,13 @@ export function formatDate(
       return "Date invalide";
     }
 
-    const options: Intl.DateTimeFormatOptions = {
+    const formatOptions: Record<string, Intl.DateTimeFormatOptions> = {
       default: { year: "numeric", month: "long", day: "numeric" },
       short: { year: "numeric", month: "2-digit", day: "2-digit" },
       long: { weekday: "long", year: "numeric", month: "long", day: "numeric" },
       time: { hour: "2-digit", minute: "2-digit" },
-    }[format] || { year: "numeric", month: "long", day: "numeric" };
+    };
+    const options = formatOptions[format] || formatOptions.default;
 
     return new Intl.DateTimeFormat(locale, options).format(dateObj);
   } catch {

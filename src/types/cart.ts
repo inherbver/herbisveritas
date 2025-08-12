@@ -30,6 +30,7 @@ export interface CartItem {
   quantity: number;
   image?: string;
   slug?: string;
+  stock?: number; // Available stock for the product
 }
 
 // --- Server Response Cart Data ---

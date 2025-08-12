@@ -8,7 +8,13 @@
 import { Result } from "@/lib/core/result";
 import { BusinessError, NotFoundError, ValidationError } from "@/lib/core/errors";
 import { logger, LogUtils } from "@/lib/core/logger";
-import { Cart, CartItem, Money, Quantity, ProductReference } from "../entities/cart.entity";
+import {
+  Cart,
+  CartItem as _CartItem,
+  Money as _Money,
+  Quantity,
+  ProductReference,
+} from "../entities/cart.entity";
 
 /**
  * Cart repository interface (will be implemented in infrastructure layer)
@@ -43,7 +49,7 @@ export interface UserRepository {
 export interface CartDomainEvent {
   aggregateId: string;
   eventType: string;
-  eventData: any;
+  eventData: Record<string, unknown>;
   occurredAt: Date;
 }
 
@@ -398,7 +404,8 @@ export class CartDomainService {
       // Validate user
       const userValidation = await this.validateUser(userId);
       if (userValidation.isError()) {
-        return Result.error(userValidation.getError());
+        const error = userValidation.getError();
+        return Result.error(new BusinessError(error.message));
       }
 
       const cartResult = await this.cartRepository.findByUserId(userId);
@@ -412,7 +419,7 @@ export class CartDomainService {
       if (cart) {
         const validationResult = await this.validateCartItems(cart);
         if (validationResult.isError()) {
-          logger.warn("Cart validation failed", validationResult.getError(), context);
+          logger.warn("Cart validation failed", { error: validationResult.getError(), context });
           // Return cart anyway but log the validation issues
         }
       }
@@ -499,7 +506,10 @@ export class CartDomainService {
           const updateResult = mergedCart.updateItemQuantity(existingItem.id, combinedQuantity);
           if (updateResult.isError()) {
             // If update fails (e.g., exceeds stock), keep existing quantity
-            logger.warn("Failed to merge item quantities", updateResult.getError(), context);
+            logger.warn("Failed to merge item quantities", {
+              error: updateResult.getError(),
+              context,
+            });
             continue;
           }
           mergedCart = updateResult.getValue();
@@ -512,7 +522,10 @@ export class CartDomainService {
           );
           if (addResult.isError()) {
             // If add fails (e.g., cart full), skip this item
-            logger.warn("Failed to add item during merge", addResult.getError(), context);
+            logger.warn("Failed to add item during merge", {
+              error: addResult.getError(),
+              context,
+            });
             continue;
           }
           mergedCart = addResult.getValue();

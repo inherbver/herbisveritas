@@ -1,17 +1,17 @@
 /**
  * Market Utilities
- * 
+ *
  * Utilities for working with market data. This file has been updated to use
  * database data instead of JSON files, while maintaining backward compatibility
  * with the existing API.
  */
 
 import { MarketInfo } from "@/types/market";
-import { 
-  getAllMarketInstances, 
-  getUpcomingMarkets, 
+import {
+  getAllMarketInstances as _getAllMarketInstances,
+  getUpcomingMarkets,
   getNextUpcomingMarket as getNextUpcomingMarketFromDb,
-  getAllMarketsSorted as getAllMarketsSortedFromDb
+  getAllMarketsSorted as getAllMarketsSortedFromDb,
 } from "@/lib/markets/queries";
 
 // Legacy imports for backward compatibility (will be removed after migration)
@@ -85,7 +85,7 @@ export async function getNextUpcomingMarket(): Promise<MarketInfo | null> {
     return await getNextUpcomingMarketFromDb();
   } catch (error) {
     console.warn("Failed to fetch market from database, falling back to legacy data:", error);
-    
+
     // Fallback to legacy logic
     const now = new Date();
     const upcomingMarkets = legacyMarketInstances
@@ -123,7 +123,7 @@ export async function getAllUpcomingMarkets(): Promise<MarketInfo[]> {
     return await getUpcomingMarkets();
   } catch (error) {
     console.warn("Failed to fetch markets from database, falling back to legacy data:", error);
-    
+
     // Fallback to legacy logic
     const now = new Date();
     return legacyMarketInstances
@@ -158,7 +158,7 @@ export async function getAllMarketsSorted(): Promise<MarketInfo[]> {
     return await getAllMarketsSortedFromDb();
   } catch (error) {
     console.warn("Failed to fetch markets from database, falling back to legacy data:", error);
-    
+
     // Fallback to legacy logic
     return [...legacyMarketInstances].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()

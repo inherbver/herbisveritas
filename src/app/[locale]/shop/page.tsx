@@ -9,7 +9,7 @@ import type { CartData } from "@/types/cart";
 import { Locale } from "@/i18n-config";
 import { Hero } from "@/components/common/hero";
 import { getActiveFeaturedHeroItem, type FeaturedHeroItem } from "@/lib/supabase/queries/hero";
-import { Link } from "@/i18n/navigation";
+// import { Link } from "@/i18n/navigation";
 
 // Forcer le rendu dynamique pour éviter les erreurs de génération statique
 export const dynamic = "force-dynamic";

@@ -5,7 +5,13 @@
 import { CartDomainService } from "../cart.service";
 import { Result } from "@/lib/core/result";
 import { BusinessError, NotFoundError, ValidationError } from "@/lib/core/errors";
-import { Cart, CartItem, Money, Quantity, ProductReference } from "@/entities/cart.entity";
+import {
+  Cart,
+  CartItem,
+  Money,
+  Quantity,
+  ProductReference as _ProductReference,
+} from "@/entities/cart.entity";
 
 // Mock repositories and dependencies
 const mockCartRepository = {

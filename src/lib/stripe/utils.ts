@@ -8,7 +8,7 @@ import Stripe from "stripe";
 /**
  * Formats amount from cents to decimal
  */
-export function formatStripeAmount(amount: number, currency: string = "eur"): number {
+export function formatStripeAmount(amount: number, _currency: string = "eur"): number {
   return amount / 100;
 }
 
@@ -221,7 +221,7 @@ export function maskCardNumber(cardNumber: string): string {
 /**
  * Converts Stripe error to user-friendly message
  */
-export function formatStripeError(error: Stripe.StripeError): string {
+export function formatStripeError(error: Stripe.StripeRawError): string {
   switch (error.code) {
     case "card_declined":
       return "Votre carte a été refusée. Veuillez vérifier vos informations ou utiliser une autre carte.";
@@ -244,9 +244,7 @@ export function formatStripeError(error: Stripe.StripeError): string {
  * Checks if payment requires additional authentication
  */
 export function requiresAuthentication(paymentIntent: Stripe.PaymentIntent): boolean {
-  return (
-    paymentIntent.status === "requires_action" || paymentIntent.status === "requires_source_action"
-  );
+  return paymentIntent.status === "requires_action";
 }
 
 /**

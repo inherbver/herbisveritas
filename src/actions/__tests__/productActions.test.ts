@@ -181,8 +181,8 @@ describe("productActions", () => {
   });
 
   describe("createProduct", () => {
-    const { withPermissionSafe } = require("@/lib/auth/server-actions-auth");
-    const { revalidateProductPages } = require("@/utils/revalidation");
+    const { withPermissionSafe } = await import("@/lib/auth/server-actions-auth");
+    const { revalidateProductPages } = await import("@/utils/revalidation");
 
     beforeEach(() => {
       // Mock withPermissionSafe to return a function that calls the original with mocked permissions

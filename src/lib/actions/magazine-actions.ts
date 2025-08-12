@@ -66,8 +66,14 @@ function parseTagsAndCategories(tagsStr?: string, categoriesStr?: string) {
 
 // === ARTICLE ACTIONS ===
 
+interface MagazineActionState {
+  success?: boolean;
+  message?: string;
+  error?: string;
+}
+
 export async function createArticleAction(
-  prevState: any,
+  prevState: MagazineActionState,
   formData: FormData
 ): Promise<ActionResult> {
   try {
@@ -163,7 +169,7 @@ export async function createArticleAction(
 }
 
 export async function updateArticleAction(
-  prevState: any,
+  prevState: MagazineActionState,
   formData: FormData
 ): Promise<ActionResult> {
   try {
@@ -276,7 +282,7 @@ export async function updateArticleAction(
 }
 
 export async function deleteArticleAction(
-  prevState: any,
+  prevState: MagazineActionState,
   formData: FormData
 ): Promise<ActionResult> {
   try {
@@ -352,7 +358,7 @@ export async function deleteArticleAction(
 // === PUBLISHING ACTIONS ===
 
 export async function publishArticleAction(
-  prevState: any,
+  prevState: MagazineActionState,
   formData: FormData
 ): Promise<ActionResult> {
   try {
@@ -411,7 +417,7 @@ export async function publishArticleAction(
 }
 
 export async function unpublishArticleAction(
-  prevState: any,
+  prevState: MagazineActionState,
   formData: FormData
 ): Promise<ActionResult> {
   try {
@@ -467,7 +473,10 @@ export async function unpublishArticleAction(
 
 // === INTERACTION ACTIONS ===
 
-export async function likeArticleAction(prevState: any, formData: FormData): Promise<ActionResult> {
+export async function likeArticleAction(
+  prevState: MagazineActionState,
+  formData: FormData
+): Promise<ActionResult> {
   try {
     const articleId = formData.get("id") as string;
     if (!articleId) {
@@ -506,7 +515,7 @@ export async function likeArticleAction(prevState: any, formData: FormData): Pro
 // === REDIRECT ACTIONS ===
 
 export async function createAndRedirectArticleAction(
-  prevState: any,
+  prevState: MagazineActionState,
   formData: FormData
 ): Promise<never> {
   const result = await createArticleAction(prevState, formData);
@@ -521,7 +530,7 @@ export async function createAndRedirectArticleAction(
 }
 
 export async function updateAndRedirectArticleAction(
-  prevState: any,
+  prevState: MagazineActionState,
   formData: FormData
 ): Promise<never> {
   const result = await updateArticleAction(prevState, formData);

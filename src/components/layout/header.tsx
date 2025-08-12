@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export function Header() {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAdminStatus = async () => {

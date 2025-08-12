@@ -12,7 +12,7 @@ import {
   clearCartAction,
 } from "../cartActions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+// import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCart } from "@/lib/cartReader";
 import { getActiveUserId } from "@/utils/authUtils";
 import { revalidateTag } from "next/cache";
@@ -54,7 +54,7 @@ describe("cartActions", () => {
     mockSupabaseAdmin = createSupabaseMock();
 
     (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabase);
-    const { createSupabaseAdminClient } = require("@/lib/supabase/admin");
+    const { createSupabaseAdminClient } = await import("@/lib/supabase/admin");
     createSupabaseAdminClient.mockReturnValue(mockSupabaseAdmin);
 
     // Setup default user

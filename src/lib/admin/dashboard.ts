@@ -24,6 +24,9 @@ export type EventType =
   | "ORDER_STATUS_CHANGED"
   // Profils (événements critiques uniquement)
   | "PROFILE_RECOVERY"
+  | "PROFILE_UPDATED"
+  | "ADDRESS_ADDED"
+  | "ADDRESS_UPDATED"
   // Newsletter
   | "NEWSLETTER_SUBSCRIPTION"
   | "NEWSLETTER_UNSUBSCRIPTION"

@@ -54,11 +54,11 @@ export enum CheckoutErrorCode {
 }
 
 export class CheckoutBusinessError extends BusinessError {
-  public readonly code: CheckoutErrorCode;
+  public readonly checkoutCode: CheckoutErrorCode;
 
-  constructor(code: CheckoutErrorCode, message: string, context?: Record<string, unknown>) {
+  constructor(checkoutCode: CheckoutErrorCode, message: string, context?: Record<string, unknown>) {
     super(message, context);
-    this.code = code;
+    this.checkoutCode = checkoutCode;
     this.name = "CheckoutBusinessError";
   }
 }
@@ -92,7 +92,10 @@ export class CheckoutOrchestrator {
       // Pipeline de validation
       const validationResult = await this.validateCheckoutRequest(params);
       if (!validationResult.success) {
-        return validationResult;
+        return {
+          success: false,
+          error: validationResult.error,
+        } as ActionResult<CheckoutSessionResult>;
       }
 
       // Création session Stripe

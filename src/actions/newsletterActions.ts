@@ -23,7 +23,7 @@ import {
   newsletterSubscriptionSchema,
   newsletterSubscriberUpdateSchema,
   newsletterUnsubscribeSchema,
-  bulkNewsletterOperationSchema,
+  bulkNewsletterOperationSchema as _bulkNewsletterOperationSchema,
 } from "@/lib/validators/newsletter";
 
 /**
@@ -66,7 +66,7 @@ export async function subscribeToNewsletter(
 
     // 5. Insert into database
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("newsletter_subscribers")
       .insert(validation.data)
       .select("email")
@@ -136,7 +136,7 @@ export async function unsubscribeFromNewsletter(email: string): Promise<ActionRe
 
     // 2. Update subscription status
     const supabase = await createSupabaseServerClient();
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("newsletter_subscribers")
       .update({ is_active: false })
       .eq("email", validation.data.email)
@@ -199,7 +199,7 @@ export async function getNewsletterSubscribers(): Promise<ActionResult<Newslette
     }
 
     // 2. Fetch subscribers
-    const { data: subscribers, error } = await (supabase as any)
+    const { data: subscribers, error } = await supabase
       .from("newsletter_subscribers")
       .select("*")
       .order("subscribed_at", { ascending: false });
@@ -248,12 +248,12 @@ export async function getNewsletterStats(): Promise<ActionResult<NewsletterStats
 
     // 2. Get stats using individual queries
     const [totalResult, activeResult, recentResult] = await Promise.all([
-      (supabase as any).from("newsletter_subscribers").select("*", { count: "exact", head: true }),
-      (supabase as any)
+      supabase.from("newsletter_subscribers").select("*", { count: "exact", head: true }),
+      supabase
         .from("newsletter_subscribers")
         .select("*", { count: "exact", head: true })
         .eq("is_active", true),
-      (supabase as any)
+      supabase
         .from("newsletter_subscribers")
         .select("*", { count: "exact", head: true })
         .gte("subscribed_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
@@ -312,7 +312,7 @@ export async function toggleNewsletterSubscriber(
     }
 
     // 3. Update subscriber status
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("newsletter_subscribers")
       .update({ is_active: validation.data.is_active })
       .eq("id", validation.data.id);

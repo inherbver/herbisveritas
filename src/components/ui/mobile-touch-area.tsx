@@ -106,7 +106,7 @@ interface MobileTouchButtonProps extends Omit<MobileTouchAreaProps, "role"> {
 export function MobileTouchButton({
   children,
   className,
-  type = "button",
+  type: _type = "button",
   variant = "default",
   ...props
 }: MobileTouchButtonProps) {

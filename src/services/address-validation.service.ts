@@ -112,7 +112,7 @@ export class AddressValidationService {
     }
 
     // Validation code postal français (exemple)
-    if (address.country === "FR" && address.postal_code) {
+    if (address.country_code === "FR" && address.postal_code) {
       const frPostalRegex = /^[0-9]{5}$/;
       if (!frPostalRegex.test(address.postal_code)) {
         throw new CheckoutBusinessError(
@@ -131,17 +131,17 @@ export class AddressValidationService {
     billingAddress: Address,
     allowedCountries: string[]
   ): void {
-    if (!allowedCountries.includes(shippingAddress.country)) {
+    if (!allowedCountries.includes(shippingAddress.country_code)) {
       throw new CheckoutBusinessError(
         CheckoutErrorCode.INVALID_ADDRESS,
-        `Livraison non disponible pour le pays: ${shippingAddress.country}`
+        `Livraison non disponible pour le pays: ${shippingAddress.country_code}`
       );
     }
 
-    if (!allowedCountries.includes(billingAddress.country)) {
+    if (!allowedCountries.includes(billingAddress.country_code)) {
       throw new CheckoutBusinessError(
         CheckoutErrorCode.INVALID_ADDRESS,
-        `Facturation non disponible pour le pays: ${billingAddress.country}`
+        `Facturation non disponible pour le pays: ${billingAddress.country_code}`
       );
     }
   }

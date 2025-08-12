@@ -43,7 +43,10 @@ export const createSupabaseMock = (overrides: Record<string, any> = {}) => {
 
   // Make ALL chainable methods return the mock itself for proper chaining
   Object.keys(chainableMethods).forEach((method) => {
-    mock[method].mockReturnValue(mock);
+    const mockMethod = mock[method as keyof typeof mock];
+    if (typeof mockMethod === "object" && "mockReturnValue" in mockMethod) {
+      (mockMethod as any).mockReturnValue(mock);
+    }
   });
 
   return mock;

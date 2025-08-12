@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { z } from "zod";
+// import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,7 +90,7 @@ const AddressForm: FC<AddressFormProps> = ({
     },
   });
 
-  const { control, handleSubmit, watch, setValue, setError } = form;
+  const { control, handleSubmit, watch, setValue, setError: _setError } = form;
 
   const countryList = countries[locale.toUpperCase() as keyof typeof countries] || countries.EN;
   const addressLine1Value = watch("address_line1");

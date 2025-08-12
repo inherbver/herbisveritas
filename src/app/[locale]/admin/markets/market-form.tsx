@@ -71,7 +71,7 @@ export function MarketForm({ market, mode = "create" }: MarketFormProps) {
         } else {
           setError(result.error || null);
         }
-      } catch (err) {
+      } catch (_err) {
         setError("Une erreur inattendue s'est produite");
       }
     });

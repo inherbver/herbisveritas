@@ -5,7 +5,7 @@
 import { createStripeCheckoutSession } from "../stripeActions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCart } from "@/lib/cartReader";
-import { stripe } from "@/lib/stripe";
+import { stripe as _stripe } from "@/lib/stripe";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { Address } from "@/types";
@@ -48,7 +48,7 @@ const mockSupabaseClient = {
 };
 
 // Get the mocked stripe instance
-const mockStripe = require("@/lib/stripe").stripe;
+const { stripe: mockStripe } = await import("@/lib/stripe");
 
 const mockHeaders = {
   get: jest.fn(),

@@ -13,6 +13,7 @@ import {
   type CartActionResult,
 } from "@/lib/cart-helpers";
 import { getCart } from "@/lib/cartReader";
+import { type Product } from "@/lib/supabase/types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logEvent } from "@/lib/admin/event-logger";
@@ -191,10 +192,10 @@ export async function removeItemFromCart(
         activeUserId,
         {
           product_id: cartItem.product_id,
-          product_name: (cartItem.product as any)?.name || "Produit inconnu",
-          product_price: (cartItem.product as any)?.price || 0,
+          product_name: (cartItem.product as Product)?.name || "Produit inconnu",
+          product_price: (cartItem.product as Product)?.price || 0,
           quantity: cartItem.quantity,
-          message: `Suppression panier: ${(cartItem.product as any)?.name || "produit"}`,
+          message: `Suppression panier: ${(cartItem.product as Product)?.name || "produit"}`,
         },
         "INFO"
       );
