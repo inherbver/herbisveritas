@@ -74,7 +74,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, AppPermission[]> = {
     "content:unpublish",
   ],
 
-  // Admin : contrôle total sauf suppression d'utilisateurs
+  // Admin : contrôle total incluant suppression d'utilisateurs
   admin: [
     "admin:access",
     "admin:read",
@@ -92,6 +92,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, AppPermission[]> = {
     "profile:update:own",
     "users:read:all",
     "users:update:role",
+    "users:delete",
     "users:manage",
     "content:read",
     "content:create",

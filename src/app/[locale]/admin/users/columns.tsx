@@ -11,8 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { UpdateRoleDialog } from "./update-role-dialog";
+import { DeleteUserDialog } from "./delete-user-dialog";
+import { UserRoleBadge } from "./components/user-role-badge";
+import { UserStatusBadge } from "./components/user-status-badge";
 
 export const columns: ColumnDef<UserForAdminPanel>[] = [
   {
@@ -38,8 +40,15 @@ export const columns: ColumnDef<UserForAdminPanel>[] = [
     header: "Rôle",
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
-      const variant = role === "admin" ? "destructive" : "default";
-      return <Badge variant={variant}>{role}</Badge>;
+      return <UserRoleBadge role={role} />;
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Statut",
+    cell: ({ row }) => {
+      const status = row.original.status || "active";
+      return <UserStatusBadge status={status} />;
     },
   },
   {
@@ -83,7 +92,14 @@ export const columns: ColumnDef<UserForAdminPanel>[] = [
                 Modifier le rôle
               </DropdownMenuItem>
             </UpdateRoleDialog>
-            <DropdownMenuItem className="text-red-600">Supprimer l'utilisateur</DropdownMenuItem>
+            <DeleteUserDialog user={user}>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                className="text-red-600 focus:text-red-600"
+              >
+                Supprimer l'utilisateur
+              </DropdownMenuItem>
+            </DeleteUserDialog>
           </DropdownMenuContent>
         </DropdownMenu>
       );
