@@ -1,157 +1,270 @@
-# Development Guide
+# HerbisVeritas Development Guide
+
+This comprehensive guide covers the complete development workflow for HerbisVeritas, an e-commerce platform built with Next.js 15, Supabase, and modern web technologies.
 
 ## Prerequisites
 
-- Node.js 18+
-- npm or yarn
-- Git
-- PostgreSQL (via Supabase)
-- Stripe account (for payments)
+### System Requirements
 
-## Initial Setup
+- **Node.js 20+** (LTS recommended)
+- **npm 9+** (included with Node.js)
+- **Git** for version control
+- **VS Code** (recommended IDE with extensions)
 
-### 1. Clone Repository
+### External Services
+
+- **Supabase account** (PostgreSQL database, Auth, Storage)
+- **Stripe account** (payment processing)
+- **Browser** with development tools
+
+## Quick Start
+
+### 1. Clone & Setup
 
 ```bash
+# Clone repository
 git clone https://github.com/inherbver/herbisveritas.git
 cd herbisveritas
-```
 
-### 2. Install Dependencies
-
-```bash
+# Install dependencies
 npm install
+
+# Setup Git hooks
+npm run prepare
 ```
 
-### 3. Environment Configuration
+### 2. Environment Configuration
 
-Create `.env.local` from the template:
+Create `.env.local` from template:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Required environment variables:
+**Required environment variables:**
 
 ```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_key
+# ===========================================
+# SUPABASE CONFIGURATION
+# ===========================================
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 
-# Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_public_key
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_webhook_secret
+# ===========================================
+# STRIPE CONFIGURATION
+# ===========================================
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Application
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+# ===========================================
+# APPLICATION CONFIGURATION
+# ===========================================
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+ADMIN_PRINCIPAL_ID=your-admin-user-uuid
+INTERNAL_FUNCTION_SECRET=secure-random-string
 ```
 
-### 4. Database Setup
-
-Run migrations:
+### 3. Start Development
 
 ```bash
-npm run supabase:migrate
-```
-
-Seed development data (optional):
-
-```bash
-npm run seed:db
-```
-
-### 5. Start Development Server
-
-```bash
+# Start development server (with Turbo)
 npm run dev
+
+# Visit application
+open http://localhost:3000
 ```
 
-Visit [http://localhost:3000](http://localhost:3000)
+## Architecture Overview
+
+### Technology Stack
+
+- **Framework**: Next.js 15 with App Router and Server Components
+- **Backend**: Supabase (PostgreSQL, Authentication, Storage, RLS)
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **State Management**: Zustand for client-side state
+- **Validation**: Zod schemas with React Hook Form
+- **Internationalization**: next-intl (French, English, German, Spanish)
+- **Payments**: Stripe integration with webhooks
+- **Testing**: Jest, React Testing Library, MSW, Playwright
+- **TypeScript**: Strict mode with end-to-end type safety
 
 ## Development Workflow
 
+### Available Scripts
+
+```bash
+# Development
+npm run dev                    # Start development server with Turbo
+npm run build                  # Build production bundle
+npm start                      # Start production server
+
+# Code Quality
+npm run lint                   # ESLint with TypeScript-ESLint
+npm run test                   # Jest unit tests
+npm run typecheck             # TypeScript compilation check
+
+# Admin Tools
+npm run audit-roles           # Audit admin roles security
+npm run fix-admin-role        # Fix admin role issues
+npm run migrate:markets-partners  # Data migration script
+```
+
 ### Code Style Guidelines
 
-#### TypeScript
+#### TypeScript Configuration
 
-- Strict mode enabled
-- No `any` types - use proper interfaces
-- Prefer type inference where possible
+- **Strict mode enabled** (`strict: true`)
+- **No `any` types** - Always define proper interfaces/types
+- **Unused variables** - Remove completely or prefix with `_`
+- **Error handling** - Use caught errors or prefix with `_error`
+- **Target ES2017** with modern browser support
 
-#### Components
+#### Component Architecture
 
-- Server Components by default
-- Add `"use client"` only when needed
-- Co-locate component files with their styles/tests
+- **Server Components by default** (Next.js 15 App Router)
+- Add `"use client"` directive only when needed for interactivity
+- **Co-location**: Place tests in `__tests__` directories
+- **File organization**: Group by domain/feature, not by type
 
 #### Naming Conventions
 
-- Files: `kebab-case.tsx`
-- Components: `PascalCase`
-- Functions/Variables: `camelCase`
-- Constants: `SCREAMING_SNAKE_CASE`
-- Server Actions: suffix with `Action`
+- **Files**: `kebab-case.tsx`
+- **Components**: `PascalCase`
+- **Functions/Variables**: `camelCase`
+- **Constants**: `SCREAMING_SNAKE_CASE`
+- **Server Actions**: suffix with `Action`
+- **Types/Interfaces**: `PascalCase` with descriptive names
 
-### Project Structure
+### Project Architecture
 
 ```
 src/
-├── app/[locale]/       # Routes (Server Components)
-├── components/
-│   ├── common/        # Shared components
-│   ├── features/      # Feature-specific
-│   ├── forms/         # Form components
-│   └── ui/            # Base UI components
-├── actions/           # Server Actions
-├── services/          # Business logic
-├── lib/              # Utilities
-├── stores/           # Client state
-└── types/            # TypeScript types
+├── app/[locale]/              # Next.js 15 App Router with i18n
+│   ├── admin/                 # Protected admin routes
+│   ├── auth/                  # Authentication pages
+│   ├── shop/                  # E-commerce pages
+│   └── api/                   # API routes & webhooks
+├── components/                # React components
+│   ├── auth/                  # Authentication & authorization
+│   ├── common/                # Shared reusable components
+│   ├── domain/                # Domain-specific components
+│   ├── features/              # Feature modules
+│   ├── forms/                 # Form components
+│   ├── layout/                # Layout and navigation
+│   └── ui/                    # shadcn/ui base components
+├── actions/                   # Server Actions for mutations
+├── lib/                       # Core utilities and services
+│   ├── auth/                  # Authentication utilities
+│   ├── supabase/              # Database clients & queries
+│   ├── stripe/                # Payment processing
+│   ├── storage/               # File upload system
+│   └── validators/            # Zod validation schemas
+├── services/                  # Business logic services
+├── stores/                    # Zustand state management
+├── types/                     # TypeScript type definitions
+├── hooks/                     # Custom React hooks
+├── i18n/                      # Internationalization
+└── mocks/                     # MSW test mocks
 ```
 
-### Creating Components
+#### Key Architecture Patterns
 
-#### Server Component (default)
+1. **Server-First**: Leverage Server Components for data fetching
+2. **Progressive Enhancement**: Add interactivity only where needed
+3. **Type Safety**: End-to-end TypeScript with Supabase types
+4. **Domain-Driven**: Organize code by business domains
+5. **Security-First**: RLS policies, role-based authorization
+
+### Component Development
+
+#### Server Component Pattern (Default)
 
 ```typescript
 // src/app/[locale]/products/page.tsx
-export default async function ProductsPage() {
+import { Suspense } from "react";
+import { ProductGrid } from "@/components/features/shop/product-grid";
+import { getProducts } from "@/lib/supabase/queries/products";
+
+export default async function ProductsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // Await params/searchParams in Next.js 15
+  const { locale } = await params;
+  const search = await searchParams;
+
   const products = await getProducts();
 
   return (
-    <div>
-      {products.map(product => (
-        <ProductCard key={product.id} product={product} />
-      ))}
-    </div>
+    <main className="container mx-auto px-4 py-8">
+      <Suspense fallback={<div>Loading products...</div>}>
+        <ProductGrid products={products} />
+      </Suspense>
+    </main>
   );
 }
 ```
 
-#### Client Component
+#### Client Component Pattern
 
 ```typescript
 // src/components/features/shop/add-to-cart.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { addToCartAction } from "@/actions/cartActions";
 
-export function AddToCart({ productId }: { productId: string }) {
+interface AddToCartProps {
+  productId: string;
+  maxQuantity: number;
+}
+
+export function AddToCart({ productId, maxQuantity }: AddToCartProps) {
   const [quantity, setQuantity] = useState(1);
+  const [isPending, startTransition] = useTransition();
+  const t = useTranslations("CartDisplay");
+
+  const handleAddToCart = () => {
+    startTransition(async () => {
+      const result = await addToCartAction({ productId, quantity });
+      if (result.success) {
+        toast.success(t("itemAdded"));
+      } else {
+        toast.error(result.error || t("addError"));
+      }
+    });
+  };
 
   return (
-    <button onClick={() => addToCart(productId, quantity)}>
-      Add to Cart
-    </button>
+    <div className="flex items-center gap-2">
+      <QuantityInput
+        value={quantity}
+        onChange={setQuantity}
+        max={maxQuantity}
+      />
+      <Button
+        onClick={handleAddToCart}
+        disabled={isPending}
+        className="w-full"
+      >
+        {isPending ? t("adding") : t("addToCart")}
+      </Button>
+    </div>
   );
 }
 ```
 
-### Server Actions
+### Server Actions Pattern
 
-Create mutations with Server Actions:
+Server Actions handle all server-side mutations with validation, authorization, and error handling:
 
 ```typescript
 // src/actions/productActions.ts
@@ -159,30 +272,95 @@ Create mutations with Server Actions:
 
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { checkAdminRole } from "@/lib/auth/admin-service";
+import { uploadProductImageCore } from "@/lib/storage/image-upload";
+import { ActionResult } from "@/lib/core/result";
+import { logAdminEvent } from "@/lib/admin/event-logger";
 
 const CreateProductSchema = z.object({
-  name: z.string().min(3),
-  price: z.number().positive(),
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  price: z.number().positive("Price must be positive"),
+  description: z.string().min(10, "Description too short"),
+  categoryId: z.string().uuid("Invalid category"),
+  image: z.instanceof(File).optional(),
 });
 
-export async function createProductAction(formData: FormData) {
-  // Validate input
-  const result = CreateProductSchema.safeParse({
-    name: formData.get("name"),
-    price: Number(formData.get("price")),
-  });
+export async function createProductAction(
+  formData: FormData
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    // Authorization check
+    const adminCheck = await checkAdminRole();
+    if (!adminCheck.success) {
+      return { success: false, error: "Unauthorized" };
+    }
 
-  if (!result.success) {
-    return { error: "Invalid input" };
+    // Input validation
+    const rawData = {
+      name: formData.get("name") as string,
+      price: Number(formData.get("price")),
+      description: formData.get("description") as string,
+      categoryId: formData.get("categoryId") as string,
+      image: formData.get("image") as File | null,
+    };
+
+    const validation = CreateProductSchema.safeParse(rawData);
+    if (!validation.success) {
+      return {
+        success: false,
+        error: validation.error.issues.map((i) => i.message).join(", "),
+      };
+    }
+
+    const data = validation.data;
+    const supabase = await createSupabaseServerClient();
+
+    // Handle image upload
+    let imageUrl: string | null = null;
+    if (data.image) {
+      const uploadResult = await uploadProductImageCore(data.image);
+      if (!uploadResult.success) {
+        return { success: false, error: "Image upload failed" };
+      }
+      imageUrl = uploadResult.data.url;
+    }
+
+    // Create product in database
+    const { data: product, error: dbError } = await supabase
+      .from("products")
+      .insert({
+        name: data.name,
+        price: data.price,
+        description: data.description,
+        category_id: data.categoryId,
+        image_url: imageUrl,
+        created_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (dbError) {
+      return { success: false, error: "Database error" };
+    }
+
+    // Log admin activity
+    await logAdminEvent({
+      action: "product_created",
+      resource_type: "product",
+      resource_id: product.id,
+      metadata: { name: data.name, price: data.price },
+    });
+
+    // Revalidate cache
+    revalidateTag("products");
+    revalidateTag(`product-${product.id}`);
+
+    return { success: true, data: { id: product.id } };
+  } catch (error) {
+    console.error("Create product error:", error);
+    return { success: false, error: "Unexpected error" };
   }
-
-  // Create product
-  const product = await productService.create(result.data);
-
-  // Invalidate cache
-  revalidateTag("products");
-
-  return { success: true, data: product };
 }
 ```
 

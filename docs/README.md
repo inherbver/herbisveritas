@@ -2,14 +2,15 @@
 
 ## Project Documentation
 
-This directory contains the complete technical documentation for HerbisVeritas.
+This directory contains the complete technical documentation for HerbisVeritas - a comprehensive e-commerce platform for natural cosmetics built with Next.js 15 and Supabase.
 
 ### Available Documentation
 
-- **[Architecture](./ARCHITECTURE.md)** - System design, patterns, and technical decisions
+- **[Architecture](./ARCHITECTURE.md)** - System design, component structure, and technical decisions
 - **[Development Guide](./DEVELOPMENT.md)** - Setup instructions, workflow, and coding standards
 - **[API Reference](./API.md)** - Server Actions documentation and usage examples
 - **[Database Schema](./DATABASE.md)** - Complete database structure, RLS policies, and queries
+- **[Test Strategy](./TEST_STRATEGY.md)** - Testing approach and implementation plan
 
 ### Quick Links
 
@@ -17,29 +18,34 @@ This directory contains the complete technical documentation for HerbisVeritas.
 
 - [Initial Setup](./DEVELOPMENT.md#initial-setup) - Get started with the project
 - [Code Style Guidelines](./DEVELOPMENT.md#code-style-guidelines) - Coding conventions
-- [Common Tasks](./DEVELOPMENT.md#common-tasks) - Frequent development operations
-- [Testing](./DEVELOPMENT.md#testing) - Test suite documentation
+- [Component Development](./DEVELOPMENT.md#creating-components) - Server/Client component patterns
+- [Server Actions](./DEVELOPMENT.md#server-actions) - API mutations and validations
+- [Testing](./TEST_STRATEGY.md) - Comprehensive test suite strategy
 
 #### For System Architects
 
 - [System Architecture](./ARCHITECTURE.md#system-architecture) - High-level overview
+- [Component Structure](./ARCHITECTURE.md#directory-structure) - Code organization patterns
 - [Data Flow Patterns](./ARCHITECTURE.md#data-flow-patterns) - Request/response flows
+- [Authentication Architecture](./ARCHITECTURE.md#authentication-architecture) - Security implementation
 - [Performance Optimizations](./ARCHITECTURE.md#performance-optimizations) - Caching and optimization strategies
-- [Security Measures](./ARCHITECTURE.md#security-measures) - Authentication and data protection
 
 #### For API Integration
 
-- [Authentication API](./API.md#authentication-api) - User authentication endpoints
-- [Shopping Cart API](./API.md#shopping-cart-api) - Cart management
-- [Order Processing API](./API.md#order-processing-api) - Order creation and management
-- [Payment Processing API](./API.md#payment-processing-api) - Stripe integration
+- [Authentication API](./API.md#authentication-api) - User authentication and session management
+- [E-commerce API](./API.md#e-commerce-functionality) - Product catalog and shopping cart
+- [Order Management API](./API.md#order-management-api) - Order processing and fulfillment
+- [Admin Operations API](./API.md#admin-operations-api) - Administrative functions
+- [Newsletter API](./API.md#newsletter-api) - Newsletter subscription management
+- [Magazine API](./API.md#magazine-api) - Editorial content management
 
 #### For Database Management
 
 - [Core Tables](./DATABASE.md#core-tables) - Main database entities
+- [Advanced Features](./DATABASE.md#advanced-features) - Newsletter, magazines, markets, partnerships
 - [Row Level Security](./DATABASE.md#row-level-security-rls) - Security policies
-- [Maintenance](./DATABASE.md#maintenance) - Cleanup and optimization
-- [Common Queries](./DATABASE.md#common-queries) - Useful SQL examples
+- [Functions and Triggers](./DATABASE.md#functions-and-triggers) - Database automation
+- [Performance Optimization](./DATABASE.md#performance-optimization) - Indexes and monitoring
 
 ## Documentation Standards
 
@@ -75,17 +81,23 @@ When updating documentation:
 
 ### External Documentation
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Stripe Documentation](https://stripe.com/docs)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [shadcn/ui](https://ui.shadcn.com)
+- [Next.js 15 Documentation](https://nextjs.org/docs) - App Router, Server Components, Server Actions
+- [Supabase Documentation](https://supabase.com/docs) - Database, Authentication, RLS
+- [Stripe Documentation](https://stripe.com/docs) - Payment processing and webhooks
+- [Tailwind CSS](https://tailwindcss.com/docs) - Utility-first CSS framework
+- [shadcn/ui](https://ui.shadcn.com) - Reusable component library
+- [React Hook Form](https://react-hook-form.com/) - Form handling and validation
+- [Zod](https://zod.dev/) - TypeScript schema validation
+- [Zustand](https://zustand-demo.pmnd.rs/) - State management
+- [Next-Intl](https://next-intl-docs.vercel.app/) - Internationalization
 
 ### Internal Resources
 
-- [CLAUDE.md](../CLAUDE.md) - AI assistant guidelines
-- [README.md](../README.md) - Project overview
-- [package.json](../package.json) - Dependencies and scripts
+- [CLAUDE.md](../CLAUDE.md) - AI assistant guidelines and project patterns
+- [README.md](../README.md) - Project overview and quick start guide
+- [package.json](../package.json) - Dependencies, scripts, and configurations
+- [Migration Files](../supabase/migrations/) - Database schema evolution
+- [Test Files](../src/**/__tests__/) - Unit and integration tests
 
 ## Support
 
