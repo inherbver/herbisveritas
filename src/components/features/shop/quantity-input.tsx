@@ -58,8 +58,8 @@ export function QuantityInput({
       <Button
         asChild
         variant="outline"
-        size="icon"
-        className="h-8 w-8 shrink-0 rounded-r-none" // Adjusted for seamless look
+        size="mobile-icon"
+        className="h-8 w-8 shrink-0 rounded-r-none md:h-8 md:w-8" // Adjusted for seamless look
         onClick={handleDecrement}
         disabled={value <= min}
         aria-label={t("decreaseQuantity")}
@@ -72,20 +72,21 @@ export function QuantityInput({
         id={id}
         name="quantity" // Add name attribute for form submission
         type="number"
+        inputMode="numeric" // Optimise le clavier mobile pour la saisie numérique
         min={min}
         max={max}
         value={value}
         onChange={handleChange}
         onBlur={handleBlur} // Handle invalid input on blur
-        className="h-8 w-14 rounded-none border-x-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0" // Remove horizontal borders & focus ring
+        className="h-8 min-h-[44px] w-14 rounded-none border-x-0 text-center focus-visible:ring-0 focus-visible:ring-offset-0 md:h-8 md:min-h-[32px]" // Remove horizontal borders & focus ring, mobile touch-friendly
         aria-label={t("quantity")}
       />
       {/* Use asChild to let Button render a motion.button */}
       <Button
         asChild
         variant="outline"
-        size="icon"
-        className="h-8 w-8 shrink-0 rounded-l-none" // Adjusted for seamless look
+        size="mobile-icon"
+        className="h-8 w-8 shrink-0 rounded-l-none md:h-8 md:w-8" // Adjusted for seamless look
         onClick={handleIncrement}
         disabled={value >= max}
         aria-label={t("increaseQuantity")}

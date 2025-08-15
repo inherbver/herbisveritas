@@ -205,9 +205,12 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
   }
 
   return (
-    <section aria-labelledby="cart-heading" className="flex h-full flex-col">
+    <section
+      aria-labelledby="cart-heading"
+      className="flex h-full max-h-[80vh] flex-col md:max-h-full"
+    >
       <header className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6">
-        <h2 id="cart-heading" className="text-2xl font-semibold">
+        <h2 id="cart-heading" className="text-lg font-semibold md:text-2xl">
           {t("yourCart")} ({totalItems})
         </h2>
       </header>
@@ -263,8 +266,8 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                     >
                       <Button
                         variant="outline"
-                        size="icon"
-                        className="min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95 md:h-8 md:w-8"
+                        size="mobile-icon"
+                        className="md:h-8 md:w-8"
                         onClick={() => {
                           if (item.id) handleUpdateItemQuantity(item.id, item.quantity - 1);
                         }}
@@ -277,8 +280,8 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                       </output>
                       <Button
                         variant="outline"
-                        size="icon"
-                        className="min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95 md:h-8 md:w-8"
+                        size="mobile-icon"
+                        className="md:h-8 md:w-8"
                         onClick={() => {
                           if (item.id) handleUpdateItemQuantity(item.id, item.quantity + 1);
                         }}
@@ -291,7 +294,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                     <section className="flex">
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="mobile-touch"
                         onClick={() => {
                           if (item.id) {
                             handleRemoveItem(item.id);
@@ -299,7 +302,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                             toast.error("Impossible de supprimer l'article : ID manquant.");
                           }
                         }}
-                        className="hover:text-destructive/80 min-h-[44px] touch-manipulation font-medium text-destructive transition-transform duration-200 active:scale-95 md:min-h-[36px]"
+                        className="hover:text-destructive/80 font-medium text-destructive md:h-9"
                         aria-label={t("removeItem", { itemName: item.name })}
                       >
                         <XIcon className="mr-1 h-4 w-4" />
