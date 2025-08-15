@@ -30,6 +30,10 @@ const buttonVariants = cva(
         sm: "h-9 px-3 has-[>svg]:px-2.5",
         lg: "h-11 px-8 has-[>svg]:px-6",
         icon: "size-10",
+        "mobile-touch":
+          "min-h-[44px] min-w-[44px] px-4 py-2 touch-manipulation transition-transform duration-200 active:scale-95 md:h-10",
+        "mobile-icon":
+          "min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95 md:size-10",
       },
     },
     defaultVariants: {
