@@ -60,17 +60,25 @@ const dashboardItems: DashboardItem[] = [
   {
     href: "/admin/orders",
     label: "Commandes",
-    description: "Bientôt disponible",
+    description: "Gestion des commandes",
     icon: ShoppingCart,
-    color: "text-gray-400 bg-gray-100",
+    color: "text-emerald-600 bg-emerald-100",
   },
+  // Performance monitoring masqué temporairement
+  // {
+  //   href: "/admin/performance",
+  //   label: "Performance",
+  //   description: "Monitoring temps réel",
+  //   icon: Activity,
+  //   color: "text-red-600 bg-red-100",
+  // },
 ];
 
 export function MobileDashboardGrid() {
   return (
     <div className="grid grid-cols-2 gap-4 md:hidden">
       {dashboardItems.map((item) => {
-        const isDisabled = item.href === "/admin/orders";
+        const isDisabled = false; // item.href === "/admin/orders";
 
         return (
           <Link
@@ -108,7 +116,7 @@ export function DesktopDashboardGrid() {
   return (
     <div className="hidden gap-4 md:grid md:grid-cols-3 lg:grid-cols-4">
       {dashboardItems.map((item) => {
-        const isDisabled = item.href === "/admin/orders";
+        const isDisabled = false; // item.href === "/admin/orders";
 
         return (
           <Link

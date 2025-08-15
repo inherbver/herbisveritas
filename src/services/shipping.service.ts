@@ -2,7 +2,7 @@
  * Service pour la gestion de la livraison et des points de retrait
  */
 
-import { createSupabaseServerClient, createAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
 import { ErrorUtils } from "@/lib/core/errors";
@@ -159,7 +159,7 @@ export class ShippingService {
     const context = LogUtils.createUserActionContext("system", "update_shipping_info", "shipping");
 
     try {
-      const adminClient = createAdminClient();
+      const supabase = await createSupabaseServerClient();
 
       // Préparer les données de mise à jour
       const updateData: any = {};
@@ -184,7 +184,7 @@ export class ShippingService {
         updateData.status = "delivered";
       }
 
-      const { error } = await adminClient.from("orders").update(updateData).eq("id", orderId);
+      const { error } = await supabase.from("orders").update(updateData).eq("id", orderId);
 
       if (error) {
         LogUtils.logOperationError("update_shipping_info", error, context);

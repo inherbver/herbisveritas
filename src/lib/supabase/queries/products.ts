@@ -1,8 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Locale } from "@/i18n-config";
 import { type Database } from "@/types/supabase";
-import { cache } from "react";
 import { ProductFilters } from "@/types/product-filters";
+import { cacheSupabaseQuery, CACHE_CONFIG } from "@/lib/cache/cache-service";
 
 // --- NEW TYPE for getAllProducts query result ---
 // Includes only fields needed for the shop page grid + translations
@@ -45,9 +45,9 @@ export interface ProductForDetailQuery {
     | null;
 }
 
-// --- NEW FUNCTION: getAllProducts ---
+// --- CACHED FUNCTION: getAllProducts ---
 // Fetches all products with their basic details and translations for the shop grid
-export async function getAllProducts(locale: Locale): Promise<ProductForShopQuery[]> {
+async function _getAllProducts(locale: Locale): Promise<ProductForShopQuery[]> {
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
@@ -87,54 +87,66 @@ export async function getAllProducts(locale: Locale): Promise<ProductForShopQuer
   return data as ProductForShopQuery[];
 }
 
+// Export cached version
+export const getAllProducts = cacheSupabaseQuery(
+  _getAllProducts,
+  { type: "products", identifier: "shop-list" },
+  CACHE_CONFIG.PRODUCTS_LIST
+);
+
 // Define the specific type for the getProductBySlug query result
 type ProductDataFromQuery = Database["public"]["Tables"]["products"]["Row"] & {
   product_translations: Database["public"]["Tables"]["product_translations"]["Row"][]; // It's an array!
 };
 
-export const getProductBySlug = cache(
-  async (slug: string, locale: Locale): Promise<ProductDataFromQuery | null> => {
-    const supabase = await createSupabaseServerClient();
+// Cached version using our cache service
+async function _getProductBySlug(slug: string, locale: Locale): Promise<ProductDataFromQuery | null> {
+  const supabase = await createSupabaseServerClient();
 
-    const { data, error } = await supabase
-      .from("products")
-      .select(
-        `
-        id,
-        slug,
-        price,
-        image_url,
-        inci_list,
-        unit,
-        product_translations!left(
-          locale,
-          name,
-          short_description,
-          description_long,
-          usage_instructions,
-          properties,
-          composition_text
-        )
+  const { data, error } = await supabase
+    .from("products")
+    .select(
       `
+      id,
+      slug,
+      price,
+      image_url,
+      inci_list,
+      unit,
+      product_translations!left(
+        locale,
+        name,
+        short_description,
+        description_long,
+        usage_instructions,
+        properties,
+        composition_text
       )
-      .eq("slug", slug)
-      .eq("is_active", true) // ✅ Filtrer uniquement les produits actifs
-      // The filter is now on the left join, not a hard requirement on the query
-      .or(`locale.eq.${locale},locale.is.null`, {
-        foreignTable: "product_translations",
-      })
-      .maybeSingle<ProductDataFromQuery>();
+    `
+    )
+    .eq("slug", slug)
+    .eq("is_active", true) // ✅ Filtrer uniquement les produits actifs
+    // The filter is now on the left join, not a hard requirement on the query
+    .or(`locale.eq.${locale},locale.is.null`, {
+      foreignTable: "product_translations",
+    })
+    .maybeSingle<ProductDataFromQuery>();
 
-    if (error) {
-      // Do not log PGRST116 as an error, it's an expected 'not found' case
-      if (error.code !== "PGRST116") {
-        console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);
-      }
-      return null;
+  if (error) {
+    // Do not log PGRST116 as an error, it's an expected 'not found' case
+    if (error.code !== "PGRST116") {
+      console.error(`Error fetching product by slug (${slug}, ${locale}):`, error);
     }
-
-    return data;
+    return null;
   }
+
+  return data;
+}
+
+export const getProductBySlug = cacheSupabaseQuery(
+  _getProductBySlug,
+  { type: "products", identifier: "detail" },
+  CACHE_CONFIG.PRODUCT_DETAIL
 );
 
 // --- NEW TYPE for Admin Panel ---
@@ -154,84 +166,152 @@ async function supabaseCallWithTimeout<T>(
   return Promise.race([promise, timeoutPromise]);
 }
 
-// --- NEW FUNCTION for Admin Panel ---
+// Pagination options for admin queries
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
+// Response with pagination metadata
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+// --- OPTIMIZED FUNCTION for Admin Panel with Pagination ---
 export async function getProductsForAdmin(
-  filters?: ProductFilters
-): Promise<ProductWithTranslations[]> {
+  filters?: ProductFilters,
+  pagination?: PaginationOptions
+): Promise<PaginatedResponse<ProductWithTranslations>> {
   try {
     const supabase = await createSupabaseServerClient();
+    
+    // Default pagination
+    const page = pagination?.page || 1;
+    const limit = Math.min(pagination?.limit || 25, 100); // Cap at 100 for performance
+    const offset = (page - 1) * limit;
+    const sortBy = pagination?.sortBy || 'created_at';
+    const sortDirection = pagination?.sortDirection || 'desc';
 
-    let query = supabase.from("products").select(`
-        *,
-        product_translations (*)
-      `);
+    // Build base query with optimized select
+    let baseQuery = supabase.from("products").select(`
+        id,
+        slug,
+        price,
+        image_url,
+        stock,
+        is_new,
+        is_on_promotion,
+        is_active,
+        status,
+        category,
+        labels,
+        unit,
+        created_at,
+        updated_at,
+        product_translations!left (
+          locale,
+          name,
+          short_description
+        )
+      `, { count: 'exact' });
 
-    // Appliquer les filtres si fournis
+    // Apply filters if provided
     if (filters) {
-      // Filtrage par status
       if (filters.status.length > 0) {
-        query = query.in("status", filters.status);
+        baseQuery = baseQuery.in("status", filters.status);
       }
 
-      // Filtrage par catégories
       if (filters.categories.length > 0) {
-        query = query.in("category", filters.categories);
+        baseQuery = baseQuery.in("category", filters.categories);
       }
 
-      // Filtrage par recherche textuelle
       if (filters.search.trim()) {
-        query = query.ilike("name", `%${filters.search.trim()}%`);
+        // Use full-text search on translations for better performance
+        baseQuery = baseQuery.or(
+          `slug.ilike.%${filters.search.trim()}%,product_translations.name.ilike.%${filters.search.trim()}%`
+        );
       }
 
-      // Filtrage par prix
       if (filters.priceRange) {
-        query = query.gte("price", filters.priceRange.min);
+        baseQuery = baseQuery.gte("price", filters.priceRange.min);
         if (filters.priceRange.max !== Infinity) {
-          query = query.lte("price", filters.priceRange.max);
+          baseQuery = baseQuery.lte("price", filters.priceRange.max);
         }
       }
 
-      // Filtrage par stock
       if (filters.inStock === true) {
-        query = query.gt("stock", 0);
+        baseQuery = baseQuery.gt("stock", 0);
       } else if (filters.inStock === false) {
-        query = query.eq("stock", 0);
+        baseQuery = baseQuery.eq("stock", 0);
       }
 
-      // Filtrage par tags/labels
       if (filters.tags.length > 0) {
-        query = query.overlaps("labels", filters.tags);
+        baseQuery = baseQuery.overlaps("labels", filters.tags);
       }
     }
 
-    const result = await supabaseCallWithTimeout(Promise.resolve(query), 8000);
-    const { data, error } = result;
+    // Add sorting and pagination
+    const query = baseQuery
+      .order(sortBy, { ascending: sortDirection === 'asc' })
+      .range(offset, offset + limit - 1);
+
+    const { data, error, count } = await supabaseCallWithTimeout(
+      Promise.resolve(query), 
+      6000 // Reduced timeout for better UX
+    );
 
     if (error) {
       console.error("Error fetching products for admin:", error.message);
-      return [];
+      return {
+        data: [],
+        pagination: {
+          page: 1,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false
+        }
+      };
     }
 
-    return (data as ProductWithTranslations[]) || [];
-  } catch (e) {
-    if (e instanceof Error) {
-      if (e.message === "Supabase_Query_Timeout") {
-        console.warn("Supabase query timeout in getProductsForAdmin. Returning empty array.");
-        return [];
-      } else if (
-        e.message.includes("fetch") ||
-        e.message.includes("network") ||
-        e.message.includes("Failed to fetch")
-      ) {
-        console.warn("Network error during getProductsForAdmin. Returning empty array:", e.message);
-        return [];
-      } else {
-        console.error("Unexpected error in getProductsForAdmin:", e);
-        return [];
+    const total = count || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: (data as ProductWithTranslations[]) || [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
       }
-    }
-    console.error("Unknown error in getProductsForAdmin:", e);
-    return [];
+    };
+  } catch (e) {
+    console.error("Error in getProductsForAdmin:", e);
+    return {
+      data: [],
+      pagination: {
+        page: 1,
+        limit: pagination?.limit || 25,
+        total: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false
+      }
+    };
   }
 }
 

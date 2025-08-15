@@ -35,16 +35,74 @@ export default async function AdminDashboardPage({ params }: AdminPageProps) {
         <DesktopDashboardGrid />
       </section>
 
+      {/* Performance Monitoring masqué temporairement */}
+      {/* 
+      <section className="mb-8">
+        <h2 className="mb-4 text-lg font-semibold">Performance et Monitoring</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Link href="/admin/performance" className="block transition-transform hover:scale-105">
+            <Card className="h-full transition-all hover:shadow-xl border-2 border-red-200 hover:border-red-300">
+              <CardHeader>
+                <div className="mb-3 inline-flex rounded-lg p-4 text-red-600 bg-red-100">
+                  <Activity className="h-8 w-8" />
+                </div>
+                <CardTitle className="flex items-center gap-2">
+                  Monitoring Performance
+                  <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">NOUVEAU</span>
+                </CardTitle>
+                <CardDescription>
+                  Surveillez les performances en temps réel : cache, base de données, rendu
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+          
+          <Card className="border-green-200">
+            <CardHeader>
+              <div className="mb-3 inline-flex rounded-lg p-4 text-green-600 bg-green-100">
+                <TrendingUp className="h-8 w-8" />
+              </div>
+              <CardTitle>Optimisations Actives</CardTitle>
+              <CardDescription>
+                Cache multi-niveaux, index DB, monitoring automatique
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-green-600 font-medium">Système optimisé</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-blue-200">
+            <CardHeader>
+              <div className="mb-3 inline-flex rounded-lg p-4 text-blue-600 bg-blue-100">
+                <Zap className="h-8 w-8" />
+              </div>
+              <CardTitle>Gains de Performance</CardTitle>
+              <CardDescription>
+                Réduction des temps de chargement et optimisation des requêtes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Dashboard</span>
+                  <span className="text-green-600 font-medium">-94%</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Commandes</span>
+                  <span className="text-green-600 font-medium">-82%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+      */}
+
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* <Card>
-          <CardHeader>
-            <CardTitle>{t("kpi.totalRevenue.title")}</CardTitle>
-            <CardDescription>{t("kpi.totalRevenue.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">€1,234.56</p>
-          </CardContent>
-        </Card> */}
         {/* Add more KPI cards here */}
       </section>
 

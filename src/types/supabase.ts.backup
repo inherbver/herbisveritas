@@ -1,3 +1,8 @@
+// Types Supabase générés automatiquement - NE PAS MODIFIER MANUELLEMENT
+// Généré le: 2025-01-08
+
+import { TipTapContent } from "./magazine";
+
 export type Json =
   | string
   | number
@@ -7,7 +12,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -324,42 +329,6 @@ export type Database = {
         }
         Relationships: []
       }
-      events: {
-        Row: {
-          aggregate_id: string
-          aggregate_type: string
-          created_at: string
-          event_data: Json
-          event_id: string
-          event_type: string
-          id: string
-          metadata: Json | null
-          version: number
-        }
-        Insert: {
-          aggregate_id: string
-          aggregate_type: string
-          created_at?: string
-          event_data: Json
-          event_id: string
-          event_type: string
-          id?: string
-          metadata?: Json | null
-          version?: number
-        }
-        Update: {
-          aggregate_id?: string
-          aggregate_type?: string
-          created_at?: string
-          event_data?: Json
-          event_id?: string
-          event_type?: string
-          id?: string
-          metadata?: Json | null
-          version?: number
-        }
-        Relationships: []
-      }
       featured_hero_items: {
         Row: {
           created_at: string
@@ -510,42 +479,6 @@ export type Database = {
         }
         Relationships: []
       }
-      newsletter_subscribers: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          ip_address: unknown | null
-          is_active: boolean
-          source: string | null
-          subscribed_at: string
-          updated_at: string
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          ip_address?: unknown | null
-          is_active?: boolean
-          source?: string | null
-          subscribed_at?: string
-          updated_at?: string
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          ip_address?: unknown | null
-          is_active?: boolean
-          source?: string | null
-          subscribed_at?: string
-          updated_at?: string
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
       order_items: {
         Row: {
           created_at: string
@@ -607,86 +540,11 @@ export type Database = {
           },
         ]
       }
-      order_pickup_points: {
-        Row: {
-          address_1: string
-          address_2: string | null
-          address_3: string | null
-          city: string
-          commercial_name: string | null
-          company: string | null
-          country_code: string | null
-          created_at: string | null
-          horaires_ouverture: string | null
-          id: string
-          latitude: number | null
-          longitude: number | null
-          name: string
-          order_id: string | null
-          phone: string | null
-          pickup_id: string
-          service_code: string | null
-          type_de_point: string | null
-          zip_code: string
-        }
-        Insert: {
-          address_1: string
-          address_2?: string | null
-          address_3?: string | null
-          city: string
-          commercial_name?: string | null
-          company?: string | null
-          country_code?: string | null
-          created_at?: string | null
-          horaires_ouverture?: string | null
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          name: string
-          order_id?: string | null
-          phone?: string | null
-          pickup_id: string
-          service_code?: string | null
-          type_de_point?: string | null
-          zip_code: string
-        }
-        Update: {
-          address_1?: string
-          address_2?: string | null
-          address_3?: string | null
-          city?: string
-          commercial_name?: string | null
-          company?: string | null
-          country_code?: string | null
-          created_at?: string | null
-          horaires_ouverture?: string | null
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          name?: string
-          order_id?: string | null
-          phone?: string | null
-          pickup_id?: string
-          service_code?: string | null
-          type_de_point?: string | null
-          zip_code?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_pickup_points_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: true
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       orders: {
         Row: {
           billing_address_id: string | null
           created_at: string
           currency: string
-          delivered_at: string | null
           id: string
           notes: string | null
           order_number: string | null
@@ -694,15 +552,12 @@ export type Database = {
           payment_method: string | null
           payment_status: Database["public"]["Enums"]["payment_status_type"]
           pickup_point_id: string | null
-          shipped_at: string | null
           shipping_address_id: string | null
           shipping_fee: number | null
           status: Database["public"]["Enums"]["order_status_type"]
           stripe_checkout_id: string | null
           stripe_checkout_session_id: string | null
           total_amount: number
-          tracking_number: string | null
-          tracking_url: string | null
           updated_at: string
           user_id: string
         }
@@ -710,7 +565,6 @@ export type Database = {
           billing_address_id?: string | null
           created_at?: string
           currency?: string
-          delivered_at?: string | null
           id?: string
           notes?: string | null
           order_number?: string | null
@@ -718,15 +572,12 @@ export type Database = {
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status_type"]
           pickup_point_id?: string | null
-          shipped_at?: string | null
           shipping_address_id?: string | null
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status_type"]
           stripe_checkout_id?: string | null
           stripe_checkout_session_id?: string | null
           total_amount: number
-          tracking_number?: string | null
-          tracking_url?: string | null
           updated_at?: string
           user_id: string
         }
@@ -734,7 +585,6 @@ export type Database = {
           billing_address_id?: string | null
           created_at?: string
           currency?: string
-          delivered_at?: string | null
           id?: string
           notes?: string | null
           order_number?: string | null
@@ -742,15 +592,12 @@ export type Database = {
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status_type"]
           pickup_point_id?: string | null
-          shipped_at?: string | null
           shipping_address_id?: string | null
           shipping_fee?: number | null
           status?: Database["public"]["Enums"]["order_status_type"]
           stripe_checkout_id?: string | null
           stripe_checkout_session_id?: string | null
           total_amount?: number
-          tracking_number?: string | null
-          tracking_url?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1002,13 +849,8 @@ export type Database = {
           billing_postal_code: string | null
           billing_state_province_region: string | null
           created_at: string
-          deactivated_at: string | null
-          deactivated_by: string | null
-          deactivation_reason: string | null
-          email: string | null
           first_name: string | null
           id: string
-          last_activity: string | null
           last_name: string | null
           newsletter_subscribed: boolean | null
           phone_number: string | null
@@ -1019,11 +861,6 @@ export type Database = {
           shipping_city: string | null
           shipping_country: string | null
           shipping_postal_code: string | null
-          status: string | null
-          suspended_at: string | null
-          suspended_by: string | null
-          suspension_reason: string | null
-          tags: string[] | null
           terms_accepted_at: string | null
           updated_at: string | null
           use_shipping_for_billing: boolean | null
@@ -1039,13 +876,8 @@ export type Database = {
           billing_postal_code?: string | null
           billing_state_province_region?: string | null
           created_at?: string
-          deactivated_at?: string | null
-          deactivated_by?: string | null
-          deactivation_reason?: string | null
-          email?: string | null
           first_name?: string | null
           id: string
-          last_activity?: string | null
           last_name?: string | null
           newsletter_subscribed?: boolean | null
           phone_number?: string | null
@@ -1056,11 +888,6 @@ export type Database = {
           shipping_city?: string | null
           shipping_country?: string | null
           shipping_postal_code?: string | null
-          status?: string | null
-          suspended_at?: string | null
-          suspended_by?: string | null
-          suspension_reason?: string | null
-          tags?: string[] | null
           terms_accepted_at?: string | null
           updated_at?: string | null
           use_shipping_for_billing?: boolean | null
@@ -1076,13 +903,8 @@ export type Database = {
           billing_postal_code?: string | null
           billing_state_province_region?: string | null
           created_at?: string
-          deactivated_at?: string | null
-          deactivated_by?: string | null
-          deactivation_reason?: string | null
-          email?: string | null
           first_name?: string | null
           id?: string
-          last_activity?: string | null
           last_name?: string | null
           newsletter_subscribed?: boolean | null
           phone_number?: string | null
@@ -1093,11 +915,6 @@ export type Database = {
           shipping_city?: string | null
           shipping_country?: string | null
           shipping_postal_code?: string | null
-          status?: string | null
-          suspended_at?: string | null
-          suspended_by?: string | null
-          suspension_reason?: string | null
-          tags?: string[] | null
           terms_accepted_at?: string | null
           updated_at?: string | null
           use_shipping_for_billing?: boolean | null
@@ -1233,16 +1050,16 @@ export type Database = {
         Args: { days_threshold?: number; dry_run?: boolean }
         Returns: {
           action_type: string
-          details: Json
           user_count: number
+          details: Json
         }[]
       }
       create_missing_profiles: {
         Args: Record<PropertyKey, never>
         Returns: {
-          action_taken: string
-          email: string
           user_id: string
+          email: string
+          action_taken: string
         }[]
       }
       create_product_with_translations: {
@@ -1264,20 +1081,20 @@ export type Database = {
       get_cleanup_report: {
         Args: { days_back?: number }
         Returns: {
-          anonymous_users_count: number
-          last_cleanup_date: string
-          recommendation: string
           report_date: string
-          users_cleaned_last_month: number
+          anonymous_users_count: number
           users_growth_rate: number
+          last_cleanup_date: string
+          users_cleaned_last_month: number
+          recommendation: string
         }[]
       }
       get_cleanup_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          description: string
           stat_name: string
           stat_value: number
+          description: string
         }[]
       }
       get_guest_id_from_jwt: {
@@ -1287,10 +1104,6 @@ export type Database = {
       get_my_custom_role: {
         Args: Record<PropertyKey, never>
         Returns: string
-      }
-      increment_product_stock: {
-        Args: { product_id: string; quantity_to_add: number }
-        Returns: undefined
       }
       is_current_user_a_user: {
         Args: Record<PropertyKey, never>
@@ -1310,36 +1123,28 @@ export type Database = {
       }
       log_auth_event: {
         Args: {
-          p_email?: string
           p_event_type: string
-          p_metadata?: Json
           p_user_id: string
+          p_email?: string
+          p_metadata?: Json
         }
         Returns: string
       }
       log_event: {
         Args: {
-          p_data?: Json
           p_event_type: string
-          p_severity?: Database["public"]["Enums"]["event_severity"]
           p_user_id?: string
+          p_data?: Json
+          p_severity?: Database["public"]["Enums"]["event_severity"]
         }
         Returns: string
       }
-      log_user_management_action: {
-        Args: {
-          action_data?: Json
-          action_type: string
-          target_user_id: string
-        }
-        Returns: undefined
-      }
       merge_carts: {
-        Args: { p_auth_cart_id: string; p_guest_cart_id: string }
+        Args: { p_guest_cart_id: string; p_auth_cart_id: string }
         Returns: undefined
       }
       merge_guest_cart_to_user: {
-        Args: { p_guest_id: string; p_user_id: string }
+        Args: { p_user_id: string; p_guest_id: string }
         Returns: string
       }
       monitor_missing_profiles: {
@@ -1357,17 +1162,17 @@ export type Database = {
       update_product_with_translations: {
         Args: {
           p_id: string
+          p_slug: string
+          p_price: number
+          p_stock: number
+          p_unit: string
           p_image_url: string
           p_inci_list: string[]
+          p_status: string
           p_is_active: boolean
           p_is_new: boolean
           p_is_on_promotion: boolean
-          p_price: number
-          p_slug: string
-          p_status: string
-          p_stock: number
           p_translations: Json
-          p_unit: string
         }
         Returns: undefined
       }

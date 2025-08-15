@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkAdminRole } from "@/lib/auth/admin-service";
+import { OrdersCache, StatsCache, CacheInvalidation } from "@/lib/cache/cache-service";
 import type {
   OrderWithRelations,
   OrderListOptions,
@@ -13,24 +14,23 @@ import type {
 } from "@/types/orders";
 
 /**
- * Récupère la liste paginée des commandes avec filtres
+ * Récupère la liste paginée des commandes avec filtres (OPTIMISÉE)
  */
-export async function getOrdersListAction(
-  options: OrderListOptions = {}
-): Promise<OrderActionResult<PaginatedOrderList>> {
-  try {
-    const supabase = await createSupabaseServerClient();
+export const getOrdersListAction = OrdersCache.adminList(
+  async (options: OrderListOptions = {}): Promise<OrderActionResult<PaginatedOrderList>> => {
+    try {
+      const supabase = await createSupabaseServerClient();
 
-    // Vérification des permissions admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user || !(await checkAdminRole(user.id))) {
-      return {
-        success: false,
-        error: "Accès non autorisé",
-      };
-    }
+      // Vérification des permissions admin
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || !(await checkAdminRole(user.id))) {
+        return {
+          success: false,
+          error: "Accès non autorisé",
+        };
+      }
 
     const {
       filters = {},
@@ -140,7 +140,7 @@ export async function getOrdersListAction(
       error: "Erreur inattendue lors de la récupération des commandes",
     };
   }
-}
+});
 
 /**
  * Récupère les détails d'une commande
@@ -425,6 +425,8 @@ export async function refundOrderAction(
       };
     }
 
+    // Invalidation du cache
+    await CacheInvalidation.onOrderUpdate();
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
 
@@ -442,11 +444,12 @@ export async function refundOrderAction(
 }
 
 /**
- * Récupère les statistiques des commandes
+ * Récupère les statistiques des commandes (OPTIMISÉE AVEC CACHE)
  */
-export async function getOrderStatsAction(): Promise<OrderActionResult<OrderStats>> {
-  try {
-    const supabase = await createSupabaseServerClient();
+export const getOrderStatsAction = StatsCache.dashboard(
+  async (): Promise<OrderActionResult<OrderStats>> => {
+    try {
+      const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions admin
     const {
@@ -511,7 +514,7 @@ export async function getOrderStatsAction(): Promise<OrderActionResult<OrderStat
       error: "Erreur lors de la récupération des statistiques",
     };
   }
-}
+});
 
 /**
  * Ajoute un numéro de suivi à une commande
@@ -555,6 +558,8 @@ export async function addTrackingNumberAction(
 
     // TODO: Envoyer un email au client avec le numéro de suivi
 
+    // Invalidation du cache
+    await CacheInvalidation.onOrderUpdate();
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
 

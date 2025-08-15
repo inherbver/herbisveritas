@@ -11,9 +11,9 @@ import { Hero } from "@/components/common/hero";
 import { getActiveFeaturedHeroItem, type FeaturedHeroItem } from "@/lib/supabase/queries/hero";
 // import { Link } from "@/i18n/navigation";
 
-// Forcer le rendu dynamique pour éviter les erreurs de génération statique
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Configuration de cache optimisée pour la performance
+export const revalidate = 300; // 5 minutes - sync avec notre cache service
+export const dynamic = "force-static"; // Génération statique pour de meilleures performances
 
 // Type for route parameters
 type PageParams = {

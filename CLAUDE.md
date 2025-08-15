@@ -167,3 +167,7 @@ These guidelines should be enforced by Claude Code when providing code suggestio
 - **Use proper TypeScript types** - Define proper TypeScript interfaces/types for all components and functions. Avoid using `any` type. Use `unknown` instead if it's really hard to define a type. Use `never` instead if it's impossible to define a type.
 - **Use proper error handling** - Use try-catch blocks for error handling. Use `Error` type for error objects. Use `throw` to throw errors.
 - **Use proper logging** - Use `console.log` for logging. Use `console.error` for error logging.
+- **Follow Conventional Commits** - Use the format type(scope): clear message, in french, without signature.
+- **Prefer semantic tags** - Always use semantic HTML tags (e.g., <header>, <main>, <section>, <article>, <footer>) instead of generic <div> elements whenever possible.
+- **Prefer semantic attributes** - Always use semantic HTML attributes (e.g., aria-label, aria-describedby, aria-hidden) instead of generic attributes whenever possible.
+- **Prefer semantic roles** - Always use semantic HTML roles (e.g., role="button", role="checkbox", role="menuitem") instead of generic roles whenever possible.

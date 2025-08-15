@@ -12,7 +12,9 @@
     "prepare": "husky",
     "audit-roles": "tsx scripts/audit-roles.ts",
     "fix-admin-role": "tsx scripts/fix-admin-role.ts",
-    "migrate:markets-partners": "tsx scripts/migrate-markets-partners.ts"
+    "migrate:markets-partners": "tsx scripts/migrate-markets-partners.ts",
+    "analyze": "tsx scripts/analyze-bundle.ts",
+    "build:analyze": "npm run build && npm run analyze"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",

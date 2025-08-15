@@ -29,66 +29,98 @@ export interface UserStats {
   activeToday: number;
 }
 
+// User pagination options
+export interface UserPaginationOptions {
+  page: number;
+  limit: number;
+  sortBy?: 'email' | 'created_at' | 'last_sign_in_at' | 'role';
+  sortDirection?: 'asc' | 'desc';
+  search?: string;
+  roleFilter?: string[];
+  statusFilter?: string[];
+}
+
+// Paginated response for users
+export interface PaginatedUserResponse {
+  data: UserForAdminPanel[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 export const getUsers = withPermissionSafe(
   "users:read:all",
-  async (): Promise<ActionResult<UserForAdminPanel[]>> => {
+  async (options?: UserPaginationOptions): Promise<ActionResult<PaginatedUserResponse>> => {
     const context = LogUtils.createUserActionContext("unknown", "get_users", "admin");
     LogUtils.logOperationStart("get_users", context);
 
     try {
       const supabase = createSupabaseAdminClient();
+      
+      // Default pagination
+      const page = options?.page || 1;
+      const limit = Math.min(options?.limit || 25, 100); // Cap at 100 for performance
+      
+      // 1. Get total count first for better performance
+      const { count: totalCount } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 1
+      });
 
-      // 1. Get all users from auth.users (paginated to handle large datasets)
-      let allUsers: any[] = [];
-      let page = 1;
-      const perPage = 1000; // Maximum allowed by Supabase
-
-      while (true) {
-        const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers({
-          page,
-          perPage,
-        });
-
-        if (authUsersError) {
-          throw ErrorUtils.fromSupabaseError(authUsersError);
-        }
-
-        if (!authUsers?.users || authUsers.users.length === 0) {
-          break;
-        }
-
-        allUsers = allUsers.concat(authUsers.users);
-
-        // If we got less than perPage, we're done
-        if (authUsers.users.length < perPage) {
-          break;
-        }
-
-        page++;
+      if (!totalCount) {
+        return ActionResult.ok({
+          data: [],
+          pagination: {
+            page: 1,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false
+          }
+        }, "Aucun utilisateur trouvé");
       }
 
-      const users = allUsers;
+      // 2. Get users for current page only
+      const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers({
+        page,
+        perPage: limit,
+      });
 
-      // 2. Get all profiles from public.profiles
+      if (authUsersError) {
+        throw ErrorUtils.fromSupabaseError(authUsersError);
+      }
+
+      const users = authUsers?.users || [];
+
+      // 3. Get corresponding profiles in batch
+      const userIds = users.map(u => u.id);
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, role, status");
+        .select("id, first_name, last_name, role, status, last_activity")
+        .in("id", userIds);
 
       if (profilesError) {
         throw ErrorUtils.fromSupabaseError(profilesError);
       }
 
-      // 3. Combine data
-      const combinedUsers: UserForAdminPanel[] = users.map((user) => {
-        const profile = profiles?.find((p) => p.id === user.id);
-        const fullName =
-          [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || null;
+      // 4. Combine data efficiently
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      let combinedUsers: UserForAdminPanel[] = users.map((user) => {
+        const profile = profileMap.get(user.id);
+        const fullName = profile 
+          ? [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null
+          : null;
 
         return {
           id: user.id,
           email: user.email || "",
           full_name: fullName,
-          // Prioritize JWT role, fallback to profile role
           role: user.app_metadata.role || profile?.role || "user",
           created_at: user.created_at,
           last_sign_in_at: user.last_sign_in_at || null,
@@ -96,8 +128,63 @@ export const getUsers = withPermissionSafe(
         };
       });
 
-      LogUtils.logOperationSuccess("get_users", { ...context, userCount: combinedUsers.length });
-      return ActionResult.ok(combinedUsers, `${combinedUsers.length} utilisateurs récupérés`);
+      // 5. Apply client-side filters for better performance than multiple DB queries
+      if (options?.search) {
+        const searchTerm = options.search.toLowerCase();
+        combinedUsers = combinedUsers.filter(user => 
+          user.email.toLowerCase().includes(searchTerm) ||
+          (user.full_name && user.full_name.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      if (options?.roleFilter && options.roleFilter.length > 0) {
+        combinedUsers = combinedUsers.filter(user => 
+          options.roleFilter!.includes(user.role || 'user')
+        );
+      }
+
+      if (options?.statusFilter && options.statusFilter.length > 0) {
+        combinedUsers = combinedUsers.filter(user => 
+          options.statusFilter!.includes(user.status || 'active')
+        );
+      }
+
+      // 6. Apply sorting
+      if (options?.sortBy) {
+        const sortDirection = options.sortDirection || 'desc';
+        combinedUsers.sort((a, b) => {
+          const aVal = a[options.sortBy!];
+          const bVal = b[options.sortBy!];
+          
+          if (aVal === null || aVal === undefined) return 1;
+          if (bVal === null || bVal === undefined) return -1;
+          
+          const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+          return sortDirection === 'asc' ? comparison : -comparison;
+        });
+      }
+
+      const totalPages = Math.ceil(totalCount / limit);
+
+      LogUtils.logOperationSuccess("get_users", { 
+        ...context, 
+        userCount: combinedUsers.length,
+        page,
+        limit 
+      });
+
+      return ActionResult.ok({
+        data: combinedUsers,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      }, `${combinedUsers.length} utilisateurs récupérés (page ${page}/${totalPages})`);
+
     } catch (error) {
       LogUtils.logOperationError("get_users", error, context);
       return ActionResult.error(

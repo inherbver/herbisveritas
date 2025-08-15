@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Clock, Truck, CheckCircle, XCircle, Euro, TrendingUp } from "lucide-react";
 import { getOrderStatsAction } from "@/actions/orderActions";
+import { CacheMonitoring } from "@/lib/cache/cache-service";
 
 export async function OrderStatsCards() {
   return (
@@ -13,7 +14,10 @@ export async function OrderStatsCards() {
 }
 
 async function OrderStatsCardsContent() {
-  const result = await getOrderStatsAction();
+  const result = await CacheMonitoring.trackCachePerformance(
+    () => getOrderStatsAction(),
+    "order-stats-dashboard"
+  );
 
   if (!result.success || !result.data) {
     return <OrderStatsError error={result.error} />;

@@ -119,6 +119,12 @@ export function ImageUploadField<T extends FieldValues>({
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        // Vérifier la taille du fichier (1 MB = 1048576 bytes)
+                        if (file.size > 1048576) {
+                          toast.error("L'image sélectionnée dépasse la limite de 1 MB. Veuillez choisir une image plus petite ou compresser votre image.");
+                          e.target.value = ''; // Reset input
+                          return;
+                        }
                         handleImageUpload(file, field.onChange);
                       }
                     }}
@@ -147,6 +153,11 @@ export function ImageUploadField<T extends FieldValues>({
                 </Button>
               </div>
 
+              {/* Size info - always visible */}
+              <p className="text-xs text-muted-foreground">
+                Formats supportés: JPEG, PNG, WebP, GIF • Taille max: 1 MB
+              </p>
+
               {/* Image Preview */}
               {field.value && (
                 <div className="mt-4">
@@ -174,7 +185,7 @@ export function ImageUploadField<T extends FieldValues>({
                     </div>
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Formats supportés: JPEG, PNG, WebP, GIF (max 4Mo)
+                    Formats supportés: JPEG, PNG, WebP, GIF (max 1 MB)
                   </p>
                 </div>
               )}

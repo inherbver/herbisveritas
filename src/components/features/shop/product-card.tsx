@@ -169,7 +169,7 @@ export function ProductCard({
         {is_on_promotion && (
           <Badge
             variant="secondary"
-            className="bg-accent/90 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase text-accent-foreground"
+            className="rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-medium uppercase text-white"
             aria-label={t("promoLabel")}
           >
             {t("promoLabel")}

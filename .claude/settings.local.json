@@ -48,15 +48,23 @@
       "Bash(npx playwright test:*)",
       "mcp__playwright__playwright_hover",
       "Bash(echo $NODE_ENV)",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "Bash(git push:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["supabase"],
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
     }
   }
 }
