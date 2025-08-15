@@ -162,3 +162,8 @@ These guidelines should be enforced by Claude Code when providing code suggestio
 - **Specify code location** - Indicate where snippets belong (e.g., "under X", "above Y")
 - **Show only changed functions** - If only one function changes
 - **Think deeply before coding** - Thinking is cheaper than debugging
+- **Prevent duplicates & follow structure** - Before creating any file or folder, verify it doesn’t already exist and place it in the most logical, conventional location for a Next.js + TypeScript project (e.g., under app/, components/, lib/, hooks/, types/)
+- **Use absolute imports** - Use `@/` alias for imports (e.g., `import { Button } from '@/components/ui/button'`)
+- **Use proper TypeScript types** - Define proper TypeScript interfaces/types for all components and functions. Avoid using `any` type. Use `unknown` instead if it's really hard to define a type. Use `never` instead if it's impossible to define a type.
+- **Use proper error handling** - Use try-catch blocks for error handling. Use `Error` type for error objects. Use `throw` to throw errors.
+- **Use proper logging** - Use `console.log` for logging. Use `console.error` for error logging.
