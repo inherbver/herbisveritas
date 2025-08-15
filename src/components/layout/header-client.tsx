@@ -265,38 +265,25 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                 <SheetDescription>{tGlobal("Header.mobileSheetDescription")}</SheetDescription>{" "}
               </SheetHeader>
               <nav className="flex flex-col gap-4 px-4">
-                <SheetClose asChild>
-                  <Link
-                    href="/shop"
-                    className="text-foreground/80 active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {tGlobal("Header.home")}
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    href="/magazine"
-                    className="text-foreground/80 active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
-                  >
-                    Magazine
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    href="/contact"
-                    className="text-foreground/80 active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {tGlobal("Header.contactLink")}
-                  </Link>
-                </SheetClose>
-                <SheetClose asChild>
-                  <Link
-                    href="/about"
-                    className="text-foreground/80 active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {tGlobal("Header.aboutLink")}
-                  </Link>
-                </SheetClose>
+                {navLinks.map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                    <SheetClose key={link.href} asChild>
+                      <Link
+                        href={link.href}
+                        className={cn(
+                          "active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground",
+                          isActive
+                            ? "bg-primary/10 border-l-4 border-primary font-semibold text-primary"
+                            : "text-foreground/80"
+                        )}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        {link.label}
+                      </Link>
+                    </SheetClose>
+                  );
+                })}
 
                 <hr className="my-4 border-border" />
 
@@ -316,7 +303,13 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                       <SheetClose asChild>
                         <Link
                           href="/admin"
-                          className="text-foreground/80 active:bg-accent/80 -mx-3 block flex min-h-[44px] touch-manipulation items-center rounded-lg px-4 py-4 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground"
+                          className={cn(
+                            "active:bg-accent/80 -mx-3 block flex min-h-[44px] touch-manipulation items-center rounded-lg px-4 py-4 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground",
+                            pathname.startsWith("/admin")
+                              ? "bg-primary/10 border-l-4 border-primary text-primary"
+                              : "text-foreground/80"
+                          )}
+                          aria-current={pathname.startsWith("/admin") ? "page" : undefined}
                         >
                           Admin
                         </Link>
