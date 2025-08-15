@@ -32,23 +32,17 @@ export const getOrdersListAction = OrdersCache.adminList(
         };
       }
 
-    const {
-      filters = {},
-      sort = { field: "created_at", direction: "desc" },
-      page = 1,
-      limit = 25,
-    } = options;
+      const {
+        filters = {},
+        sort = { field: "created_at", direction: "desc" },
+        page = 1,
+        limit = 25,
+      } = options;
 
-    // Construction de la requête
-    let query = supabase.from("orders").select(
-      `
+      // Construction de la requête sans relation automatique pour user_id
+      let query = supabase.from("orders").select(
+        `
         *,
-        user:profiles!orders_user_id_fkey (
-          id,
-          email,
-          first_name,
-          last_name
-        ),
         items:order_items (
           *,
           product:products (
@@ -77,70 +71,99 @@ export const getOrdersListAction = OrdersCache.adminList(
           phone_number
         )
       `,
-      { count: "exact" }
-    );
+        { count: "exact" }
+      );
 
-    // Application des filtres
-    if (filters.status?.length) {
-      query = query.in("status", filters.status);
-    }
-    if (filters.payment_status?.length) {
-      query = query.in("payment_status", filters.payment_status);
-    }
-    if (filters.date_from) {
-      query = query.gte("created_at", filters.date_from);
-    }
-    if (filters.date_to) {
-      query = query.lte("created_at", filters.date_to);
-    }
-    if (filters.min_amount !== undefined) {
-      query = query.gte("total_amount", filters.min_amount);
-    }
-    if (filters.max_amount !== undefined) {
-      query = query.lte("total_amount", filters.max_amount);
-    }
-    if (filters.search) {
-      query = query.or(`order_number.ilike.%${filters.search}%,id.ilike.%${filters.search}%`);
-    }
+      // Application des filtres
+      if (filters.status?.length) {
+        query = query.in("status", filters.status);
+      }
+      if (filters.payment_status?.length) {
+        query = query.in("payment_status", filters.payment_status);
+      }
+      if (filters.date_from) {
+        query = query.gte("created_at", filters.date_from);
+      }
+      if (filters.date_to) {
+        query = query.lte("created_at", filters.date_to);
+      }
+      if (filters.min_amount !== undefined) {
+        query = query.gte("total_amount", filters.min_amount);
+      }
+      if (filters.max_amount !== undefined) {
+        query = query.lte("total_amount", filters.max_amount);
+      }
+      if (filters.search) {
+        query = query.or(`order_number.ilike.%${filters.search}%,id.ilike.%${filters.search}%`);
+      }
 
-    // Tri
-    query = query.order(sort.field, { ascending: sort.direction === "asc" });
+      // Tri
+      query = query.order(sort.field, { ascending: sort.direction === "asc" });
 
-    // Pagination
-    const offset = (page - 1) * limit;
-    query = query.range(offset, offset + limit - 1);
+      // Pagination
+      const offset = (page - 1) * limit;
+      query = query.range(offset, offset + limit - 1);
 
-    const { data, error, count } = await query;
+      const { data: orders, error, count } = await query;
 
-    if (error) {
-      console.error("Error fetching orders:", error);
+      if (error) {
+        console.error("Error fetching orders:", error);
+        return {
+          success: false,
+          error: "Erreur lors de la récupération des commandes",
+        };
+      }
+
+      if (!orders || orders.length === 0) {
+        const totalPages = Math.ceil((count || 0) / limit);
+        return {
+          success: true,
+          data: {
+            orders: [],
+            total_count: count || 0,
+            page,
+            limit,
+            has_next: page < totalPages,
+            has_previous: page > 1,
+          },
+        };
+      }
+
+      // Récupération des profils manuellement
+      const userIds = orders.map((order) => order.user_id).filter(Boolean);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email, phone_number")
+        .in("id", userIds);
+
+      // Association des profils aux commandes
+      const ordersWithProfiles = orders.map((order) => ({
+        ...order,
+        profile: profiles?.find((profile) => profile.id === order.user_id) || null,
+      }));
+
+      const totalPages = Math.ceil((count || 0) / limit);
+
+      return {
+        success: true,
+        data: {
+          orders: ordersWithProfiles as unknown as OrderWithRelations[],
+          total_count: count || 0,
+          page,
+          limit,
+          has_next: page < totalPages,
+          has_previous: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error("Error in getOrdersListAction:", error);
       return {
         success: false,
-        error: "Erreur lors de la récupération des commandes",
+        error: "Erreur inattendue lors de la récupération des commandes",
       };
     }
-
-    const totalPages = Math.ceil((count || 0) / limit);
-
-    return {
-      success: true,
-      data: {
-        orders: data as unknown as OrderWithRelations[],
-        total_count: count || 0,
-        page,
-        limit,
-        has_next: page < totalPages,
-        has_previous: page > 1,
-      },
-    };
-  } catch (error) {
-    console.error("Error in getOrdersListAction:", error);
-    return {
-      success: false,
-      error: "Erreur inattendue lors de la récupération des commandes",
-    };
   }
-});
+);
 
 /**
  * Récupère les détails d'une commande
@@ -162,20 +185,17 @@ export async function getOrderDetailsAction(
       };
     }
 
-    const { data, error } = await supabase
+    const { data: order, error } = await supabase
       .from("orders")
       .select(
         `
         *,
-        user:profiles!orders_user_id_fkey (
-          id,
-          email,
-          first_name,
-          last_name,
-          phone_number
-        ),
         items:order_items (
-          *
+          *,
+          product:products (
+            name,
+            image_url
+          )
         ),
         shipping_address:addresses!orders_shipping_address_id_fkey (
           *
@@ -196,9 +216,23 @@ export async function getOrderDetailsAction(
       };
     }
 
+    // Récupération du profil manuellement si user_id existe
+    let profile = null;
+    if (order.user_id) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, email, phone_number")
+        .eq("id", order.user_id)
+        .single();
+      profile = profileData;
+    }
+
     return {
       success: true,
-      data: data as unknown as OrderWithRelations,
+      data: {
+        ...order,
+        profile,
+      } as unknown as OrderWithRelations,
     };
   } catch (error) {
     console.error("Error in getOrderDetailsAction:", error);
@@ -451,70 +485,71 @@ export const getOrderStatsAction = StatsCache.dashboard(
     try {
       const supabase = await createSupabaseServerClient();
 
-    // Vérification des permissions admin
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user || !(await checkAdminRole(user.id))) {
-      return {
-        success: false,
-        error: "Accès non autorisé",
+      // Vérification des permissions admin
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || !(await checkAdminRole(user.id))) {
+        return {
+          success: false,
+          error: "Accès non autorisé",
+        };
+      }
+
+      // Récupération de toutes les commandes pour les stats
+      const { data: orders, error } = await supabase
+        .from("orders")
+        .select("status, payment_status, total_amount, created_at");
+
+      if (error) {
+        console.error("Error fetching order stats:", error);
+        return {
+          success: false,
+          error: "Erreur lors de la récupération des statistiques",
+        };
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const stats: OrderStats = {
+        total_orders: orders?.length || 0,
+        pending_orders: orders?.filter((o) => o.status === "pending_payment").length || 0,
+        processing_orders: orders?.filter((o) => o.status === "processing").length || 0,
+        shipped_orders: orders?.filter((o) => o.status === "shipped").length || 0,
+        delivered_orders: orders?.filter((o) => o.status === "delivered").length || 0,
+        cancelled_orders: orders?.filter((o) => o.status === "cancelled").length || 0,
+        total_revenue:
+          orders
+            ?.filter((o) => o.payment_status === "succeeded")
+            .reduce((sum, o) => sum + Number(o.total_amount), 0) || 0,
+        average_order_value: 0,
+        orders_today: orders?.filter((o) => new Date(o.created_at) >= today).length || 0,
+        revenue_today:
+          orders
+            ?.filter((o) => new Date(o.created_at) >= today && o.payment_status === "succeeded")
+            .reduce((sum, o) => sum + Number(o.total_amount), 0) || 0,
       };
-    }
 
-    // Récupération de toutes les commandes pour les stats
-    const { data: orders, error } = await supabase
-      .from("orders")
-      .select("status, payment_status, total_amount, created_at");
+      // Calcul de la valeur moyenne
+      const paidOrders = orders?.filter((o) => o.payment_status === "succeeded") || [];
+      if (paidOrders.length > 0) {
+        stats.average_order_value = stats.total_revenue / paidOrders.length;
+      }
 
-    if (error) {
-      console.error("Error fetching order stats:", error);
+      return {
+        success: true,
+        data: stats,
+      };
+    } catch (error) {
+      console.error("Error in getOrderStatsAction:", error);
       return {
         success: false,
         error: "Erreur lors de la récupération des statistiques",
       };
     }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const stats: OrderStats = {
-      total_orders: orders?.length || 0,
-      pending_orders: orders?.filter((o) => o.status === "pending_payment").length || 0,
-      processing_orders: orders?.filter((o) => o.status === "processing").length || 0,
-      shipped_orders: orders?.filter((o) => o.status === "shipped").length || 0,
-      delivered_orders: orders?.filter((o) => o.status === "delivered").length || 0,
-      cancelled_orders: orders?.filter((o) => o.status === "cancelled").length || 0,
-      total_revenue:
-        orders
-          ?.filter((o) => o.payment_status === "succeeded")
-          .reduce((sum, o) => sum + Number(o.total_amount), 0) || 0,
-      average_order_value: 0,
-      orders_today: orders?.filter((o) => new Date(o.created_at) >= today).length || 0,
-      revenue_today:
-        orders
-          ?.filter((o) => new Date(o.created_at) >= today && o.payment_status === "succeeded")
-          .reduce((sum, o) => sum + Number(o.total_amount), 0) || 0,
-    };
-
-    // Calcul de la valeur moyenne
-    const paidOrders = orders?.filter((o) => o.payment_status === "succeeded") || [];
-    if (paidOrders.length > 0) {
-      stats.average_order_value = stats.total_revenue / paidOrders.length;
-    }
-
-    return {
-      success: true,
-      data: stats,
-    };
-  } catch (error) {
-    console.error("Error in getOrderStatsAction:", error);
-    return {
-      success: false,
-      error: "Erreur lors de la récupération des statistiques",
-    };
   }
-});
+);
 
 /**
  * Ajoute un numéro de suivi à une commande

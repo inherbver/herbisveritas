@@ -49,10 +49,8 @@ import type {
   OrderWithRelations,
   OrderStatus,
   PaymentStatus,
-  ORDER_STATUS_LABELS,
-  PAYMENT_STATUS_LABELS,
-  ORDER_STATUS_COLORS,
 } from "@/types/orders";
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, ORDER_STATUS_COLORS } from "@/types/orders";
 
 interface OrdersTableProps {
   initialOptions: OrderListOptions;
@@ -320,9 +318,9 @@ export function OrdersTable({ initialOptions }: OrdersTableProps) {
                       <TableCell>
                         <div>
                           <p className="font-medium">
-                            {order.user?.first_name} {order.user?.last_name}
+                            {order.profile?.first_name} {order.profile?.last_name}
                           </p>
-                          <p className="text-sm text-muted-foreground">{order.user?.email}</p>
+                          <p className="text-sm text-muted-foreground">{order.profile?.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>

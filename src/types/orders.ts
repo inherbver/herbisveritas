@@ -30,6 +30,10 @@ export interface OrderItem {
   product_image_url_at_purchase?: string;
   created_at: string;
   updated_at: string;
+  product?: {
+    name: string;
+    image_url?: string;
+  };
 }
 
 /**
@@ -61,31 +65,32 @@ export interface Order {
  */
 export interface OrderWithRelations extends Order {
   items: OrderItem[];
-  user?: {
+  profile?: {
     id: string;
-    email: string;
     first_name?: string;
     last_name?: string;
+    email?: string;
+    phone_number?: string;
   };
   shipping_address?: {
     id: string;
-    name: string;
+    full_name: string;
     address_line1: string;
     address_line2?: string;
     city: string;
     postal_code: string;
-    country: string;
-    phone?: string;
+    country_code: string;
+    phone_number?: string;
   };
   billing_address?: {
     id: string;
-    name: string;
+    full_name: string;
     address_line1: string;
     address_line2?: string;
     city: string;
     postal_code: string;
-    country: string;
-    phone?: string;
+    country_code: string;
+    phone_number?: string;
   };
 }
 
