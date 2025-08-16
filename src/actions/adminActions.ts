@@ -11,13 +11,19 @@ import {
   ErrorUtils 
 } from "@/lib/core/errors";
 
+// SÉCURITÉ: Rate limiting pour actions d'administration
+import { withRateLimit } from "@/lib/security/rate-limit-decorator";
+
 interface SetUserRoleParams {
   userId: string;
   newRole: "user" | "dev" | "admin";
   reason: string;
 }
 
-export const setUserRole = withPermissionSafe(
+export const setUserRole = withRateLimit(
+  'ADMIN',
+  'set-user-role'
+)(withPermissionSafe(
   "users:update:role",
   async ({ userId, newRole, reason }: SetUserRoleParams): Promise<ActionResult<null>> => {
     const context = LogUtils.createUserActionContext('unknown', 'set_user_role', 'admin', { 
@@ -68,4 +74,4 @@ export const setUserRole = withPermissionSafe(
       );
     }
   }
-);
+));

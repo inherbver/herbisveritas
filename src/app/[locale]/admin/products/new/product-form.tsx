@@ -36,13 +36,26 @@ import { useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createProduct, updateProduct } from "@/actions/productActions";
-import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { UnifiedImageUpload } from "@/components/common/image-upload";
 import { type ProductWithTranslations } from "@/lib/supabase/queries/products";
 import { type Database } from "@/types/supabase";
+import { uploadProductImage } from "@/actions/productActions";
 
 interface ProductFormProps {
   initialData?: ProductWithTranslations | null;
 }
+
+// Fonction utilitaire pour générer un slug
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+    .replace(/[^\w\s-]/g, "") // Supprime les caractères spéciaux
+    .replace(/\s+/g, "-") // Remplace les espaces par des tirets
+    .replace(/--+/g, "-") // Supprime les tirets multiples
+    .trim();
+};
 
 export function ProductForm({ initialData }: ProductFormProps) {
   const t = useTranslations("AdminProducts");
@@ -106,6 +119,21 @@ export function ProductForm({ initialData }: ProductFormProps) {
     control: form.control,
     name: "inci_list" as never,
   });
+
+  // Surveillance du nom principal (français) pour la génération automatique du slug
+  const watchedFrenchName = form.watch("translations.0.name");
+  const watchedSlug = form.watch("slug");
+
+  // Fonction pour gérer les changements de nom avec génération automatique de slug
+  const handleNameChange = (value: string, index: number) => {
+    form.setValue(`translations.${index}.name`, value);
+    
+    // Auto-générer le slug si c'est un nouveau produit ou si le slug n'a pas été modifié manuellement
+    // On utilise le nom français (index 0) comme référence pour le slug
+    if (index === 0 && (!isEditMode || !watchedSlug || watchedSlug === generateSlug(watchedFrenchName))) {
+      form.setValue("slug", generateSlug(value));
+    }
+  };
 
   const onSubmit = (data: ProductFormValues) => {
     startTransition(async () => {
@@ -174,11 +202,27 @@ export function ProductForm({ initialData }: ProductFormProps) {
                   name="slug"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("slugLabel")}</FormLabel>
+                      <FormLabel>
+                        {t("slugLabel")}
+                        <span className="text-red-500 ml-1">*</span>
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="nom-du-produit" {...field} />
+                        <div className="flex">
+                          <span className="inline-flex items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm text-muted-foreground">
+                            /products/
+                          </span>
+                          <Input
+                            placeholder="savon-aloe-vera"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            className="rounded-l-none"
+                            aria-describedby="slug-help"
+                          />
+                        </div>
                       </FormControl>
-                      <FormDescription>{t("slugDescription")}</FormDescription>
+                      <FormDescription id="slug-help">
+                        L'URL du produit. Généré automatiquement à partir du nom français.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -291,7 +335,24 @@ export function ProductForm({ initialData }: ProductFormProps) {
                 </div>
               </div>
 
-              <ImageUploadField control={form.control} name="image_url" />
+              <FormField
+                control={form.control}
+                name="image_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Image du produit</FormLabel>
+                    <FormControl>
+                      <UnifiedImageUpload
+                        context="product"
+                        currentValue={field.value}
+                        onUploadSuccess={(url) => field.onChange(url)}
+                        uploadFunction={uploadProductImage}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Sélecteur de statut */}
               <FormField
@@ -388,9 +449,19 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t("languageLabel")}</FormLabel>
-                          <FormControl>
-                            <Input placeholder="fr" {...field} />
-                          </FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner une langue" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="fr">🇫🇷 Français</SelectItem>
+                              <SelectItem value="en">🇬🇧 English</SelectItem>
+                              <SelectItem value="de">🇩🇪 Deutsch</SelectItem>
+                              <SelectItem value="es">🇪🇸 Español</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -400,10 +471,23 @@ export function ProductForm({ initialData }: ProductFormProps) {
                       name={`translations.${index}.name`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("productNameLabel")}</FormLabel>
+                          <FormLabel>
+                            {t("productNameLabel")}
+                            {index === 0 && <span className="text-red-500 ml-1">*</span>}
+                          </FormLabel>
                           <FormControl>
-                            <Input placeholder="Savon doux à l'aloe vera" {...field} />
+                            <Input 
+                              placeholder="Savon doux à l'aloe vera" 
+                              value={field.value}
+                              onChange={(e) => handleNameChange(e.target.value, index)}
+                            />
                           </FormControl>
+                          <FormDescription>
+                            {index === 0 
+                              ? "Nom principal qui génère automatiquement le slug pour l'URL"
+                              : "Nom qui apparaît sur la carte produit et les pages de détail"
+                            }
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

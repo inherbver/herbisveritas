@@ -13,11 +13,10 @@ import { createPasswordSchema, createSignupSchema } from "@/lib/validators/auth.
 // New imports for Clean Architecture
 import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
-import { 
-  ValidationError, 
-  AuthenticationError,
-  ErrorUtils 
-} from "@/lib/core/errors";
+import { ValidationError, AuthenticationError, ErrorUtils } from "@/lib/core/errors";
+
+// SÉCURITÉ: Rate limiting pour actions d'authentification
+import { withRateLimit } from "@/lib/security/rate-limit-decorator";
 
 // --- Schéma Login ---
 const loginSchema = z.object({
@@ -34,12 +33,15 @@ export interface AuthActionResult {
 }
 
 // --- Action de Connexion ---
-export async function loginAction(
-  prevState: AuthActionResult | undefined,
+export const loginAction = withRateLimit(
+  'AUTH', // Configuration de rate limiting pour auth
+  'login'
+)(async function loginAction(
+  prevState: ActionResult<null> | undefined,
   formData: FormData
 ): Promise<ActionResult<null>> {
-  const context = LogUtils.createUserActionContext('unknown', 'login', 'auth');
-  LogUtils.logOperationStart('login', context);
+  const context = LogUtils.createUserActionContext("unknown", "login", "auth");
+  LogUtils.logOperationStart("login", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -51,11 +53,9 @@ export async function loginAction(
     });
 
     if (!validatedFields.success) {
-      throw new ValidationError(
-        'Données de connexion invalides',
-        undefined,
-        { validationErrors: validatedFields.error.flatten().fieldErrors }
-      );
+      throw new ValidationError("Données de connexion invalides", undefined, {
+        validationErrors: validatedFields.error.flatten().fieldErrors,
+      });
     }
 
     const { email, password } = validatedFields.data;
@@ -75,7 +75,9 @@ export async function loginAction(
 
     if (error) {
       if (error.message === "Email not confirmed") {
-        throw new AuthenticationError("Email non confirmé. Veuillez vérifier votre boîte de réception.");
+        throw new AuthenticationError(
+          "Email non confirmé. Veuillez vérifier votre boîte de réception."
+        );
       }
       throw new AuthenticationError("L'email ou le mot de passe est incorrect.");
     }
@@ -91,26 +93,26 @@ export async function loginAction(
           } else if (isValidationErrorResult(migrationResult)) {
             errorDetails = `Erreurs de validation: ${JSON.stringify(migrationResult.errors)}`;
           }
-          LogUtils.logOperationError('cart_migration', new Error(errorDetails), context);
+          LogUtils.logOperationError("cart_migration", new Error(errorDetails), context);
           // Ne pas bloquer la connexion si la migration échoue
         } else {
-          LogUtils.logOperationSuccess('cart_migration', context);
+          LogUtils.logOperationSuccess("cart_migration", context);
         }
       } catch (migrationError) {
-        LogUtils.logOperationError('cart_migration', migrationError, context);
+        LogUtils.logOperationError("cart_migration", migrationError, context);
         // Ne pas bloquer la connexion si la migration échoue
       }
     }
 
-    LogUtils.logOperationSuccess('login', { ...context, email });
+    LogUtils.logOperationSuccess("login", { ...context, email });
     redirect("/fr/profile/account");
   } catch (error) {
-    LogUtils.logOperationError('login', error, context);
-    
+    LogUtils.logOperationError("login", error, context);
+
     if (error instanceof AuthenticationError || error instanceof ValidationError) {
       return ActionResult.error(ErrorUtils.formatForUser(error));
     }
-    
+
     // Si c'est une redirection Next.js, la relancer
     if (
       typeof error === "object" &&
@@ -121,19 +123,22 @@ export async function loginAction(
     ) {
       throw error;
     }
-    
-    return ActionResult.error('Une erreur inattendue est survenue');
+
+    return ActionResult.error("Une erreur inattendue est survenue");
   }
-}
+});
 
 // --- Action d'Inscription ---
-export async function signUpAction(
+export const signUpAction = withRateLimit(
+  'AUTH', // Configuration de rate limiting pour auth
+  'signup'
+)(async function signUpAction(
   prevState: AuthActionResult | undefined,
   formData: FormData
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
-  const context = LogUtils.createUserActionContext('unknown', 'signup', 'auth', { locale });
-  LogUtils.logOperationStart('signup', context);
+  const context = LogUtils.createUserActionContext("unknown", "signup", "auth", { locale });
+  LogUtils.logOperationStart("signup", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -153,11 +158,9 @@ export async function signUpAction(
     });
 
     if (!validatedFields.success) {
-      throw new ValidationError(
-        'Données d\'inscription invalides',
-        undefined,
-        { validationErrors: validatedFields.error.flatten().fieldErrors }
-      );
+      throw new ValidationError("Données d'inscription invalides", undefined, {
+        validationErrors: validatedFields.error.flatten().fieldErrors,
+      });
     }
 
     const { email, password } = validatedFields.data;
@@ -167,7 +170,7 @@ export async function signUpAction(
     if (!origin) {
       throw new Error("NEXT_PUBLIC_BASE_URL n'est pas définie.");
     }
-  const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
+    const redirectUrl = `${origin}/${locale}/auth/callback?type=signup&next=/${locale}/shop`;
 
     // 3. Essayer d'inscrire l'utilisateur
     const { data, error } = await supabase.auth.signUp({
@@ -180,18 +183,18 @@ export async function signUpAction(
 
     if (error) {
       const t = await getTranslations({ locale, namespace: "Auth.validation" });
-      
+
       if (error.message.includes("User already registered")) {
         throw new ValidationError(t("emailAlreadyExists"));
       }
-      
+
       throw new AuthenticationError(t("genericSignupError"));
     }
 
     // 4. Audit the successful signup
     if (data.user) {
       context.userId = data.user.id;
-      
+
       const { error: auditError } = await supabase.from("audit_logs").insert({
         user_id: data.user.id,
         event_type: "USER_REGISTERED",
@@ -205,20 +208,25 @@ export async function signUpAction(
       });
 
       if (auditError) {
-        LogUtils.logOperationError('audit_signup', auditError, context);
+        LogUtils.logOperationError("audit_signup", auditError, context);
         // Don't fail signup if audit fails
       }
     }
 
-    LogUtils.logOperationSuccess('signup', { ...context, email });
-    return ActionResult.ok(null, "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.");
+    LogUtils.logOperationSuccess("signup", { ...context, email });
+    return ActionResult.ok(
+      null,
+      "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email."
+    );
   } catch (error) {
-    LogUtils.logOperationError('signup', error, context);
+    LogUtils.logOperationError("signup", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Une erreur inattendue est survenue"
     );
   }
-}
+});
 
 // --- Mot de passe oublié ---
 export async function requestPasswordResetAction(
@@ -226,8 +234,8 @@ export async function requestPasswordResetAction(
   formData: FormData
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
-  const context = LogUtils.createUserActionContext('unknown', 'password_reset', 'auth', { locale });
-  LogUtils.logOperationStart('password_reset', context);
+  const context = LogUtils.createUserActionContext("unknown", "password_reset", "auth", { locale });
+  LogUtils.logOperationStart("password_reset", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -239,7 +247,7 @@ export async function requestPasswordResetAction(
     const validatedEmail = emailSchema.safeParse(email);
 
     if (!validatedEmail.success) {
-      throw new ValidationError('Email invalide', 'email');
+      throw new ValidationError("Email invalide", "email");
     }
 
     // 2. Construire l'URL de redirection
@@ -255,18 +263,23 @@ export async function requestPasswordResetAction(
     });
 
     if (error) {
-      LogUtils.logOperationError('password_reset_email', error, { ...context, email: validatedEmail.data });
+      LogUtils.logOperationError("password_reset_email", error, {
+        ...context,
+        email: validatedEmail.data,
+      });
       // Ne pas révéler si l'email existe - retourner succès générique
     }
 
     // 4. Toujours renvoyer un message de succès pour des raisons de sécurité
     const tSuccess = await getTranslations({ locale, namespace: "Auth.ForgotPassword" });
-    LogUtils.logOperationSuccess('password_reset', { ...context, email: validatedEmail.data });
+    LogUtils.logOperationSuccess("password_reset", { ...context, email: validatedEmail.data });
     return ActionResult.ok(null, tSuccess("successMessage"));
   } catch (error) {
-    LogUtils.logOperationError('password_reset', error, context);
+    LogUtils.logOperationError("password_reset", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Une erreur inattendue est survenue"
     );
   }
 }
@@ -276,8 +289,10 @@ export async function updatePasswordAction(
   formData: FormData
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
-  const context = LogUtils.createUserActionContext('unknown', 'update_password', 'auth', { locale });
-  LogUtils.logOperationStart('update_password', context);
+  const context = LogUtils.createUserActionContext("unknown", "update_password", "auth", {
+    locale,
+  });
+  LogUtils.logOperationStart("update_password", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -302,11 +317,9 @@ export async function updatePasswordAction(
     });
 
     if (!validatedFields.success) {
-      throw new ValidationError(
-        'Mots de passe invalides',
-        undefined,
-        { validationErrors: validatedFields.error.flatten().fieldErrors }
-      );
+      throw new ValidationError("Mots de passe invalides", undefined, {
+        validationErrors: validatedFields.error.flatten().fieldErrors,
+      });
     }
 
     const { password } = validatedFields.data;
@@ -322,20 +335,24 @@ export async function updatePasswordAction(
 
     // 3. Succès
     const tSuccess = await getTranslations({ locale, namespace: "Auth.UpdatePassword" });
-    LogUtils.logOperationSuccess('update_password', context);
+    LogUtils.logOperationSuccess("update_password", context);
     return ActionResult.ok(null, tSuccess("successMessage"));
   } catch (error) {
-    LogUtils.logOperationError('update_password', error, context);
+    LogUtils.logOperationError("update_password", error, context);
     return ActionResult.error(
-      ErrorUtils.isAppError(error) ? ErrorUtils.formatForUser(error) : 'Une erreur inattendue est survenue'
+      ErrorUtils.isAppError(error)
+        ? ErrorUtils.formatForUser(error)
+        : "Une erreur inattendue est survenue"
     );
   }
 }
 
 // --- Action pour renvoyer l'email de confirmation ---
 export async function resendConfirmationEmailAction(email: string): Promise<ActionResult<null>> {
-  const context = LogUtils.createUserActionContext('unknown', 'resend_confirmation', 'auth', { email });
-  LogUtils.logOperationStart('resend_confirmation', context);
+  const context = LogUtils.createUserActionContext("unknown", "resend_confirmation", "auth", {
+    email,
+  });
+  LogUtils.logOperationStart("resend_confirmation", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -349,18 +366,21 @@ export async function resendConfirmationEmailAction(email: string): Promise<Acti
       throw ErrorUtils.fromSupabaseError(error);
     }
 
-    LogUtils.logOperationSuccess('resend_confirmation', context);
-    return ActionResult.ok(null, "Email de confirmation renvoyé avec succès. Veuillez vérifier votre boîte de réception.");
+    LogUtils.logOperationSuccess("resend_confirmation", context);
+    return ActionResult.ok(
+      null,
+      "Email de confirmation renvoyé avec succès. Veuillez vérifier votre boîte de réception."
+    );
   } catch (error) {
-    LogUtils.logOperationError('resend_confirmation', error, context);
-    return ActionResult.error('Une erreur est survenue lors du renvoi de l\'email.');
+    LogUtils.logOperationError("resend_confirmation", error, context);
+    return ActionResult.error("Une erreur est survenue lors du renvoi de l'email.");
   }
 }
 
 // --- Logout Action ---
 export async function logoutAction() {
-  const context = LogUtils.createUserActionContext('unknown', 'logout', 'auth');
-  LogUtils.logOperationStart('logout', context);
+  const context = LogUtils.createUserActionContext("unknown", "logout", "auth");
+  LogUtils.logOperationStart("logout", context);
 
   try {
     const supabase = await createSupabaseServerClient();
@@ -369,11 +389,11 @@ export async function logoutAction() {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      LogUtils.logOperationError('logout', error, context);
+      LogUtils.logOperationError("logout", error, context);
       // En cas d'erreur de déconnexion Supabase, on redirige quand même
       redirect("/?logout_error=true&message=" + encodeURIComponent(error.message));
     } else {
-      LogUtils.logOperationSuccess('logout', context);
+      LogUtils.logOperationSuccess("logout", context);
       // Redirection avec paramètre pour signaler la déconnexion réussie
       redirect("/?logged_out=true");
     }
@@ -395,7 +415,14 @@ export async function logoutAction() {
     }
 
     // Pour toutes les autres erreurs, loguer et rediriger vers une page d'erreur
-    LogUtils.logOperationError('logout', error, context);
+    LogUtils.logOperationError("logout", error, context);
     redirect("/?logout_error=true&message=" + encodeURIComponent(errorMessage));
   }
 }
+
+// --- Export Aliases for Tests ---
+// These aliases maintain backward compatibility with test files
+export const signInAction = loginAction;
+export const signOutAction = logoutAction;
+export const forgotPasswordAction = requestPasswordResetAction;
+export const resetPasswordAction = updatePasswordAction;
