@@ -1,445 +1,594 @@
-# Architecture Documentation
+# Guide d'Architecture - HerbisVeritas
 
-## Overview
+## Vue d'Ensemble
 
-HerbisVeritas is an e-commerce platform built with Next.js 15 App Router, featuring a comprehensive admin system, multilingual support, and integration with Supabase, Stripe, and Colissimo shipping. The architecture follows a server-first approach optimized for performance, type safety, and maintainability.
+HerbisVeritas est une plateforme e-commerce moderne construite selon une architecture **server-first** avec Next.js 15 App Router. L'architecture privilégie la performance, la sécurité et la maintenabilité à travers une approche progressive et modulaire.
 
-## Core Principles
+## Table des Matières
 
-1. **Server-First Approach**: Maximize Server Components usage with selective client-side interactivity
-2. **Type Safety**: End-to-end TypeScript with strict mode, Zod validation, and generated Supabase types
-3. **Security**: Row Level Security (RLS) policies, role-based admin system, and comprehensive validation
-4. **Performance**: Edge runtime, optimized caching, and image optimization
-5. **Maintainability**: Clear separation of concerns with organized component architecture
-6. **Internationalization**: Multi-language support with next-intl (French, English, German, Spanish)
+- [Principes Architecturaux](#principes-architecturaux)
+- [Architecture Globale](#architecture-globale)
+- [Couches Applicatives](#couches-applicatives)
+- [Patterns de Conception](#patterns-de-conception)
+- [Flux de Données](#flux-de-données)
+- [Gestion des États](#gestion-des-états)
+- [Sécurité](#sécurité)
+- [Performance](#performance)
 
-## System Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    CLIENT BROWSER                        │
-│  ┌─────────────────┐  ┌─────────────────────────────┐  │
-│  │   Public Shop   │  │        Admin Panel          │  │
-│  │   Multi-lang    │  │    Role-based Access       │  │
-│  └─────────────────┘  └─────────────────────────────┘  │
-├─────────────────────────────────────────────────────────┤
-│                 Next.js 15 App Router                    │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │       React Server Components (Default)         │  │
-│  │   Pages, Layouts, Data Fetching, SEO            │  │
-│  └──────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │           Client Components                      │  │
-│  │   Cart (Zustand), Forms, Interactive UI         │  │
-│  └──────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │             Server Actions                       │  │
-│  │   Form Handling, Mutations, Business Logic      │  │
-│  └──────────────────────────────────────────────────┘  │
-├─────────────────────────────────────────────────────────┤
-│                  APPLICATION LAYER                       │
-│ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │
-│ │  Services   │ │ Validators  │ │   Stores (Client)   │ │
-│ │  Shipping   │ │    Zod      │ │ Cart, Address, User │ │
-│ │  Cart, Auth │ │  Schemas    │ │    (Zustand)        │ │
-│ └─────────────┘ └─────────────┘ └─────────────────────┘ │
-├─────────────────────────────────────────────────────────┤
-│                   SECURITY LAYER                         │
-│   Middleware Auth • RLS Policies • Role Verification    │
-├─────────────────────────────────────────────────────────┤
-│                   DATA ACCESS LAYER                      │
-│           Supabase Client SDK with Type Safety          │
-└─────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│                   EXTERNAL SERVICES                      │
-│  Supabase (Auth/DB/Storage) • Stripe • Colissimo        │
-└─────────────────────────────────────────────────────────┘
-```
-
-## Directory Structure
-
-### `/src/app/[locale]`
-
-Next.js 15 App Router with internationalization support:
-
-- **Public Routes**: `/`, `/shop`, `/products/[slug]`, `/magazine`, `/contact`
-- **Auth Routes**: `/login`, `/register`, `/profile/*`
-- **Admin Routes**: `/admin/*` with role-based access control
-- **API Routes**: `/api/stripe-webhook`, `/api/colissimo-token`
-
-### `/src/components`
-
-Organized component architecture:
-
-- **auth/**: Authentication components (`Can`, `can-server`)
-- **common/**: Shared UI components (buttons, modals, search, filters)
-- **domain/**: Business domain components (checkout, profile, colissimo)
-- **features/**: Feature-specific components organized by domain:
-  - `admin/`: Complete admin dashboard with sidebar, monitoring, filters
-  - `magazine/`: Article management with TipTap editor and image upload
-  - `newsletter/`: Newsletter signup and management
-  - `shop/`: Product grid, cart, checkout, quantity controls
-- **forms/**: Form components with Zod validation
-- **layout/**: Page layout components (header, footer, navigation)
-- **ui/**: shadcn/ui components with custom additions
-
-### `/src/actions`
-
-Server Actions for secure data mutations:
-
-- `authActions.ts`: Login, register, password management
-- `cartActions.ts`: Cart operations with optimistic updates
-- `productActions.ts`: Product CRUD with image upload
-- `adminActions.ts`: Admin dashboard and user management
-- `orderActions.ts`: Order processing and management
-- `stripeActions.ts`: Payment processing integration
-
-### `/src/services`
-
-Business logic services:
-
-- `cart.service.ts`: Cart business logic and validation
-- `checkout.service.ts`: Checkout orchestration
-- `shipping.service.ts`: Colissimo integration and pickup points
-- `magazine.service.ts`: Article publication workflows
-- `address-validation.service.ts`: Address validation logic
-
-### `/src/stores`
-
-Zustand stores with persistence:
-
-- `cartStore.ts`: Shopping cart state with localStorage sync
-- `addressStore.ts`: User addresses management
-- `profileStore.ts`: User profile data
-
-### `/src/lib`
-
-Core utilities and configurations:
-
-- **auth/**: Advanced authentication system:
-  - `admin-service.ts`: Role-based access control with caching
-  - `server-auth.ts`: Server-side authentication utilities
-  - `types.ts`: Permission and role definitions
-- **supabase/**: Database integration:
-  - `client.ts`, `server.ts`, `admin.ts`: Different client configurations
-  - `types.ts`: Generated types with utility helpers
-- **storage/**: Centralized image upload system
-- **stripe/**: Payment processing utilities
-- **validators/**: Zod schemas for all data validation
-- **core/**: Error handling, logging, and result patterns
-
-### `/src/types`
-
-TypeScript definitions:
-
-- `supabase.ts`: Generated database types
-- Domain-specific types: `cart.ts`, `orders.ts`, `magazine.ts`, etc.
-
-### `/src/i18n`
-
-Internationalization setup:
-
-- Translation files for French (default), English, German, Spanish
-- Organized by feature/page for maintainability
-
-## Data Flow Patterns
-
-### Read Operations (Server Components)
-
-```
-Request → Middleware (Auth/i18n) → Server Component → Supabase Query → SSR HTML
-```
-
-### Write Operations (Server Actions)
-
-```
-Form Submit → Server Action → Auth Check → Zod Validation → Service Layer → Database Update → Cache Invalidation → Client Update/Redirect
-```
-
-### Admin Operations
-
-```
-Admin Request → Middleware Auth → Role Verification → Permission Check → Admin Service → Database → Audit Log → Response
-```
-
-### Cart Management
-
-```
-User Action → Client Component → Zustand Store → Server Action → Database Sync → LocalStorage Update → UI Refresh
-```
-
-### Image Upload Flow
-
-```
-File Select → Client Upload → Server Action → Auth Check → Validation → Supabase Storage → URL Generation → Database Update
-```
-
-### Payment Flow
-
-```
-Checkout → Cart Validation → Stripe Session → Payment Processing → Webhook → Order Creation → Email Notification → Success Page
-```
-
-### Shipping Integration
-
-```
-Order Creation → Colissimo API → Pickup Point Selection → Database Storage → Tracking Integration → Customer Notification
-```
-
-## Authentication & Authorization Architecture
-
-### Multi-Layer Security
-
-1. **Middleware Layer** (`middleware.ts`):
-   - Route protection for `/admin/*` and `/profile/*`
-   - Internationalization routing
-   - Supabase session validation with timeout handling
-   - Automatic redirect to login with return URL
-
-2. **Database Layer**:
-   - Row Level Security (RLS) policies on all tables
-   - User roles: `user`, `admin`, `super_admin`
-   - Permission system with granular access control
-
-3. **Admin System** (`lib/auth/admin-service.ts`):
-   - Database-driven role verification with in-memory caching
-   - Permission-based access control (`products:update`, `users:manage`, etc.)
-   - Security event logging in `audit_logs` table
-   - Cache invalidation on role changes
-
-4. **Server Actions Protection**:
-   - `withPermissionSafe` wrapper for automatic permission checks
-   - User context validation on every mutation
-   - Audit logging for sensitive operations
-
-### Permission System
-
-```typescript
-// Example permissions
-const permissions = {
-  "products:update": ["admin", "super_admin"],
-  "users:manage": ["super_admin"],
-  "content:create": ["admin", "super_admin"],
-  "*": ["super_admin"], // Wildcard permission
-};
-```
-
-### Security Features
-
-- JWT-based authentication with secure cookie storage
-- Automatic session refresh and cleanup
-- Failed access attempt logging
-- Emergency admin fallback system
-- CSRF protection via Server Actions
-
-## Performance Optimizations
-
-### Caching Strategy
-
-- **Next.js Cache**: Granular cache tags for targeted invalidation
-- **Role Caching**: In-memory admin role caching with TTL (5 minutes)
-- **Static Generation**: Product pages, magazine articles
-- **Dynamic Rendering**: User-specific data (cart, profile)
-- **Edge Runtime**: Lightweight API routes and middleware
-
-### State Management
-
-- **Server State**: Server Components by default, minimal client state
-- **Client State**: Zustand stores with persistence:
-  - Cart state synchronized with database
-  - Address management with optimistic updates
-  - Profile data caching
-
-### Image Optimization
-
-- **Centralized Upload System**: `lib/storage/image-upload.ts`
-- **Supabase Storage**: CDN-backed image storage
-- **Next.js Image**: Automatic optimization with WebP conversion
-- **File Validation**: Size limits (4MB), format restrictions
-- **Lazy Loading**: Progressive image loading with placeholders
-
-### Code Splitting
-
-- **Route-based**: Automatic splitting by Next.js App Router
-- **Component-level**: Dynamic imports for heavy components (TipTap editor)
-- **Admin Bundle**: Separate bundle for admin functionality
-- **Lazy Components**: Chart libraries, rich text editors loaded on demand
-
-### Database Optimization
-
-- **Connection Pooling**: Supabase handles connection management
-- **Query Optimization**: Selective field queries, pagination
-- **RLS Performance**: Efficient policy design
-- **Indexes**: Proper indexing on frequently queried fields
-
-## Security Measures
-
-### Input Validation
-
-- **Comprehensive Zod Schemas**: All user inputs validated (`lib/validators/`)
-- **File Upload Validation**: Size, type, and malware scanning
-- **SQL Injection Prevention**: Parameterized queries via Supabase
-- **XSS Protection**: Next.js built-in sanitization
-
-### Authentication & Session Management
-
-- **Supabase Auth**: JWT-based with automatic refresh
-- **Secure Cookies**: HttpOnly, SameSite=Lax, Secure in production
-- **Session Timeout**: Automatic cleanup and re-authentication
-- **Password Security**: Bcrypt hashing, strength validation
-
-### Data Protection
-
-- **Row Level Security**: Comprehensive RLS policies on all tables
-- **API Key Security**: Service role key server-side only
-- **CORS Configuration**: Restricted origins in production
-- **Rate Limiting**: Built-in Supabase rate limiting
-
-### Admin Security
-
-- **Role-based Access**: Database-verified admin roles
-- **Permission Granularity**: Fine-grained permission system
-- **Audit Logging**: All admin actions logged with context
-- **Security Monitoring**: Failed access attempt tracking
-
-### Additional Security
-
-- **Environment Variables**: Secure configuration management
-- **HTTPS Enforcement**: Automatic HTTPS in production
-- **Content Security Policy**: Configured for external resources
-- **Error Handling**: No sensitive data in error messages
-
-## Deployment Architecture
-
-```
-┌─────────────────────────────────────────────────┐
-│               Vercel Edge Network                │
-│            (CDN + Edge Functions)               │
-└─────────────────────────────────────────────────┘
-                        ↓
-┌─────────────────────────────────────────────────┐
-│            Next.js Application                  │
-│  ┌─────────────────┐  ┌─────────────────────┐  │
-│  │ Server Functions│  │   Static Assets     │  │
-│  │   (Serverless)  │  │  (Images, CSS, JS)  │  │
-│  └─────────────────┘  └─────────────────────┘  │
-│  ┌─────────────────────────────────────────────┐ │
-│  │           API Routes & Server Actions       │ │
-│  │     Stripe Webhooks, Auth Callbacks         │ │
-│  └─────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────┘
-                        ↓
-┌─────────────────────────────────────────────────┐
-│              External Services                  │
-│  ┌─────────────┐ ┌──────────┐ ┌─────────────┐  │
-│  │  Supabase   │ │  Stripe  │ │  Colissimo  │  │
-│  │ Auth/DB/    │ │ Payments │ │  Shipping   │  │
-│  │ Storage     │ │          │ │   API       │  │
-│  └─────────────┘ └──────────┘ └─────────────┘  │
-└─────────────────────────────────────────────────┘
-```
-
-### Environment Configuration
-
-- **Production**: Vercel with environment variables
-- **Development**: Local development with Supabase local
-- **Staging**: Branch deployments for testing
-- **Monitoring**: Built-in Vercel analytics and logging
-
-## Key Design Decisions
+## Principes Architecturaux
 
 ### 1. Server-First Architecture
 
-- **Server Components by Default**: Maximize server rendering for performance and SEO
-- **Selective Client Components**: Only when interactivity is required
-- **Server Actions**: Prefer over API routes for form handling and mutations
+```mermaid
+graph TB
+    A[Request] --> B[Middleware]
+    B --> C{Route Type}
+    C -->|Public| D[Server Component]
+    C -->|Protected| E[Auth Check]
+    E --> D
+    D --> F[Data Fetching]
+    F --> G[Response]
+    
+    subgraph "Server Side"
+        D
+        F
+        H[Business Logic]
+        I[Database]
+    end
+    
+    subgraph "Client Side"
+        J[Hydration]
+        K[Interactivity]
+        L[Client Components]
+    end
+    
+    G --> J
+    J --> K
+    K --> L
+```
 
-### 2. Type Safety Throughout
+**Avantages :**
+- SEO optimisé par défaut
+- Temps de chargement initial réduit
+- Sécurité renforcée (logique serveur)
+- Résilience aux pannes réseau
 
-- **Generated Supabase Types**: Direct database type usage with utility helpers
-- **Zod Validation**: Runtime and compile-time type safety
-- **TypeScript Strict Mode**: Zero tolerance for `any` types
+### 2. Progressive Enhancement
 
-### 3. Component Organization
+L'application fonctionne même sans JavaScript activé, avec amélioration progressive des fonctionnalités.
 
-- **Domain-Driven Structure**: Components organized by business domain
-- **Composition over Inheritance**: Flexible component composition patterns
-- **Single Responsibility**: Each component has a clear, focused purpose
+### 3. Type Safety Complète
 
-### 4. State Management Strategy
+- TypeScript strict mode
+- Validation runtime avec Zod
+- Types générés depuis Supabase
+- Zero `any` policy
 
-- **Server State First**: Leverage Server Components for data fetching
-- **Zustand for Client State**: Lightweight with automatic persistence
-- **Optimistic Updates**: Immediate UI feedback with server synchronization
+### 4. Security by Design
 
-### 5. Security by Design
+- Row Level Security (RLS) par défaut
+- Middleware de protection des routes
+- Audit automatique des actions sensibles
+- Validation double (client/serveur)
 
-- **Defense in Depth**: Multiple security layers (middleware, RLS, validation)
-- **Principle of Least Privilege**: Granular permission system
-- **Audit Everything**: Comprehensive logging for security events
+## Architecture Globale
 
-### 6. Developer Experience
+### Diagramme de l'Architecture
 
-- **Clear File Organization**: Intuitive directory structure
-- **Comprehensive Testing**: Unit and integration tests with MSW
-- **ESLint Enforcement**: Zero-error policy with strict rules
-- **Documentation**: Code comments and architectural documentation
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        A[Browser]
+        B[Mobile App]
+    end
+    
+    subgraph "CDN/Edge Layer"
+        C[Vercel Edge Network]
+        D[Static Assets]
+    end
+    
+    subgraph "Application Layer"
+        E[Next.js 15 App]
+        F[Middleware]
+        G[Server Components]
+        H[Client Components]
+        I[Server Actions]
+    end
+    
+    subgraph "Business Logic Layer"
+        J[Services]
+        K[Validators]
+        L[Utilities]
+    end
+    
+    subgraph "Data Layer"
+        M[Supabase Client]
+        N[PostgreSQL]
+        O[Storage]
+    end
+    
+    subgraph "External Services"
+        P[Stripe API]
+        Q[Colissimo API]
+        R[Email Service]
+    end
+    
+    A --> C
+    B --> C
+    C --> E
+    E --> F
+    F --> G
+    F --> H
+    G --> I
+    I --> J
+    J --> M
+    M --> N
+    M --> O
+    I --> P
+    I --> Q
+    I --> R
+```
 
-## Technology Stack Summary
+### Technologies par Couche
 
-### Core Framework
+| Couche | Technologies | Responsabilités |
+|--------|-------------|----------------|
+| **Présentation** | Next.js 15, React 19, Tailwind | UI/UX, Routing, SSR/SSG |
+| **Application** | Server Components, Server Actions | Logique applicative, State |
+| **Business** | TypeScript, Zod | Règles métier, Validation |
+| **Données** | Supabase, PostgreSQL | Persistance, RLS |
+| **Infrastructure** | Vercel, Edge Functions | Déploiement, Performance |
 
-- **Next.js 15**: App Router, Server Components, Server Actions
-- **React 18**: Concurrent features, Suspense, Error Boundaries
-- **TypeScript**: Strict mode with comprehensive type coverage
+## Couches Applicatives
 
-### Backend & Database
+### 1. Couche Présentation
 
-- **Supabase**: PostgreSQL, Authentication, Storage, RLS
-- **Server Actions**: Form handling and data mutations
-- **Edge Runtime**: Lightweight serverless functions
+```typescript
+// Structure des composants
+src/components/
+├── ui/              # Design system (shadcn/ui)
+├── common/          # Composants réutilisables
+├── features/        # Composants métier
+├── forms/           # Formulaires avec validation
+├── layout/          # Structure de page
+└── admin/           # Interface administration
+```
 
-### Styling & UI
+**Responsabilités :**
+- Rendu de l'interface utilisateur
+- Gestion des interactions
+- Validation côté client
+- Accessibilité et responsive design
 
-- **Tailwind CSS**: Utility-first styling
-- **shadcn/ui**: Accessible, customizable component library
-- **Responsive Design**: Mobile-first approach
+### 2. Couche Application
 
-### State Management
+```typescript
+// Server Actions pattern
+export async function createOrderAction(
+  prevState: unknown,
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    // 1. Validation
+    const validation = orderSchema.safeParse(data);
+    
+    // 2. Authentication
+    const user = await getCurrentUser();
+    
+    // 3. Authorization
+    await checkPermissions(user, 'orders:create');
+    
+    // 4. Business Logic
+    const result = await orderService.create(validation.data);
+    
+    // 5. Audit
+    await auditService.log('ORDER_CREATED', user.id, result);
+    
+    return { success: true, data: result };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+```
 
-- **Zustand**: Client-side state with persistence
-- **React Hook Form**: Form state management
-- **React Query**: (Future consideration for server state)
+### 3. Couche Services
 
-### External Integrations
+```typescript
+// Service pattern
+export class OrderService {
+  private supabase: SupabaseClient;
+  
+  async create(orderData: CreateOrderInput): Promise<Order> {
+    // Transaction avec rollback automatique
+    return await this.supabase.rpc('create_order_from_cart', {
+      cart_id: orderData.cartId,
+      shipping_address_id: orderData.shippingAddressId,
+      billing_address_id: orderData.billingAddressId
+    });
+  }
+  
+  async updateStatus(orderId: string, status: OrderStatus): Promise<void> {
+    // Mise à jour avec validation métier
+  }
+}
+```
 
-- **Stripe**: Payment processing with webhooks
-- **Colissimo**: French postal service integration
-- **TipTap**: Rich text editor for magazine content
-- **next-intl**: Internationalization support
+## Patterns de Conception
 
-## Future Considerations
+### 1. Server Actions Pattern
 
-### Short Term (Next 6 months)
+**Usage :** Mutations de données avec validation et audit automatique.
 
-- Enhanced monitoring with Vercel Analytics
-- Performance optimization with Partial Prerendering
-- Mobile app considerations (React Native)
-- Advanced search functionality
+```typescript
+// Pattern standard pour toutes les actions
+export async function actionTemplate(
+  prevState: unknown,
+  formData: FormData
+): Promise<ActionResult<T>> {
+  try {
+    // Validation Zod
+    const validation = schema.safeParse(data);
+    if (!validation.success) {
+      return createValidationError(validation.error);
+    }
+    
+    // Authentification
+    const user = await getAuthenticatedUser();
+    
+    // Autorisation
+    await verifyPermissions(user, requiredPermission);
+    
+    // Logique métier
+    const result = await businessService.execute(validation.data);
+    
+    // Cache invalidation
+    revalidateTag(cacheTag);
+    
+    // Audit logging
+    await logAction(actionType, user.id, result);
+    
+    return createSuccessResult(result);
+  } catch (error) {
+    return createErrorResult(error);
+  }
+}
+```
 
-### Medium Term (6-12 months)
+### 2. Component Composition Pattern
 
-- Migration to React 19 features when stable
-- Real-time features with Supabase Realtime
-- Advanced analytics dashboard
-- API rate limiting and quotas
+```typescript
+// Composition over inheritance
+export function ProductCard({ product }: ProductCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <ProductImage src={product.image} alt={product.name} />
+        <ProductTitle>{product.name}</ProductTitle>
+      </CardHeader>
+      <CardContent>
+        <ProductPrice price={product.price} />
+        <ProductDescription>{product.description}</ProductDescription>
+      </CardContent>
+      <CardFooter>
+        <AddToCartButton productId={product.id} />
+      </CardFooter>
+    </Card>
+  );
+}
+```
 
-### Long Term (12+ months)
+### 3. Custom Hooks Pattern
 
-- Microservices architecture consideration
-- Multi-tenant support
-- Advanced caching strategies (Redis)
-- Internationalization expansion
-- Progressive Web App capabilities
+```typescript
+// Encapsulation de la logique réutilisable
+export function useOptimisticCart() {
+  const [optimisticItems, setOptimisticItems] = useOptimistic(
+    cartItems,
+    (state, action) => {
+      switch (action.type) {
+        case 'ADD_ITEM':
+          return [...state, action.item];
+        case 'REMOVE_ITEM':
+          return state.filter(item => item.id !== action.itemId);
+        default:
+          return state;
+      }
+    }
+  );
+  
+  return {
+    items: optimisticItems,
+    addItem: (item) => setOptimisticItems({ type: 'ADD_ITEM', item }),
+    removeItem: (itemId) => setOptimisticItems({ type: 'REMOVE_ITEM', itemId })
+  };
+}
+```
+
+## Flux de Données
+
+### 1. Lecture de Données (Server Components)
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant SC as Server Component
+    participant DB as Database
+    participant CDN as Cache/CDN
+    
+    C->>SC: Request Page
+    SC->>DB: Fetch Data
+    DB-->>SC: Return Data
+    SC-->>C: SSR HTML
+    C->>CDN: Request Assets
+    CDN-->>C: Cached Assets
+```
+
+### 2. Mutations (Server Actions)
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant SA as Server Action
+    participant V as Validator
+    participant S as Service
+    participant DB as Database
+    participant A as Audit
+    
+    C->>SA: Form Submission
+    SA->>V: Validate Input
+    V-->>SA: Validation Result
+    SA->>S: Business Logic
+    S->>DB: Database Operation
+    DB-->>S: Result
+    SA->>A: Log Action
+    SA-->>C: Response + Revalidation
+```
+
+### 3. État Client (Zustand + Server State)
+
+```typescript
+// Hybride client/server state
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      // État optimiste
+      items: [],
+      
+      // Actions avec synchronisation serveur
+      addItem: async (product, quantity) => {
+        // 1. Mise à jour optimiste
+        set(state => ({
+          items: [...state.items, { ...product, quantity }]
+        }));
+        
+        try {
+          // 2. Synchronisation serveur
+          const result = await addToCartAction(product.id, quantity);
+          
+          if (!result.success) {
+            // 3. Rollback en cas d'erreur
+            set(state => ({
+              items: state.items.filter(item => item.id !== product.id)
+            }));
+            throw new Error(result.error);
+          }
+        } catch (error) {
+          // Gestion d'erreur avec rollback
+        }
+      }
+    }),
+    {
+      name: 'cart-storage',
+      version: 1
+    }
+  )
+);
+```
+
+## Gestion des États
+
+### Architecture Hybride
+
+```mermaid
+graph TB
+    subgraph "Server State"
+        A[Database]
+        B[Server Components]
+        C[Cache Next.js]
+    end
+    
+    subgraph "Client State"
+        D[Zustand Stores]
+        E[React Hook Form]
+        F[Local Storage]
+    end
+    
+    subgraph "Synchronisation"
+        G[Server Actions]
+        H[Optimistic Updates]
+        I[Cache Invalidation]
+    end
+    
+    A --> B
+    B --> C
+    D --> G
+    G --> A
+    G --> I
+    I --> C
+    D --> H
+    H --> D
+```
+
+### Stratégies par Type de Données
+
+| Type de Données | Stratégie | Outil |
+|-----------------|-----------|-------|
+| **Données utilisateur** | Server State | Server Components |
+| **Panier** | Hybride | Zustand + Server Actions |
+| **Formulaires** | Client State | React Hook Form |
+| **Préférences UI** | Client State | localStorage |
+| **Cache API** | Server State | Next.js Cache |
+
+## Sécurité
+
+### Architecture de Sécurité Multi-Couches
+
+```mermaid
+graph TB
+    subgraph "Frontend Security"
+        A[Input Validation]
+        B[XSS Protection]
+        C[CSRF Protection]
+    end
+    
+    subgraph "Transport Security"
+        D[HTTPS Only]
+        E[Security Headers]
+        F[Content Security Policy]
+    end
+    
+    subgraph "Application Security"
+        G[Authentication]
+        H[Authorization]
+        I[Rate Limiting]
+    end
+    
+    subgraph "Database Security"
+        J[Row Level Security]
+        K[Encrypted Storage]
+        L[Audit Logging]
+    end
+    
+    A --> G
+    B --> G
+    C --> G
+    G --> H
+    H --> J
+    I --> J
+    J --> K
+    J --> L
+```
+
+### Implémentation RLS
+
+```sql
+-- Politique de sécurité granulaire
+CREATE POLICY "users_own_profile" ON profiles
+  FOR ALL USING (auth.uid() = id);
+
+CREATE POLICY "admins_read_all_profiles" ON profiles
+  FOR SELECT USING (
+    auth.uid() = id OR 
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin'
+  );
+```
+
+## Performance
+
+### Stratégies d'Optimisation
+
+#### 1. Rendu Côté Serveur
+
+- Server Components par défaut
+- Streaming avec Suspense
+- Génération statique quand possible
+
+#### 2. Cache Multi-Niveaux
+
+```typescript
+// Cache strategies
+export async function getProducts() {
+  return await fetch('/api/products', {
+    next: {
+      revalidate: 3600,  // ISR avec revalidation
+      tags: ['products'] // Cache invalidation ciblée
+    }
+  });
+}
+
+// Invalidation ciblée
+export async function updateProduct(id: string) {
+  await updateProductInDB(id);
+  revalidateTag('products'); // Invalide seulement les produits
+}
+```
+
+#### 3. Optimisation des Images
+
+```typescript
+// Configuration Next.js
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'supabase-storage.com',
+        pathname: '/storage/v1/object/public/**'
+      }
+    ],
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920]
+  }
+};
+```
+
+#### 4. Code Splitting Automatique
+
+- Route-based splitting (App Router)
+- Dynamic imports pour composants lourds
+- Lazy loading avec Suspense
+
+### Métriques de Performance
+
+| Métrique | Cible | Mesure |
+|----------|-------|--------|
+| **First Contentful Paint** | < 1.5s | Lighthouse |
+| **Largest Contentful Paint** | < 2.5s | Web Vitals |
+| **Cumulative Layout Shift** | < 0.1 | Core Web Vitals |
+| **Time to Interactive** | < 3s | Lighthouse |
+
+## Évolutivité
+
+### Architecture Modulaire
+
+```
+src/
+├── modules/           # Modules métier isolés
+│   ├── auth/         # Authentification
+│   ├── cart/         # Panier
+│   ├── orders/       # Commandes
+│   └── products/     # Catalogue
+├── shared/           # Code partagé
+│   ├── ui/           # Composants UI
+│   ├── utils/        # Utilitaires
+│   └── types/        # Types globaux
+└── app/              # Configuration routes
+```
+
+### Stratégie de Montée en Charge
+
+1. **Vertical Scaling** : Augmentation des ressources Vercel
+2. **Edge Functions** : Distribution géographique
+3. **Database Scaling** : Read replicas Supabase
+4. **CDN Optimization** : Cache agressif des assets
+
+### Migration Strategy
+
+Pour une croissance future, l'architecture permet :
+
+- **Microservices** : Extraction graduelle de modules
+- **Database Sharding** : Partition par tenant/région
+- **API Gateway** : Centralisation des accès
+- **Event Sourcing** : Traçabilité complète des actions
+
+## Conclusion
+
+L'architecture HerbisVeritas privilégie :
+
+- **Simplicité** : Patterns cohérents et prévisibles
+- **Performance** : Server-first avec optimisations ciblées
+- **Sécurité** : Protection multi-couches et audit complet
+- **Maintenabilité** : Type safety et modularité
+- **Évolutivité** : Architecture préparée pour la croissance
+
+Cette approche garantit une base solide pour le développement et la maintenance à long terme de la plateforme.

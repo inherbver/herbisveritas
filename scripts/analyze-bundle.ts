@@ -222,7 +222,8 @@ async function main() {
   }
 }
 
-if (require.main === module) {
+// ES Module compatibility check
+if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 

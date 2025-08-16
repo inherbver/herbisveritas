@@ -26,21 +26,21 @@ import { CacheService } from "@/lib/cache/cache-service";
 import { MemoryCleanupButton } from "@/components/features/admin/MemoryCleanupButton";
 
 export default function PerformancePage() {
-  // Page temporairement masquée
   return (
-    <main className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center space-y-4">
-        <div className="mx-auto h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
-          <Activity className="h-6 w-6 text-yellow-600" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">Monitoring Performance</h1>
-        <p className="text-gray-600 max-w-md">
-          Cette fonctionnalité est temporairement indisponible pour maintenance.
-        </p>
-        <p className="text-sm text-gray-500">
-          Le système de monitoring sera bientôt disponible avec des fonctionnalités améliorées.
-        </p>
-      </div>
+    <main className="space-y-6">
+      <header className="flex items-center justify-between">
+        <section>
+          <h1 className="text-3xl font-bold tracking-tight">Performance Monitor</h1>
+          <p className="text-muted-foreground">
+            Surveillance en temps réel des performances système - Phase 2 Optimisée
+          </p>
+        </section>
+        <MemoryCleanupButton />
+      </header>
+
+      <Suspense fallback={<PerformancePageSkeleton />}>
+        <PerformanceContent />
+      </Suspense>
     </main>
   );
 }

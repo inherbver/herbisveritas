@@ -3,7 +3,7 @@
 "use client";
 
 import { UnifiedImageUpload } from "@/components/common/image-upload";
-import { uploadMagazineImage } from "@/actions/magazineActions";
+import { uploadMagazineImageAction } from "@/actions/magazineActions";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 
@@ -21,26 +21,37 @@ interface ImageUploadProps {
 export function ImageUpload({
   onImageSelect,
   trigger,
-  maxSizeInMB = 4,
-  allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"],
 }: ImageUploadProps) {
   const defaultTrigger = (
-    <Button variant="outline" type="button" className="flex items-center gap-2">
-      <Upload className="h-4 w-4" />
+    <Button variant="outline" role="button" aria-label="Ouvrir le sélecteur d'image">
+      <Upload className="mr-2 h-4 w-4" />
       Ajouter une image
     </Button>
   );
 
   return (
-    <section aria-label="Upload d'image pour magazine">
+    <article role="main" aria-label="Interface d'upload d'image magazine">
       <UnifiedImageUpload
         context="magazine"
         onUploadSuccess={onImageSelect}
-        uploadFunction={uploadMagazineImage}
+        uploadFunction={uploadMagazineImageAction}
         trigger={trigger || defaultTrigger}
-        maxSizeInMB={maxSizeInMB}
-        allowedTypes={allowedTypes}
+        label="Ajouter une image"
       />
-    </section>
+    </article>
   );
+}
+
+// Export des interfaces pour rétrocompatibilité
+export interface UploadedImage {
+  url: string;
+  filename: string;
+  size: number;
+}
+
+export interface UploadResult {
+  success: boolean;
+  message: string;
+  data?: { url: string };
+  errors?: { file?: string[]; fileName?: string[] };
 }
