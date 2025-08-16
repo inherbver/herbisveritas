@@ -37,6 +37,14 @@ export interface ShippingUpdateData {
   delivered_at?: string;
 }
 
+interface OrderUpdateData {
+  tracking_number?: string;
+  tracking_url?: string;
+  shipped_at?: string;
+  delivered_at?: string;
+  status?: string;
+}
+
 /**
  * Service de gestion de la livraison
  */
@@ -162,7 +170,7 @@ export class ShippingService {
       const supabase = await createSupabaseServerClient();
 
       // Préparer les données de mise à jour
-      const updateData: any = {};
+      const updateData: OrderUpdateData = {};
 
       if (shippingData.tracking_number !== undefined) {
         updateData.tracking_number = shippingData.tracking_number;

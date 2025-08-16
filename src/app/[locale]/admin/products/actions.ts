@@ -83,15 +83,19 @@ export const createProduct = withPermissionSafe(
         message: "Produit créé avec succès !",
         data: newProduct,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Gérer l'erreur de limite de taille
-      if (error.statusCode === 413 || error.message?.includes('Body exceeded 1 MB limit')) {
+      if (
+        (error as Error & { statusCode?: number }).statusCode === 413 ||
+        (error as Error).message?.includes("Body exceeded 1 MB limit")
+      ) {
         return {
           success: false,
-          message: "L'image sélectionnée dépasse la limite de 1 MB. Veuillez choisir une image plus petite ou compresser votre image.",
+          message:
+            "L'image sélectionnée dépasse la limite de 1 MB. Veuillez choisir une image plus petite ou compresser votre image.",
         };
       }
-      
+
       // Autres erreurs non prévues
       console.error("Erreur inattendue lors de la création du produit:", error);
       return {
@@ -177,15 +181,19 @@ export const updateProduct = withPermissionSafe(
         success: true,
         message: "Produit mis à jour avec succès !",
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Gérer l'erreur de limite de taille
-      if (error.statusCode === 413 || error.message?.includes('Body exceeded 1 MB limit')) {
+      if (
+        (error as Error & { statusCode?: number }).statusCode === 413 ||
+        (error as Error).message?.includes("Body exceeded 1 MB limit")
+      ) {
         return {
           success: false,
-          message: "L'image sélectionnée dépasse la limite de 1 MB. Veuillez choisir une image plus petite ou compresser votre image.",
+          message:
+            "L'image sélectionnée dépasse la limite de 1 MB. Veuillez choisir une image plus petite ou compresser votre image.",
         };
       }
-      
+
       // Autres erreurs non prévues
       console.error("Erreur inattendue lors de la mise à jour du produit:", error);
       return {

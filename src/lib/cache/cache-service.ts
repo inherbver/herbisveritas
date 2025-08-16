@@ -17,19 +17,19 @@ export interface CacheConfig {
 export interface CacheKey {
   type: "products" | "orders" | "users" | "stats" | "search";
   identifier: string;
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
 }
 
 // Cache en mémoire pour les données très fréquemment utilisées
 class MemoryCache {
-  private cache = new Map<string, { data: any; expires: number }>();
+  private cache = new Map<string, { data: unknown; expires: number }>();
   private maxSize = 200; // Limite de taille réduite pour éviter les fuites mémoire
 
-  set(key: string, data: any, ttl: number): void {
+  set(key: string, data: unknown, ttl: number): void {
     if (this.cache.size >= this.maxSize) {
       // Supprimer les entrées expirées d'abord
       this.cleanup();
-      
+
       // Si toujours plein, supprimer la plus ancienne
       if (this.cache.size >= this.maxSize) {
         const firstKey = this.cache.keys().next().value;
@@ -43,7 +43,7 @@ class MemoryCache {
     });
   }
 
-  get(key: string): any | null {
+  get(key: string): unknown | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
 
@@ -93,11 +93,17 @@ class MemoryCache {
 const memoryCache = new MemoryCache();
 
 // Nettoyage automatique toutes les 5 minutes
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    memoryCache['cleanup']();
-    console.log('[CACHE] Nettoyage automatique effectué. Taille actuelle:', memoryCache['cache'].size);
-  }, 5 * 60 * 1000); // 5 minutes
+if (typeof setInterval !== "undefined") {
+  setInterval(
+    () => {
+      memoryCache["cleanup"]();
+      console.log(
+        "[CACHE] Nettoyage automatique effectué. Taille actuelle:",
+        memoryCache["cache"].size
+      );
+    },
+    5 * 60 * 1000
+  ); // 5 minutes
 }
 
 /**
@@ -105,7 +111,7 @@ if (typeof setInterval !== 'undefined') {
  */
 export class CacheService {
   private static generateKey(cacheKey: CacheKey): string {
-    const paramsStr = cacheKey.params 
+    const paramsStr = cacheKey.params
       ? JSON.stringify(cacheKey.params, Object.keys(cacheKey.params).sort())
       : "";
     return `${cacheKey.type}:${cacheKey.identifier}:${paramsStr}`;
@@ -114,14 +120,14 @@ export class CacheService {
   /**
    * Cache React - pour les données partagées entre composants
    */
-  static createReactCache<T extends any[], R>(
+  static createReactCache<T extends unknown[], R>(
     fn: (...args: T) => Promise<R>,
     cacheKey: CacheKey,
     config: CacheConfig = {}
   ) {
     const cachedFn = cache(async (...args: T): Promise<R> => {
       const key = this.generateKey(cacheKey) + ":" + JSON.stringify(args);
-      
+
       // Essayer le cache mémoire d'abord
       if (config.memory !== false) {
         const cached = memoryCache.get(key);
@@ -145,38 +151,34 @@ export class CacheService {
   /**
    * Cache Next.js - pour les données côté serveur
    */
-  static createNextCache<T extends any[], R>(
+  static createNextCache<T extends unknown[], R>(
     fn: (...args: T) => Promise<R>,
     cacheKey: CacheKey,
     config: CacheConfig = {}
   ) {
     const key = this.generateKey(cacheKey);
-    
-    return unstable_cache(
-      fn,
-      [key],
-      {
-        revalidate: config.revalidate || config.ttl || 3600, // 1 heure par défaut
-        tags: config.tags || [cacheKey.type, cacheKey.identifier],
-      }
-    );
+
+    return unstable_cache(fn, [key], {
+      revalidate: config.revalidate || config.ttl || 3600, // 1 heure par défaut
+      tags: config.tags || [cacheKey.type, cacheKey.identifier],
+    });
   }
 
   /**
    * Cache hybride - combine React Cache et mémoire
    */
-  static createHybridCache<T extends any[], R>(
+  static createHybridCache<T extends unknown[], R>(
     fn: (...args: T) => Promise<R>,
     cacheKey: CacheKey,
     config: CacheConfig = {}
   ) {
     // React Cache pour la cohérence dans le rendu
     const reactCached = this.createReactCache(fn, cacheKey, config);
-    
+
     // Wrapper avec cache mémoire
     return async (...args: T): Promise<R> => {
       const key = this.generateKey(cacheKey) + ":" + JSON.stringify(args);
-      
+
       // Cache mémoire
       if (config.memory !== false) {
         const cached = memoryCache.get(key);
@@ -243,7 +245,7 @@ export class CacheService {
    */
   static async warmup(preloadFunctions: Array<() => Promise<any>>): Promise<void> {
     try {
-      await Promise.allSettled(preloadFunctions.map(fn => fn()));
+      await Promise.allSettled(preloadFunctions.map((fn) => fn()));
     } catch (error) {
       console.warn("Cache warmup failed:", error);
     }
@@ -256,92 +258,104 @@ export class CacheService {
  * Cache pour les produits
  */
 export const ProductsCache = {
-  search: (searchFn: any) => CacheService.createHybridCache(
-    searchFn,
-    { type: "products", identifier: "search" },
-    { ttl: 300, tags: ["products"], memory: true }
-  ),
+  search: <T extends unknown[], R>(searchFn: (...args: T) => Promise<R>) =>
+    CacheService.createHybridCache(
+      searchFn,
+      { type: "products", identifier: "search" },
+      { ttl: 300, tags: ["products"], memory: true }
+    ),
 
-  byId: (getFn: any) => CacheService.createHybridCache(
-    getFn,
-    { type: "products", identifier: "byId" },
-    { ttl: 600, tags: ["products"], memory: true }
-  ),
+  byId: <T extends unknown[], R>(getFn: (...args: T) => Promise<R>) =>
+    CacheService.createHybridCache(
+      getFn,
+      { type: "products", identifier: "byId" },
+      { ttl: 600, tags: ["products"], memory: true }
+    ),
 
-  list: (listFn: any) => CacheService.createNextCache(
-    listFn,
-    { type: "products", identifier: "list" },
-    { revalidate: 300, tags: ["products"] }
-  ),
+  list: <T extends unknown[], R>(listFn: (...args: T) => Promise<R>) =>
+    CacheService.createNextCache(
+      listFn,
+      { type: "products", identifier: "list" },
+      { revalidate: 300, tags: ["products"] }
+    ),
 
-  popular: (popularFn: any) => CacheService.createHybridCache(
-    popularFn,
-    { type: "products", identifier: "popular" },
-    { ttl: 900, tags: ["products", "stats"], memory: true }
-  ),
+  popular: <T extends unknown[], R>(popularFn: (...args: T) => Promise<R>) =>
+    CacheService.createHybridCache(
+      popularFn,
+      { type: "products", identifier: "popular" },
+      { ttl: 900, tags: ["products", "stats"], memory: true }
+    ),
 };
 
 /**
  * Cache pour les commandes
  */
 export const OrdersCache = {
-  adminList: (listFn: any) => CacheService.createReactCache(
-    listFn,
-    { type: "orders", identifier: "adminList" },
-    { ttl: 60, tags: ["orders"] }
-  ),
+  adminList: <T extends unknown[], R>(listFn: (...args: T) => Promise<R>) =>
+    CacheService.createReactCache(
+      listFn,
+      { type: "orders", identifier: "adminList" },
+      { ttl: 60, tags: ["orders"] }
+    ),
 
-  userOrders: (userOrdersFn: any) => CacheService.createHybridCache(
-    userOrdersFn,
-    { type: "orders", identifier: "userOrders" },
-    { ttl: 300, tags: ["orders"], memory: true }
-  ),
+  userOrders: <T extends unknown[], R>(userOrdersFn: (...args: T) => Promise<R>) =>
+    CacheService.createHybridCache(
+      userOrdersFn,
+      { type: "orders", identifier: "userOrders" },
+      { ttl: 300, tags: ["orders"], memory: true }
+    ),
 
-  stats: (statsFn: any) => CacheService.createHybridCache(
-    statsFn,
-    { type: "orders", identifier: "stats" },
-    { ttl: 300, tags: ["orders", "stats"], memory: true }
-  ),
+  stats: <T extends unknown[], R>(statsFn: (...args: T) => Promise<R>) =>
+    CacheService.createHybridCache(
+      statsFn,
+      { type: "orders", identifier: "stats" },
+      { ttl: 300, tags: ["orders", "stats"], memory: true }
+    ),
 };
 
 /**
  * Cache pour les utilisateurs
  */
 export const UsersCache = {
-  list: (listFn: any) => CacheService.createReactCache(
-    listFn,
-    { type: "users", identifier: "list" },
-    { ttl: 180, tags: ["users"] }
-  ),
+  list: <T extends unknown[], R>(listFn: (...args: T) => Promise<R>) =>
+    CacheService.createReactCache(
+      listFn,
+      { type: "users", identifier: "list" },
+      { ttl: 180, tags: ["users"] }
+    ),
 
-  profile: (profileFn: any) => CacheService.createHybridCache(
-    profileFn,
-    { type: "users", identifier: "profile" },
-    { ttl: 600, tags: ["users"], memory: true }
-  ),
+  profile: <T extends unknown[], R>(profileFn: (...args: T) => Promise<R>) =>
+    CacheService.createHybridCache(
+      profileFn,
+      { type: "users", identifier: "profile" },
+      { ttl: 600, tags: ["users"], memory: true }
+    ),
 
-  stats: (statsFn: any) => CacheService.createHybridCache(
-    statsFn,
-    { type: "users", identifier: "stats" },
-    { ttl: 600, tags: ["users", "stats"], memory: true }
-  ),
+  stats: <T extends unknown[], R>(statsFn: (...args: T) => Promise<R>) =>
+    CacheService.createHybridCache(
+      statsFn,
+      { type: "users", identifier: "stats" },
+      { ttl: 600, tags: ["users", "stats"], memory: true }
+    ),
 };
 
 /**
  * Cache pour les statistiques globales
  */
 export const StatsCache = {
-  dashboard: (dashboardFn: any) => CacheService.createHybridCache(
-    dashboardFn,
-    { type: "stats", identifier: "dashboard" },
-    { ttl: 300, tags: ["stats"], memory: true }
-  ),
+  dashboard: <T extends unknown[], R>(dashboardFn: (...args: T) => Promise<R>) =>
+    CacheService.createHybridCache(
+      dashboardFn,
+      { type: "stats", identifier: "dashboard" },
+      { ttl: 300, tags: ["stats"], memory: true }
+    ),
 
-  analytics: (analyticsFn: any) => CacheService.createNextCache(
-    analyticsFn,
-    { type: "stats", identifier: "analytics" },
-    { revalidate: 600, tags: ["stats", "analytics"] }
-  ),
+  analytics: <T extends unknown[], R>(analyticsFn: (...args: T) => Promise<R>) =>
+    CacheService.createNextCache(
+      analyticsFn,
+      { type: "stats", identifier: "analytics" },
+      { revalidate: 600, tags: ["stats", "analytics"] }
+    ),
 };
 
 // ===== HELPERS POUR L'INVALIDATION =====
@@ -409,7 +423,7 @@ export const CACHE_CONFIG = {
 /**
  * Helper pour cache les requêtes Supabase
  */
-export function cacheSupabaseQuery<T extends any[], R>(
+export function cacheSupabaseQuery<T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
   cacheKey: CacheKey,
   config: CacheConfig = {}
@@ -435,18 +449,15 @@ export const CacheMonitoring = {
     }
   },
 
-  trackCachePerformance: async <T>(
-    fn: () => Promise<T>,
-    cacheKey: string
-  ): Promise<T> => {
+  trackCachePerformance: async <T>(fn: () => Promise<T>, cacheKey: string): Promise<T> => {
     const start = performance.now();
     const result = await fn();
     const end = performance.now();
-    
+
     if (process.env.NODE_ENV === "development") {
       console.log(`[CACHE PERF] ${cacheKey} - ${(end - start).toFixed(2)}ms`);
     }
-    
+
     return result;
   },
 };

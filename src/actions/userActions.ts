@@ -33,8 +33,8 @@ export interface UserStats {
 export interface UserPaginationOptions {
   page: number;
   limit: number;
-  sortBy?: 'email' | 'created_at' | 'last_sign_in_at' | 'role';
-  sortDirection?: 'asc' | 'desc';
+  sortBy?: "email" | "created_at" | "last_sign_in_at" | "role";
+  sortDirection?: "asc" | "desc";
   search?: string;
   roleFilter?: string[];
   statusFilter?: string[];
@@ -61,29 +61,32 @@ export const getUsers = withPermissionSafe(
 
     try {
       const supabase = createSupabaseAdminClient();
-      
+
       // Default pagination
       const page = options?.page || 1;
       const limit = Math.min(options?.limit || 25, 100); // Cap at 100 for performance
-      
+
       // 1. Get total count first for better performance
       const { count: totalCount } = await supabase.auth.admin.listUsers({
         page: 1,
-        perPage: 1
+        perPage: 1,
       });
 
       if (!totalCount) {
-        return ActionResult.ok({
-          data: [],
-          pagination: {
-            page: 1,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false
-          }
-        }, "Aucun utilisateur trouvé");
+        return ActionResult.ok(
+          {
+            data: [],
+            pagination: {
+              page: 1,
+              limit,
+              total: 0,
+              totalPages: 0,
+              hasNext: false,
+              hasPrev: false,
+            },
+          },
+          "Aucun utilisateur trouvé"
+        );
       }
 
       // 2. Get users for current page only
@@ -99,7 +102,7 @@ export const getUsers = withPermissionSafe(
       const users = authUsers?.users || [];
 
       // 3. Get corresponding profiles in batch
-      const userIds = users.map(u => u.id);
+      const userIds = users.map((u) => u.id);
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, role, status, last_activity")
@@ -110,10 +113,10 @@ export const getUsers = withPermissionSafe(
       }
 
       // 4. Combine data efficiently
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
       let combinedUsers: UserForAdminPanel[] = users.map((user) => {
         const profile = profileMap.get(user.id);
-        const fullName = profile 
+        const fullName = profile
           ? [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null
           : null;
 
@@ -131,60 +134,63 @@ export const getUsers = withPermissionSafe(
       // 5. Apply client-side filters for better performance than multiple DB queries
       if (options?.search) {
         const searchTerm = options.search.toLowerCase();
-        combinedUsers = combinedUsers.filter(user => 
-          user.email.toLowerCase().includes(searchTerm) ||
-          (user.full_name && user.full_name.toLowerCase().includes(searchTerm))
+        combinedUsers = combinedUsers.filter(
+          (user) =>
+            user.email.toLowerCase().includes(searchTerm) ||
+            (user.full_name && user.full_name.toLowerCase().includes(searchTerm))
         );
       }
 
       if (options?.roleFilter && options.roleFilter.length > 0) {
-        combinedUsers = combinedUsers.filter(user => 
-          options.roleFilter!.includes(user.role || 'user')
+        combinedUsers = combinedUsers.filter((user) =>
+          options.roleFilter!.includes(user.role || "user")
         );
       }
 
       if (options?.statusFilter && options.statusFilter.length > 0) {
-        combinedUsers = combinedUsers.filter(user => 
-          options.statusFilter!.includes(user.status || 'active')
+        combinedUsers = combinedUsers.filter((user) =>
+          options.statusFilter!.includes(user.status || "active")
         );
       }
 
       // 6. Apply sorting
       if (options?.sortBy) {
-        const sortDirection = options.sortDirection || 'desc';
+        const sortDirection = options.sortDirection || "desc";
         combinedUsers.sort((a, b) => {
           const aVal = a[options.sortBy!];
           const bVal = b[options.sortBy!];
-          
+
           if (aVal === null || aVal === undefined) return 1;
           if (bVal === null || bVal === undefined) return -1;
-          
+
           const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-          return sortDirection === 'asc' ? comparison : -comparison;
+          return sortDirection === "asc" ? comparison : -comparison;
         });
       }
 
       const totalPages = Math.ceil(totalCount / limit);
 
-      LogUtils.logOperationSuccess("get_users", { 
-        ...context, 
+      LogUtils.logOperationSuccess("get_users", {
+        ...context,
         userCount: combinedUsers.length,
         page,
-        limit 
+        limit,
       });
 
-      return ActionResult.ok({
-        data: combinedUsers,
-        pagination: {
-          page,
-          limit,
-          total: totalCount,
-          totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
-        }
-      }, `${combinedUsers.length} utilisateurs récupérés (page ${page}/${totalPages})`);
-
+      return ActionResult.ok(
+        {
+          data: combinedUsers,
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
+          },
+        },
+        `${combinedUsers.length} utilisateurs récupérés (page ${page}/${totalPages})`
+      );
     } catch (error) {
       LogUtils.logOperationError("get_users", error, context);
       return ActionResult.error(
@@ -287,7 +293,7 @@ export const getUserStats = withPermissionSafe(
       const supabase = createSupabaseAdminClient();
 
       // 1. Get all users from auth.users (paginated to handle large datasets)
-      let allUsers: any[] = [];
+      let allUsers: unknown[] = [];
       let page = 1;
       const perPage = 1000; // Maximum allowed by Supabase
 

@@ -92,6 +92,33 @@ export interface ProductReference {
 }
 
 /**
+ * JSON structure for cart serialization
+ */
+export interface CartJSON {
+  id: string;
+  userId: string | null;
+  items: CartItemJSON[];
+  totalAmount: { amount: number; currency: string };
+  totalItems: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CartItemJSON {
+  id: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  price: { amount: number; currency: string };
+  quantity: number;
+  totalPrice: { amount: number; currency: string };
+  addedAt: string;
+  imageUrl?: string;
+  stock?: number;
+  isActive?: boolean;
+}
+
+/**
  * Cart Item Entity
  */
 export class CartItem {
@@ -362,7 +389,7 @@ export class Cart {
   /**
    * Create from JSON data
    */
-  static fromJSON(data: any): Cart {
+  static fromJSON(data: CartJSON): Cart {
     const items = new Map<string, CartItem>();
 
     if (data.items && Array.isArray(data.items)) {

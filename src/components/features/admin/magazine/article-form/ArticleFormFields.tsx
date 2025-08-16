@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUploadField } from "@/components/common/image-upload-field";
 import { uploadMagazineImageAction } from "@/actions/magazineActions";
-import { Category } from "@/types/magazine";
+import { Category, TipTapContent } from "@/types/magazine";
 
 interface ArticleFormValues {
   title: string;
@@ -24,7 +24,7 @@ interface ArticleFormValues {
   seo_title: string;
   seo_description: string;
   status: "draft" | "published" | "archived";
-  content: any;
+  content: TipTapContent;
 }
 
 interface ArticleFormFieldsProps {
@@ -36,7 +36,6 @@ interface ArticleFormFieldsProps {
   mode: "create" | "edit";
 }
 
-// Fonction utilitaire pour générer un slug
 const generateSlug = (title: string): string => {
   return title
     .toLowerCase()
@@ -74,7 +73,7 @@ export function ArticleFormFields({
         {/* Titre et Slug */}
         <fieldset className="grid gap-4">
           <legend className="text-lg font-semibold">Informations principales</legend>
-          
+
           <div>
             <Label htmlFor="title">
               Titre <span className="text-red-500">*</span>
@@ -87,7 +86,7 @@ export function ArticleFormFields({
               required
               aria-describedby="title-help"
             />
-            <p id="title-help" className="text-sm text-muted-foreground mt-1">
+            <p id="title-help" className="mt-1 text-sm text-muted-foreground">
               Le titre apparaîtra sur la page d'accueil et dans les résultats de recherche
             </p>
           </div>
@@ -104,7 +103,7 @@ export function ArticleFormFields({
               required
               aria-describedby="slug-help"
             />
-            <p id="slug-help" className="text-sm text-muted-foreground mt-1">
+            <p id="slug-help" className="mt-1 text-sm text-muted-foreground">
               L'URL de l'article. Généré automatiquement à partir du titre.
             </p>
           </div>
@@ -113,7 +112,7 @@ export function ArticleFormFields({
         {/* Extrait */}
         <fieldset>
           <legend className="text-lg font-semibold">Description</legend>
-          
+
           <div>
             <Label htmlFor="excerpt">Extrait</Label>
             <Textarea
@@ -124,7 +123,7 @@ export function ArticleFormFields({
               rows={3}
               aria-describedby="excerpt-help"
             />
-            <p id="excerpt-help" className="text-sm text-muted-foreground mt-1">
+            <p id="excerpt-help" className="mt-1 text-sm text-muted-foreground">
               Apparaît dans les aperçus et sur les réseaux sociaux
             </p>
           </div>
@@ -133,7 +132,7 @@ export function ArticleFormFields({
         {/* Image et Catégorie */}
         <fieldset className="grid gap-4">
           <legend className="text-lg font-semibold">Média et classification</legend>
-          
+
           <div>
             <ImageUploadField
               control={control}
@@ -161,7 +160,7 @@ export function ArticleFormFields({
                 ))}
               </SelectContent>
             </Select>
-            <p id="category-help" className="text-sm text-muted-foreground mt-1">
+            <p id="category-help" className="mt-1 text-sm text-muted-foreground">
               Aide à organiser et filtrer les articles
             </p>
           </div>
@@ -170,7 +169,7 @@ export function ArticleFormFields({
         {/* SEO */}
         <fieldset className="grid gap-4">
           <legend className="text-lg font-semibold">Optimisation SEO</legend>
-          
+
           <div>
             <Label htmlFor="seo_title">Titre SEO</Label>
             <Input
@@ -181,7 +180,7 @@ export function ArticleFormFields({
               maxLength={60}
               aria-describedby="seo-title-help"
             />
-            <p id="seo-title-help" className="text-sm text-muted-foreground mt-1">
+            <p id="seo-title-help" className="mt-1 text-sm text-muted-foreground">
               Recommandé : 50-60 caractères
             </p>
           </div>
@@ -197,7 +196,7 @@ export function ArticleFormFields({
               rows={2}
               aria-describedby="seo-desc-help"
             />
-            <p id="seo-desc-help" className="text-sm text-muted-foreground mt-1">
+            <p id="seo-desc-help" className="mt-1 text-sm text-muted-foreground">
               Recommandé : 150-160 caractères
             </p>
           </div>

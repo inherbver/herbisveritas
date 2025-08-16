@@ -1,9 +1,9 @@
 /**
  * Rate Limiting Decorator pour Server Actions
- * 
+ *
  * OBJECTIF: Protéger les Server Actions contre les attaques DDoS et brute force
  * CRITICITÉ: HAUTE - Vulnérabilité de sécurité critique
- * 
+ *
  * Fonctionnalités:
  * - Décorateur @withRateLimit simple à utiliser
  * - Configuration par endpoint
@@ -89,7 +89,7 @@ class InMemoryRateLimitStore {
       const newEntry: RateLimitEntry = {
         count: 1,
         resetTime: now + windowMs,
-        firstRequest: now
+        firstRequest: now,
       };
       this.store.set(key, newEntry);
       return newEntry;
@@ -118,7 +118,7 @@ class InMemoryRateLimitStore {
   getStats(): { totalEntries: number; memoryUsage: string } {
     return {
       totalEntries: this.store.size,
-      memoryUsage: `${Math.round(JSON.stringify([...this.store]).length / 1024)}KB`
+      memoryUsage: `${Math.round(JSON.stringify([...this.store]).length / 1024)}KB`,
     };
   }
 
@@ -149,57 +149,60 @@ export const RATE_LIMIT_CONFIGS = {
   AUTH: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 5, // 5 tentatives par 15 minutes
-    message: "Trop de tentatives de connexion. Réessayez dans 15 minutes."
+    message: "Trop de tentatives de connexion. Réessayez dans 15 minutes.",
   },
 
   // Actions de paiement - restrictif
   PAYMENT: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 3, // 3 tentatives par minute
-    message: "Trop de tentatives de paiement. Réessayez dans 1 minute."
+    message: "Trop de tentatives de paiement. Réessayez dans 1 minute.",
   },
 
   // Actions admin - modérément restrictif
   ADMIN: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 20, // 20 actions par minute
-    message: "Trop d'actions administratives. Réessayez dans 1 minute."
+    message: "Trop d'actions administratives. Réessayez dans 1 minute.",
   },
 
   // Actions de panier - permissif
   CART: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 30, // 30 actions par minute
-    message: "Trop d'actions sur le panier. Réessayez dans 1 minute."
+    message: "Trop d'actions sur le panier. Réessayez dans 1 minute.",
   },
 
   // Actions de contenu - standard
   CONTENT: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 15, // 15 actions par minute
-    message: "Trop d'actions sur le contenu. Réessayez dans 1 minute."
+    message: "Trop d'actions sur le contenu. Réessayez dans 1 minute.",
   },
 
   // Actions par défaut
   DEFAULT: {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 10, // 10 actions par minute
-    message: "Trop de requêtes. Réessayez dans 1 minute."
-  }
+    message: "Trop de requêtes. Réessayez dans 1 minute.",
+  },
 } as const;
 
 /**
  * Crée le contexte de rate limiting
  */
-async function createRateLimitContext(actionName: string, userId?: string): Promise<RateLimitContext> {
+async function createRateLimitContext(
+  actionName: string,
+  userId?: string
+): Promise<RateLimitContext> {
   const headersList = await headers();
-  
+
   return {
     userId,
     ip: getClientIP(headersList),
     userAgent: headersList.get("user-agent") || "unknown",
     timestamp: Date.now(),
-    actionName
+    actionName,
   };
 }
 
@@ -243,12 +246,12 @@ async function checkRateLimit(
 ): Promise<void> {
   const context = await createRateLimitContext(actionName, userId);
   const key = generateRateLimitKey(config, context);
-  
+
   const entry = rateLimitStore.increment(key, config.windowMs);
-  
+
   if (entry.count > config.maxRequests) {
     const resetInSeconds = Math.ceil((entry.resetTime - Date.now()) / 1000);
-    
+
     // Logger l'événement de sécurité
     await logSecurityEvent({
       type: "rate_limit_exceeded",
@@ -261,8 +264,8 @@ async function checkRateLimit(
         resetInSeconds,
         ip: context.ip,
         userAgent: context.userAgent,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
 
     logger.warn("Rate limit exceeded", {
@@ -271,10 +274,11 @@ async function checkRateLimit(
       count: entry.count,
       limit: config.maxRequests,
       resetInSeconds,
-      context
+      context,
     });
 
-    const message = config.message || `Trop de requêtes. Réessayez dans ${resetInSeconds} secondes.`;
+    const message =
+      config.message || `Trop de requêtes. Réessayez dans ${resetInSeconds} secondes.`;
     throw new RateLimitError(message);
   }
 
@@ -284,31 +288,31 @@ async function checkRateLimit(
     key,
     count: entry.count,
     limit: config.maxRequests,
-    context
+    context,
   });
 }
 
 /**
  * Décorateur pour appliquer le rate limiting
  */
-export function withRateLimit<T extends (...args: any[]) => any>(
+export function withRateLimit<T extends (...args: unknown[]) => unknown>(
   config: RateLimitConfig | keyof typeof RATE_LIMIT_CONFIGS,
   actionName?: string
 ) {
   return function (target: T, propertyKey?: string): T {
-    const finalActionName = actionName || propertyKey || target.name || 'unknown-action';
-    const finalConfig = typeof config === 'string' ? RATE_LIMIT_CONFIGS[config] : config;
+    const finalActionName = actionName || propertyKey || target.name || "unknown-action";
+    const finalConfig = typeof config === "string" ? RATE_LIMIT_CONFIGS[config] : config;
 
     const wrappedFunction = async (...args: Parameters<T>) => {
       try {
         // Extraire l'userId du premier argument si c'est un objet FormData ou object
         let userId: string | undefined;
-        
+
         if (args.length > 0) {
           const firstArg = args[0];
           if (firstArg instanceof FormData) {
-            userId = firstArg.get('userId')?.toString();
-          } else if (typeof firstArg === 'object' && firstArg !== null) {
+            userId = firstArg.get("userId")?.toString();
+          } else if (typeof firstArg === "object" && firstArg !== null) {
             userId = (firstArg as any).userId || (firstArg as any).user_id;
           }
         }
@@ -325,7 +329,6 @@ export function withRateLimit<T extends (...args: any[]) => any>(
         }
 
         return result;
-
       } catch (error) {
         // Optionnel: ne pas compter les requêtes échouées si configuré
         if (finalConfig.skipFailedRequests && !(error instanceof RateLimitError)) {
@@ -361,7 +364,10 @@ export const RateLimitUtils = {
   /**
    * Vérifie le statut du rate limiting pour une clé
    */
-  async checkStatus(actionName: string, userId?: string): Promise<{
+  async checkStatus(
+    actionName: string,
+    userId?: string
+  ): Promise<{
     remaining: number;
     resetTime: number;
     total: number;
@@ -369,7 +375,7 @@ export const RateLimitUtils = {
     const context = await createRateLimitContext(actionName, userId);
     const key = generateRateLimitKey(RATE_LIMIT_CONFIGS.DEFAULT, context);
     const entry = rateLimitStore.get(key);
-    
+
     if (!entry) {
       return null;
     }
@@ -377,7 +383,7 @@ export const RateLimitUtils = {
     return {
       remaining: Math.max(0, RATE_LIMIT_CONFIGS.DEFAULT.maxRequests - entry.count),
       resetTime: entry.resetTime,
-      total: RATE_LIMIT_CONFIGS.DEFAULT.maxRequests
+      total: RATE_LIMIT_CONFIGS.DEFAULT.maxRequests,
     };
   },
 
@@ -392,22 +398,27 @@ export const RateLimitUtils = {
     return {
       windowMs,
       maxRequests,
-      ...options
+      ...options,
     };
-  }
+  },
 };
 
 /**
  * Middleware pour Express-like frameworks (si nécessaire)
  */
 export function createRateLimitMiddleware(config: RateLimitConfig) {
-  return async (req: any, res: any, next: any) => {
+  return async (req: unknown, res: unknown, next: unknown) => {
     try {
+      const reqObj = req as {
+        ip?: string;
+        connection?: { remoteAddress?: string };
+        headers?: Record<string, string>;
+      };
       const context: RateLimitContext = {
-        ip: req.ip || req.connection.remoteAddress || 'unknown',
-        userAgent: req.headers['user-agent'] || 'unknown',
+        ip: reqObj.ip || reqObj.connection?.remoteAddress || "unknown",
+        userAgent: reqObj.headers?.["user-agent"] || "unknown",
         timestamp: Date.now(),
-        actionName: req.path || 'unknown'
+        actionName: (reqObj as { path?: string }).path || "unknown",
       };
 
       const key = generateRateLimitKey(config, context);
@@ -416,8 +427,8 @@ export function createRateLimitMiddleware(config: RateLimitConfig) {
       if (entry.count > config.maxRequests) {
         const resetInSeconds = Math.ceil((entry.resetTime - Date.now()) / 1000);
         res.status(429).json({
-          error: config.message || 'Trop de requêtes',
-          resetInSeconds
+          error: config.message || "Trop de requêtes",
+          resetInSeconds,
         });
         return;
       }
@@ -430,7 +441,7 @@ export function createRateLimitMiddleware(config: RateLimitConfig) {
 }
 
 // Nettoyer le store à l'arrêt de l'application
-if (typeof process !== 'undefined') {
-  process.on('SIGTERM', () => rateLimitStore.destroy());
-  process.on('SIGINT', () => rateLimitStore.destroy());
+if (typeof process !== "undefined") {
+  process.on("SIGTERM", () => rateLimitStore.destroy());
+  process.on("SIGINT", () => rateLimitStore.destroy());
 }

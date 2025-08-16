@@ -7,23 +7,64 @@ import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Activity, 
-  Database, 
-  Zap, 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Activity,
+  Database,
+  Zap,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
   Clock,
   Users,
   HardDrive,
   Gauge,
   Trash2,
-  RefreshCw
+  RefreshCw,
 } from "lucide-react";
 import { getCachedPerformanceReport } from "@/lib/performance/performance-monitor";
 import { CacheService } from "@/lib/cache/cache-service";
 import { MemoryCleanupButton } from "@/components/features/admin/MemoryCleanupButton";
+
+// Interfaces for performance data
+interface SystemHealth {
+  cacheHitRate: number;
+  averageDbResponseTime: number;
+  averageRenderTime: number;
+  memoryUsage: number;
+}
+
+interface PerformanceAnalysisData {
+  totalRequests: number;
+  averageResponseTime: number;
+  errorRate: number;
+  cacheEfficiency: number;
+  components: ComponentPerformance[];
+  metrics: PerformanceMetric[];
+}
+
+interface ComponentPerformance {
+  componentName: string;
+  dbQueries: number;
+  cacheHits: number;
+  renderTime: number;
+}
+
+interface PerformanceMetric {
+  category: string;
+  name: string;
+  value: number;
+  unit: string;
+  timestamp: string;
+}
+
+interface CacheStats {
+  memory: {
+    size: number;
+    maxSize: number;
+    entries: Array<{ key: string; expiresIn: number }>;
+  };
+  timestamp: string;
+}
 
 export default function PerformancePage() {
   return (
@@ -77,34 +118,44 @@ async function PerformanceContent() {
     return (
       <article className="space-y-6">
         <section aria-labelledby="system-health">
-          <h2 id="system-health" className="sr-only">État de santé du système</h2>
+          <h2 id="system-health" className="sr-only">
+            État de santé du système
+          </h2>
           <SystemHealthCards health={performanceReport.summary} />
         </section>
 
         <section aria-labelledby="performance-analysis">
-          <h2 id="performance-analysis" className="sr-only">Analyse des performances</h2>
+          <h2 id="performance-analysis" className="sr-only">
+            Analyse des performances
+          </h2>
           <PerformanceAnalysis analysis={performanceReport.analysis} />
         </section>
 
         <section aria-labelledby="cache-stats">
-          <h2 id="cache-stats" className="sr-only">Statistiques du cache</h2>
+          <h2 id="cache-stats" className="sr-only">
+            Statistiques du cache
+          </h2>
           <CacheStatsCard stats={cacheStats} />
         </section>
 
         <section aria-labelledby="component-performance">
-          <h2 id="component-performance" className="sr-only">Performance des composants</h2>
+          <h2 id="component-performance" className="sr-only">
+            Performance des composants
+          </h2>
           <ComponentPerformanceCard components={performanceReport.components} />
         </section>
 
         <section aria-labelledby="recent-metrics">
-          <h2 id="recent-metrics" className="sr-only">Métriques récentes</h2>
+          <h2 id="recent-metrics" className="sr-only">
+            Métriques récentes
+          </h2>
           <RecentMetricsCard metrics={performanceReport.metrics.slice(-10)} />
         </section>
       </article>
     );
   } catch (error) {
     console.error("Error loading performance data:", error);
-    
+
     // Fallback vers mock data en cas d'erreur
     const mockHealth = {
       cacheHitRate: 92.5,
@@ -112,44 +163,54 @@ async function PerformanceContent() {
       averageRenderTime: 120,
       memoryUsage: 180,
       activeUsers: 12,
-      errorRate: 0.2
+      errorRate: 0.2,
     };
-    
+
     const mockAnalysis = {
       insights: ["Excellent taux de cache: 92.5%", "Temps de réponse DB optimal: 45ms"],
       recommendations: [],
-      alerts: []
+      alerts: [],
     };
-    
+
     const mockCacheStats = {
       memory: { size: 45, maxSize: 1000, entries: [] },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     return (
       <article className="space-y-6">
         <section aria-labelledby="system-health-fallback">
-          <h2 id="system-health-fallback" className="sr-only">État de santé du système (mode dégradé)</h2>
+          <h2 id="system-health-fallback" className="sr-only">
+            État de santé du système (mode dégradé)
+          </h2>
           <SystemHealthCards health={mockHealth} />
         </section>
 
         <section aria-labelledby="performance-analysis-fallback">
-          <h2 id="performance-analysis-fallback" className="sr-only">Analyse des performances (mode dégradé)</h2>
+          <h2 id="performance-analysis-fallback" className="sr-only">
+            Analyse des performances (mode dégradé)
+          </h2>
           <PerformanceAnalysis analysis={mockAnalysis} />
         </section>
 
         <section aria-labelledby="cache-stats-fallback">
-          <h2 id="cache-stats-fallback" className="sr-only">Statistiques du cache (mode dégradé)</h2>
+          <h2 id="cache-stats-fallback" className="sr-only">
+            Statistiques du cache (mode dégradé)
+          </h2>
           <CacheStatsCard stats={mockCacheStats} />
         </section>
 
         <section aria-labelledby="component-performance-fallback">
-          <h2 id="component-performance-fallback" className="sr-only">Performance des composants (aucune donnée)</h2>
+          <h2 id="component-performance-fallback" className="sr-only">
+            Performance des composants (aucune donnée)
+          </h2>
           <ComponentPerformanceCard components={[]} />
         </section>
 
         <section aria-labelledby="recent-metrics-fallback">
-          <h2 id="recent-metrics-fallback" className="sr-only">Métriques récentes (aucune donnée)</h2>
+          <h2 id="recent-metrics-fallback" className="sr-only">
+            Métriques récentes (aucune donnée)
+          </h2>
           <RecentMetricsCard metrics={[]} />
         </section>
       </article>
@@ -157,7 +218,7 @@ async function PerformanceContent() {
   }
 }
 
-function SystemHealthCards({ health }: { health: any }) {
+function SystemHealthCards({ health }: { health: SystemHealth }) {
   const getHealthStatus = (value: number, thresholds: { good: number; warning: number }) => {
     if (value <= thresholds.good) return { color: "green", status: "Excellent" };
     if (value <= thresholds.warning) return { color: "yellow", status: "Attention" };
@@ -170,7 +231,7 @@ function SystemHealthCards({ health }: { health: any }) {
   const memoryStatus = getHealthStatus(health.memoryUsage, { good: 200, warning: 500 });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Cache Hit Rate</CardTitle>
@@ -178,8 +239,16 @@ function SystemHealthCards({ health }: { health: any }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{health.cacheHitRate.toFixed(1)}%</div>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant={cacheStatus.color === "green" ? "default" : cacheStatus.color === "yellow" ? "secondary" : "destructive"}>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge
+              variant={
+                cacheStatus.color === "green"
+                  ? "default"
+                  : cacheStatus.color === "yellow"
+                    ? "secondary"
+                    : "destructive"
+              }
+            >
               {cacheStatus.status}
             </Badge>
           </div>
@@ -193,8 +262,16 @@ function SystemHealthCards({ health }: { health: any }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{health.averageDbResponseTime.toFixed(0)}ms</div>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant={dbStatus.color === "green" ? "default" : dbStatus.color === "yellow" ? "secondary" : "destructive"}>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge
+              variant={
+                dbStatus.color === "green"
+                  ? "default"
+                  : dbStatus.color === "yellow"
+                    ? "secondary"
+                    : "destructive"
+              }
+            >
               {dbStatus.status}
             </Badge>
           </div>
@@ -208,8 +285,16 @@ function SystemHealthCards({ health }: { health: any }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{health.averageRenderTime.toFixed(0)}ms</div>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant={renderStatus.color === "green" ? "default" : renderStatus.color === "yellow" ? "secondary" : "destructive"}>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge
+              variant={
+                renderStatus.color === "green"
+                  ? "default"
+                  : renderStatus.color === "yellow"
+                    ? "secondary"
+                    : "destructive"
+              }
+            >
               {renderStatus.status}
             </Badge>
           </div>
@@ -223,8 +308,16 @@ function SystemHealthCards({ health }: { health: any }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{health.memoryUsage.toFixed(0)}MB</div>
-          <div className="flex items-center gap-2 mt-2">
-            <Badge variant={memoryStatus.color === "green" ? "default" : memoryStatus.color === "yellow" ? "secondary" : "destructive"}>
+          <div className="mt-2 flex items-center gap-2">
+            <Badge
+              variant={
+                memoryStatus.color === "green"
+                  ? "default"
+                  : memoryStatus.color === "yellow"
+                    ? "secondary"
+                    : "destructive"
+              }
+            >
               {memoryStatus.status}
             </Badge>
           </div>
@@ -234,9 +327,9 @@ function SystemHealthCards({ health }: { health: any }) {
   );
 }
 
-function PerformanceAnalysis({ analysis }: { analysis: any }) {
+function PerformanceAnalysis({ analysis }: { analysis: PerformanceAnalysisData }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {/* Insights */}
       <Card>
         <CardHeader>
@@ -249,8 +342,8 @@ function PerformanceAnalysis({ analysis }: { analysis: any }) {
           {analysis.insights.length > 0 ? (
             <ul className="space-y-2">
               {analysis.insights.map((insight: string, index: number) => (
-                <li key={index} className="text-sm text-green-700 flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <li key={index} className="flex items-start gap-2 text-sm text-green-700">
+                  <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   {insight}
                 </li>
               ))}
@@ -273,8 +366,8 @@ function PerformanceAnalysis({ analysis }: { analysis: any }) {
           {analysis.recommendations.length > 0 ? (
             <ul className="space-y-2">
               {analysis.recommendations.map((rec: string, index: number) => (
-                <li key={index} className="text-sm text-blue-700 flex items-start gap-2">
-                  <TrendingUp className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <li key={index} className="flex items-start gap-2 text-sm text-blue-700">
+                  <TrendingUp className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   {rec}
                 </li>
               ))}
@@ -297,14 +390,14 @@ function PerformanceAnalysis({ analysis }: { analysis: any }) {
           {analysis.alerts.length > 0 ? (
             <ul className="space-y-2">
               {analysis.alerts.map((alert: string, index: number) => (
-                <li key={index} className="text-sm text-red-700 flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <li key={index} className="flex items-start gap-2 text-sm text-red-700">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   {alert}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-green-600 flex items-center gap-2">
+            <p className="flex items-center gap-2 text-sm text-green-600">
               <CheckCircle className="h-4 w-4" />
               Aucune alerte
             </p>
@@ -315,7 +408,7 @@ function PerformanceAnalysis({ analysis }: { analysis: any }) {
   );
 }
 
-function CacheStatsCard({ stats }: { stats: any }) {
+function CacheStatsCard({ stats }: { stats: CacheStats }) {
   return (
     <Card>
       <CardHeader>
@@ -326,38 +419,32 @@ function CacheStatsCard({ stats }: { stats: any }) {
         <CardDescription>État du cache mémoire en temps réel</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <p className="text-sm font-medium">Utilisation Mémoire</p>
             <div className="text-2xl font-bold">
               {stats.memory.size}/{stats.memory.maxSize}
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full" 
+            <div className="h-2 w-full rounded-full bg-gray-200">
+              <div
+                className="h-2 rounded-full bg-blue-600"
                 style={{ width: `${(stats.memory.size / stats.memory.maxSize) * 100}%` }}
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <p className="text-sm font-medium">Entries Actives</p>
             <div className="text-2xl font-bold text-green-600">
-              {stats.memory.entries.filter((e: any) => e.expiresIn > 0).length}
+              {stats.memory.entries.filter((e) => e.expiresIn > 0).length}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Entries valides en cache
-            </p>
+            <p className="text-xs text-muted-foreground">Entries valides en cache</p>
           </div>
 
           <div className="space-y-2">
             <p className="text-sm font-medium">Dernière Mise à Jour</p>
-            <div className="text-sm">
-              {new Date(stats.timestamp).toLocaleTimeString('fr-FR')}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Heure de dernière mesure
-            </p>
+            <div className="text-sm">{new Date(stats.timestamp).toLocaleTimeString("fr-FR")}</div>
+            <p className="text-xs text-muted-foreground">Heure de dernière mesure</p>
           </div>
         </div>
       </CardContent>
@@ -365,7 +452,7 @@ function CacheStatsCard({ stats }: { stats: any }) {
   );
 }
 
-function ComponentPerformanceCard({ components }: { components: any[] }) {
+function ComponentPerformanceCard({ components }: { components: ComponentPerformance[] }) {
   return (
     <Card>
       <CardHeader>
@@ -379,7 +466,7 @@ function ComponentPerformanceCard({ components }: { components: any[] }) {
         {components.length > 0 ? (
           <div className="space-y-4">
             {components.slice(0, 5).map((comp, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              <div key={index} className="flex items-center justify-between rounded-lg border p-3">
                 <div>
                   <p className="font-medium">{comp.componentName}</p>
                   <p className="text-sm text-muted-foreground">
@@ -394,7 +481,7 @@ function ComponentPerformanceCard({ components }: { components: any[] }) {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-center py-4">
+          <p className="py-4 text-center text-muted-foreground">
             Aucune donnée de performance disponible
           </p>
         )}
@@ -403,7 +490,7 @@ function ComponentPerformanceCard({ components }: { components: any[] }) {
   );
 }
 
-function RecentMetricsCard({ metrics }: { metrics: any[] }) {
+function RecentMetricsCard({ metrics }: { metrics: PerformanceMetric[] }) {
   return (
     <Card>
       <CardHeader>
@@ -426,17 +513,18 @@ function RecentMetricsCard({ metrics }: { metrics: any[] }) {
                 </div>
                 <div className="text-right">
                   <span className="font-medium">
-                    {metric.value.toFixed(metric.unit === "ms" ? 1 : 0)}{metric.unit}
+                    {metric.value.toFixed(metric.unit === "ms" ? 1 : 0)}
+                    {metric.unit}
                   </span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    {new Date(metric.timestamp).toLocaleTimeString('fr-FR')}
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {new Date(metric.timestamp).toLocaleTimeString("fr-FR")}
                   </span>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-center py-4">
+          <p className="py-4 text-center text-muted-foreground">
             Aucune métrique récente disponible
           </p>
         )}
@@ -449,14 +537,14 @@ function PerformancePageSkeleton() {
   return (
     <div className="space-y-6">
       {/* Health Cards Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardHeader className="space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="mb-2 h-8 w-16" />
               <Skeleton className="h-6 w-20" />
             </CardContent>
           </Card>
@@ -464,7 +552,7 @@ function PerformancePageSkeleton() {
       </div>
 
       {/* Analysis Cards Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {[...Array(3)].map((_, i) => (
           <Card key={i}>
             <CardHeader>
@@ -488,7 +576,7 @@ function PerformancePageSkeleton() {
           <Skeleton className="h-4 w-60" />
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="space-y-2">
                 <Skeleton className="h-4 w-24" />
