@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server"; // Importe le client Supabase côté serveur
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
 import { isGeneralErrorResult, isValidationErrorResult } from "@/lib/cart-helpers"; // ✅ Corriger les noms d'imports

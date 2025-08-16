@@ -2,6 +2,7 @@
 
 import crypto from "crypto";
 import { revalidateTag } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { getActiveUserId } from "@/utils/authUtils";
@@ -35,13 +36,18 @@ export { getCart };
 
 // --- Cart Actions ---
 
-export const addItemToCart = withRateLimit(
+export const addItemToCart = withRateLimit<
+  (
+    prevState: unknown,
+    formData: FormData
+  ) => Promise<CartActionResult<(CartData & { guestCartId?: string }) | null>>
+>(
   "CART",
   "add-item"
 )(async function addItemToCart(
   prevState: unknown,
   formData: FormData
-): Promise<CartActionResult<CartData | null>> {
+): Promise<CartActionResult<(CartData & { guestCartId?: string }) | null>> {
   try {
     const validatedFields = AddToCartInputSchema.safeParse({
       productId: formData.get("productId"),
@@ -66,32 +72,69 @@ export const addItemToCart = withRateLimit(
       .eq("id", productId)
       .single();
     const activeUserId = await getActiveUserId(supabase);
-    if (!activeUserId) {
-      return createGeneralErrorResult(
-        "User identification failed",
-        "Impossible d'identifier l'utilisateur."
-      );
+
+    // Gestion des utilisateurs invités (guests) - similaire à cartReader.ts
+    let cartId: string | null = null;
+
+    if (activeUserId) {
+      // Utilisateur authentifié - chercher son panier
+      const { data: existingCart, error: findCartError } = await supabase
+        .from("carts")
+        .select("id")
+        .eq("user_id", activeUserId)
+        .maybeSingle();
+
+      if (findCartError) throw findCartError;
+      cartId = existingCart?.id || null;
+    } else {
+      // Utilisateur invité - chercher le panier via cookie
+      const cookieStore = await cookies();
+      const guestCartId = cookieStore.get("herbis-cart-id")?.value;
+
+      if (guestCartId) {
+        // Vérifier que le panier invité existe
+        const { data: guestCart, error: guestCartError } = await supabase
+          .from("carts")
+          .select("id")
+          .eq("id", guestCartId)
+          .maybeSingle();
+
+        if (guestCartError) throw guestCartError;
+        cartId = guestCart?.id || null;
+      }
     }
 
-    const { data: existingCart, error: findCartError } = await supabase
-      .from("carts")
-      .select("id")
-      .eq("user_id", activeUserId)
-      .maybeSingle();
-
-    if (findCartError) throw findCartError;
-
-    let cartId = existingCart?.id;
+    // Créer un nouveau panier si nécessaire
     if (!cartId) {
-      const { data: newCart, error: newCartError } = await supabase
-        .from("carts")
-        .insert({ user_id: activeUserId })
-        .select("id")
-        .single();
-      if (newCartError || !newCart) {
-        throw newCartError || new Error("Cart creation failed.");
+      if (activeUserId) {
+        // Créer un panier pour utilisateur authentifié
+        const { data: newCart, error: newCartError } = await supabase
+          .from("carts")
+          .insert({ user_id: activeUserId })
+          .select("id")
+          .single();
+        if (newCartError || !newCart) {
+          throw newCartError || new Error("Cart creation failed.");
+        }
+        cartId = newCart.id;
+      } else {
+        // Créer un panier invité avec un guest_id généré
+        const guestId = crypto.randomUUID();
+        const { data: newGuestCart, error: newGuestCartError } = await supabase
+          .from("carts")
+          .insert({ guest_id: guestId })
+          .select("id")
+          .single();
+        if (newGuestCartError || !newGuestCart) {
+          throw newGuestCartError || new Error("Guest cart creation failed.");
+        }
+        cartId = newGuestCart.id;
       }
-      cartId = newCart.id;
+    }
+
+    // Vérification de sécurité - cartId ne devrait jamais être null à ce point
+    if (!cartId) {
+      throw new Error("Failed to create or find cart");
     }
 
     const { error: rpcError } = await supabase.rpc("add_or_update_cart_item", {
@@ -122,7 +165,7 @@ export const addItemToCart = withRateLimit(
     // Log l'ajout au panier
     await logEvent(
       "CART_ITEM_ADDED",
-      activeUserId,
+      activeUserId || undefined,
       {
         product_id: productId,
         product_name: product?.name || "Produit inconnu",
@@ -133,7 +176,15 @@ export const addItemToCart = withRateLimit(
       "INFO"
     );
 
-    return createSuccessResult(updatedCart.data, "Article ajouté au panier avec succès.");
+    const resultData = {
+      ...updatedCart.data,
+      ...(!activeUserId && cartId && { guestCartId: cartId }),
+    };
+
+    return createSuccessResult(
+      resultData as CartData & { guestCartId?: string },
+      "Article ajouté au panier avec succès."
+    );
   } catch (error: unknown) {
     const errorMessage = (error as Error).message;
     console.error("addItemToCart Error:", error);

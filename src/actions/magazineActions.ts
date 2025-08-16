@@ -29,7 +29,6 @@ import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
 import { ValidationError, AuthenticationError, ErrorUtils } from "@/lib/core/errors";
 
-// Fonction utilitaire pour nettoyer le contenu TipTap avant sauvegarde
 function sanitizeTipTapContent(content: unknown): TipTapContent {
   console.log("🧹 [MagazineActions] sanitizeTipTapContent reçu:", JSON.stringify(content, null, 2));
 

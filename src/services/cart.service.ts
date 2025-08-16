@@ -145,7 +145,6 @@ export class CartDomainService {
         return Result.error(userValidation.getError());
       }
 
-      // Get product details with stock validation
       const productResult = await this.productRepository.findById(productId);
       if (productResult.isError()) {
         return Result.error(new BusinessError("Erreur lors de la récupération du produit"));

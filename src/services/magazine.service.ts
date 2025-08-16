@@ -524,5 +524,4 @@ export class MagazineService {
   }
 }
 
-// Export du service instancié pour utilisation directe
 export const magazineService = new MagazineService();
