@@ -15,6 +15,9 @@ import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
 import { ValidationError, AuthenticationError, ErrorUtils } from "@/lib/core/errors";
 
+// SÉCURITÉ: Rate limiting pour actions d'authentification
+import { withRateLimit } from "@/lib/security/rate-limit-decorator";
+
 // --- Schéma Login ---
 const loginSchema = z.object({
   email: z.string().email({ message: "L'adresse email n'est pas valide." }),
@@ -30,7 +33,10 @@ export interface AuthActionResult {
 }
 
 // --- Action de Connexion ---
-export async function loginAction(
+export const loginAction = withRateLimit(
+  "AUTH", // Configuration de rate limiting pour auth
+  "login"
+)(async function loginAction(
   prevState: ActionResult<null> | undefined,
   formData: FormData
 ): Promise<ActionResult<null>> {
@@ -120,10 +126,13 @@ export async function loginAction(
 
     return ActionResult.error("Une erreur inattendue est survenue");
   }
-}
+});
 
 // --- Action d'Inscription ---
-export async function signUpAction(
+export const signUpAction = withRateLimit(
+  "AUTH", // Configuration de rate limiting pour auth
+  "signup"
+)(async function signUpAction(
   prevState: AuthActionResult | undefined,
   formData: FormData
 ): Promise<ActionResult<null>> {
@@ -217,7 +226,7 @@ export async function signUpAction(
         : "Une erreur inattendue est survenue"
     );
   }
-}
+});
 
 // --- Mot de passe oublié ---
 export async function requestPasswordResetAction(

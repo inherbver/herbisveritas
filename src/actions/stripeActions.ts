@@ -20,6 +20,9 @@ import { ProductValidationService } from "@/services/product-validation.service"
 import { AddressValidationService } from "@/services/address-validation.service";
 import { ErrorUtils } from "@/lib/core/errors";
 
+// SÉCURITÉ: Rate limiting pour actions de paiement
+import { withRateLimit } from "@/lib/security/rate-limit-decorator";
+
 // interface Product - plus nécessaire, remplacé par ProductValidationService
 
 // ✅ Interface pour les méthodes de livraison selon le schéma DB réel
@@ -35,7 +38,10 @@ interface ShippingMethod {
  * Gère les utilisateurs authentifiés et invités, ainsi que les adresses nouvelles ou existantes.
  * @returns ActionResult contenant sessionId et url de redirection en cas de succès.
  */
-export async function createStripeCheckoutSession(
+export const createStripeCheckoutSession = withRateLimit(
+  "PAYMENT",
+  "create-checkout-session"
+)(async function createStripeCheckoutSession(
   shippingAddress: Address,
   billingAddress: Address,
   shippingMethodId: string
@@ -276,4 +282,4 @@ export async function createStripeCheckoutSession(
         : "Une erreur inattendue est survenue lors du checkout"
     );
   }
-}
+});

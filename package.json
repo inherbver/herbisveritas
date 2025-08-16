@@ -14,7 +14,20 @@
     "fix-admin-role": "tsx scripts/fix-admin-role.ts",
     "migrate:markets-partners": "tsx scripts/migrate-markets-partners.ts",
     "analyze": "tsx scripts/analyze-bundle.ts",
-    "build:analyze": "npm run build && npm run analyze"
+    "build:analyze": "npm run build && npm run analyze",
+    "modernization:analyze": "tsx scripts/run-modernization-analysis.ts",
+    "detect:duplicates": "tsx scripts/duplicate-detector.ts",
+    "analyze:complexity": "tsx scripts/component-analyzer.ts",
+    "analyze:modernization": "tsx scripts/modernization-analyzer.ts",
+    "validate:migration": "tsx scripts/migration-validator.ts",
+    "baseline:save": "tsx scripts/migration-validator.ts baseline",
+    "modernization:full": "npm run modernization:analyze && npm run detect:duplicates && npm run analyze:complexity",
+    "security:rotate-keys": "tsx scripts/supabase-key-rotation.ts",
+    "security:validate-keys": "tsx scripts/validate-supabase-keys.ts",
+    "security:apply-rate-limiting": "tsx scripts/apply-rate-limiting.ts",
+    "security:validate-rate-limiting": "tsx scripts/apply-rate-limiting.ts --validate-only",
+    "security:remove-hardcoded-admin": "tsx scripts/remove-hardcoded-admin.ts",
+    "security:full-audit": "npm run security:validate-keys && npm run security:validate-rate-limiting && echo 'Audit sécurité terminé'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",

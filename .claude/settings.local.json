@@ -52,8 +52,11 @@
       "Bash(git push:*)",
       "Bash(git branch:*)",
       "Bash(git remote:*)",
-      "Bash(npm install)"
-    ]
+      "Bash(npm install)",
+      "Bash(git commit:*)",
+      "Bash(true)"
+    ],
+    "additionalDirectories": ["C:\\c"]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": ["supabase"],
