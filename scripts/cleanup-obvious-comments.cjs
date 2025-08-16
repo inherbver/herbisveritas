@@ -63,6 +63,18 @@ const OBVIOUS_COMMENTS_TO_REMOVE = [
     "reason": "Import évident"
   },
   {
+    "file": "src\\app\\[locale]\\admin\\products\\new\\product-form.tsx",
+    "line": 49,
+    "text": "// Fonction utilitaire pour générer un slug",
+    "reason": "Fonction évidente"
+  },
+  {
+    "file": "src\\app\\[locale]\\admin\\products\\new\\product-form.tsx",
+    "line": 128,
+    "text": "// Fonction pour gérer les changements de nom avec génération automatique de slug",
+    "reason": "Fonction évidente"
+  },
+  {
     "file": "src\\app\\[locale]\\contact\\page.tsx",
     "line": 10,
     "text": "import { MarketCalendarView } from \"@/components/domain/market/MarketCalendarView\"; // Import du nouveau composant calendrier",
@@ -99,6 +111,12 @@ const OBVIOUS_COMMENTS_TO_REMOVE = [
     "reason": "Définition évidente"
   },
   {
+    "file": "src\\components\\common\\image-upload\\index.tsx",
+    "line": 64,
+    "text": "// Export des composants individuels",
+    "reason": "Export évident"
+  },
+  {
     "file": "src\\components\\common\\skip-nav-target.tsx",
     "line": 3,
     "text": "import { DEFAULT_CONTENT_ID } from \"./skip-nav-link\"; // Importe l'ID par défaut",
@@ -115,6 +133,12 @@ const OBVIOUS_COMMENTS_TO_REMOVE = [
     "line": 6,
     "text": "// Déclaration globale pour jQuery Colissimo plugin",
     "reason": "Déclaration évidente"
+  },
+  {
+    "file": "src\\components\\features\\admin\\magazine\\article-form\\ArticleFormFields.tsx",
+    "line": 39,
+    "text": "// Fonction utilitaire pour générer un slug",
+    "reason": "Fonction évidente"
   },
   {
     "file": "src\\components\\features\\admin\\magazine\\index.ts",
@@ -139,6 +163,12 @@ const OBVIOUS_COMMENTS_TO_REMOVE = [
     "line": 5,
     "text": "// Fonction utilitaire pour convertir un blob en base64",
     "reason": "Fonction évidente"
+  },
+  {
+    "file": "src\\components\\features\\magazine\\image-upload.tsx",
+    "line": 45,
+    "text": "// Export des interfaces pour rétrocompatibilité",
+    "reason": "Export évident"
   },
   {
     "file": "src\\components\\features\\magazine\\index.ts",
@@ -333,12 +363,6 @@ const OBVIOUS_COMMENTS_TO_REMOVE = [
     "reason": "Return évident"
   },
   {
-    "file": "src\\mocks\\handlers.ts",
-    "line": 3,
-    "text": "// Define handlers for your API endpoints here.",
-    "reason": "Définition évidente"
-  },
-  {
     "file": "src\\services\\cart.service.ts",
     "line": 148,
     "text": "// Get product details with stock validation",
@@ -396,6 +420,24 @@ const OBVIOUS_COMMENTS_TO_REMOVE = [
     "file": "src\\services\\magazine.service.ts",
     "line": 527,
     "text": "// Export du service instancié pour utilisation directe",
+    "reason": "Export évident"
+  },
+  {
+    "file": "src\\test-utils\\index.ts",
+    "line": 40,
+    "text": "// Import des factories à l'intérieur de la fonction pour éviter les références circulaires",
+    "reason": "Import évident"
+  },
+  {
+    "file": "src\\test-utils\\render.tsx",
+    "line": 111,
+    "text": "// Fonction rerender personnalisée",
+    "reason": "Fonction évidente"
+  },
+  {
+    "file": "src\\test-utils\\render.tsx",
+    "line": 210,
+    "text": "// Export par défaut",
     "reason": "Export évident"
   },
   {
