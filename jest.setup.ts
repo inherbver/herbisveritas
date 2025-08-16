@@ -12,9 +12,13 @@ process.env.NEXT_PUBLIC_SUPABASE_URL = "https://esgirafriwoildqcwtjm.supabase.co
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 process.env.STRIPE_SECRET_KEY = "sk_test_123456789";
+process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_123456789";
 process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_123456789";
 process.env.NEXT_PUBLIC_BASE_URL = "https://example.com";
 process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
+process.env.ADMIN_PRINCIPAL_ID = "123e4567-e89b-12d3-a456-426614174000";
+process.env.INTERNAL_FUNCTION_SECRET = "test-internal-function-secret";
+process.env.NODE_ENV = "test";
 
 // Mock Next.js cache et revalidation functions
 jest.mock("next/cache", () => ({

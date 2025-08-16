@@ -45,5 +45,10 @@ next-env.d.ts
 /playwright-report/
 /test-results/
 
-nul
-~/
+# jest
+/.jest-cache/
+
+# temporary test files
+tests/*test_*.spec.ts
+tests/screenshot*.png
+tests/temp-*.spec.ts

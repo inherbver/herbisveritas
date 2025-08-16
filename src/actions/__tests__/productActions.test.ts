@@ -181,18 +181,18 @@ describe("productActions", () => {
   });
 
   describe("createProduct", () => {
-    const { withPermissionSafe } = await import("@/lib/auth/server-actions-auth");
-    const { revalidateProductPages } = await import("@/utils/revalidation");
-
-    beforeEach(() => {
+    beforeEach(async () => {
+      const { withPermissionSafe } = await import("@/lib/auth/server-actions-auth");
+      const { revalidateProductPages } = await import("@/utils/revalidation");
+      
       // Mock withPermissionSafe to return a function that calls the original with mocked permissions
-      withPermissionSafe.mockImplementation((permission, fn) => {
-        return async (...args) => {
+      (withPermissionSafe as jest.Mock).mockImplementation((permission, fn) => {
+        return async (...args: any[]) => {
           // Simulate permission check passed
           return await fn(...args);
         };
       });
-      revalidateProductPages.mockResolvedValue(undefined);
+      (revalidateProductPages as jest.Mock).mockResolvedValue(undefined);
     });
 
     it("should create a product successfully", async () => {

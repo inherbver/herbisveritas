@@ -98,9 +98,7 @@ const mockSupabaseClient = {
   delete: jest.fn(() => mockSupabaseClient),
 };
 
-// Get the mocked Stripe instance
-const { default: Stripe } = await import("stripe");
-const mockStripe = new Stripe("", { apiVersion: "2023-10-16" });
+// Mock Stripe instance will be created in tests
 
 // Mock environment variables
 const originalEnv = process.env;
@@ -147,7 +145,9 @@ const mockOrder = {
 };
 
 describe("Stripe Webhook Handler", () => {
-  beforeEach(() => {
+  let mockStripe: any;
+
+  beforeEach(async () => {
     jest.clearAllMocks();
 
     // Reset environment
@@ -162,7 +162,11 @@ describe("Stripe Webhook Handler", () => {
     // Setup mocks
     (headers as jest.Mock).mockResolvedValue(mockHeaders);
     const { createClient } = await import("@supabase/supabase-js");
-    createClient.mockReturnValue(mockSupabaseClient);
+    (createClient as jest.Mock).mockReturnValue(mockSupabaseClient);
+
+    // Create mock Stripe instance
+    const StripeConstructor = Stripe as any;
+    mockStripe = new StripeConstructor("", { apiVersion: "2023-10-16" });
 
     mockHeaders.get.mockReturnValue("whsec_test_signature");
   });

@@ -46,7 +46,7 @@ describe("cartActions", () => {
   let mockSupabase: ReturnType<typeof createSupabaseMock>;
   let mockSupabaseAdmin: ReturnType<typeof createSupabaseMock>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
 
     // Setup Supabase mocks
@@ -55,7 +55,7 @@ describe("cartActions", () => {
 
     (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabase);
     const { createSupabaseAdminClient } = await import("@/lib/supabase/admin");
-    createSupabaseAdminClient.mockReturnValue(mockSupabaseAdmin);
+    (createSupabaseAdminClient as jest.Mock).mockReturnValue(mockSupabaseAdmin);
 
     // Setup default user
     (getActiveUserId as jest.Mock).mockResolvedValue("user-123");

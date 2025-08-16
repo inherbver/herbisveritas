@@ -1,0 +1,455 @@
+name: CI/CD Pipeline - Phase 3.5
+# Pipeline de tests complet avec parallélisation et couverture
+
+on:
+  push:
+    branches: [main, develop, refactor-main]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Tests quotidiens à 2h du matin UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: Setup et cache des dépendances
+  setup:
+    name: Setup Dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-keys.outputs.cache-key }}
+      test-matrix: ${{ steps.test-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        id: pnpm-cache
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate cache keys
+        id: cache-keys
+        run: |
+          echo "cache-key=${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}" >> $GITHUB_OUTPUT
+
+      - name: Generate test matrix
+        id: test-matrix
+        run: |
+          # Générer une matrice de tests basée sur les répertoires de tests
+          UNIT_TESTS=$(find src -name "*.test.ts" -o -name "*.test.tsx" | head -20 | jq -R -s -c 'split("\n")[:-1]')
+          E2E_TESTS=$(find tests/e2e -name "*.spec.ts" | jq -R -s -c 'split("\n")[:-1]')
+          
+          echo "matrix={\"unit\": $UNIT_TESTS, \"e2e\": $E2E_TESTS}" >> $GITHUB_OUTPUT
+
+  # Job 2: Analyse statique et linting
+  lint-and-analyze:
+    name: Lint & Static Analysis
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ needs.setup.outputs.cache-key }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type checking
+        run: pnpm run typecheck
+
+      - name: ESLint
+        run: pnpm run lint --format=@microsoft/eslint-formatter-sarif --output-file=eslint-results.sarif
+        continue-on-error: true
+
+      - name: Upload ESLint results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: eslint-results.sarif
+
+      - name: Build check
+        run: pnpm run build
+
+  # Job 3: Tests unitaires parallélisés
+  unit-tests:
+    name: Unit Tests (Parallel)
+    runs-on: ubuntu-latest
+    needs: [setup, lint-and-analyze]
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+        total-shards: [4]
+    env:
+      # Variables d'environnement pour les tests
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_TEST }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_TEST }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
+      ADMIN_PRINCIPAL_ID: "123e4567-e89b-12d3-a456-426614174000"
+      INTERNAL_FUNCTION_SECRET: "test-internal-function-secret"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ needs.setup.outputs.cache-key }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests (shard ${{ matrix.shard }}/${{ matrix.total-shards }})
+        run: |
+          pnpm test -- \
+            --shard=${{ matrix.shard }}/${{ matrix.total-shards }} \
+            --coverage \
+            --coverageReporters=json \
+            --coverageDirectory=coverage-${{ matrix.shard }} \
+            --maxWorkers=50% \
+            --detectOpenHandles \
+            --forceExit
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-unit-${{ matrix.shard }}
+          path: coverage-${{ matrix.shard }}/coverage-final.json
+          retention-days: 1
+
+  # Job 4: Tests E2E parallélisés
+  e2e-tests:
+    name: E2E Tests (Parallel)
+    runs-on: ubuntu-latest
+    needs: [setup, lint-and-analyze]
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
+        test-file: 
+          - tests/e2e/checkout-flow.spec.ts
+          - tests/e2e/admin-dashboard.spec.ts
+          - tests/e2e/mobile-navigation.spec.ts
+    env:
+      # Base URL pour les tests E2E
+      PLAYWRIGHT_BASE_URL: http://localhost:3003
+      # Variables de test
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_TEST }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_TEST }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ needs.setup.outputs.cache-key }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps ${{ matrix.project }}
+
+      - name: Build application
+        run: pnpm run build
+
+      - name: Start application server
+        run: |
+          pnpm start &
+          sleep 10
+          curl --retry 10 --retry-delay 1 --retry-connrefused http://localhost:3003
+
+      - name: Run E2E tests
+        run: |
+          pnpm exec playwright test \
+            --project=${{ matrix.project }} \
+            ${{ matrix.test-file }} \
+            --reporter=html,json \
+            --output-dir=test-results-${{ matrix.project }}-$(basename ${{ matrix.test-file }} .spec.ts)
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-results-${{ matrix.project }}-$(basename ${{ matrix.test-file }} .spec.ts)
+          path: |
+            test-results-${{ matrix.project }}-$(basename ${{ matrix.test-file }} .spec.ts)/
+            playwright-report/
+          retention-days: 7
+
+  # Job 5: Agrégation des résultats de couverture
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: coverage-artifacts
+
+      - name: Install nyc for coverage merging
+        run: npm install -g nyc
+
+      - name: Merge coverage reports
+        run: |
+          mkdir -p merged-coverage
+          find coverage-artifacts -name "coverage-final.json" -exec cp {} merged-coverage/ \;
+          
+          # Fusionner tous les rapports de couverture
+          nyc merge merged-coverage .nyc_output/out.json
+          nyc report --reporter=html --reporter=lcov --reporter=text-summary
+
+      - name: Upload merged coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unit-tests
+          name: merged-coverage
+
+      - name: Check coverage thresholds
+        run: |
+          # Vérifier que nous avons atteint 75% de couverture
+          COVERAGE=$(nyc report --reporter=text-summary | grep "Lines" | awk '{print $3}' | sed 's/%//')
+          echo "Current coverage: $COVERAGE%"
+          
+          if (( $(echo "$COVERAGE < 75" | bc -l) )); then
+            echo "❌ Coverage threshold not met: $COVERAGE% < 75%"
+            exit 1
+          else
+            echo "✅ Coverage threshold met: $COVERAGE% >= 75%"
+          fi
+
+  # Job 6: Tests de performance et budgets
+  performance-tests:
+    name: Performance & Bundle Analysis
+    runs-on: ubuntu-latest
+    needs: [setup]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ needs.setup.outputs.cache-key }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with bundle analysis
+        run: |
+          ANALYZE=true pnpm run build
+          
+      - name: Bundle size check
+        run: |
+          # Vérifier la taille des bundles
+          BUNDLE_SIZE=$(du -s .next/static/chunks | awk '{print $1}')
+          MAX_BUNDLE_SIZE=5120  # 5MB en KB
+          
+          echo "Bundle size: ${BUNDLE_SIZE}KB"
+          
+          if [ $BUNDLE_SIZE -gt $MAX_BUNDLE_SIZE ]; then
+            echo "❌ Bundle size exceeded: ${BUNDLE_SIZE}KB > ${MAX_BUNDLE_SIZE}KB"
+            exit 1
+          else
+            echo "✅ Bundle size within limits: ${BUNDLE_SIZE}KB <= ${MAX_BUNDLE_SIZE}KB"
+          fi
+
+      - name: Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v9
+        with:
+          configPath: './lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  # Job 7: Tests de sécurité
+  security-tests:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: [setup]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ needs.setup.outputs.cache-key }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run security audit
+        run: |
+          pnpm audit --audit-level=moderate
+          
+      - name: Run Semgrep security scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/javascript
+            p/typescript
+            p/react
+
+  # Job 8: Déploiement conditionnel
+  deploy:
+    name: Deploy to Preview
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests, coverage-report, performance-tests, security-tests]
+    if: success() && github.ref == 'refs/heads/develop'
+    environment: preview
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to preview environment
+        run: |
+          echo "🚀 Deploying to preview environment..."
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Ici, vous ajouteriez votre logique de déploiement
+          # Exemple: Vercel, Netlify, etc.
+
+  # Job 9: Notification des résultats
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests, coverage-report, performance-tests, security-tests]
+    if: always()
+    steps:
+      - name: Notify success
+        if: success()
+        run: |
+          echo "✅ All tests passed successfully!"
+          echo "Coverage: Check the coverage report"
+          echo "Performance: Within budget limits"
+          echo "Security: No critical issues found"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "❌ Some tests failed."
+          echo "Please check the failed jobs for details."
+          
+      - name: Create GitHub Status
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            const description = state === 'success' 
+              ? '✅ All CI checks passed' 
+              : '❌ Some CI checks failed';
+            
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: state,
+              description: description,
+              context: 'ci/herbisveritas'
+            });
