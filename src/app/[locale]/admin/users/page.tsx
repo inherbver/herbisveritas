@@ -9,22 +9,22 @@ interface AdminUsersPageProps {
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
   const resolvedSearchParams = await searchParams;
-  
+
   // Build pagination options from search params
   const paginationOptions: UserPaginationOptions = {
     page: resolvedSearchParams.page ? parseInt(resolvedSearchParams.page as string) : 1,
     limit: resolvedSearchParams.limit ? parseInt(resolvedSearchParams.limit as string) : 25,
-    sortBy: (resolvedSearchParams.sortBy as any) || 'created_at',
-    sortDirection: (resolvedSearchParams.sortDirection as 'asc' | 'desc') || 'desc',
-    search: resolvedSearchParams.search as string || undefined,
-    roleFilter: resolvedSearchParams.roleFilter 
-      ? Array.isArray(resolvedSearchParams.roleFilter) 
-        ? resolvedSearchParams.roleFilter 
+    sortBy: (resolvedSearchParams.sortBy as any) || "created_at",
+    sortDirection: (resolvedSearchParams.sortDirection as "asc" | "desc") || "desc",
+    search: (resolvedSearchParams.search as string) || undefined,
+    roleFilter: resolvedSearchParams.roleFilter
+      ? Array.isArray(resolvedSearchParams.roleFilter)
+        ? resolvedSearchParams.roleFilter
         : [resolvedSearchParams.roleFilter]
       : undefined,
-    statusFilter: resolvedSearchParams.statusFilter 
-      ? Array.isArray(resolvedSearchParams.statusFilter) 
-        ? resolvedSearchParams.statusFilter 
+    statusFilter: resolvedSearchParams.statusFilter
+      ? Array.isArray(resolvedSearchParams.statusFilter)
+        ? resolvedSearchParams.statusFilter
         : [resolvedSearchParams.statusFilter]
       : undefined,
   };
@@ -32,7 +32,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   // Fetch both users and stats in parallel
   const [usersResult, statsResult] = await Promise.all([
     getUsers(paginationOptions),
-    getUserStats()
+    getUserStats(),
   ]);
 
   if (!usersResult.success || !usersResult.data) {
@@ -51,8 +51,16 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     );
   }
 
-  // Extract the paginated data
-  const { data: usersData, pagination } = usersResult.data;
+  // Extract the paginated data with safety checks
+  const usersData = usersResult.data?.data || [];
+  const pagination = usersResult.data?.pagination || {
+    page: 1,
+    limit: 25,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  };
   const statsData =
     statsResult.success && statsResult.data && statsResult.data.success
       ? statsResult.data.data
@@ -76,16 +84,13 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           <div>
             <h2 className="text-xl font-semibold">Liste des utilisateurs</h2>
             <p className="text-sm text-muted-foreground">
-              {pagination.total} utilisateur(s) au total - Page {pagination.page} sur {pagination.totalPages}
+              {pagination.total} utilisateur(s) au total - Page {pagination.page} sur{" "}
+              {pagination.totalPages}
             </p>
           </div>
         </header>
 
-        <EnhancedDataTable 
-          columns={columns} 
-          data={usersData} 
-          pagination={pagination}
-        />
+        <EnhancedDataTable columns={columns} data={usersData} pagination={pagination} />
       </section>
     </main>
   );
