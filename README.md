@@ -12,14 +12,12 @@ Plateforme e-commerce moderne spécialisée dans les cosmétiques naturels et pr
 
 - [Démarrage Rapide](#démarrage-rapide)
 - [Architecture](#architecture)
-- [Documentation](#documentation)
 - [Stack Technologique](#stack-technologique)
 - [Fonctionnalités](#fonctionnalités)
 - [Structure du Projet](#structure-du-projet)
 - [Scripts Disponibles](#scripts-disponibles)
 - [Configuration](#configuration)
-- [Déploiement](#déploiement)
-- [Contribution](#contribution)
+- [Documentation Technique](#documentation-technique)
 
 ## Démarrage Rapide
 
@@ -91,24 +89,21 @@ graph TB
 - **Type Safety Complète** : TypeScript strict, validation Zod runtime
 - **Progressive Enhancement** : Fonctionne sans JavaScript
 
-## Documentation
+## Documentation Technique
 
-### Documentation Technique
+Pour la documentation technique complète de l'architecture, de la base de données, et des patterns de développement, consulter :
 
-- 📋 [Guide d'Architecture](./docs/ARCHITECTURE.md) - Conception système détaillée
-- 🚀 [Guide de Développement](./docs/DEVELOPMENT.md) - Workflow et conventions
-- 🔌 [Référence API](./docs/API.md) - Server Actions et endpoints
-- 🗃️ [Schéma Base de Données](./docs/DATABASE.md) - Structure et relations
-- 🔒 [Guide Sécurité](./docs/SECURITY.md) - Authentification et autorisations
-- 🌐 [Internationalisation](./docs/I18N.md) - Configuration multilingue
-- 🎨 [Guide UI/UX](./docs/COMPONENTS.md) - Système de design et composants
+📋 **[DOCUMENTATION.md](./DOCUMENTATION.md)** - Documentation technique complète
 
-### Guides Opérationnels
+Cette documentation couvre :
 
-- ⚙️ [Configuration](./docs/CONFIGURATION.md) - Variables d'environnement
-- 📦 [Déploiement](./docs/DEPLOYMENT.md) - Production et CI/CD
-- 🧪 [Tests](./docs/TESTING.md) - Stratégie de test
-- 📊 [Monitoring](./docs/MONITORING.md) - Observabilité et métriques
+- Architecture du système et patterns utilisés
+- Structure de la base de données Supabase
+- Système d'authentification et autorisation
+- Gestion d'état et Server Actions
+- Internationalisation et routing
+- Intégrations externes (Stripe, Colissimo)
+- Standards de code et tests
 
 ## Stack Technologique
 
@@ -273,57 +268,28 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
 ```
 
-Pour plus de détails, consulter [Configuration](./docs/CONFIGURATION.md).
-
-## Déploiement
-
-### Déploiement Vercel (Recommandé)
-
-```bash
-# Installation Vercel CLI
-npm i -g vercel
-
-# Déploiement
-vercel --prod
-```
-
-### Variables d'Environnement Production
-
-Configurer les mêmes variables que le développement dans l'interface Vercel.
-
-Pour plus de détails, consulter [Guide de Déploiement](./docs/DEPLOYMENT.md).
-
 ## Contribution
 
 ### Standards de Code
 
-- TypeScript strict mode
-- ESLint + Prettier configurés
+- TypeScript strict mode avec validation Zod
+- ESLint + Prettier configurés avec hooks Git
 - Tests requis pour nouvelles fonctionnalités
-- Commits conventionnels (format français)
-- Revue de code obligatoire
+- Commits conventionnels en français
+- Server Components par défaut
 
 ### Workflow
 
 1. Fork du projet
 2. Création branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Commits avec messages clairs
-4. Tests et validation qualité
+3. Développement suivant les patterns existants
+4. Tests et validation qualité (`npm run lint && npm run test`)
 5. Pull Request vers `main`
-
-### Guidelines
-
-- Suivre les patterns existants
-- Utiliser Server Components par défaut
-- Validation Zod obligatoire
-- Documentation mise à jour
-- Performance et accessibilité prioritaires
 
 ## Support
 
-- **Issues** : [GitHub Issues](https://github.com/inherbver/herbisveritas/issues)
-- **Documentation** : [Wiki du projet](./docs/)
 - **Contact** : contact@herbisveritas.fr
+- **Documentation** : [DOCUMENTATION.md](./DOCUMENTATION.md)
 
 ## Licence
 
