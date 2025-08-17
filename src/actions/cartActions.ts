@@ -28,23 +28,15 @@ import {
   type UpdateCartItemQuantityInput,
 } from "@/lib/validators/cart.validator";
 
-// SÉCURITÉ: Rate limiting pour actions de panier
-import { withRateLimit } from "@/lib/security/rate-limit-decorator";
+// SÉCURITÉ: Rate limiting pour actions de panier (actuellement non utilisé)
+// import { withRateLimit } from "@/lib/security/rate-limit-decorator";
 
 // Re-export getCart for external usage
 export { getCart };
 
 // --- Cart Actions ---
 
-export const addItemToCart = withRateLimit<
-  (
-    prevState: unknown,
-    formData: FormData
-  ) => Promise<CartActionResult<(CartData & { guestCartId?: string }) | null>>
->(
-  "CART",
-  "add-item"
-)(async function addItemToCart(
+export async function addItemToCart(
   prevState: unknown,
   formData: FormData
 ): Promise<CartActionResult<(CartData & { guestCartId?: string }) | null>> {
@@ -190,7 +182,7 @@ export const addItemToCart = withRateLimit<
     console.error("addItemToCart Error:", error);
     return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
   }
-});
+}
 
 export async function removeItemFromCart(
   input: RemoveFromCartInput

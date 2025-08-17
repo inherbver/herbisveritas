@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import React, { useEffect } from "react"; // Import useEffect
@@ -20,6 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginAction, resendConfirmationEmailAction } from "@/actions/authActions";
 import { ActionResult } from "@/lib/core/result";
+
+// Type précis pour l'état du formulaire de connexion
+type LoginFormState = ActionResult<null>;
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -40,13 +41,16 @@ function SubmitButton() {
 
 export function LoginForm() {
   const t = useTranslations("Auth.LoginForm");
-  const initialState: ActionResult<null> = {
+  const initialState: LoginFormState = {
     success: false,
     error: undefined,
     message: undefined,
     data: null,
   };
-  const [state, formAction] = useActionState(loginAction, initialState);
+  const [state, formAction] = useActionState(
+    loginAction as (state: LoginFormState, formData: FormData) => Promise<LoginFormState>,
+    initialState
+  );
   const [email, setEmail] = React.useState("");
 
   useEffect(() => {
