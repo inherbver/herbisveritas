@@ -5,10 +5,10 @@
  * Phase 2: Robustification Performance - HerbisVeritas
  */
 
-import { execSync } from 'child_process';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import os from 'os';
+import { execSync } from "child_process";
+import { writeFileSync, readFileSync, existsSync } from "fs";
+import { join } from "path";
+import os from "os";
 
 interface BuildPerformanceReport {
   timestamp: string;
@@ -31,7 +31,7 @@ interface BuildPerformanceReport {
 }
 
 class BuildOptimizer {
-  private reportPath = join(process.cwd(), 'build-performance.json');
+  private reportPath = join(process.cwd(), "build-performance.json");
   private cpuCount = Math.max(1, os.cpus().length - 1); // Laisser 1 CPU libre
 
   /**
@@ -39,15 +39,19 @@ class BuildOptimizer {
    */
   private async optimizeNextConfig(): Promise<string[]> {
     const optimizations: string[] = [];
-    const nextConfigPath = join(process.cwd(), 'next.config.js');
-    
+    const nextConfigPath = join(process.cwd(), "next.config.js");
+
     if (!existsSync(nextConfigPath)) {
-      console.warn('next.config.js non trouvé, création d\'une configuration optimisée');
+      console.warn(
+        "next.config.js non trouvé, création d'une configuration optimisée",
+      );
       await this.createOptimizedNextConfig();
-      optimizations.push('Configuration Next.js optimisée créée');
+      optimizations.push("Configuration Next.js optimisée créée");
     } else {
-      console.log('✅ next.config.js trouvé, vérification des optimisations...');
-      optimizations.push('Configuration Next.js existante validée');
+      console.log(
+        "✅ next.config.js trouvé, vérification des optimisations...",
+      );
+      optimizations.push("Configuration Next.js existante validée");
     }
 
     return optimizations;
@@ -167,7 +171,7 @@ const nextConfig = {
 
 module.exports = nextConfig;`;
 
-    writeFileSync(join(process.cwd(), 'next.config.optimized.js'), config);
+    writeFileSync(join(process.cwd(), "next.config.optimized.js"), config);
   }
 
   /**
@@ -175,15 +179,18 @@ module.exports = nextConfig;`;
    */
   private async optimizeJestConfig(): Promise<string[]> {
     const optimizations: string[] = [];
-    const jestConfigPath = join(process.cwd(), 'jest.config.cjs');
-    
+    const jestConfigPath = join(process.cwd(), "jest.config.cjs");
+
     if (existsSync(jestConfigPath)) {
-      const currentConfig = readFileSync(jestConfigPath, 'utf-8');
+      const currentConfig = readFileSync(jestConfigPath, "utf-8");
       const optimizedConfig = this.createOptimizedJestConfig();
-      
+
       // Sauvegarder la version optimisée
-      writeFileSync(join(process.cwd(), 'jest.config.optimized.cjs'), optimizedConfig);
-      optimizations.push('Configuration Jest optimisée créée');
+      writeFileSync(
+        join(process.cwd(), "jest.config.optimized.cjs"),
+        optimizedConfig,
+      );
+      optimizations.push("Configuration Jest optimisée créée");
     }
 
     return optimizations;
@@ -289,26 +296,26 @@ module.exports = {
    */
   private async optimizePackageScripts(): Promise<string[]> {
     const optimizations: string[] = [];
-    const packagePath = join(process.cwd(), 'package.json');
-    
+    const packagePath = join(process.cwd(), "package.json");
+
     if (existsSync(packagePath)) {
-      const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
+      const packageJson = JSON.parse(readFileSync(packagePath, "utf-8"));
       const originalScripts = { ...packageJson.scripts };
 
       // Scripts optimisés
       const optimizedScripts = {
         ...packageJson.scripts,
-        "dev": "next dev --turbo", // Utiliser Turbo en dev
-        "build": "next build",
+        dev: "next dev --turbo", // Utiliser Turbo en dev
+        build: "next build",
         "build:analyze": "ANALYZE=true next build",
         "build:fast": "next build --no-lint --no-typecheck", // Build rapide pour testing
-        "test": "jest --passWithNoTests",
+        test: "jest --passWithNoTests",
         "test:watch": "jest --watch --passWithNoTests",
         "test:ci": "jest --ci --coverage --watchAll=false --passWithNoTests",
         "test:fast": "jest --passWithNoTests --silent --maxWorkers=2",
-        "lint": "next lint --fix",
+        lint: "next lint --fix",
         "lint:fast": "next lint --fix --quiet",
-        "typecheck": "tsc --noEmit --incremental",
+        typecheck: "tsc --noEmit --incremental",
         "typecheck:fast": "tsc --noEmit --skipLibCheck",
       };
 
@@ -319,11 +326,11 @@ module.exports = {
       };
 
       writeFileSync(
-        join(process.cwd(), 'package.optimized.json'), 
-        JSON.stringify(optimizedPackage, null, 2)
+        join(process.cwd(), "package.optimized.json"),
+        JSON.stringify(optimizedPackage, null, 2),
       );
-      
-      optimizations.push('Scripts package.json optimisés créés');
+
+      optimizations.push("Scripts package.json optimisés créés");
     }
 
     return optimizations;
@@ -333,19 +340,19 @@ module.exports = {
    * Mesure les performances de build
    */
   async measureBuildPerformance(): Promise<BuildPerformanceReport> {
-    console.log('🚀 Mesure des performances de build...');
+    console.log("🚀 Mesure des performances de build...");
 
     const startTime = Date.now();
     const buildStartTime = performance.now();
 
     try {
       // Build avec mesure de temps
-      console.log('📦 Lancement du build...');
-      execSync('npm run build', { 
-        stdio: 'inherit',
+      console.log("📦 Lancement du build...");
+      execSync("npm run build", {
+        stdio: "inherit",
         timeout: 300000, // 5 minutes max
       });
-      
+
       const buildTime = performance.now() - buildStartTime;
       console.log(`✅ Build terminé en ${(buildTime / 1000).toFixed(2)}s`);
 
@@ -355,16 +362,16 @@ module.exports = {
       // Mesurer les tests si demandé
       let testTime: number | undefined;
       try {
-        console.log('🧪 Lancement des tests...');
+        console.log("🧪 Lancement des tests...");
         const testStartTime = performance.now();
-        execSync('npm run test:fast', { 
-          stdio: 'inherit',
+        execSync("npm run test:fast", {
+          stdio: "inherit",
           timeout: 180000, // 3 minutes max
         });
         testTime = performance.now() - testStartTime;
         console.log(`✅ Tests terminés en ${(testTime / 1000).toFixed(2)}s`);
       } catch (error) {
-        console.warn('⚠️ Tests échoués ou non disponibles');
+        console.warn("⚠️ Tests échoués ou non disponibles");
       }
 
       const report: BuildPerformanceReport = {
@@ -374,21 +381,26 @@ module.exports = {
         bundleSize: bundleStats.totalSize,
         jsChunks: bundleStats.chunks,
         optimizations: await this.getAppliedOptimizations(),
-        recommendations: this.generateRecommendations(buildTime, testTime, bundleStats),
+        recommendations: this.generateRecommendations(
+          buildTime,
+          testTime,
+          bundleStats,
+        ),
       };
 
       // Comparer avec le rapport précédent
       if (existsSync(this.reportPath)) {
         const previousReport: BuildPerformanceReport = JSON.parse(
-          readFileSync(this.reportPath, 'utf-8')
+          readFileSync(this.reportPath, "utf-8"),
         );
         report.comparison = {
           previousBuildTime: previousReport.buildTime,
           previousTestTime: previousReport.testTime,
           buildTimeChange: buildTime - previousReport.buildTime,
-          testTimeChange: testTime && previousReport.testTime 
-            ? testTime - previousReport.testTime 
-            : undefined,
+          testTimeChange:
+            testTime && previousReport.testTime
+              ? testTime - previousReport.testTime
+              : undefined,
         };
       }
 
@@ -396,9 +408,8 @@ module.exports = {
       writeFileSync(this.reportPath, JSON.stringify(report, null, 2));
 
       return report;
-
     } catch (error) {
-      console.error('❌ Erreur lors de la mesure de performance:', error);
+      console.error("❌ Erreur lors de la mesure de performance:", error);
       throw error;
     }
   }
@@ -411,22 +422,22 @@ module.exports = {
     chunks: Array<{ name: string; size: number; gzipped: number }>;
   }> {
     try {
-      const buildDir = join(process.cwd(), '.next');
-      
+      const buildDir = join(process.cwd(), ".next");
+
       // Analyser les chunks JavaScript
       const chunks = [
-        { name: 'main', size: 245000, gzipped: 73500 },
-        { name: 'framework', size: 165000, gzipped: 49500 },
-        { name: 'commons', size: 98000, gzipped: 29400 },
-        { name: 'pages', size: 87000, gzipped: 26100 },
-        { name: 'chunks/polyfills', size: 32000, gzipped: 9600 },
+        { name: "main", size: 245000, gzipped: 73500 },
+        { name: "framework", size: 165000, gzipped: 49500 },
+        { name: "commons", size: 98000, gzipped: 29400 },
+        { name: "pages", size: 87000, gzipped: 26100 },
+        { name: "chunks/polyfills", size: 32000, gzipped: 9600 },
       ];
 
       const totalSize = chunks.reduce((sum, chunk) => sum + chunk.size, 0);
 
       return { totalSize, chunks };
     } catch (error) {
-      console.warn('⚠️ Impossible d\'analyser la taille du bundle:', error);
+      console.warn("⚠️ Impossible d'analyser la taille du bundle:", error);
       return {
         totalSize: 500000,
         chunks: [],
@@ -441,18 +452,18 @@ module.exports = {
     const optimizations: string[] = [];
 
     // Vérifier les optimisations Next.js
-    optimizations.push(...await this.optimizeNextConfig());
-    
+    optimizations.push(...(await this.optimizeNextConfig()));
+
     // Vérifier les optimisations Jest
-    optimizations.push(...await this.optimizeJestConfig());
-    
+    optimizations.push(...(await this.optimizeJestConfig()));
+
     // Vérifier les optimisations package.json
-    optimizations.push(...await this.optimizePackageScripts());
+    optimizations.push(...(await this.optimizePackageScripts()));
 
     // Optimisations système
     optimizations.push(`Utilisation de ${this.cpuCount} CPU cores`);
-    optimizations.push('Cache filesystem activé');
-    optimizations.push('Workers parallèles configurés');
+    optimizations.push("Cache filesystem activé");
+    optimizations.push("Workers parallèles configurés");
 
     return optimizations;
   }
@@ -463,44 +474,71 @@ module.exports = {
   private generateRecommendations(
     buildTime: number,
     testTime: number | undefined,
-    bundleStats: { totalSize: number; chunks: Array<{ name: string; size: number; gzipped: number }> }
+    bundleStats: {
+      totalSize: number;
+      chunks: Array<{ name: string; size: number; gzipped: number }>;
+    },
   ): string[] {
     const recommendations: string[] = [];
 
     // Recommandations basées sur le temps de build
-    if (buildTime > 30000) { // > 30s
-      recommendations.push('🔴 CRITIQUE: Build très lent, activer Turbo et optimiser webpack');
-      recommendations.push('💡 Considérer l\'utilisation de SWC au lieu de Babel');
-    } else if (buildTime > 15000) { // > 15s
-      recommendations.push('🟡 ATTENTION: Build lent, optimiser la configuration webpack');
+    if (buildTime > 30000) {
+      // > 30s
+      recommendations.push(
+        "🔴 CRITIQUE: Build très lent, activer Turbo et optimiser webpack",
+      );
+      recommendations.push(
+        "💡 Considérer l'utilisation de SWC au lieu de Babel",
+      );
+    } else if (buildTime > 15000) {
+      // > 15s
+      recommendations.push(
+        "🟡 ATTENTION: Build lent, optimiser la configuration webpack",
+      );
     } else {
-      recommendations.push('✅ Temps de build optimal');
+      recommendations.push("✅ Temps de build optimal");
     }
 
     // Recommandations basées sur les tests
-    if (testTime && testTime > 60000) { // > 1 minute
-      recommendations.push('🔴 CRITIQUE: Tests très lents, optimiser la configuration Jest');
-      recommendations.push('💡 Utiliser --maxWorkers=50% et réduire les setup files');
-    } else if (testTime && testTime > 30000) { // > 30s
-      recommendations.push('🟡 ATTENTION: Tests lents, considérer la parallélisation');
+    if (testTime && testTime > 60000) {
+      // > 1 minute
+      recommendations.push(
+        "🔴 CRITIQUE: Tests très lents, optimiser la configuration Jest",
+      );
+      recommendations.push(
+        "💡 Utiliser --maxWorkers=50% et réduire les setup files",
+      );
+    } else if (testTime && testTime > 30000) {
+      // > 30s
+      recommendations.push(
+        "🟡 ATTENTION: Tests lents, considérer la parallélisation",
+      );
     } else if (testTime) {
-      recommendations.push('✅ Temps de tests optimal');
+      recommendations.push("✅ Temps de tests optimal");
     }
 
     // Recommandations basées sur la taille du bundle
-    if (bundleStats.totalSize > 800000) { // > 800KB
-      recommendations.push('🔴 CRITIQUE: Bundle très lourd, implémenter code splitting agressif');
-      recommendations.push('💡 Utiliser dynamic imports pour les composants admin');
-    } else if (bundleStats.totalSize > 500000) { // > 500KB
-      recommendations.push('🟡 ATTENTION: Bundle lourd, optimiser les imports');
+    if (bundleStats.totalSize > 800000) {
+      // > 800KB
+      recommendations.push(
+        "🔴 CRITIQUE: Bundle très lourd, implémenter code splitting agressif",
+      );
+      recommendations.push(
+        "💡 Utiliser dynamic imports pour les composants admin",
+      );
+    } else if (bundleStats.totalSize > 500000) {
+      // > 500KB
+      recommendations.push("🟡 ATTENTION: Bundle lourd, optimiser les imports");
     } else {
-      recommendations.push('✅ Taille de bundle optimale');
+      recommendations.push("✅ Taille de bundle optimale");
     }
 
     // Recommandations spécifiques
-    recommendations.push('📦 Activer gzip/brotli compression sur le serveur');
-    recommendations.push('🔄 Implémenter Service Worker pour cache offline');
-    recommendations.push('⚡ Utiliser Vercel Edge Functions pour les API critiques');
+    recommendations.push("📦 Activer gzip/brotli compression sur le serveur");
+    recommendations.push("🔄 Implémenter Service Worker pour cache offline");
+    recommendations.push(
+      "⚡ Utiliser Vercel Edge Functions pour les API critiques",
+    );
 
     return recommendations;
   }
@@ -509,49 +547,55 @@ module.exports = {
    * Affiche le rapport de performance
    */
   printReport(report: BuildPerformanceReport): void {
-    console.log('\n📊 RAPPORT DE PERFORMANCE BUILD & TESTS');
-    console.log('=' .repeat(55));
-    
+    console.log("\n📊 RAPPORT DE PERFORMANCE BUILD & TESTS");
+    console.log("=".repeat(55));
+
     console.log(`📅 Timestamp: ${report.timestamp}`);
     console.log(`⏱️  Temps de build: ${(report.buildTime / 1000).toFixed(2)}s`);
-    
+
     if (report.testTime) {
       console.log(`🧪 Temps de tests: ${(report.testTime / 1000).toFixed(2)}s`);
     }
-    
-    console.log(`📦 Taille bundle: ${(report.bundleSize / 1024).toFixed(2)} KB`);
+
+    console.log(
+      `📦 Taille bundle: ${(report.bundleSize / 1024).toFixed(2)} KB`,
+    );
 
     if (report.comparison) {
       const buildChange = report.comparison.buildTimeChange;
-      const buildIcon = buildChange > 0 ? '📈' : '📉';
-      const buildColor = buildChange > 0 ? '\x1b[31m' : '\x1b[32m';
-      
-      console.log(`${buildIcon} Changement build: ${buildColor}${buildChange > 0 ? '+' : ''}${(buildChange / 1000).toFixed(2)}s\x1b[0m`);
-      
+      const buildIcon = buildChange > 0 ? "📈" : "📉";
+      const buildColor = buildChange > 0 ? "\x1b[31m" : "\x1b[32m";
+
+      console.log(
+        `${buildIcon} Changement build: ${buildColor}${buildChange > 0 ? "+" : ""}${(buildChange / 1000).toFixed(2)}s\x1b[0m`,
+      );
+
       if (report.comparison.testTimeChange !== undefined) {
         const testChange = report.comparison.testTimeChange;
-        const testIcon = testChange > 0 ? '📈' : '📉';
-        const testColor = testChange > 0 ? '\x1b[31m' : '\x1b[32m';
-        
-        console.log(`${testIcon} Changement tests: ${testColor}${testChange > 0 ? '+' : ''}${(testChange / 1000).toFixed(2)}s\x1b[0m`);
+        const testIcon = testChange > 0 ? "📈" : "📉";
+        const testColor = testChange > 0 ? "\x1b[31m" : "\x1b[32m";
+
+        console.log(
+          `${testIcon} Changement tests: ${testColor}${testChange > 0 ? "+" : ""}${(testChange / 1000).toFixed(2)}s\x1b[0m`,
+        );
       }
     }
 
-    console.log('\n🔧 OPTIMISATIONS APPLIQUÉES:');
-    report.optimizations.forEach(opt => {
+    console.log("\n🔧 OPTIMISATIONS APPLIQUÉES:");
+    report.optimizations.forEach((opt) => {
       console.log(`   ✅ ${opt}`);
     });
 
-    console.log('\n💡 RECOMMANDATIONS:');
-    report.recommendations.forEach(rec => {
+    console.log("\n💡 RECOMMANDATIONS:");
+    report.recommendations.forEach((rec) => {
       console.log(`   ${rec}`);
     });
 
-    console.log('\n🎯 PROCHAINES ÉTAPES:');
-    console.log('   1. Appliquer les configurations optimisées générées');
-    console.log('   2. Tester les performances avec npm run build:fast');
-    console.log('   3. Monitorer les temps avec npm run test:ci');
-    console.log('   4. Itérer sur les optimisations selon les résultats');
+    console.log("\n🎯 PROCHAINES ÉTAPES:");
+    console.log("   1. Appliquer les configurations optimisées générées");
+    console.log("   2. Tester les performances avec npm run build:fast");
+    console.log("   3. Monitorer les temps avec npm run test:ci");
+    console.log("   4. Itérer sur les optimisations selon les résultats");
   }
 }
 
@@ -566,20 +610,25 @@ export class ContinuousOptimization {
     if (!report.comparison) return false;
 
     const buildRegression = report.comparison.buildTimeChange > 5000; // +5s
-    const testRegression = report.comparison.testTimeChange && 
+    const testRegression =
+      report.comparison.testTimeChange &&
       report.comparison.testTimeChange > 10000; // +10s
 
     if (buildRegression || testRegression) {
-      console.log('\n🚨 RÉGRESSION PERFORMANCE DÉTECTÉE!');
-      
+      console.log("\n🚨 RÉGRESSION PERFORMANCE DÉTECTÉE!");
+
       if (buildRegression) {
-        console.log(`   - Build: +${(report.comparison.buildTimeChange / 1000).toFixed(2)}s`);
+        console.log(
+          `   - Build: +${(report.comparison.buildTimeChange / 1000).toFixed(2)}s`,
+        );
       }
-      
+
       if (testRegression) {
-        console.log(`   - Tests: +${(report.comparison.testTimeChange! / 1000).toFixed(2)}s`);
+        console.log(
+          `   - Tests: +${(report.comparison.testTimeChange! / 1000).toFixed(2)}s`,
+        );
       }
-      
+
       return true;
     }
 
@@ -627,30 +676,34 @@ echo "📊 Exécuter 'npm run analyze' pour mesurer les gains"
 
 async function main() {
   const optimizer = new BuildOptimizer();
-  
+
   try {
-    console.log('🚀 Lancement de l\'analyse de performance...');
-    
+    console.log("🚀 Lancement de l'analyse de performance...");
+
     const report = await optimizer.measureBuildPerformance();
     optimizer.printReport(report);
-    
+
     // Vérifier les régressions
-    const hasRegression = ContinuousOptimization.checkPerformanceRegression(report);
-    
+    const hasRegression =
+      ContinuousOptimization.checkPerformanceRegression(report);
+
     if (hasRegression) {
-      console.log('\n❌ Régression de performance détectée!');
+      console.log("\n❌ Régression de performance détectée!");
       process.exit(1);
     }
-    
+
     // Générer le script d'amélioration
-    const improvementScript = ContinuousOptimization.generateImprovementScript(report);
-    writeFileSync(join(process.cwd(), 'improve-performance.sh'), improvementScript);
-    
-    console.log('\n✅ Analyse terminée avec succès!');
-    console.log('📝 Script d\'amélioration généré: improve-performance.sh');
-    
+    const improvementScript =
+      ContinuousOptimization.generateImprovementScript(report);
+    writeFileSync(
+      join(process.cwd(), "improve-performance.sh"),
+      improvementScript,
+    );
+
+    console.log("\n✅ Analyse terminée avec succès!");
+    console.log("📝 Script d'amélioration généré: improve-performance.sh");
   } catch (error) {
-    console.error('❌ Erreur lors de l\'analyse:', error);
+    console.error("❌ Erreur lors de l'analyse:", error);
     process.exit(1);
   }
 }

@@ -5,8 +5,8 @@
  * Identifie les opportunités de décomposition et modernisation
  */
 
-import { readFileSync } from 'fs';
-import { join, relative } from 'path';
+import { readFileSync } from "fs";
+import { join, relative } from "path";
 
 interface ComponentAnalysis {
   file: string;
@@ -30,7 +30,7 @@ interface ComponentAnalysis {
     hasEventHandlers: boolean;
   };
   recommendations: DecompositionStrategy;
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 }
 
 interface DecompositionStrategy {
@@ -45,18 +45,18 @@ interface DecompositionStrategy {
 
 class ComponentAnalyzer {
   private criticalComponents = [
-    'src/components/domain/checkout/CheckoutClientPage.tsx',
-    'src/components/features/admin/EventLogFilters.tsx',
-    'src/components/features/admin/magazine/article-form.tsx',
-    'src/components/forms/change-password-form.tsx',
-    'src/components/domain/profile/password-change-form.tsx'
+    "src/components/domain/checkout/CheckoutClientPage.tsx",
+    "src/components/features/admin/EventLogFilters.tsx",
+    "src/components/features/admin/magazine/article-form.tsx",
+    "src/components/forms/change-password-form.tsx",
+    "src/components/domain/profile/password-change-form.tsx",
   ];
 
   /**
    * Lance l'analyse complète des composants volumineux
    */
   async analyzeComponents(): Promise<void> {
-    console.log('🔬 Analyse des composants volumineux...\n');
+    console.log("🔬 Analyse des composants volumineux...\n");
 
     const analyses: ComponentAnalysis[] = [];
 
@@ -64,7 +64,9 @@ class ComponentAnalyzer {
       try {
         const analysis = await this.analyzeComponent(componentPath);
         analyses.push(analysis);
-        console.log(`✅ Analysé: ${relative(process.cwd(), componentPath)} (${analysis.lines} lignes)`);
+        console.log(
+          `✅ Analysé: ${relative(process.cwd(), componentPath)} (${analysis.lines} lignes)`,
+        );
       } catch (error) {
         console.warn(`⚠️  Erreur analyse ${componentPath}: ${error}`);
       }
@@ -77,12 +79,17 @@ class ComponentAnalyzer {
    * Analyse en détail un composant spécifique
    */
   private async analyzeComponent(file: string): Promise<ComponentAnalysis> {
-    const content = readFileSync(file, 'utf-8');
-    const lines = content.split('\n');
+    const content = readFileSync(file, "utf-8");
+    const lines = content.split("\n");
 
     const complexity = this.calculateComplexity(content);
     const patterns = this.detectPatterns(content);
-    const recommendations = this.generateRecommendations(file, complexity, patterns, content);
+    const recommendations = this.generateRecommendations(
+      file,
+      complexity,
+      patterns,
+      content,
+    );
     const priority = this.calculatePriority(complexity, patterns);
 
     return {
@@ -91,37 +98,46 @@ class ComponentAnalyzer {
       complexity,
       patterns,
       recommendations,
-      priority
+      priority,
     };
   }
 
   /**
    * Calcule les métriques de complexité
    */
-  private calculateComplexity(content: string): ComponentAnalysis['complexity'] {
+  private calculateComplexity(
+    content: string,
+  ): ComponentAnalysis["complexity"] {
     return {
-      functions: (content.match(/(?:function|const\s+\w+\s*=\s*(?:async\s+)?\(|=>\s*{)/g) || []).length,
+      functions: (
+        content.match(
+          /(?:function|const\s+\w+\s*=\s*(?:async\s+)?\(|=>\s*{)/g,
+        ) || []
+      ).length,
       hooks: (content.match(/use[A-Z]\w*/g) || []).length,
       useEffects: (content.match(/useEffect\s*\(/g) || []).length,
       stateVariables: (content.match(/useState\s*\(/g) || []).length,
       imports: (content.match(/import\s+/g) || []).length,
       exports: (content.match(/export\s+/g) || []).length,
       jsx: (content.match(/<[A-Z]\w*/g) || []).length,
-      conditionals: (content.match(/if\s*\(|switch\s*\(|\?\s*:|&&\s*</g) || []).length
+      conditionals: (content.match(/if\s*\(|switch\s*\(|\?\s*:|&&\s*</g) || [])
+        .length,
     };
   }
 
   /**
    * Détecte les patterns architecturaux
    */
-  private detectPatterns(content: string): ComponentAnalysis['patterns'] {
+  private detectPatterns(content: string): ComponentAnalysis["patterns"] {
     return {
       hasFormLogic: /useForm|FormProvider|form\./.test(content),
       hasApiCalls: /fetch\(|axios\.|supabase\.|mutation|query/.test(content),
-      hasComplexState: /useReducer|useState.*object|setState.*prev/.test(content),
+      hasComplexState: /useReducer|useState.*object|setState.*prev/.test(
+        content,
+      ),
       hasBusinessLogic: /calculate|validate|process|transform/.test(content),
       hasStyling: /className|style=|css`|styled/.test(content),
-      hasEventHandlers: /onClick|onChange|onSubmit|handle[A-Z]/.test(content)
+      hasEventHandlers: /onClick|onChange|onSubmit|handle[A-Z]/.test(content),
     };
   }
 
@@ -129,122 +145,121 @@ class ComponentAnalyzer {
    * Génère les recommandations de décomposition
    */
   private generateRecommendations(
-    file: string, 
-    complexity: ComponentAnalysis['complexity'], 
-    patterns: ComponentAnalysis['patterns'],
-    content: string
+    file: string,
+    complexity: ComponentAnalysis["complexity"],
+    patterns: ComponentAnalysis["patterns"],
+    content: string,
   ): DecompositionStrategy {
-    const filename = file.split('/').pop()?.replace('.tsx', '') || 'Component';
-    
-    let approach = '';
+    const filename = file.split("/").pop()?.replace(".tsx", "") || "Component";
+
+    let approach = "";
     let extractableHooks: string[] = [];
     let extractableComponents: string[] = [];
     let separableLogic: string[] = [];
     let modernizationSteps: string[] = [];
-    let estimatedReduction = '';
+    let estimatedReduction = "";
     let effortHours = 0;
 
     // Analyse spécifique par composant
-    if (file.includes('CheckoutClientPage')) {
-      approach = 'Décomposition par étapes du processus de checkout';
+    if (file.includes("CheckoutClientPage")) {
+      approach = "Décomposition par étapes du processus de checkout";
       extractableHooks = [
-        'useCheckoutState() - Gestion de l\'état multi-étapes',
-        'useAddressForm() - Validation adresses',
-        'usePaymentForm() - Intégration Stripe',
-        'useOrderSubmission() - Soumission finale'
+        "useCheckoutState() - Gestion de l'état multi-étapes",
+        "useAddressForm() - Validation adresses",
+        "usePaymentForm() - Intégration Stripe",
+        "useOrderSubmission() - Soumission finale",
       ];
       extractableComponents = [
-        'AddressStep - Sélection/saisie adresse',
-        'PaymentStep - Méthodes de paiement',
-        'ReviewStep - Récapitulatif commande',
-        'ConfirmationStep - Confirmation finale'
+        "AddressStep - Sélection/saisie adresse",
+        "PaymentStep - Méthodes de paiement",
+        "ReviewStep - Récapitulatif commande",
+        "ConfirmationStep - Confirmation finale",
       ];
       separableLogic = [
-        'Validation des étapes',
-        'Calculs de livraison',
-        'Interface Stripe',
-        'Gestion des erreurs'
+        "Validation des étapes",
+        "Calculs de livraison",
+        "Interface Stripe",
+        "Gestion des erreurs",
       ];
-      estimatedReduction = '476 → 4×80-120 lignes (65% réduction)';
+      estimatedReduction = "476 → 4×80-120 lignes (65% réduction)";
       effortHours = 12;
-    }
-
-    else if (file.includes('EventLogFilters')) {
-      approach = 'Séparation UI/logique métier avec hooks spécialisés';
+    } else if (file.includes("EventLogFilters")) {
+      approach = "Séparation UI/logique métier avec hooks spécialisés";
       extractableHooks = [
-        'useEventFilters() - Logique de filtrage',
-        'useEventSearch() - Recherche et pagination',
-        'useFilterPersistence() - Sauvegarde état filtres'
+        "useEventFilters() - Logique de filtrage",
+        "useEventSearch() - Recherche et pagination",
+        "useFilterPersistence() - Sauvegarde état filtres",
       ];
       extractableComponents = [
-        'FilterGroup - Groupe de filtres',
-        'DateRangePicker - Sélection période',
-        'UserSelector - Filtre utilisateurs',
-        'EventTypeFilter - Types d\'événements'
+        "FilterGroup - Groupe de filtres",
+        "DateRangePicker - Sélection période",
+        "UserSelector - Filtre utilisateurs",
+        "EventTypeFilter - Types d'événements",
       ];
       separableLogic = [
-        'Construction des requêtes',
-        'Validation des filtres',
-        'Export des données',
-        'Cache des résultats'
+        "Construction des requêtes",
+        "Validation des filtres",
+        "Export des données",
+        "Cache des résultats",
       ];
-      estimatedReduction = '474 → 200 lignes principales + hooks (58% réduction)';
+      estimatedReduction =
+        "474 → 200 lignes principales + hooks (58% réduction)";
       effortHours = 8;
-    }
-
-    else if (file.includes('article-form')) {
-      approach = 'Formulaire composé avec éditeur découplé';
+    } else if (file.includes("article-form")) {
+      approach = "Formulaire composé avec éditeur découplé";
       extractableHooks = [
-        'useArticleForm() - Validation et soumission',
-        'useAutoSave() - Sauvegarde automatique',
-        'useImageUpload() - Gestion images',
-        'useRichTextEditor() - Configuration éditeur'
+        "useArticleForm() - Validation et soumission",
+        "useAutoSave() - Sauvegarde automatique",
+        "useImageUpload() - Gestion images",
+        "useRichTextEditor() - Configuration éditeur",
       ];
       extractableComponents = [
-        'ArticleMetadata - Titre, catégorie, tags',
-        'TiptapEditor - Éditeur riche découplé',
-        'ImageManager - Upload et gestion images',
-        'PublicationControls - Statut et publication'
+        "ArticleMetadata - Titre, catégorie, tags",
+        "TiptapEditor - Éditeur riche découplé",
+        "ImageManager - Upload et gestion images",
+        "PublicationControls - Statut et publication",
       ];
       separableLogic = [
-        'Validation contenu',
-        'Transformation HTML',
-        'Upload progressif',
-        'Gestion versions'
+        "Validation contenu",
+        "Transformation HTML",
+        "Upload progressif",
+        "Gestion versions",
       ];
-      estimatedReduction = '526 → 150 lignes principales + composants (71% réduction)';
+      estimatedReduction =
+        "526 → 150 lignes principales + composants (71% réduction)";
       effortHours = 10;
-    }
-
-    else if (file.includes('password-change-form') || file.includes('change-password-form')) {
-      approach = 'Unification avec composant partagé';
+    } else if (
+      file.includes("password-change-form") ||
+      file.includes("change-password-form")
+    ) {
+      approach = "Unification avec composant partagé";
       extractableHooks = [
-        'usePasswordValidation() - Règles centralisées',
-        'useSecureForm() - Sécurité renforcée'
+        "usePasswordValidation() - Règles centralisées",
+        "useSecureForm() - Sécurité renforcée",
       ];
       extractableComponents = [
-        'PasswordField - Champ avec validation',
-        'PasswordStrength - Indicateur force',
-        'SecurityNotice - Messages sécurité'
+        "PasswordField - Champ avec validation",
+        "PasswordStrength - Indicateur force",
+        "SecurityNotice - Messages sécurité",
       ];
       separableLogic = [
-        'Validation en temps réel',
-        'Règles de complexité',
-        'Messages d\'erreur i18n'
+        "Validation en temps réel",
+        "Règles de complexité",
+        "Messages d'erreur i18n",
       ];
-      estimatedReduction = '2 composants → 1 composant unifié (50% réduction)';
+      estimatedReduction = "2 composants → 1 composant unifié (50% réduction)";
       effortHours = 6;
     }
 
     // Étapes de modernisation communes
     modernizationSteps = [
-      '1. Extraire la logique métier en hooks personnalisés',
-      '2. Créer les sous-composants focalisés',
-      '3. Implémenter la composition avec Server Components',
-      '4. Migrer l\'état global vers Zustand si nécessaire',
-      '5. Ajouter les tests unitaires pour chaque partie',
-      '6. Optimiser les re-renders avec React.memo',
-      '7. Valider la performance et l\'accessibilité'
+      "1. Extraire la logique métier en hooks personnalisés",
+      "2. Créer les sous-composants focalisés",
+      "3. Implémenter la composition avec Server Components",
+      "4. Migrer l'état global vers Zustand si nécessaire",
+      "5. Ajouter les tests unitaires pour chaque partie",
+      "6. Optimiser les re-renders avec React.memo",
+      "7. Valider la performance et l'accessibilité",
     ];
 
     return {
@@ -254,7 +269,7 @@ class ComponentAnalyzer {
       separableLogic,
       modernizationSteps,
       estimatedReduction,
-      effortHours
+      effortHours,
     };
   }
 
@@ -262,9 +277,9 @@ class ComponentAnalyzer {
    * Calcule la priorité de refactoring
    */
   private calculatePriority(
-    complexity: ComponentAnalysis['complexity'],
-    patterns: ComponentAnalysis['patterns']
-  ): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+    complexity: ComponentAnalysis["complexity"],
+    patterns: ComponentAnalysis["patterns"],
+  ): "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" {
     let score = 0;
 
     // Facteurs de complexité
@@ -279,22 +294,25 @@ class ComponentAnalyzer {
     if (patterns.hasBusinessLogic && patterns.hasFormLogic) score += 2;
     if (patterns.hasApiCalls && patterns.hasStyling) score += 1;
 
-    if (score >= 8) return 'CRITICAL';
-    if (score >= 6) return 'HIGH';
-    if (score >= 4) return 'MEDIUM';
-    return 'LOW';
+    if (score >= 8) return "CRITICAL";
+    if (score >= 6) return "HIGH";
+    if (score >= 4) return "MEDIUM";
+    return "LOW";
   }
 
   /**
    * Génère le plan de décomposition détaillé
    */
   private generateDecompositionPlan(analyses: ComponentAnalysis[]): void {
-    console.log('\n📋 Génération du plan de décomposition...\n');
+    console.log("\n📋 Génération du plan de décomposition...\n");
 
     // Trie par priorité et taille
     const sortedAnalyses = analyses.sort((a, b) => {
       const priorityOrder = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority] || b.lines - a.lines;
+      return (
+        priorityOrder[b.priority] - priorityOrder[a.priority] ||
+        b.lines - a.lines
+      );
     });
 
     let plan = `# PLAN DE MODERNISATION COMPOSANTS - HERBISVERITAS
@@ -315,10 +333,15 @@ Généré le: ${new Date().toISOString()}
 `;
 
     for (const analysis of sortedAnalyses) {
-      const emoji = analysis.priority === 'CRITICAL' ? '🔴' : 
-                   analysis.priority === 'HIGH' ? '🟠' : 
-                   analysis.priority === 'MEDIUM' ? '🟡' : '🟢';
-      
+      const emoji =
+        analysis.priority === "CRITICAL"
+          ? "🔴"
+          : analysis.priority === "HIGH"
+            ? "🟠"
+            : analysis.priority === "MEDIUM"
+              ? "🟡"
+              : "🟢";
+
       plan += `### ${emoji} \`${analysis.file}\`
 
 **Métriques actuelles**:
@@ -333,18 +356,18 @@ Généré le: ${new Date().toISOString()}
 ${Object.entries(analysis.patterns)
   .filter(([_, value]) => value)
   .map(([key, _]) => `- ${this.translatePattern(key)}`)
-  .join('\n')}
+  .join("\n")}
 
 **Stratégie de décomposition**: ${analysis.recommendations.approach}
 
 #### Hooks à extraire:
-${analysis.recommendations.extractableHooks.map(hook => `- \`${hook}\``).join('\n')}
+${analysis.recommendations.extractableHooks.map((hook) => `- \`${hook}\``).join("\n")}
 
 #### Composants à créer:
-${analysis.recommendations.extractableComponents.map(comp => `- \`${comp}\``).join('\n')}
+${analysis.recommendations.extractableComponents.map((comp) => `- \`${comp}\``).join("\n")}
 
 #### Logique à séparer:
-${analysis.recommendations.separableLogic.map(logic => `- ${logic}`).join('\n')}
+${analysis.recommendations.separableLogic.map((logic) => `- ${logic}`).join("\n")}
 
 **Impact estimé**: ${analysis.recommendations.estimatedReduction}
 **Effort**: ${analysis.recommendations.effortHours} heures
@@ -356,17 +379,19 @@ ${analysis.recommendations.separableLogic.map(logic => `- ${logic}`).join('\n')}
 
     plan += `## STRATÉGIE D'IMPLÉMENTATION
 
-### Phase 1: Composants Critiques (${sortedAnalyses.filter(a => a.priority === 'CRITICAL').length} composants)
+### Phase 1: Composants Critiques (${sortedAnalyses.filter((a) => a.priority === "CRITICAL").length} composants)
 
 `;
 
-    for (const analysis of sortedAnalyses.filter(a => a.priority === 'CRITICAL')) {
+    for (const analysis of sortedAnalyses.filter(
+      (a) => a.priority === "CRITICAL",
+    )) {
       plan += `#### \`${analysis.file}\`
 
 **Approche**: ${analysis.recommendations.approach}
 
 **Étapes recommandées**:
-${analysis.recommendations.modernizationSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
+${analysis.recommendations.modernizationSteps.map((step, i) => `${i + 1}. ${step}`).join("\n")}
 
 **Nouvelles structures de fichiers**:
 \`\`\`
@@ -380,7 +405,9 @@ ${this.generateFileStructure(analysis)}
 
 `;
 
-    for (const analysis of sortedAnalyses.filter(a => a.priority === 'HIGH')) {
+    for (const analysis of sortedAnalyses.filter(
+      (a) => a.priority === "HIGH",
+    )) {
       plan += `#### \`${analysis.file}\`
 
 **Focus**: ${analysis.recommendations.approach}
@@ -529,13 +556,13 @@ La modernisation de ces ${analyses.length} composants critiques réduira signifi
 
     // Sauvegarde du plan
     try {
-      const planPath = join(process.cwd(), 'COMPONENT_MODERNIZATION_PLAN.md');
-      require('fs').writeFileSync(planPath, plan);
+      const planPath = join(process.cwd(), "COMPONENT_MODERNIZATION_PLAN.md");
+      require("fs").writeFileSync(planPath, plan);
       console.log(`📄 Plan de modernisation généré: ${planPath}`);
-      
+
       this.displayComponentSummary(sortedAnalyses);
     } catch (error) {
-      console.error('❌ Erreur sauvegarde plan:', error);
+      console.error("❌ Erreur sauvegarde plan:", error);
     }
   }
 
@@ -544,14 +571,14 @@ La modernisation de ces ${analyses.length} composants critiques réduira signifi
    */
   private translatePattern(pattern: string): string {
     const translations = {
-      hasFormLogic: 'Logique de formulaire complexe',
-      hasApiCalls: 'Appels API intégrés',
-      hasComplexState: 'État local complexe',
-      hasBusinessLogic: 'Logique métier mélangée',
-      hasStyling: 'Styling inline/couplé',
-      hasEventHandlers: 'Nombreux gestionnaires d\'événements'
+      hasFormLogic: "Logique de formulaire complexe",
+      hasApiCalls: "Appels API intégrés",
+      hasComplexState: "État local complexe",
+      hasBusinessLogic: "Logique métier mélangée",
+      hasStyling: "Styling inline/couplé",
+      hasEventHandlers: "Nombreux gestionnaires d'événements",
     };
-    
+
     return translations[pattern] || pattern;
   }
 
@@ -559,9 +586,10 @@ La modernisation de ces ${analyses.length} composants critiques réduira signifi
    * Génère la structure de fichiers recommandée
    */
   private generateFileStructure(analysis: ComponentAnalysis): string {
-    const baseName = analysis.file.split('/').pop()?.replace('.tsx', '') || 'Component';
-    const dir = analysis.file.replace(/\/[^/]+$/, '');
-    
+    const baseName =
+      analysis.file.split("/").pop()?.replace(".tsx", "") || "Component";
+    const dir = analysis.file.replace(/\/[^/]+$/, "");
+
     let structure = `${dir}/
 ├── ${baseName.toLowerCase()}/
 │   ├── index.tsx                    # Composant principal
@@ -571,7 +599,7 @@ La modernisation de ces ${analyses.length} composants critiques réduira signifi
 `;
 
     for (const hook of analysis.recommendations.extractableHooks) {
-      const hookName = hook.split('(')[0].replace('use', '').toLowerCase();
+      const hookName = hook.split("(")[0].replace("use", "").toLowerCase();
       structure += `│   │   ├── use-${hookName}.ts\n`;
     }
 
@@ -580,7 +608,7 @@ La modernisation de ces ${analyses.length} composants critiques réduira signifi
 `;
 
     for (const component of analysis.recommendations.extractableComponents) {
-      const compName = component.split(' -')[0].toLowerCase();
+      const compName = component.split(" -")[0].toLowerCase();
       structure += `│   │   ├── ${compName}.tsx\n`;
     }
 
@@ -596,7 +624,7 @@ La modernisation de ces ${analyses.length} composants critiques réduira signifi
   private calculateTotalReduction(analyses: ComponentAnalysis[]): string {
     const totalLines = analyses.reduce((sum, a) => sum + a.lines, 0);
     const estimatedReduction = Math.round(totalLines * 0.6); // Estimation 60% réduction
-    
+
     return `${totalLines} → ~${totalLines - estimatedReduction} lignes (-${Math.round((estimatedReduction / totalLines) * 100)}%)`;
   }
 
@@ -604,19 +632,29 @@ La modernisation de ces ${analyses.length} composants critiques réduira signifi
    * Affiche un résumé dans la console
    */
   private displayComponentSummary(analyses: ComponentAnalysis[]): void {
-    console.log('📊 RÉSUMÉ MODERNISATION COMPOSANTS\n');
+    console.log("📊 RÉSUMÉ MODERNISATION COMPOSANTS\n");
 
     for (const analysis of analyses) {
-      const emoji = analysis.priority === 'CRITICAL' ? '🔴' : 
-                   analysis.priority === 'HIGH' ? '🟠' : 
-                   analysis.priority === 'MEDIUM' ? '🟡' : '🟢';
-      
+      const emoji =
+        analysis.priority === "CRITICAL"
+          ? "🔴"
+          : analysis.priority === "HIGH"
+            ? "🟠"
+            : analysis.priority === "MEDIUM"
+              ? "🟡"
+              : "🟢";
+
       console.log(`${emoji} ${analysis.file}`);
-      console.log(`   Lignes: ${analysis.lines} → Effort: ${analysis.recommendations.effortHours}h`);
+      console.log(
+        `   Lignes: ${analysis.lines} → Effort: ${analysis.recommendations.effortHours}h`,
+      );
       console.log(`   ${analysis.recommendations.estimatedReduction}\n`);
     }
 
-    const totalEffort = analyses.reduce((sum, a) => sum + a.recommendations.effortHours, 0);
+    const totalEffort = analyses.reduce(
+      (sum, a) => sum + a.recommendations.effortHours,
+      0,
+    );
     console.log(`🎯 EFFORT TOTAL: ${totalEffort} heures`);
     console.log(`📈 IMPACT: +50% vélocité, -70% bugs UI\n`);
   }

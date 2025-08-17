@@ -5,14 +5,14 @@
  * Focus sur les patterns critiques identifiés dans l'audit
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { readFileSync, readdirSync, statSync } from "fs";
+import { join, relative } from "path";
 
 interface CriticalDuplicate {
   type: string;
   pattern: RegExp;
   description: string;
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  severity: "CRITICAL" | "HIGH" | "MEDIUM";
   consolidationTarget: string;
   occurrences: Array<{
     file: string;
@@ -25,63 +25,69 @@ interface CriticalDuplicate {
 class DuplicateDetector {
   private criticalPatterns: CriticalDuplicate[] = [
     {
-      type: 'PASSWORD_VALIDATION',
-      pattern: /const\s+MIN_LENGTH\s*=\s*8|\/\[A-Z\]\/|\/\[0-9\]\/|\/\[\^A-Za-z0-9\]\//g,
-      description: 'Règles de validation de mot de passe dupliquées',
-      severity: 'CRITICAL',
-      consolidationTarget: 'src/lib/validators/password-rules.ts',
-      occurrences: []
+      type: "PASSWORD_VALIDATION",
+      pattern:
+        /const\s+MIN_LENGTH\s*=\s*8|\/\[A-Z\]\/|\/\[0-9\]\/|\/\[\^A-Za-z0-9\]\//g,
+      description: "Règles de validation de mot de passe dupliquées",
+      severity: "CRITICAL",
+      consolidationTarget: "src/lib/validators/password-rules.ts",
+      occurrences: [],
     },
     {
-      type: 'ERROR_HANDLING',
-      pattern: /try\s*\{[\s\S]*?createSupabaseServerClient[\s\S]*?\}\s*catch|ActionResult\.error|console\.error\("Error in action"/g,
-      description: 'Patterns de gestion d\'erreur dans les actions',
-      severity: 'CRITICAL',
-      consolidationTarget: 'src/lib/actions/action-wrapper.ts',
-      occurrences: []
+      type: "ERROR_HANDLING",
+      pattern:
+        /try\s*\{[\s\S]*?createSupabaseServerClient[\s\S]*?\}\s*catch|ActionResult\.error|console\.error\("Error in action"/g,
+      description: "Patterns de gestion d'erreur dans les actions",
+      severity: "CRITICAL",
+      consolidationTarget: "src/lib/actions/action-wrapper.ts",
+      occurrences: [],
     },
     {
-      type: 'FORM_STATE',
-      pattern: /const\s+\[isLoading,\s*setIsLoading\]\s*=\s*useState\(false\)|const\s+\[error,\s*setError\]\s*=\s*useState<string\s*\|\s*null>/g,
-      description: 'État de formulaire dupliqué',
-      severity: 'HIGH',
-      consolidationTarget: 'src/hooks/use-form-state.ts',
-      occurrences: []
+      type: "FORM_STATE",
+      pattern:
+        /const\s+\[isLoading,\s*setIsLoading\]\s*=\s*useState\(false\)|const\s+\[error,\s*setError\]\s*=\s*useState<string\s*\|\s*null>/g,
+      description: "État de formulaire dupliqué",
+      severity: "HIGH",
+      consolidationTarget: "src/hooks/use-form-state.ts",
+      occurrences: [],
     },
     {
-      type: 'FORM_FIELDS',
-      pattern: /<FormField[\s\S]*?name="(?:newPassword|confirmPassword)"[\s\S]*?<PasswordInput/g,
-      description: 'Champs de mot de passe dupliqués',
-      severity: 'HIGH',
-      consolidationTarget: 'src/components/forms/password-field.tsx',
-      occurrences: []
+      type: "FORM_FIELDS",
+      pattern:
+        /<FormField[\s\S]*?name="(?:newPassword|confirmPassword)"[\s\S]*?<PasswordInput/g,
+      description: "Champs de mot de passe dupliqués",
+      severity: "HIGH",
+      consolidationTarget: "src/components/forms/password-field.tsx",
+      occurrences: [],
     },
     {
-      type: 'CONSTANTS',
-      pattern: /const\s+MAX_QUANTITY\s*=\s*99|const\s+DEFAULT_TIMEOUT\s*=\s*5000|const\s+MIN_LENGTH\s*=\s*8/g,
-      description: 'Constantes de validation dupliquées',
-      severity: 'MEDIUM',
-      consolidationTarget: 'src/lib/constants/validation.ts',
-      occurrences: []
+      type: "CONSTANTS",
+      pattern:
+        /const\s+MAX_QUANTITY\s*=\s*99|const\s+DEFAULT_TIMEOUT\s*=\s*5000|const\s+MIN_LENGTH\s*=\s*8/g,
+      description: "Constantes de validation dupliquées",
+      severity: "MEDIUM",
+      consolidationTarget: "src/lib/constants/validation.ts",
+      occurrences: [],
     },
     {
-      type: 'MAGAZINE_ACTIONS',
-      pattern: /export\s+(?:async\s+)?function\s+(?:create|update|delete)Article/g,
-      description: 'Actions Magazine dupliquées',
-      severity: 'HIGH',
-      consolidationTarget: 'src/actions/magazineActions.ts',
-      occurrences: []
-    }
+      type: "MAGAZINE_ACTIONS",
+      pattern:
+        /export\s+(?:async\s+)?function\s+(?:create|update|delete)Article/g,
+      description: "Actions Magazine dupliquées",
+      severity: "HIGH",
+      consolidationTarget: "src/actions/magazineActions.ts",
+      occurrences: [],
+    },
   ];
 
   /**
    * Lance la détection des doublons critiques
    */
   async detectCriticalDuplicates(): Promise<void> {
-    console.log('🔍 Détection des doublons critiques...\n');
+    console.log("🔍 Détection des doublons critiques...\n");
 
     const files = this.getAllTSFiles();
-    
+
     for (const file of files) {
       await this.scanFile(file);
     }
@@ -94,17 +100,19 @@ class DuplicateDetector {
    */
   private getAllTSFiles(): string[] {
     const files: string[] = [];
-    
+
     const traverse = (dir: string) => {
       try {
         const entries = readdirSync(dir);
-        
+
         for (const entry of entries) {
           const fullPath = join(dir, entry);
-          
-          if (statSync(fullPath).isDirectory() && 
-              !entry.startsWith('.') && 
-              entry !== 'node_modules') {
+
+          if (
+            statSync(fullPath).isDirectory() &&
+            !entry.startsWith(".") &&
+            entry !== "node_modules"
+          ) {
             traverse(fullPath);
           } else if (fullPath.match(/\.(ts|tsx)$/)) {
             files.push(fullPath);
@@ -114,8 +122,8 @@ class DuplicateDetector {
         // Ignore les erreurs d'accès
       }
     };
-    
-    traverse('src');
+
+    traverse("src");
     return files;
   }
 
@@ -124,23 +132,25 @@ class DuplicateDetector {
    */
   private async scanFile(file: string): Promise<void> {
     try {
-      const content = readFileSync(file, 'utf-8');
-      const lines = content.split('\n');
+      const content = readFileSync(file, "utf-8");
+      const lines = content.split("\n");
 
       for (const pattern of this.criticalPatterns) {
         let match;
-        const regex = new RegExp(pattern.pattern.source, 'gm');
-        
+        const regex = new RegExp(pattern.pattern.source, "gm");
+
         while ((match = regex.exec(content)) !== null) {
-          const lineNumber = content.substring(0, match.index).split('\n').length;
+          const lineNumber = content
+            .substring(0, match.index)
+            .split("\n").length;
           const contextStart = Math.max(0, lineNumber - 3);
           const contextEnd = Math.min(lines.length, lineNumber + 2);
-          
+
           pattern.occurrences.push({
             file: relative(process.cwd(), file),
             line: lineNumber,
             match: match[0].substring(0, 100), // Limite la taille
-            context: lines.slice(contextStart, contextEnd).join('\n')
+            context: lines.slice(contextStart, contextEnd).join("\n"),
           });
         }
       }
@@ -153,7 +163,7 @@ class DuplicateDetector {
    * Génère le plan de consolidation détaillé
    */
   private generateConsolidationPlan(): void {
-    console.log('📋 Génération du plan de consolidation...\n');
+    console.log("📋 Génération du plan de consolidation...\n");
 
     let plan = `# PLAN DE CONSOLIDATION IMMÉDIATE - DOUBLONS CRITIQUES
 
@@ -169,8 +179,9 @@ Généré le: ${new Date().toISOString()}
 
     for (const pattern of this.criticalPatterns) {
       totalOccurrences += pattern.occurrences.length;
-      if (pattern.severity === 'CRITICAL') criticalCount += pattern.occurrences.length;
-      if (pattern.severity === 'HIGH') highCount += pattern.occurrences.length;
+      if (pattern.severity === "CRITICAL")
+        criticalCount += pattern.occurrences.length;
+      if (pattern.severity === "HIGH") highCount += pattern.occurrences.length;
     }
 
     plan += `**Total doublons détectés**: ${totalOccurrences}
@@ -185,17 +196,23 @@ Généré le: ${new Date().toISOString()}
 
     // Trie par sévérité et nombre d'occurrences
     const sortedPatterns = this.criticalPatterns
-      .filter(p => p.occurrences.length > 0)
+      .filter((p) => p.occurrences.length > 0)
       .sort((a, b) => {
         const severityOrder = { CRITICAL: 3, HIGH: 2, MEDIUM: 1 };
-        return severityOrder[b.severity] - severityOrder[a.severity] || 
-               b.occurrences.length - a.occurrences.length;
+        return (
+          severityOrder[b.severity] - severityOrder[a.severity] ||
+          b.occurrences.length - a.occurrences.length
+        );
       });
 
     for (const pattern of sortedPatterns) {
-      const emoji = pattern.severity === 'CRITICAL' ? '🔴' : 
-                   pattern.severity === 'HIGH' ? '🟠' : '🟡';
-      
+      const emoji =
+        pattern.severity === "CRITICAL"
+          ? "🔴"
+          : pattern.severity === "HIGH"
+            ? "🟠"
+            : "🟡";
+
       plan += `### ${emoji} ${pattern.type} (${pattern.severity})
 
 **Description**: ${pattern.description}
@@ -215,7 +232,7 @@ Généré le: ${new Date().toISOString()}
       }
 
       for (const [file, lines] of fileGroups) {
-        plan += `- \`${file}\` (lignes: ${lines.join(', ')})\n`;
+        plan += `- \`${file}\` (lignes: ${lines.join(", ")})\n`;
       }
 
       plan += `
@@ -240,7 +257,9 @@ ${this.getConsolidationAction(pattern.type)}
 
 `;
 
-    for (const pattern of sortedPatterns.filter(p => p.severity === 'CRITICAL')) {
+    for (const pattern of sortedPatterns.filter(
+      (p) => p.severity === "CRITICAL",
+    )) {
       plan += `#### ${pattern.type}
 
 1. **Créer** \`${pattern.consolidationTarget}\`
@@ -256,7 +275,7 @@ ${this.getConsolidationAction(pattern.type)}
 
 `;
 
-    for (const pattern of sortedPatterns.filter(p => p.severity === 'HIGH')) {
+    for (const pattern of sortedPatterns.filter((p) => p.severity === "HIGH")) {
       plan += `#### ${pattern.type}
 
 1. **Analyser** les variations entre occurrences
@@ -271,7 +290,9 @@ ${this.getConsolidationAction(pattern.type)}
 
 `;
 
-    for (const pattern of sortedPatterns.filter(p => p.severity === 'MEDIUM')) {
+    for (const pattern of sortedPatterns.filter(
+      (p) => p.severity === "MEDIUM",
+    )) {
       plan += `#### ${pattern.type}
 
 1. **Audit** de l'impact
@@ -317,15 +338,15 @@ npm run validate:consolidation
 
     // Sauvegarde du plan
     try {
-      const planPath = join(process.cwd(), 'CONSOLIDATION_PLAN.md');
-      require('fs').writeFileSync(planPath, plan);
+      const planPath = join(process.cwd(), "CONSOLIDATION_PLAN.md");
+      require("fs").writeFileSync(planPath, plan);
       console.log(`📄 Plan de consolidation généré: ${planPath}`);
-      
+
       // Affiche aussi un résumé court
       this.displaySummary(sortedPatterns);
     } catch (error) {
-      console.error('❌ Erreur sauvegarde plan:', error);
-      console.log('\n' + plan);
+      console.error("❌ Erreur sauvegarde plan:", error);
+      console.log("\n" + plan);
     }
   }
 
@@ -368,10 +389,10 @@ npm run validate:consolidation
 1. Consolider dans \`src/actions/magazineActions.ts\` unique
 2. Supprimer \`src/lib/actions/magazine-actions.ts\` (duplication)
 3. Mettre à jour tous les imports
-4. Valider avec les tests existants`
+4. Valider avec les tests existants`,
     };
 
-    return actions[type] || 'Action de consolidation à définir';
+    return actions[type] || "Action de consolidation à définir";
   }
 
   /**
@@ -384,12 +405,12 @@ npm run validate:consolidation
       FORM_STATE: 4,
       FORM_FIELDS: 5,
       CONSTANTS: 2,
-      MAGAZINE_ACTIONS: 3
+      MAGAZINE_ACTIONS: 3,
     };
 
     const base = baseEffort[pattern.type] || 2;
     const complexity = pattern.occurrences.length * 0.3;
-    
+
     const total = base + complexity;
     return `${Math.ceil(total)}-${Math.ceil(total * 1.3)}`;
   }
@@ -403,7 +424,7 @@ npm run validate:consolidation
 
     for (const pattern of patterns) {
       const estimate = this.estimateEffort(pattern);
-      const [min, max] = estimate.split('-').map(Number);
+      const [min, max] = estimate.split("-").map(Number);
       totalMin += min;
       totalMax += max;
     }
@@ -415,13 +436,19 @@ npm run validate:consolidation
    * Affiche un résumé rapide dans la console
    */
   private displaySummary(patterns: CriticalDuplicate[]): void {
-    console.log('📊 RÉSUMÉ DES DOUBLONS CRITIQUES\n');
+    console.log("📊 RÉSUMÉ DES DOUBLONS CRITIQUES\n");
 
     for (const pattern of patterns.slice(0, 5)) {
-      const emoji = pattern.severity === 'CRITICAL' ? '🔴' : 
-                   pattern.severity === 'HIGH' ? '🟠' : '🟡';
-      
-      console.log(`${emoji} ${pattern.type}: ${pattern.occurrences.length} occurrences`);
+      const emoji =
+        pattern.severity === "CRITICAL"
+          ? "🔴"
+          : pattern.severity === "HIGH"
+            ? "🟠"
+            : "🟡";
+
+      console.log(
+        `${emoji} ${pattern.type}: ${pattern.occurrences.length} occurrences`,
+      );
       console.log(`   → ${pattern.consolidationTarget}`);
       console.log(`   → Effort: ${this.estimateEffort(pattern)}h\n`);
     }
