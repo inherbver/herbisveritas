@@ -36,6 +36,7 @@ import { ChevronDown } from "lucide-react";
 interface EnhancedDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  pagination?: any;
 }
 
 export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({
@@ -43,8 +44,11 @@ export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({
   data,
 }: EnhancedDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [filters, setFilters] = React.useState<FilterState>({
     search: "",
     role: "all",
@@ -55,6 +59,10 @@ export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({
 
   // Filter data client-side based on our custom filters
   const filteredData = React.useMemo(() => {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
     const filtered = data.filter((item) => {
       const user = item as UserForAdminPanel;
 
@@ -146,7 +154,8 @@ export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">
-            {filteredData.length} utilisateur(s) sur {data.length}
+            {filteredData.length} utilisateur(s) sur{" "}
+            {Array.isArray(data) ? data.length : 0}
           </p>
         </div>
 
@@ -167,7 +176,9 @@ export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({
                     key={column.id}
                     className="capitalize"
                     checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
                   >
                     {column.id}
                   </DropdownMenuCheckboxItem>
@@ -188,7 +199,10 @@ export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   );
                 })}
@@ -198,19 +212,30 @@ export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <p className="text-muted-foreground">Aucun utilisateur trouvé</p>
+                    <p className="text-muted-foreground">
+                      Aucun utilisateur trouvé
+                    </p>
                     <Button variant="outline" size="sm" onClick={resetFilters}>
                       Réinitialiser les filtres
                     </Button>
@@ -225,8 +250,8 @@ export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Page {table.getState().pagination.pageIndex + 1} sur {table.getPageCount()} (
-          {filteredData.length} résultats)
+          Page {table.getState().pagination.pageIndex + 1} sur{" "}
+          {table.getPageCount()} ({filteredData.length} résultats)
         </div>
         <div className="flex items-center space-x-2">
           <Button

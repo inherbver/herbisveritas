@@ -35,12 +35,12 @@ export class AddressValidationService {
     shippingAddress: Address,
     billingAddress: Address,
     userId?: string,
-    options: AddressValidationOptions = {}
+    options: AddressValidationOptions = {},
   ): Promise<ActionResult<ProcessedAddresses>> {
     const context = this.logger.createUserActionContext(
       userId || "guest",
       "validate_addresses",
-      "checkout"
+      "checkout",
     );
 
     this.logger.logOperationStart("validate_addresses", context);
@@ -52,13 +52,25 @@ export class AddressValidationService {
 
       // Validation des pays autorisés
       if (options.allowedCountries) {
-        this.validateCountries(shippingAddress, billingAddress, options.allowedCountries);
+        this.validateCountries(
+          shippingAddress,
+          billingAddress,
+          options.allowedCountries,
+        );
       }
 
       // Traitement des adresses selon le type d'utilisateur
       const processedAddresses = userId
-        ? await this.processAuthenticatedUserAddresses(shippingAddress, billingAddress, userId)
-        : await this.processGuestAddresses(shippingAddress, billingAddress, options);
+        ? await this.processAuthenticatedUserAddresses(
+            shippingAddress,
+            billingAddress,
+            userId,
+          )
+        : await this.processGuestAddresses(
+            shippingAddress,
+            billingAddress,
+            options,
+          );
 
       this.logger.logOperationSuccess("validate_addresses", {
         ...context,
@@ -77,7 +89,7 @@ export class AddressValidationService {
       return ActionResult.error(
         ErrorUtils.isAppError(error)
           ? ErrorUtils.formatForUser(error)
-          : "Erreur lors de la validation des adresses"
+          : "Erreur lors de la validation des adresses",
       );
     }
   }
@@ -85,8 +97,18 @@ export class AddressValidationService {
   /**
    * Valide le format d'une adresse
    */
-  private validateAddressFormat(address: Address, type: "shipping" | "billing"): void {
-    const requiredFields = ["first_name", "last_name", "street", "city", "postal_code", "country"];
+  private validateAddressFormat(
+    address: Address,
+    type: "shipping" | "billing",
+  ): void {
+    const requiredFields = [
+      "first_name",
+      "last_name",
+      "address_line1",
+      "city",
+      "postal_code",
+      "country_code",
+    ];
 
     for (const field of requiredFields) {
       if (
@@ -95,7 +117,7 @@ export class AddressValidationService {
       ) {
         throw new CheckoutBusinessError(
           CheckoutErrorCode.INVALID_ADDRESS,
-          `Champ manquant dans l'adresse de ${type === "shipping" ? "livraison" : "facturation"}: ${field}`
+          `Champ manquant dans l'adresse de ${type === "shipping" ? "livraison" : "facturation"}: ${field}`,
         );
       }
     }
@@ -106,7 +128,7 @@ export class AddressValidationService {
       if (!emailRegex.test(address.email)) {
         throw new CheckoutBusinessError(
           CheckoutErrorCode.INVALID_ADDRESS,
-          "Format d'email invalide dans l'adresse de facturation"
+          "Format d'email invalide dans l'adresse de facturation",
         );
       }
     }
@@ -117,7 +139,7 @@ export class AddressValidationService {
       if (!frPostalRegex.test(address.postal_code)) {
         throw new CheckoutBusinessError(
           CheckoutErrorCode.INVALID_ADDRESS,
-          "Format de code postal français invalide"
+          "Format de code postal français invalide",
         );
       }
     }
@@ -129,19 +151,19 @@ export class AddressValidationService {
   private validateCountries(
     shippingAddress: Address,
     billingAddress: Address,
-    allowedCountries: string[]
+    allowedCountries: string[],
   ): void {
     if (!allowedCountries.includes(shippingAddress.country_code)) {
       throw new CheckoutBusinessError(
         CheckoutErrorCode.INVALID_ADDRESS,
-        `Livraison non disponible pour le pays: ${shippingAddress.country_code}`
+        `Livraison non disponible pour le pays: ${shippingAddress.country_code}`,
       );
     }
 
     if (!allowedCountries.includes(billingAddress.country_code)) {
       throw new CheckoutBusinessError(
         CheckoutErrorCode.INVALID_ADDRESS,
-        `Facturation non disponible pour le pays: ${billingAddress.country_code}`
+        `Facturation non disponible pour le pays: ${billingAddress.country_code}`,
       );
     }
   }
@@ -152,13 +174,13 @@ export class AddressValidationService {
   private async processAuthenticatedUserAddresses(
     shippingAddress: Address,
     billingAddress: Address,
-    userId: string
+    userId: string,
   ): Promise<ProcessedAddresses> {
     const supabase = await createSupabaseServerClient();
 
     const processAddress = async (
       address: Address,
-      type: "shipping" | "billing"
+      type: "shipping" | "billing",
     ): Promise<string | null> => {
       // Si l'adresse a un ID et n'est pas temporaire, l'utiliser
       if ("id" in address && address.id && !address.id.startsWith("temp-")) {
@@ -202,12 +224,12 @@ export class AddressValidationService {
   private async processGuestAddresses(
     shippingAddress: Address,
     billingAddress: Address,
-    options: AddressValidationOptions
+    options: AddressValidationOptions,
   ): Promise<ProcessedAddresses> {
     if (!options.allowGuestAddresses) {
       throw new CheckoutBusinessError(
         CheckoutErrorCode.INVALID_ADDRESS,
-        "Checkout invité non autorisé"
+        "Checkout invité non autorisé",
       );
     }
 
@@ -224,7 +246,7 @@ export class AddressValidationService {
    * Récupère les méthodes de livraison disponibles pour une adresse
    */
   async getAvailableShippingMethods(
-    _shippingAddress: Address
+    _shippingAddress: Address,
   ): Promise<ActionResult<Array<{ id: string; name: string; price: number }>>> {
     try {
       const supabase = await createSupabaseServerClient();
@@ -243,7 +265,9 @@ export class AddressValidationService {
 
       return ActionResult.ok(shippingMethods || []);
     } catch (_error) {
-      return ActionResult.error("Erreur lors de la récupération des méthodes de livraison");
+      return ActionResult.error(
+        "Erreur lors de la récupération des méthodes de livraison",
+      );
     }
   }
 }
