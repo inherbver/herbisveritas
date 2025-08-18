@@ -65,8 +65,8 @@ src/
 - **products** : Catalogue avec prix, stock, statuts
 - **product_translations** : Traductions multilingues (FR, EN, DE, ES)
 - **categories** : Classification des produits
-- **carts** : Paniers utilisateurs authentifiés et invités
-- **cart_items** : Articles dans les paniers
+- **carts** : Paniers utilisateurs authentifiés et invités (`user_id` ou `guest_id`)
+- **cart_items** : Articles dans les paniers (partagé guest/user)
 - **orders** : Commandes avec statuts et paiements
 - **order_items** : Articles commandés avec prix historique
 
@@ -110,8 +110,9 @@ payment_status_type: 'pending', 'succeeded', 'failed', 'refunded'
 
 #### Gestion Panier
 
-- `add_or_update_cart_item()` : Ajout/mise à jour articles
-- `merge_guest_cart_to_user()` : Fusion panier invité→authentifié
+- `add_or_update_cart_item()` : Ajout/mise à jour articles (guest et user)
+- `merge_guest_cart_to_user()` : Fusion automatique panier guest→user
+- `get_or_create_cart()` : Récupération/création panier guest ou user
 
 #### Administration
 
@@ -214,6 +215,178 @@ interface CartStore {
 
 - **AddressStore** : Gestion adresses utilisateur
 - **ProfileStore** : Données profil avec synchronisation
+
+## Gestion des Paniers Guest
+
+### Vue d'ensemble
+
+Le système permet aux utilisateurs non authentifiés de :
+
+1. **Remplir un panier** et naviguer sur le site
+2. **Finaliser complètement leur commande** (paiement + livraison)
+3. **Migrer automatiquement** leur panier lors de l'inscription
+4. **Purger automatiquement** les paniers anciens (>14 jours)
+
+### Architecture Technique
+
+#### Structure Base de Données
+
+```sql
+-- Table carts : Support guest et user authentifié
+CREATE TABLE public.carts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id),  -- NULL pour guest
+    guest_id UUID,                           -- ID unique pour guest
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    metadata JSONB
+);
+
+-- Table orders : user_id nullable pour guest checkout
+CREATE TABLE public.orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id),  -- Nullable depuis migration 20250624005000
+    total_amount NUMERIC NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    stripe_checkout_id TEXT UNIQUE,
+    shipping_address_id UUID,
+    billing_address_id UUID,
+    -- Champs pour guest
+    guest_email TEXT,
+    guest_phone TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+#### Flux de Fonctionnement
+
+**1. Panier Guest**
+
+- Création automatique d'un `guest_id` unique
+- Stockage en base avec `user_id = NULL`
+- Gestion identique aux paniers authentifiés
+
+**2. Checkout Guest**
+
+```typescript
+// Dans stripeActions.ts
+const processedAddresses =
+  await addressValidationService.validateAndProcessAddresses({
+    userId: undefined, // Guest
+    shippingAddress,
+    billingAddress,
+  });
+
+// isGuestCheckout: true déclenche le flux spécialisé
+const sessionData = {
+  isGuestCheckout: processedAddresses.isGuestCheckout,
+  // ...
+};
+```
+
+**3. Migration Automatique lors Connexion**
+
+```typescript
+// Dans authActions.ts - loginAction
+if (guestUserId) {
+  const migrationResult = await migrateAndGetCart({ guestUserId });
+  // Fusion automatique des paniers guest → user
+}
+```
+
+**4. Purge Automatique**
+
+```typescript
+// Edge Function : cleanup-guest-carts
+const config = {
+  maxAgeHours: 24 * 14, // 14 jours par défaut
+  batchSize: 100,
+  dryRun: false,
+};
+```
+
+### Services et Actions
+
+#### CartActions
+
+- **`addItemToCart()`** : Support guest via `guest_id`
+- **`migrateAndGetCart()`** : Migration guest → user authentifié
+- **`getCart()`** : Récupération panier guest ou user
+
+#### CheckoutOrchestratorService
+
+- **`processCheckout()`** : Orchestre le processus complet
+- **Validation addresses** : Support `isGuestCheckout: true`
+- **Création commande** : Sans `user_id` pour guest
+
+#### AddressValidationService
+
+```typescript
+interface AddressValidationResult {
+  isGuestCheckout: boolean;
+  shippingAddress: ProcessedAddress;
+  billingAddress: ProcessedAddress;
+}
+```
+
+### Tests et Validation
+
+#### Test E2E Guest Checkout
+
+```typescript
+// tests/e2e/checkout-flow.spec.ts
+test("guest user can complete full checkout process", async ({ page }) => {
+  // Navigation → Boutique
+  // Ajout produits au panier
+  // Remplissage adresses livraison/facturation
+  // Informations contact (email, téléphone)
+  // Finalisation paiement Stripe
+});
+```
+
+#### Tests Unitaires
+
+- **Migration panier** : `cartActions.test.ts`
+- **Validation addresses** : `address-validation.service.test.ts`
+- **Checkout orchestration** : `checkout-orchestrator.service.test.ts`
+
+### Edge Functions
+
+#### cleanup-guest-carts
+
+```typescript
+// Purge automatique des paniers expirés
+interface CleanupConfig {
+  dryRun?: boolean;
+  maxAgeHours?: number; // 14 jours par défaut
+  batchSize?: number; // 100 par défaut
+}
+
+// Déclenchement :
+// - Automatique (cron job)
+// - Manuel via interface admin
+```
+
+### Points d'Attention
+
+#### Sécurité
+
+- **RLS Policies** : Accès guest contrôlé par `guest_id`
+- **Validation stricte** : Tous les inputs guest validés
+- **Audit trail** : Logs détaillés des opérations guest
+
+#### Performance
+
+- **Index optimisés** : Sur `guest_id` et `created_at`
+- **Purge par batch** : Évite la surcharge système
+- **Cache intelligent** : Réduction des requêtes répétitives
+
+#### Monitoring
+
+- **Métriques spécialisées** : Taux de conversion guest
+- **Alertes** : Échecs migration ou purge
+- **Dashboard admin** : Vue d'ensemble paniers guest
 
 ## Internationalisation
 
