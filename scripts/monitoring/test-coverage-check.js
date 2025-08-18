@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-env node */
 /**
  * Script de vérification de la couverture de tests - Phase 3.5
  * Analyse et rapporte la couverture de code avec des métriques détaillées

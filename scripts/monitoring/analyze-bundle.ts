@@ -76,8 +76,8 @@ class BundleAnalyzer {
     return report;
   }
 
-  private getChunkSizes(staticDir: string): Array<{ name: string; size: number; percentage: number }> {
-    const chunks: Array<{ name: string; size: number; percentage: number }> = [];
+  private getChunkSizes(_staticDir: string): Array<{ name: string; size: number; percentage: number }> {
+    const _chunks: Array<{ name: string; size: number; percentage: number }> = [];
     
     try {
       // Simuler l'analyse des chunks (dans un vrai projet, on utiliserait webpack-bundle-analyzer)

@@ -126,7 +126,7 @@ class SupabaseKeyRotator {
       const supabase = createClient(this.config.supabaseUrl, this.config.currentServiceKey);
       
       // Test simple: lister les tables
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('profiles')
         .select('id')
         .limit(1);

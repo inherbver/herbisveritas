@@ -6,7 +6,7 @@ import type { Database } from "../src/types/supabase";
 dotenv.config({ path: ".env.local" });
 
 const ADMIN_USER_ID = "245eba22-0041-44d1-94ee-9ca71d3d561d";
-const ADMIN_EMAIL = "inherbver@gmail.com";
+const _ADMIN_EMAIL = "inherbver@gmail.com";
 
 async function fixAdminRole() {
   console.log("🔧 Correction du rôle admin pour l'utilisateur:", ADMIN_USER_ID);
@@ -28,7 +28,7 @@ async function fixAdminRole() {
     console.log("🔍 Vérification de la structure de la table profiles...");
 
     // Essayer de vérifier avec une requête simple
-    const { data: sampleProfile, error: sampleError } = await supabase
+    const { data: _sampleProfile, error: sampleError } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", ADMIN_USER_ID)
