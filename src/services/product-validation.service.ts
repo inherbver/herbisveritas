@@ -6,7 +6,11 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
-import { CheckoutBusinessError, CheckoutErrorCode, CartValidationResult } from "./checkout.service";
+import {
+  CheckoutBusinessError,
+  CheckoutErrorCode,
+  CartValidationResult,
+} from "./checkout.service";
 import { ErrorUtils } from "@/lib/core/errors";
 
 export interface CartItem {
@@ -20,7 +24,7 @@ export interface Product {
   price: number;
   image_url: string | null;
   is_available: boolean;
-  stock_quantity: number;
+  stock: number;
 }
 
 /**
@@ -32,11 +36,13 @@ export class ProductValidationService {
   /**
    * Valide tous les produits du panier
    */
-  async validateCartProducts(cartItems: CartItem[]): Promise<ActionResult<CartValidationResult>> {
+  async validateCartProducts(
+    cartItems: CartItem[],
+  ): Promise<ActionResult<CartValidationResult>> {
     const context = this.logger.createUserActionContext(
       "unknown",
       "validate_cart_products",
-      "checkout"
+      "checkout",
     );
 
     this.logger.logOperationStart("validate_cart_products", {
@@ -46,7 +52,10 @@ export class ProductValidationService {
 
     try {
       if (!cartItems || cartItems.length === 0) {
-        throw new CheckoutBusinessError(CheckoutErrorCode.EMPTY_CART, "Le panier est vide");
+        throw new CheckoutBusinessError(
+          CheckoutErrorCode.EMPTY_CART,
+          "Le panier est vide",
+        );
       }
 
       const supabase = await createSupabaseServerClient();
@@ -55,7 +64,7 @@ export class ProductValidationService {
       // Récupération des produits en base
       const { data: products, error: productsError } = await supabase
         .from("products")
-        .select("id, name, price, image_url, is_available, stock_quantity")
+        .select("id, name, price, image_url, is_available, stock")
         .in("id", productIds)
         .returns<Product[]>();
 
@@ -73,21 +82,21 @@ export class ProductValidationService {
         if (!product) {
           throw new CheckoutBusinessError(
             CheckoutErrorCode.PRODUCT_NOT_FOUND,
-            `Produit non trouvé: ${cartItem.productId}`
+            `Produit non trouvé: ${cartItem.productId}`,
           );
         }
 
         if (!product.is_available) {
           throw new CheckoutBusinessError(
             CheckoutErrorCode.PRODUCT_UNAVAILABLE,
-            `Produit non disponible: ${product.name}`
+            `Produit non disponible: ${product.name}`,
           );
         }
 
-        if (product.stock_quantity < cartItem.quantity) {
+        if (product.stock < cartItem.quantity) {
           throw new CheckoutBusinessError(
             CheckoutErrorCode.INSUFFICIENT_STOCK,
-            `Stock insuffisant pour ${product.name}. Disponible: ${product.stock_quantity}, Demandé: ${cartItem.quantity}`
+            `Stock insuffisant pour ${product.name}. Disponible: ${product.stock}, Demandé: ${cartItem.quantity}`,
           );
         }
 
@@ -97,7 +106,7 @@ export class ProductValidationService {
         validatedItems.push({
           productId: product.id,
           quantity: cartItem.quantity,
-          availableStock: product.stock_quantity,
+          availableStock: product.stock,
           price: product.price,
           name: product.name,
         });
@@ -126,7 +135,7 @@ export class ProductValidationService {
       return ActionResult.error(
         ErrorUtils.isAppError(error)
           ? ErrorUtils.formatForUser(error)
-          : "Erreur lors de la validation des produits"
+          : "Erreur lors de la validation des produits",
       );
     }
   }
@@ -136,7 +145,7 @@ export class ProductValidationService {
    */
   async validateSingleProduct(
     productId: string,
-    requestedQuantity: number
+    requestedQuantity: number,
   ): Promise<ActionResult<Product>> {
     try {
       const supabase = await createSupabaseServerClient();
@@ -154,14 +163,14 @@ export class ProductValidationService {
       if (!product.is_available) {
         throw new CheckoutBusinessError(
           CheckoutErrorCode.PRODUCT_UNAVAILABLE,
-          `Produit non disponible: ${product.name}`
+          `Produit non disponible: ${product.name}`,
         );
       }
 
-      if (product.stock_quantity < requestedQuantity) {
+      if (product.stock < requestedQuantity) {
         throw new CheckoutBusinessError(
           CheckoutErrorCode.INSUFFICIENT_STOCK,
-          `Stock insuffisant pour ${product.name}`
+          `Stock insuffisant pour ${product.name}`,
         );
       }
 
