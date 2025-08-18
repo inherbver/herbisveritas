@@ -17,4 +17,13 @@ export interface ProfileData {
   billing_postal_code: string | null;
   billing_city: string | null;
   billing_country: string | null;
+  // Propriétés pour les tests
+  email?: string;
+  phone?: string;
+  language?: string;
+  newsletter?: boolean;
+  accepted_terms?: boolean;
 }
+
+// Alias pour compatibilité avec les tests
+export type Profile = ProfileData;

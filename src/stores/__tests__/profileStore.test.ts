@@ -2,18 +2,34 @@
  * Tests for Profile Zustand Store
  */
 
+import { renderHook, act } from "@testing-library/react";
 import { useProfileStore } from "../profileStore";
-import { ProfileData } from "@/types/profile";
+import { createMockSupabaseClient } from "@/test-utils/supabaseMocks";
+import { UserFactory } from "@/test-utils/factories/UserFactory";
+import type { Profile } from "@/types/profile";
 
 // Mock profile data
-const mockProfileData: ProfileData = {
+const _mockProfileData: Profile = {
   first_name: "John",
   last_name: "Doe",
+  phone_number: "+33612345678",
+  role: "user",
   email: "john.doe@example.com",
-  phone: "+33612345678",
   language: "fr",
   newsletter: true,
   accepted_terms: true,
+  shipping_address_line1: null,
+  shipping_address_line2: null,
+  shipping_postal_code: null,
+  shipping_city: null,
+  shipping_country: null,
+  terms_accepted_at: null,
+  billing_address_is_different: null,
+  billing_address_line1: null,
+  billing_address_line2: null,
+  billing_postal_code: null,
+  billing_city: null,
+  billing_country: null,
 };
 
 describe("profileStore", () => {
@@ -137,7 +153,9 @@ describe("profileStore", () => {
       expect(result).toBe(false);
 
       const state = useProfileStore.getState();
-      expect(state.error).toBe("Aucun profil en cours d'édition ou données manquantes.");
+      expect(state.error).toBe(
+        "Aucun profil en cours d'édition ou données manquantes.",
+      );
     });
 
     it("should handle submit without profile data", async () => {
@@ -150,7 +168,7 @@ describe("profileStore", () => {
 
       expect(result).toBe(false);
       expect(useProfileStore.getState().error).toBe(
-        "Aucun profil en cours d'édition ou données manquantes."
+        "Aucun profil en cours d'édition ou données manquantes.",
       );
     });
   });

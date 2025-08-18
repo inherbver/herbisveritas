@@ -37,13 +37,19 @@ jest.mock("@/lib/core/logger", () => ({
   },
 }));
 
-const mockSupabaseClient = {
+const mockSupabaseClient: any = {
   auth: {
     getUser: jest.fn(),
   },
-  from: jest.fn(() => mockSupabaseClient),
-  select: jest.fn(() => mockSupabaseClient),
-  eq: jest.fn(() => mockSupabaseClient),
+  from: jest.fn(function (this: any) {
+    return this;
+  }),
+  select: jest.fn(function (this: any) {
+    return this;
+  }),
+  eq: jest.fn(function (this: any) {
+    return this;
+  }),
   single: jest.fn(),
 };
 
@@ -136,7 +142,9 @@ describe("stripeActions", () => {
     jest.clearAllMocks();
 
     // Setup default mocks
-    (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
+    (createSupabaseServerClient as jest.Mock).mockResolvedValue(
+      mockSupabaseClient,
+    );
     (getCart as jest.Mock).mockResolvedValue({
       success: true,
       data: mockCart,
@@ -149,8 +157,12 @@ describe("stripeActions", () => {
       url: "https://checkout.stripe.com/test",
     });
 
-    (ProductValidationService as jest.Mock).mockImplementation(() => mockProductValidationService);
-    (AddressValidationService as jest.Mock).mockImplementation(() => mockAddressValidationService);
+    (ProductValidationService as jest.Mock).mockImplementation(
+      () => mockProductValidationService,
+    );
+    (AddressValidationService as jest.Mock).mockImplementation(
+      () => mockAddressValidationService,
+    );
 
     // Mock environment variables
     process.env.NEXT_PUBLIC_BASE_URL = "https://example.com";
@@ -184,7 +196,7 @@ describe("stripeActions", () => {
       const result = await createStripeCheckoutSession(
         mockShippingAddress,
         mockBillingAddress,
-        "shipping-1"
+        "shipping-1",
       );
 
       expect(result.success).toBe(true);
@@ -210,7 +222,7 @@ describe("stripeActions", () => {
             cartId: "cart-123",
             userId: "user-123",
           }),
-        })
+        }),
       );
     });
 
@@ -223,7 +235,7 @@ describe("stripeActions", () => {
       const result = await createStripeCheckoutSession(
         mockShippingAddress,
         mockBillingAddress,
-        "shipping-1"
+        "shipping-1",
       );
 
       expect(result.success).toBe(false);
@@ -239,7 +251,7 @@ describe("stripeActions", () => {
       const result = await createStripeCheckoutSession(
         mockShippingAddress,
         mockBillingAddress,
-        "invalid-shipping"
+        "invalid-shipping",
       );
 
       expect(result.success).toBe(false);
@@ -247,15 +259,17 @@ describe("stripeActions", () => {
     });
 
     it("should handle address validation failure", async () => {
-      mockAddressValidationService.validateAndProcessAddresses.mockResolvedValue({
-        success: false,
-        message: "Invalid address format",
-      });
+      mockAddressValidationService.validateAndProcessAddresses.mockResolvedValue(
+        {
+          success: false,
+          message: "Invalid address format",
+        },
+      );
 
       const result = await createStripeCheckoutSession(
         mockShippingAddress,
         mockBillingAddress,
-        "shipping-1"
+        "shipping-1",
       );
 
       expect(result.success).toBe(false);
@@ -271,7 +285,7 @@ describe("stripeActions", () => {
       const result = await createStripeCheckoutSession(
         mockShippingAddress,
         mockBillingAddress,
-        "shipping-1"
+        "shipping-1",
       );
 
       expect(result.success).toBe(false);
@@ -279,12 +293,14 @@ describe("stripeActions", () => {
     });
 
     it("should handle Stripe session creation failure", async () => {
-      mockStripe.checkout.sessions.create.mockRejectedValue(new Error("Stripe API error"));
+      mockStripe.checkout.sessions.create.mockRejectedValue(
+        new Error("Stripe API error"),
+      );
 
       const result = await createStripeCheckoutSession(
         mockShippingAddress,
         mockBillingAddress,
-        "shipping-1"
+        "shipping-1",
       );
 
       expect(result.success).toBe(false);
@@ -292,7 +308,11 @@ describe("stripeActions", () => {
     });
 
     it("should include shipping costs in session", async () => {
-      await createStripeCheckoutSession(mockShippingAddress, mockBillingAddress, "shipping-1");
+      await createStripeCheckoutSession(
+        mockShippingAddress,
+        mockBillingAddress,
+        "shipping-1",
+      );
 
       expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -308,25 +328,36 @@ describe("stripeActions", () => {
               }),
             }),
           ],
-        })
+        }),
       );
     });
 
     it("should set correct success and cancel URLs with locale", async () => {
-      await createStripeCheckoutSession(mockShippingAddress, mockBillingAddress, "shipping-1");
+      await createStripeCheckoutSession(
+        mockShippingAddress,
+        mockBillingAddress,
+        "shipping-1",
+      );
 
       expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          success_url: "https://example.com/fr/checkout/success?session_id={CHECKOUT_SESSION_ID}",
+          success_url:
+            "https://example.com/fr/checkout/success?session_id={CHECKOUT_SESSION_ID}",
           cancel_url: "https://example.com/fr/checkout",
-        })
+        }),
       );
     });
 
     it("should revalidate paths when addresses are processed", async () => {
-      await createStripeCheckoutSession(mockShippingAddress, mockBillingAddress, "shipping-1");
+      await createStripeCheckoutSession(
+        mockShippingAddress,
+        mockBillingAddress,
+        "shipping-1",
+      );
 
-      expect(revalidatePath).toHaveBeenCalledWith("/[locale]/profile/addresses");
+      expect(revalidatePath).toHaveBeenCalledWith(
+        "/[locale]/profile/addresses",
+      );
       expect(revalidatePath).toHaveBeenCalledWith("/[locale]/checkout");
     });
   });

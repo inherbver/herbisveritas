@@ -193,7 +193,7 @@ export const RATE_LIMIT_CONFIGS = {
  */
 async function createRateLimitContext(
   actionName: string,
-  userId?: string
+  userId?: string,
 ): Promise<RateLimitContext> {
   const headersList = await headers();
 
@@ -226,7 +226,10 @@ function getClientIP(headers: Headers): string {
 /**
  * Génère une clé de rate limiting
  */
-function generateRateLimitKey(config: RateLimitConfig, context: RateLimitContext): string {
+function generateRateLimitKey(
+  config: RateLimitConfig,
+  context: RateLimitContext,
+): string {
   if (config.keyGenerator) {
     return config.keyGenerator(context);
   }
@@ -242,7 +245,7 @@ function generateRateLimitKey(config: RateLimitConfig, context: RateLimitContext
 async function checkRateLimit(
   actionName: string,
   config: RateLimitConfig,
-  userId?: string
+  userId?: string,
 ): Promise<void> {
   const context = await createRateLimitContext(actionName, userId);
   const key = generateRateLimitKey(config, context);
@@ -278,7 +281,8 @@ async function checkRateLimit(
     });
 
     const message =
-      config.message || `Trop de requêtes. Réessayez dans ${resetInSeconds} secondes.`;
+      config.message ||
+      `Trop de requêtes. Réessayez dans ${resetInSeconds} secondes.`;
     throw new RateLimitError(message);
   }
 
@@ -295,15 +299,19 @@ async function checkRateLimit(
 /**
  * Décorateur pour appliquer le rate limiting
  */
-export function withRateLimit<T extends (...args: unknown[]) => unknown>(
+export function withRateLimit(
   config: RateLimitConfig | keyof typeof RATE_LIMIT_CONFIGS,
-  actionName?: string
+  actionName?: string,
 ) {
-  return function (target: T, propertyKey?: string): T {
-    const finalActionName = actionName || propertyKey || target.name || "unknown-action";
-    const finalConfig = typeof config === "string" ? RATE_LIMIT_CONFIGS[config] : config;
+  return function <T extends (...args: any[]) => any>(target: T): T {
+    const finalActionName = actionName || target.name || "unknown-action";
+    const finalConfig =
+      typeof config === "string" ? RATE_LIMIT_CONFIGS[config] : config;
 
-    const wrappedFunction = async (...args: Parameters<T>) => {
+    const wrappedFunction = async function (
+      this: any,
+      ...args: Parameters<T>
+    ): Promise<ReturnType<T>> {
       try {
         // Extraire l'userId du premier argument si c'est un objet FormData ou object
         let userId: string | undefined;
@@ -331,7 +339,10 @@ export function withRateLimit<T extends (...args: unknown[]) => unknown>(
         return result;
       } catch (error) {
         // Optionnel: ne pas compter les requêtes échouées si configuré
-        if (finalConfig.skipFailedRequests && !(error instanceof RateLimitError)) {
+        if (
+          finalConfig.skipFailedRequests &&
+          !(error instanceof RateLimitError)
+        ) {
           // TODO: Implémenter la logique pour ne pas compter cette requête
         }
 
@@ -366,7 +377,7 @@ export const RateLimitUtils = {
    */
   async checkStatus(
     actionName: string,
-    userId?: string
+    userId?: string,
   ): Promise<{
     remaining: number;
     resetTime: number;
@@ -381,7 +392,10 @@ export const RateLimitUtils = {
     }
 
     return {
-      remaining: Math.max(0, RATE_LIMIT_CONFIGS.DEFAULT.maxRequests - entry.count),
+      remaining: Math.max(
+        0,
+        RATE_LIMIT_CONFIGS.DEFAULT.maxRequests - entry.count,
+      ),
       resetTime: entry.resetTime,
       total: RATE_LIMIT_CONFIGS.DEFAULT.maxRequests,
     };
@@ -393,7 +407,7 @@ export const RateLimitUtils = {
   createConfig(
     windowMs: number,
     maxRequests: number,
-    options?: Partial<RateLimitConfig>
+    options?: Partial<RateLimitConfig>,
   ): RateLimitConfig {
     return {
       windowMs,

@@ -4,11 +4,12 @@ import "@testing-library/jest-dom";
 
 // Polyfills pour Node.js
 import { TextEncoder, TextDecoder } from "util";
-global.TextEncoder = TextEncoder;
+global.TextEncoder = TextEncoder as any;
 global.TextDecoder = TextDecoder as any;
 
 // Variables d'environnement pour les tests
-process.env.NEXT_PUBLIC_SUPABASE_URL = "https://esgirafriwoildqcwtjm.supabase.co";
+process.env.NEXT_PUBLIC_SUPABASE_URL =
+  "https://esgirafriwoildqcwtjm.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 process.env.STRIPE_SECRET_KEY = "sk_test_123456789";
@@ -18,7 +19,7 @@ process.env.NEXT_PUBLIC_BASE_URL = "https://example.com";
 process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
 process.env.ADMIN_PRINCIPAL_ID = "123e4567-e89b-12d3-a456-426614174000";
 process.env.INTERNAL_FUNCTION_SECRET = "test-internal-function-secret";
-process.env.NODE_ENV = "test";
+// NODE_ENV est déjà défini par Jest, pas besoin de le redéfinir
 
 // Mock Next.js cache et revalidation functions
 jest.mock("next/cache", () => ({
@@ -42,7 +43,12 @@ const mockRouter = {
 
 const MockLink = React.forwardRef<
   HTMLAnchorElement,
-  { children: React.ReactNode; href?: string; locale?: string; [key: string]: any }
+  {
+    children: React.ReactNode;
+    href?: string;
+    locale?: string;
+    [key: string]: any;
+  }
 >(({ children, href, locale, ...props }, ref) => {
   return React.createElement(
     "a",
@@ -53,7 +59,7 @@ const MockLink = React.forwardRef<
       "data-locale": locale,
       ...props,
     },
-    children as React.ReactNode
+    children as React.ReactNode,
   );
 });
 
@@ -62,82 +68,95 @@ MockLink.displayName = "MockLink";
 // Mock next-intl for client components
 jest.mock("next-intl", () => ({
   useTranslations: jest.fn(
-    (namespace?: string) => (key: string) => (namespace ? `${namespace}.${key}` : key)
+    (namespace?: string) => (key: string) =>
+      namespace ? `${namespace}.${key}` : key,
   ),
-  getTranslations: jest.fn(async (options?: string | { namespace?: string }) => {
-    const namespace = typeof options === "string" ? options : options?.namespace;
-    return (key: string) => (namespace ? `${namespace}.${key}` : key);
-  }),
+  getTranslations: jest.fn(
+    async (options?: string | { namespace?: string }) => {
+      const namespace =
+        typeof options === "string" ? options : options?.namespace;
+      return (key: string) => (namespace ? `${namespace}.${key}` : key);
+    },
+  ),
   useMessages: jest.fn(() => ({})),
   useLocale: jest.fn(() => "en"),
   useNow: jest.fn(() => new Date("2024-01-01")),
   useTimeZone: jest.fn(() => "UTC"),
   useFormatter: jest.fn(() => ({
-    dateTime: (_date: Date) => `formatted_${_date.toISOString().split("T")[0]}_en-US`,
+    dateTime: (_date: Date) =>
+      `formatted_${_date.toISOString().split("T")[0]}_en-US`,
     number: (num: number) => num.toString(),
     relativeTime: (_date: Date) => "relative time",
   })),
   useRouter: jest.fn(() => mockRouter),
   usePathname: jest.fn(() => "/"),
   Link: MockLink,
-  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
+  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
 }));
 
 jest.mock("next-intl/server", () => ({
   getTranslations: jest
     .fn()
-    .mockImplementation(async (options?: { namespace?: string; locale?: string } | string) => {
-      let namespace: string | undefined;
+    .mockImplementation(
+      async (options?: { namespace?: string; locale?: string } | string) => {
+        let namespace: string | undefined;
 
-      if (typeof options === "string") {
-        namespace = options;
-      } else if (options && typeof options === "object") {
-        namespace = options.namespace;
-      }
+        if (typeof options === "string") {
+          namespace = options;
+        } else if (options && typeof options === "object") {
+          namespace = options.namespace;
+        }
 
-      return (key: string) => {
-        const fullKey = namespace ? `${namespace}.${key}` : key;
+        return (key: string) => {
+          const fullKey = namespace ? `${namespace}.${key}` : key;
 
-        // Utiliser la même fonction mockTranslate que pour le côté client
-        const translations: Record<string, string> = {
-          // Auth
-          "Auth.validation.emailAlreadyExists": "Un compte existe déjà avec cette adresse email.",
-          "Auth.validation.genericSignupError":
-            "Une erreur est survenue lors de l'inscription. Veuillez réessayer.",
-          "Auth.passwordsDoNotMatch": "Les mots de passe ne correspondent pas.",
-          "Auth.UpdatePassword.errorMessage": "Erreur lors de la mise à jour du mot de passe.",
-          "Auth.UpdatePassword.successMessage": "Mot de passe mis à jour avec succès.",
+          // Utiliser la même fonction mockTranslate que pour le côté client
+          const translations: Record<string, string> = {
+            // Auth
+            "Auth.validation.emailAlreadyExists":
+              "Un compte existe déjà avec cette adresse email.",
+            "Auth.validation.genericSignupError":
+              "Une erreur est survenue lors de l'inscription. Veuillez réessayer.",
+            "Auth.passwordsDoNotMatch":
+              "Les mots de passe ne correspondent pas.",
+            "Auth.UpdatePassword.errorMessage":
+              "Erreur lors de la mise à jour du mot de passe.",
+            "Auth.UpdatePassword.successMessage":
+              "Mot de passe mis à jour avec succès.",
 
-          // ContactPage - sections principales
-          "ContactPage.defaultHeroHeading": "Contactez-nous",
-          "ContactPage.defaultHeroSubheading": "Nous sommes là pour vous aider",
-          "ContactPage.nextMarketHeroHeading": "Prochain marché",
-          "ContactPage.nextMarketHeroSubheading": "Retrouvez-nous bientôt",
-          "ContactPage.coordinatesTitle": "Nos coordonnées",
-          "ContactPage.socialMediaTitle": "Réseaux sociaux",
-          "ContactPage.marketsAgendaTitle": "Agenda des marchés",
-          "ContactPage.partnerShopsTitle": "Boutiques partenaires",
+            // ContactPage - sections principales
+            "ContactPage.defaultHeroHeading": "Contactez-nous",
+            "ContactPage.defaultHeroSubheading":
+              "Nous sommes là pour vous aider",
+            "ContactPage.nextMarketHeroHeading": "Prochain marché",
+            "ContactPage.nextMarketHeroSubheading": "Retrouvez-nous bientôt",
+            "ContactPage.coordinatesTitle": "Nos coordonnées",
+            "ContactPage.socialMediaTitle": "Réseaux sociaux",
+            "ContactPage.marketsAgendaTitle": "Agenda des marchés",
+            "ContactPage.partnerShopsTitle": "Boutiques partenaires",
 
-          // ContactPage - détails
-          "ContactPage.emailTitle": "Email",
-          "ContactPage.phoneTitle": "Téléphone",
-          "ContactPage.addressTitle": "Adresse",
-          "ContactPage.cityLabel": "Ville",
-          "ContactPage.dateLabel": "Date",
-          "ContactPage.hoursLabel": "Horaires",
-          "ContactPage.addressLabel": "Adresse",
-          "ContactPage.noUpcomingMarketsForFilter": "Aucun marché à venir",
-          "ContactPage.seeAllMarketsButton": "Voir tous les marchés",
-          "ContactPage.defaultHeroImageAlt": "Image de fond par défaut",
-          "ContactPage.nextMarketHeroImageAlt": "Image du prochain marché",
+            // ContactPage - détails
+            "ContactPage.emailTitle": "Email",
+            "ContactPage.phoneTitle": "Téléphone",
+            "ContactPage.addressTitle": "Adresse",
+            "ContactPage.cityLabel": "Ville",
+            "ContactPage.dateLabel": "Date",
+            "ContactPage.hoursLabel": "Horaires",
+            "ContactPage.addressLabel": "Adresse",
+            "ContactPage.noUpcomingMarketsForFilter": "Aucun marché à venir",
+            "ContactPage.seeAllMarketsButton": "Voir tous les marchés",
+            "ContactPage.defaultHeroImageAlt": "Image de fond par défaut",
+            "ContactPage.nextMarketHeroImageAlt": "Image du prochain marché",
 
-          // Filtres et autres
-          "Filters.filterByCity": "Filtrer par ville",
+            // Filtres et autres
+            "Filters.filterByCity": "Filtrer par ville",
+          };
+
+          return translations[fullKey] || fullKey;
         };
-
-        return translations[fullKey] || fullKey;
-      };
-    }),
+      },
+    ),
   getMessages: jest.fn(async () => ({})),
   getLocale: jest.fn(async () => "en"),
   getNow: jest.fn(async () => new Date("2024-01-01")),
@@ -358,7 +377,7 @@ afterAll(() => {
 global.Request = class MockRequest {
   constructor(
     public input: any,
-    public init?: any
+    public init?: any,
   ) {}
   async text() {
     return this.init?.body || "";
@@ -371,7 +390,7 @@ global.Request = class MockRequest {
 global.Response = class MockResponse {
   constructor(
     public body?: any,
-    public init?: any
+    public init?: any,
   ) {}
   get status() {
     return this.init?.status || 200;
@@ -380,7 +399,9 @@ global.Response = class MockResponse {
     return typeof this.body === "string" ? JSON.parse(this.body) : this.body;
   }
   async text() {
-    return typeof this.body === "string" ? this.body : JSON.stringify(this.body);
+    return typeof this.body === "string"
+      ? this.body
+      : JSON.stringify(this.body);
   }
 } as any;
 
@@ -427,4 +448,6 @@ jest.mock("stripe", () => {
   }));
 });
 
-console.log("Jest setup fully loaded with complete next-intl, Supabase and Stripe mocks");
+console.log(
+  "Jest setup fully loaded with complete next-intl, Supabase and Stripe mocks",
+);

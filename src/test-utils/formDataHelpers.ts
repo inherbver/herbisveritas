@@ -2,10 +2,14 @@
  * Test utilities for FormData handling
  */
 
+import { jest } from "@jest/globals";
+
 /**
  * Creates a FormData mock for testing Server Actions
  */
-export const createFormData = (fields: Record<string, string | number>): FormData => {
+export const createFormData = (
+  fields: Record<string, string | number>,
+): FormData => {
   const formData = new FormData();
   Object.entries(fields).forEach(([key, value]) => {
     formData.set(key, String(value));
@@ -16,7 +20,7 @@ export const createFormData = (fields: Record<string, string | number>): FormDat
 /**
  * Creates a mock Supabase client with chainable methods
  */
-export const createSupabaseMock = (overrides: Record<string, any> = {}) => {
+export const createSupabaseMock = (overrides: Record<string, unknown> = {}) => {
   const chainableMethods = {
     from: jest.fn(),
     select: jest.fn(),
@@ -45,7 +49,7 @@ export const createSupabaseMock = (overrides: Record<string, any> = {}) => {
   Object.keys(chainableMethods).forEach((method) => {
     const mockMethod = mock[method as keyof typeof mock];
     if (typeof mockMethod === "object" && "mockReturnValue" in mockMethod) {
-      (mockMethod as any).mockReturnValue(mock);
+      (mockMethod as unknown as jest.Mock).mockReturnValue(mock);
     }
   });
 
@@ -55,7 +59,10 @@ export const createSupabaseMock = (overrides: Record<string, any> = {}) => {
 /**
  * Assertion helpers for test results
  */
-export const expectSuccessResult = (result: any, message?: string) => {
+export const expectSuccessResult = (
+  result: { success: boolean; error?: string; message?: string },
+  message?: string,
+) => {
   expect(result.success).toBe(true);
   expect(result.error).toBeUndefined();
   if (message) {
@@ -63,7 +70,10 @@ export const expectSuccessResult = (result: any, message?: string) => {
   }
 };
 
-export const expectErrorResult = (result: any, errorText?: string) => {
+export const expectErrorResult = (
+  result: { success: boolean; error?: string; message?: string },
+  errorText?: string,
+) => {
   expect(result.success).toBe(false);
   if (errorText) {
     expect(result.error || result.message).toContain(errorText);
@@ -71,8 +81,8 @@ export const expectErrorResult = (result: any, errorText?: string) => {
 };
 
 export const expectValidationErrorResult = (
-  result: any,
-  expectedErrors?: Record<string, string[]>
+  result: { success: boolean; errors?: Record<string, string[]> },
+  expectedErrors?: Record<string, string[]>,
 ) => {
   expect(result.success).toBe(false);
   expect(result.errors).toBeDefined();
@@ -84,7 +94,7 @@ export const expectValidationErrorResult = (
 /**
  * Mock data builders
  */
-export const buildMockCart = (overrides: Record<string, any> = {}) => ({
+export const buildMockCart = (overrides: Record<string, unknown> = {}) => ({
   id: "cart-123",
   user_id: "user-123",
   items: [],
@@ -93,7 +103,7 @@ export const buildMockCart = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-export const buildMockCartItem = (overrides: Record<string, any> = {}) => ({
+export const buildMockCartItem = (overrides: Record<string, unknown> = {}) => ({
   id: "item-123",
   cart_id: "cart-123",
   product_id: "prod-123",

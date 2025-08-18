@@ -21,18 +21,26 @@ jest.mock("stripe", () => {
 });
 jest.mock("next/server", () => {
   const MockNextResponse = class MockNextResponse {
-    public body: any;
+    public body: unknown;
     public status: number;
+    public headers: Record<string, string>;
 
-    constructor(body?: any, init?: any) {
+    constructor(
+      body?: unknown,
+      init?: { status?: number; headers?: Record<string, string> },
+    ) {
       this.body = body;
       this.status = init?.status || 200;
+      this.headers = init?.headers || { "Content-Type": "application/json" };
     }
 
-    static json(data: any, init?: any) {
+    static json(
+      data: unknown,
+      init?: { status?: number; headers?: Record<string, string> },
+    ) {
       return new MockNextResponse(JSON.stringify(data), {
         status: init?.status || 200,
-        headers: { "Content-Type": "application/json" },
+        headers: init?.headers || { "Content-Type": "application/json" },
       });
     }
 
@@ -41,7 +49,9 @@ jest.mock("next/server", () => {
     }
 
     async text() {
-      return typeof this.body === "string" ? this.body : JSON.stringify(this.body);
+      return typeof this.body === "string"
+        ? this.body
+        : JSON.stringify(this.body);
     }
   };
 
@@ -54,8 +64,12 @@ jest.mock("next/server", () => {
 if (!global.Request) {
   global.Request = class MockRequest {
     constructor(
-      public input: any,
-      public init?: any
+      public input: string | URL,
+      public init?: {
+        body?: string;
+        method?: string;
+        headers?: Record<string, string>;
+      },
     ) {}
     async text() {
       return this.init?.body || "";
@@ -69,8 +83,8 @@ if (!global.Request) {
 if (!global.Response) {
   global.Response = class MockResponse {
     constructor(
-      public body?: any,
-      public init?: any
+      public body?: unknown,
+      public init?: { status?: number; headers?: Record<string, string> },
     ) {}
     get status() {
       return this.init?.status || 200;
@@ -79,7 +93,9 @@ if (!global.Response) {
       return typeof this.body === "string" ? JSON.parse(this.body) : this.body;
     }
     async text() {
-      return typeof this.body === "string" ? this.body : JSON.stringify(this.body);
+      return typeof this.body === "string"
+        ? this.body
+        : JSON.stringify(this.body);
     }
   } as any;
 }
@@ -88,13 +104,23 @@ const mockHeaders = {
   get: jest.fn(),
 };
 
-const mockSupabaseClient = {
-  from: jest.fn(() => mockSupabaseClient),
-  select: jest.fn(() => mockSupabaseClient),
-  eq: jest.fn(() => mockSupabaseClient),
+const mockSupabaseClient: any = {
+  from: jest.fn(function (this: any) {
+    return this;
+  }),
+  select: jest.fn(function (this: any) {
+    return this;
+  }),
+  eq: jest.fn(function (this: any) {
+    return this;
+  }),
   single: jest.fn(),
-  insert: jest.fn(() => mockSupabaseClient), // Return self for chaining
-  update: jest.fn(() => mockSupabaseClient),
+  insert: jest.fn(function (this: any) {
+    return this;
+  }),
+  update: jest.fn(function (this: any) {
+    return this;
+  }),
   delete: jest.fn(() => mockSupabaseClient),
 };
 
@@ -145,7 +171,13 @@ const mockOrder = {
 };
 
 describe("Stripe Webhook Handler", () => {
-  let mockStripe: any;
+  let mockStripe: {
+    webhooks: {
+      constructEvent: jest.MockedFunction<
+        (payload: string, signature: string, secret: string) => unknown
+      >;
+    };
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -302,7 +334,10 @@ describe("Stripe Webhook Handler", () => {
       mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
 
       // Mock no existing order
-      mockSupabaseClient.single.mockResolvedValueOnce({ data: null, error: null });
+      mockSupabaseClient.single.mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
 
       const response = await POST(mockRequest);
 
@@ -374,7 +409,9 @@ describe("Stripe Webhook Handler", () => {
 
       expect(response.status).toBe(200);
       expect(responseData.received).toBe(true);
-      expect(responseData.message).toBe("Order already processed (idempotency).");
+      expect(responseData.message).toBe(
+        "Order already processed (idempotency).",
+      );
     });
 
     it("should ignore non-checkout.session.completed events", async () => {

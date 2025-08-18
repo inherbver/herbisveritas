@@ -4,7 +4,13 @@
  */
 
 import { Suspense } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -34,12 +40,9 @@ interface SystemHealth {
 }
 
 interface PerformanceAnalysisData {
-  totalRequests: number;
-  averageResponseTime: number;
-  errorRate: number;
-  cacheEfficiency: number;
-  components: ComponentPerformance[];
-  metrics: PerformanceMetric[];
+  insights: string[];
+  recommendations: string[];
+  alerts: string[];
 }
 
 interface ComponentPerformance {
@@ -54,7 +57,7 @@ interface PerformanceMetric {
   name: string;
   value: number;
   unit: string;
-  timestamp: string;
+  timestamp: number;
 }
 
 interface CacheStats {
@@ -71,9 +74,12 @@ export default function PerformancePage() {
     <main className="space-y-6">
       <header className="flex items-center justify-between">
         <section>
-          <h1 className="text-3xl font-bold tracking-tight">Performance Monitor</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Performance Monitor
+          </h1>
           <p className="text-muted-foreground">
-            Surveillance en temps réel des performances système - Phase 2 Optimisée
+            Surveillance en temps réel des performances système - Phase 2
+            Optimisée
           </p>
         </section>
         <MemoryCleanupButton />
@@ -167,7 +173,10 @@ async function PerformanceContent() {
     };
 
     const mockAnalysis = {
-      insights: ["Excellent taux de cache: 92.5%", "Temps de réponse DB optimal: 45ms"],
+      insights: [
+        "Excellent taux de cache: 92.5%",
+        "Temps de réponse DB optimal: 45ms",
+      ],
       recommendations: [],
       alerts: [],
     };
@@ -219,16 +228,33 @@ async function PerformanceContent() {
 }
 
 function SystemHealthCards({ health }: { health: SystemHealth }) {
-  const getHealthStatus = (value: number, thresholds: { good: number; warning: number }) => {
-    if (value <= thresholds.good) return { color: "green", status: "Excellent" };
-    if (value <= thresholds.warning) return { color: "yellow", status: "Attention" };
+  const getHealthStatus = (
+    value: number,
+    thresholds: { good: number; warning: number },
+  ) => {
+    if (value <= thresholds.good)
+      return { color: "green", status: "Excellent" };
+    if (value <= thresholds.warning)
+      return { color: "yellow", status: "Attention" };
     return { color: "red", status: "Critique" };
   };
 
-  const cacheStatus = getHealthStatus(100 - health.cacheHitRate, { good: 10, warning: 30 });
-  const dbStatus = getHealthStatus(health.averageDbResponseTime, { good: 100, warning: 500 });
-  const renderStatus = getHealthStatus(health.averageRenderTime, { good: 100, warning: 200 });
-  const memoryStatus = getHealthStatus(health.memoryUsage, { good: 200, warning: 500 });
+  const cacheStatus = getHealthStatus(100 - health.cacheHitRate, {
+    good: 10,
+    warning: 30,
+  });
+  const dbStatus = getHealthStatus(health.averageDbResponseTime, {
+    good: 100,
+    warning: 500,
+  });
+  const renderStatus = getHealthStatus(health.averageRenderTime, {
+    good: 100,
+    warning: 200,
+  });
+  const memoryStatus = getHealthStatus(health.memoryUsage, {
+    good: 200,
+    warning: 500,
+  });
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -238,7 +264,9 @@ function SystemHealthCards({ health }: { health: SystemHealth }) {
           <Zap className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{health.cacheHitRate.toFixed(1)}%</div>
+          <div className="text-2xl font-bold">
+            {health.cacheHitRate.toFixed(1)}%
+          </div>
           <div className="mt-2 flex items-center gap-2">
             <Badge
               variant={
@@ -257,11 +285,15 @@ function SystemHealthCards({ health }: { health: SystemHealth }) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">DB Response Time</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            DB Response Time
+          </CardTitle>
           <Database className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{health.averageDbResponseTime.toFixed(0)}ms</div>
+          <div className="text-2xl font-bold">
+            {health.averageDbResponseTime.toFixed(0)}ms
+          </div>
           <div className="mt-2 flex items-center gap-2">
             <Badge
               variant={
@@ -284,7 +316,9 @@ function SystemHealthCards({ health }: { health: SystemHealth }) {
           <Activity className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{health.averageRenderTime.toFixed(0)}ms</div>
+          <div className="text-2xl font-bold">
+            {health.averageRenderTime.toFixed(0)}ms
+          </div>
           <div className="mt-2 flex items-center gap-2">
             <Badge
               variant={
@@ -307,7 +341,9 @@ function SystemHealthCards({ health }: { health: SystemHealth }) {
           <HardDrive className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{health.memoryUsage.toFixed(0)}MB</div>
+          <div className="text-2xl font-bold">
+            {health.memoryUsage.toFixed(0)}MB
+          </div>
           <div className="mt-2 flex items-center gap-2">
             <Badge
               variant={
@@ -327,7 +363,11 @@ function SystemHealthCards({ health }: { health: SystemHealth }) {
   );
 }
 
-function PerformanceAnalysis({ analysis }: { analysis: PerformanceAnalysisData }) {
+function PerformanceAnalysis({
+  analysis,
+}: {
+  analysis: PerformanceAnalysisData;
+}) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {/* Insights */}
@@ -342,14 +382,19 @@ function PerformanceAnalysis({ analysis }: { analysis: PerformanceAnalysisData }
           {analysis.insights.length > 0 ? (
             <ul className="space-y-2">
               {analysis.insights.map((insight: string, index: number) => (
-                <li key={index} className="flex items-start gap-2 text-sm text-green-700">
+                <li
+                  key={index}
+                  className="flex items-start gap-2 text-sm text-green-700"
+                >
                   <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   {insight}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">Aucun insight disponible</p>
+            <p className="text-sm text-muted-foreground">
+              Aucun insight disponible
+            </p>
           )}
         </CardContent>
       </Card>
@@ -366,14 +411,19 @@ function PerformanceAnalysis({ analysis }: { analysis: PerformanceAnalysisData }
           {analysis.recommendations.length > 0 ? (
             <ul className="space-y-2">
               {analysis.recommendations.map((rec: string, index: number) => (
-                <li key={index} className="flex items-start gap-2 text-sm text-blue-700">
+                <li
+                  key={index}
+                  className="flex items-start gap-2 text-sm text-blue-700"
+                >
                   <TrendingUp className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   {rec}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">Aucune recommandation</p>
+            <p className="text-sm text-muted-foreground">
+              Aucune recommandation
+            </p>
           )}
         </CardContent>
       </Card>
@@ -390,7 +440,10 @@ function PerformanceAnalysis({ analysis }: { analysis: PerformanceAnalysisData }
           {analysis.alerts.length > 0 ? (
             <ul className="space-y-2">
               {analysis.alerts.map((alert: string, index: number) => (
-                <li key={index} className="flex items-start gap-2 text-sm text-red-700">
+                <li
+                  key={index}
+                  className="flex items-start gap-2 text-sm text-red-700"
+                >
                   <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   {alert}
                 </li>
@@ -428,7 +481,9 @@ function CacheStatsCard({ stats }: { stats: CacheStats }) {
             <div className="h-2 w-full rounded-full bg-gray-200">
               <div
                 className="h-2 rounded-full bg-blue-600"
-                style={{ width: `${(stats.memory.size / stats.memory.maxSize) * 100}%` }}
+                style={{
+                  width: `${(stats.memory.size / stats.memory.maxSize) * 100}%`,
+                }}
               />
             </div>
           </div>
@@ -438,13 +493,19 @@ function CacheStatsCard({ stats }: { stats: CacheStats }) {
             <div className="text-2xl font-bold text-green-600">
               {stats.memory.entries.filter((e) => e.expiresIn > 0).length}
             </div>
-            <p className="text-xs text-muted-foreground">Entries valides en cache</p>
+            <p className="text-xs text-muted-foreground">
+              Entries valides en cache
+            </p>
           </div>
 
           <div className="space-y-2">
             <p className="text-sm font-medium">Dernière Mise à Jour</p>
-            <div className="text-sm">{new Date(stats.timestamp).toLocaleTimeString("fr-FR")}</div>
-            <p className="text-xs text-muted-foreground">Heure de dernière mesure</p>
+            <div className="text-sm">
+              {new Date(stats.timestamp).toLocaleTimeString("fr-FR")}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Heure de dernière mesure
+            </p>
           </div>
         </div>
       </CardContent>
@@ -452,7 +513,11 @@ function CacheStatsCard({ stats }: { stats: CacheStats }) {
   );
 }
 
-function ComponentPerformanceCard({ components }: { components: ComponentPerformance[] }) {
+function ComponentPerformanceCard({
+  components,
+}: {
+  components: ComponentPerformance[];
+}) {
   return (
     <Card>
       <CardHeader>
@@ -466,7 +531,10 @@ function ComponentPerformanceCard({ components }: { components: ComponentPerform
         {components.length > 0 ? (
           <div className="space-y-4">
             {components.slice(0, 5).map((comp, index) => (
-              <div key={index} className="flex items-center justify-between rounded-lg border p-3">
+              <div
+                key={index}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
                 <div>
                   <p className="font-medium">{comp.componentName}</p>
                   <p className="text-sm text-muted-foreground">
@@ -474,8 +542,12 @@ function ComponentPerformanceCard({ components }: { components: ComponentPerform
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold">{comp.renderTime.toFixed(1)}ms</p>
-                  <p className="text-xs text-muted-foreground">Temps de rendu</p>
+                  <p className="text-lg font-bold">
+                    {comp.renderTime.toFixed(1)}ms
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Temps de rendu
+                  </p>
                 </div>
               </div>
             ))}
@@ -504,7 +576,10 @@ function RecentMetricsCard({ metrics }: { metrics: PerformanceMetric[] }) {
         {metrics.length > 0 ? (
           <div className="space-y-2">
             {metrics.map((metric, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
+              <div
+                key={index}
+                className="flex items-center justify-between text-sm"
+              >
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">
                     {metric.category}

@@ -3,62 +3,65 @@
  * Combine tous les providers nécessaires (i18n, stores, auth, etc.)
  */
 
-import React from 'react'
-import { NextIntlClientProvider } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { UserFactory, type UserWithProfile } from './factories/UserFactory'
-import { CartFactory, type CartWithItems } from './factories/CartFactory'
+import React from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { createClient } from "@/lib/supabase/client";
+import { UserFactory, type UserWithProfile } from "./factories/UserFactory";
+import { CartFactory, type CartWithItems } from "./factories/CartFactory";
 
 // Mock des traductions pour les tests
 const mockMessages = {
   // Auth
-  'Auth.validation.emailAlreadyExists': 'Un compte existe déjà avec cette adresse email.',
-  'Auth.validation.genericSignupError': 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.',
-  'Auth.passwordsDoNotMatch': 'Les mots de passe ne correspondent pas.',
-  'Auth.UpdatePassword.errorMessage': 'Erreur lors de la mise à jour du mot de passe.',
-  'Auth.UpdatePassword.successMessage': 'Mot de passe mis à jour avec succès.',
-  
+  "Auth.validation.emailAlreadyExists":
+    "Un compte existe déjà avec cette adresse email.",
+  "Auth.validation.genericSignupError":
+    "Une erreur est survenue lors de l'inscription. Veuillez réessayer.",
+  "Auth.passwordsDoNotMatch": "Les mots de passe ne correspondent pas.",
+  "Auth.UpdatePassword.errorMessage":
+    "Erreur lors de la mise à jour du mot de passe.",
+  "Auth.UpdatePassword.successMessage": "Mot de passe mis à jour avec succès.",
+
   // Cart
-  'Cart.addToCart': 'Ajouter au panier',
-  'Cart.removeFromCart': 'Retirer du panier',
-  'Cart.updateQuantity': 'Modifier la quantité',
-  'Cart.empty': 'Votre panier est vide',
-  'Cart.total': 'Total',
-  'Cart.checkout': 'Commander',
-  
+  "Cart.addToCart": "Ajouter au panier",
+  "Cart.removeFromCart": "Retirer du panier",
+  "Cart.updateQuantity": "Modifier la quantité",
+  "Cart.empty": "Votre panier est vide",
+  "Cart.total": "Total",
+  "Cart.checkout": "Commander",
+
   // Products
-  'Products.outOfStock': 'Rupture de stock',
-  'Products.inStock': 'En stock',
-  'Products.price': 'Prix',
-  'Products.addToCart': 'Ajouter au panier',
-  
+  "Products.outOfStock": "Rupture de stock",
+  "Products.inStock": "En stock",
+  "Products.price": "Prix",
+  "Products.addToCart": "Ajouter au panier",
+
   // Forms
-  'Forms.required': 'Ce champ est requis',
-  'Forms.email.invalid': 'Email invalide',
-  'Forms.password.tooShort': 'Mot de passe trop court',
-  'Forms.submit': 'Valider',
-  'Forms.cancel': 'Annuler',
-  
+  "Forms.required": "Ce champ est requis",
+  "Forms.email.invalid": "Email invalide",
+  "Forms.password.tooShort": "Mot de passe trop court",
+  "Forms.submit": "Valider",
+  "Forms.cancel": "Annuler",
+
   // Common
-  'Common.loading': 'Chargement...',
-  'Common.error': 'Erreur',
-  'Common.success': 'Succès',
-  'Common.confirm': 'Confirmer',
-  'Common.delete': 'Supprimer',
-  'Common.edit': 'Modifier',
-  'Common.save': 'Enregistrer',
-}
+  "Common.loading": "Chargement...",
+  "Common.error": "Erreur",
+  "Common.success": "Succès",
+  "Common.confirm": "Confirmer",
+  "Common.delete": "Supprimer",
+  "Common.edit": "Modifier",
+  "Common.save": "Enregistrer",
+};
 
 interface TestProvidersOptions {
-  locale?: string
-  user?: UserWithProfile | null
-  cart?: CartWithItems | null
-  messages?: Record<string, string>
-  mockSupabaseClient?: any
+  locale?: string;
+  user?: UserWithProfile | null;
+  cart?: CartWithItems | null;
+  messages?: Record<string, string>;
+  mockSupabaseClient?: any;
 }
 
 interface TestProvidersProps extends TestProvidersOptions {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 /**
@@ -66,24 +69,24 @@ interface TestProvidersProps extends TestProvidersOptions {
  */
 export function TestProviders({
   children,
-  locale = 'fr',
+  locale = "fr",
   user = null,
   cart = null,
   messages = mockMessages,
   mockSupabaseClient,
 }: TestProvidersProps) {
-  const supabaseClient = mockSupabaseClient || createClient()
-  
+  const supabaseClient = mockSupabaseClient || createClient();
+
   return (
     <NextIntlClientProvider
       locale={locale}
       messages={messages}
       timeZone="UTC"
-      now={new Date('2024-01-01T00:00:00.000Z')}
+      now={new Date("2024-01-01T00:00:00.000Z")}
     >
       {children}
     </NextIntlClientProvider>
-  )
+  );
 }
 
 /**
@@ -91,20 +94,20 @@ export function TestProviders({
  */
 export function useTestProviders(options: TestProvidersOptions = {}) {
   const {
-    locale = 'fr',
+    locale = "fr",
     user = null,
     cart = null,
     messages = mockMessages,
     mockSupabaseClient,
-  } = options
-  
+  } = options;
+
   return {
     locale,
     user,
     cart,
     messages,
     mockSupabaseClient,
-  }
+  };
 }
 
 /**
@@ -117,90 +120,101 @@ export class TestContextFactory {
   static guest() {
     return {
       user: UserFactory.guest(),
-      cart: CartFactory.forGuest('guest-123', 1),
-    }
+      cart: CartFactory.forGuest("guest-123", 1),
+    };
   }
-  
+
   /**
    * Contexte pour utilisateur authentifié
    */
-  static authenticated(userId: string = 'user-123') {
+  static authenticated(userId: string = "user-123") {
     return {
       user: UserFactory.authenticated({ user: { id: userId } }),
       cart: CartFactory.forUser(userId, 2),
-    }
+    };
   }
-  
+
   /**
    * Contexte pour admin
    */
-  static admin(userId: string = 'admin-123') {
+  static admin(userId: string = "admin-123") {
     return {
       user: UserFactory.admin({ user: { id: userId } }),
       cart: CartFactory.forUser(userId, 1),
-    }
+    };
   }
-  
+
   /**
    * Contexte avec panier vide
    */
-  static withEmptyCart(userId: string = 'user-123') {
+  static withEmptyCart(userId: string = "user-123") {
     return {
       user: UserFactory.authenticated({ user: { id: userId } }),
       cart: { cart: CartFactory.empty(userId), items: [] },
-    }
+    };
   }
-  
+
   /**
    * Contexte avec panier plein
    */
-  static withFullCart(userId: string = 'user-123') {
+  static withFullCart(userId: string = "user-123") {
     return {
       user: UserFactory.authenticated({ user: { id: userId } }),
       cart: CartFactory.forUser(userId, 5),
-    }
+    };
   }
-  
+
   /**
    * Contexte avec produits en promotion
    */
-  static withDiscountedCart(userId: string = 'user-123') {
+  static withDiscountedCart(userId: string = "user-123") {
     return {
       user: UserFactory.authenticated({ user: { id: userId } }),
       cart: CartFactory.withDiscountedItems(userId),
-    }
+    };
   }
-  
+
   /**
    * Contexte multilingue
    */
-  static multilingual(locale: 'fr' | 'en' | 'de' | 'es' = 'en') {
+  static multilingual(locale: "fr" | "en" | "de" | "es" = "en") {
     const baseMessages = {
       en: {
-        'Cart.addToCart': 'Add to cart',
-        'Cart.empty': 'Your cart is empty',
-        'Products.outOfStock': 'Out of stock',
-        'Common.loading': 'Loading...',
+        "Cart.addToCart": "Add to cart",
+        "Cart.empty": "Your cart is empty",
+        "Products.outOfStock": "Out of stock",
+        "Common.loading": "Loading...",
       },
       de: {
-        'Cart.addToCart': 'In den Warenkorb',
-        'Cart.empty': 'Ihr Warenkorb ist leer',
-        'Products.outOfStock': 'Nicht vorrätig',
-        'Common.loading': 'Laden...',
+        "Cart.addToCart": "In den Warenkorb",
+        "Cart.empty": "Ihr Warenkorb ist leer",
+        "Products.outOfStock": "Nicht vorrätig",
+        "Common.loading": "Laden...",
       },
       es: {
-        'Cart.addToCart': 'Añadir al carrito',
-        'Cart.empty': 'Tu carrito está vacío',
-        'Products.outOfStock': 'Agotado',
-        'Common.loading': 'Cargando...',
+        "Cart.addToCart": "Añadir al carrito",
+        "Cart.empty": "Tu carrito está vacío",
+        "Products.outOfStock": "Agotado",
+        "Common.loading": "Cargando...",
       },
-    }
-    
+      fr: {
+        "Cart.addToCart": "Ajouter au panier",
+        "Cart.empty": "Votre panier est vide",
+        "Products.outOfStock": "Rupture de stock",
+        "Common.loading": "Chargement...",
+      },
+    };
+
+    const localMessages =
+      locale === "fr"
+        ? baseMessages.fr
+        : baseMessages[locale as "en" | "de" | "es"] || {};
+
     return {
       locale,
-      messages: { ...mockMessages, ...baseMessages[locale] },
+      messages: { ...mockMessages, ...localMessages },
       user: UserFactory.authenticated(),
-      cart: CartFactory.forUser('user-123', 2),
-    }
+      cart: CartFactory.forUser("user-123", 2),
+    };
   }
 }

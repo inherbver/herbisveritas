@@ -6,14 +6,24 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
-import { isGeneralErrorResult, isValidationErrorResult } from "@/lib/cart-helpers"; // ✅ Corriger les noms d'imports
+import {
+  isGeneralErrorResult,
+  isValidationErrorResult,
+} from "@/lib/cart-helpers"; // Corriger les noms d'imports
 import { getTranslations } from "next-intl/server";
-import { createPasswordSchema, createSignupSchema } from "@/lib/validators/auth.validator";
+import {
+  createPasswordSchema,
+  createSignupSchema,
+} from "@/lib/validators/auth.validator";
 
 // New imports for Clean Architecture
 import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
-import { ValidationError, AuthenticationError, ErrorUtils } from "@/lib/core/errors";
+import {
+  ValidationError,
+  AuthenticationError,
+  ErrorUtils,
+} from "@/lib/core/errors";
 
 // SÉCURITÉ: Rate limiting pour actions d'authentification
 import { withRateLimit } from "@/lib/security/rate-limit-decorator";
@@ -21,7 +31,11 @@ import { withRateLimit } from "@/lib/security/rate-limit-decorator";
 // --- Schéma Login ---
 const loginSchema = z.object({
   email: z.string().email({ message: "L'adresse email n'est pas valide." }),
-  password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères." }),
+  password: z
+    .string()
+    .min(8, {
+      message: "Le mot de passe doit contenir au moins 8 caractères.",
+    }),
 });
 
 // --- Types d'Actions --- (Deprecated: use ActionResult<T> instead)
@@ -35,10 +49,10 @@ export interface AuthActionResult {
 // --- Action de Connexion ---
 export const loginAction = withRateLimit(
   "AUTH", // Configuration de rate limiting pour auth
-  "login"
+  "login",
 )(async function loginAction(
   prevState: ActionResult<null> | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<null>> {
   const context = LogUtils.createUserActionContext("unknown", "login", "auth");
   LogUtils.logOperationStart("login", context);
@@ -71,15 +85,20 @@ export const loginAction = withRateLimit(
     }
 
     // 3. Essayer de connecter
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
       if (error.message === "Email not confirmed") {
         throw new AuthenticationError(
-          "Email non confirmé. Veuillez vérifier votre boîte de réception."
+          "Email non confirmé. Veuillez vérifier votre boîte de réception.",
         );
       }
-      throw new AuthenticationError("L'email ou le mot de passe est incorrect.");
+      throw new AuthenticationError(
+        "L'email ou le mot de passe est incorrect.",
+      );
     }
 
     // 4. Si la connexion est réussie et qu'un utilisateur invité a été détecté, tenter la migration du panier
@@ -87,13 +106,18 @@ export const loginAction = withRateLimit(
       try {
         const migrationResult = await migrateAndGetCart({ guestUserId });
         if (!migrationResult.success) {
-          let errorDetails = "Détails de l'erreur de migration non disponibles.";
+          let errorDetails =
+            "Détails de l'erreur de migration non disponibles.";
           if (isGeneralErrorResult(migrationResult)) {
             errorDetails = `Erreur générale: ${migrationResult.error}`;
           } else if (isValidationErrorResult(migrationResult)) {
             errorDetails = `Erreurs de validation: ${JSON.stringify(migrationResult.errors)}`;
           }
-          LogUtils.logOperationError("cart_migration", new Error(errorDetails), context);
+          LogUtils.logOperationError(
+            "cart_migration",
+            new Error(errorDetails),
+            context,
+          );
           // Ne pas bloquer la connexion si la migration échoue
         } else {
           LogUtils.logOperationSuccess("cart_migration", context);
@@ -109,7 +133,10 @@ export const loginAction = withRateLimit(
   } catch (error) {
     LogUtils.logOperationError("login", error, context);
 
-    if (error instanceof AuthenticationError || error instanceof ValidationError) {
+    if (
+      error instanceof AuthenticationError ||
+      error instanceof ValidationError
+    ) {
       return ActionResult.error(ErrorUtils.formatForUser(error));
     }
 
@@ -131,21 +158,32 @@ export const loginAction = withRateLimit(
 // --- Action d'Inscription ---
 export const signUpAction = withRateLimit(
   "AUTH", // Configuration de rate limiting pour auth
-  "signup"
+  "signup",
 )(async function signUpAction(
   prevState: AuthActionResult | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
-  const context = LogUtils.createUserActionContext("unknown", "signup", "auth", { locale });
+  const context = LogUtils.createUserActionContext(
+    "unknown",
+    "signup",
+    "auth",
+    { locale },
+  );
   LogUtils.logOperationStart("signup", context);
 
   try {
     const supabase = await createSupabaseServerClient();
 
     // Charger les traductions nécessaires pour la validation
-    const tPassword = await getTranslations({ locale, namespace: "PasswordPage.validation" });
-    const tAuth = await getTranslations({ locale, namespace: "Auth.validation" });
+    const tPassword = await getTranslations({
+      locale,
+      namespace: "PasswordPage.validation",
+    });
+    const tAuth = await getTranslations({
+      locale,
+      namespace: "Auth.validation",
+    });
 
     // Créer le schéma de validation avec les traductions
     const finalSignUpSchema = createSignupSchema(tPassword, tAuth);
@@ -216,14 +254,14 @@ export const signUpAction = withRateLimit(
     LogUtils.logOperationSuccess("signup", { ...context, email });
     return ActionResult.ok(
       null,
-      "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email."
+      "Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse email.",
     );
   } catch (error) {
     LogUtils.logOperationError("signup", error, context);
     return ActionResult.error(
       ErrorUtils.isAppError(error)
         ? ErrorUtils.formatForUser(error)
-        : "Une erreur inattendue est survenue"
+        : "Une erreur inattendue est survenue",
     );
   }
 });
@@ -231,10 +269,15 @@ export const signUpAction = withRateLimit(
 // --- Mot de passe oublié ---
 export async function requestPasswordResetAction(
   prevState: AuthActionResult | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
-  const context = LogUtils.createUserActionContext("unknown", "password_reset", "auth", { locale });
+  const context = LogUtils.createUserActionContext(
+    "unknown",
+    "password_reset",
+    "auth",
+    { locale },
+  );
   LogUtils.logOperationStart("password_reset", context);
 
   try {
@@ -258,9 +301,12 @@ export async function requestPasswordResetAction(
     const redirectUrl = `${origin}/${locale}/update-password`;
 
     // 3. Appeler Supabase pour envoyer l'email
-    const { error } = await supabase.auth.resetPasswordForEmail(validatedEmail.data, {
-      redirectTo: redirectUrl,
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      validatedEmail.data,
+      {
+        redirectTo: redirectUrl,
+      },
+    );
 
     if (error) {
       LogUtils.logOperationError("password_reset_email", error, {
@@ -271,34 +317,48 @@ export async function requestPasswordResetAction(
     }
 
     // 4. Toujours renvoyer un message de succès pour des raisons de sécurité
-    const tSuccess = await getTranslations({ locale, namespace: "Auth.ForgotPassword" });
-    LogUtils.logOperationSuccess("password_reset", { ...context, email: validatedEmail.data });
+    const tSuccess = await getTranslations({
+      locale,
+      namespace: "Auth.ForgotPassword",
+    });
+    LogUtils.logOperationSuccess("password_reset", {
+      ...context,
+      email: validatedEmail.data,
+    });
     return ActionResult.ok(null, tSuccess("successMessage"));
   } catch (error) {
     LogUtils.logOperationError("password_reset", error, context);
     return ActionResult.error(
       ErrorUtils.isAppError(error)
         ? ErrorUtils.formatForUser(error)
-        : "Une erreur inattendue est survenue"
+        : "Une erreur inattendue est survenue",
     );
   }
 }
 
 export async function updatePasswordAction(
   prevState: AuthActionResult | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
-  const context = LogUtils.createUserActionContext("unknown", "update_password", "auth", {
-    locale,
-  });
+  const context = LogUtils.createUserActionContext(
+    "unknown",
+    "update_password",
+    "auth",
+    {
+      locale,
+    },
+  );
   LogUtils.logOperationStart("update_password", context);
 
   try {
     const supabase = await createSupabaseServerClient();
 
     // 1. Valider les mots de passe
-    const tValidation = await getTranslations({ locale, namespace: "PasswordPage.validation" });
+    const tValidation = await getTranslations({
+      locale,
+      namespace: "PasswordPage.validation",
+    });
     const tAuth = await getTranslations({ locale, namespace: "Auth" });
 
     const updatePasswordSchema = z
@@ -334,7 +394,10 @@ export async function updatePasswordAction(
     }
 
     // 3. Succès
-    const tSuccess = await getTranslations({ locale, namespace: "Auth.UpdatePassword" });
+    const tSuccess = await getTranslations({
+      locale,
+      namespace: "Auth.UpdatePassword",
+    });
     LogUtils.logOperationSuccess("update_password", context);
     return ActionResult.ok(null, tSuccess("successMessage"));
   } catch (error) {
@@ -342,16 +405,23 @@ export async function updatePasswordAction(
     return ActionResult.error(
       ErrorUtils.isAppError(error)
         ? ErrorUtils.formatForUser(error)
-        : "Une erreur inattendue est survenue"
+        : "Une erreur inattendue est survenue",
     );
   }
 }
 
 // --- Action pour renvoyer l'email de confirmation ---
-export async function resendConfirmationEmailAction(email: string): Promise<ActionResult<null>> {
-  const context = LogUtils.createUserActionContext("unknown", "resend_confirmation", "auth", {
-    email,
-  });
+export async function resendConfirmationEmailAction(
+  email: string,
+): Promise<ActionResult<null>> {
+  const context = LogUtils.createUserActionContext(
+    "unknown",
+    "resend_confirmation",
+    "auth",
+    {
+      email,
+    },
+  );
   LogUtils.logOperationStart("resend_confirmation", context);
 
   try {
@@ -369,11 +439,13 @@ export async function resendConfirmationEmailAction(email: string): Promise<Acti
     LogUtils.logOperationSuccess("resend_confirmation", context);
     return ActionResult.ok(
       null,
-      "Email de confirmation renvoyé avec succès. Veuillez vérifier votre boîte de réception."
+      "Email de confirmation renvoyé avec succès. Veuillez vérifier votre boîte de réception.",
     );
   } catch (error) {
     LogUtils.logOperationError("resend_confirmation", error, context);
-    return ActionResult.error("Une erreur est survenue lors du renvoi de l'email.");
+    return ActionResult.error(
+      "Une erreur est survenue lors du renvoi de l'email.",
+    );
   }
 }
 
@@ -391,7 +463,9 @@ export async function logoutAction() {
     if (error) {
       LogUtils.logOperationError("logout", error, context);
       // En cas d'erreur de déconnexion Supabase, on redirige quand même
-      redirect("/?logout_error=true&message=" + encodeURIComponent(error.message));
+      redirect(
+        "/?logout_error=true&message=" + encodeURIComponent(error.message),
+      );
     } else {
       LogUtils.logOperationSuccess("logout", context);
       // Redirection avec paramètre pour signaler la déconnexion réussie

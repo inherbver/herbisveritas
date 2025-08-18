@@ -35,7 +35,9 @@ export const mockSupabaseClient = {
   })),
   storage: {
     from: jest.fn((bucket: string) => ({
-      upload: jest.fn().mockResolvedValue({ data: { path: "test-path" }, error: null }),
+      upload: jest
+        .fn()
+        .mockResolvedValue({ data: { path: "test-path" }, error: null }),
       getPublicUrl: jest
         .fn()
         .mockReturnValue({ data: { publicUrl: "https://test.url/image.jpg" } }),
@@ -133,7 +135,7 @@ export const mockOrder = {
 };
 
 // Utility to create mock fetch response
-export const mockFetch = (data: any, ok = true) => {
+export const mockFetch = (data: unknown, ok = true) => {
   return jest.fn().mockResolvedValue({
     ok,
     json: jest.fn().mockResolvedValue(data),
