@@ -17,6 +17,31 @@ export function createClient() {
           "x-client-info": "inherbis-web",
         },
       },
-    }
+    },
   );
+}
+
+/**
+ * Nettoie tous les tokens Supabase du localStorage
+ * Utile en cas d'erreur "Refresh Token Not Found"
+ */
+export function clearSupabaseTokens() {
+  if (typeof window === "undefined") return;
+
+  Object.keys(localStorage).forEach((key) => {
+    if (key.includes("supabase") || key.includes("sb-")) {
+      localStorage.removeItem(key);
+      console.log("Token supprimé:", key);
+    }
+  });
+
+  // Nettoyer aussi les cookies Supabase si présents
+  document.cookie.split(";").forEach((cookie) => {
+    const eqPos = cookie.indexOf("=");
+    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+    if (name.includes("supabase") || name.includes("sb-")) {
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      console.log("Cookie supprimé:", name);
+    }
+  });
 }

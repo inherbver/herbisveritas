@@ -8,7 +8,7 @@ export abstract class AppError extends Error {
 
   constructor(
     message: string,
-    public readonly context?: Record<string, unknown>
+    public readonly context?: Record<string, unknown>,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -25,7 +25,7 @@ export class ValidationError extends AppError {
   constructor(
     message: string,
     public readonly field?: string,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -38,7 +38,10 @@ export class AuthorizationError extends AppError {
   readonly code = "AUTHORIZATION_ERROR";
   readonly statusCode = 403;
 
-  constructor(message: string = "Accès non autorisé", context?: Record<string, unknown>) {
+  constructor(
+    message: string = "Accès non autorisé",
+    context?: Record<string, unknown>,
+  ) {
     super(message, context);
   }
 }
@@ -50,7 +53,10 @@ export class AuthenticationError extends AppError {
   readonly code = "AUTHENTICATION_ERROR";
   readonly statusCode = 401;
 
-  constructor(message: string = "Authentification requise", context?: Record<string, unknown>) {
+  constructor(
+    message: string = "Authentification requise",
+    context?: Record<string, unknown>,
+  ) {
     super(message, context);
   }
 }
@@ -62,7 +68,11 @@ export class NotFoundError extends AppError {
   readonly code = "NOT_FOUND_ERROR";
   readonly statusCode = 404;
 
-  constructor(resource: string, identifier?: string, context?: Record<string, unknown>) {
+  constructor(
+    resource: string,
+    identifier?: string,
+    context?: Record<string, unknown>,
+  ) {
     const message = identifier
       ? `${resource} avec l'identifiant "${identifier}" introuvable`
       : `${resource} introuvable`;
@@ -92,7 +102,7 @@ export class DatabaseError extends AppError {
   constructor(
     message: string,
     public readonly originalError?: unknown,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -109,7 +119,7 @@ export class ExternalServiceError extends AppError {
     service: string,
     message: string,
     public readonly originalError?: unknown,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     super(`Erreur du service ${service}: ${message}`, context);
   }
@@ -124,7 +134,7 @@ export class RateLimitError extends AppError {
 
   constructor(
     message: string = "Trop de requêtes, veuillez réessayer plus tard",
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -201,9 +211,13 @@ export const ErrorUtils = {
       case "VALIDATION_ERROR":
         return error.message;
       case "AUTHORIZATION_ERROR":
-        return "Vous n'avez pas les permissions nécessaires pour cette action";
+        return (
+          error.message ||
+          "Vous n'avez pas les permissions nécessaires pour cette action"
+        );
       case "AUTHENTICATION_ERROR":
-        return "Veuillez vous connecter pour continuer";
+        // Utiliser le message spécifique s'il existe, sinon le message générique
+        return error.message || "Veuillez vous connecter pour continuer";
       case "NOT_FOUND_ERROR":
         return error.message;
       case "BUSINESS_ERROR":
@@ -240,7 +254,8 @@ export const ErrorUtils = {
 
     const code = (error as Record<string, unknown>)?.code;
     const message =
-      ((error as Record<string, unknown>)?.message as string) || "Erreur de base de données";
+      ((error as Record<string, unknown>)?.message as string) ||
+      "Erreur de base de données";
 
     switch (code) {
       case "23505": // unique_violation

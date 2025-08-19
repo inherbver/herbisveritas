@@ -71,7 +71,7 @@ export async function middleware(request: NextRequest) {
           response.cookies.set({ name, value: "", ...removeOptions });
         },
       },
-    }
+    },
   );
 
   // Gestion plus robuste de la récupération de l'utilisateur avec timeout et retry
@@ -81,10 +81,10 @@ export async function middleware(request: NextRequest) {
   // Fonction helper pour les appels Supabase avec timeout
   const supabaseCallWithTimeout = async <T>(
     promise: Promise<T>,
-    timeoutMs: number = 3000
+    timeoutMs: number = 3000,
   ): Promise<T> => {
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Supabase_Timeout")), timeoutMs)
+      setTimeout(() => reject(new Error("Supabase_Timeout")), timeoutMs),
     );
 
     return Promise.race([promise, timeoutPromise]);
@@ -93,30 +93,36 @@ export async function middleware(request: NextRequest) {
   try {
     const { data, error } = await supabaseCallWithTimeout(
       supabase.auth.getUser(),
-      2000 // Timeout de 2 secondes pour ne pas bloquer la navigation
+      2000, // Timeout de 2 secondes pour ne pas bloquer la navigation
     );
 
     if (error) {
-      console.warn("Supabase auth warning in middleware:", error.message);
-      if (error.message.includes("Auth session missing")) {
-        // C'est normal si l'utilisateur n'est pas connecté.
-        user = null;
-      } else {
+      // Ne log que si ce n'est pas "Auth session missing" qui est normal
+      if (!error.message.includes("Auth session missing")) {
+        console.warn("Supabase auth warning in middleware:", error.message);
         // Pour d'autres erreurs, log plus détaillé et potentiellement nettoyer les cookies
-        console.error("Supabase auth error in middleware (not session missing):", error);
+        console.error(
+          "Supabase auth error in middleware (not session missing):",
+          error,
+        );
         // Si l'erreur spécifique est 'user_not_found', cela signifie que le token est invalide ou expiré.
         // Nous nettoyons les cookies pour forcer une déconnexion propre.
         if (error.code === "user_not_found") {
-          console.log("User not found with existing auth token. Clearing cookies.");
+          console.log(
+            "User not found with existing auth token. Clearing cookies.",
+          );
           clearSupabaseCookies(request, response);
         }
       }
+      user = null;
     } else {
       user = data.user;
     }
   } catch (e) {
     if (e instanceof Error && e.message === "Supabase_Timeout") {
-      console.warn("Supabase auth timeout in middleware. Continuing without blocking navigation.");
+      console.warn(
+        "Supabase auth timeout in middleware. Continuing without blocking navigation.",
+      );
       user = null;
       authTimedOut = true;
     } else if (
@@ -127,12 +133,15 @@ export async function middleware(request: NextRequest) {
     ) {
       console.warn(
         "Network error during auth check in middleware. Continuing without blocking navigation:",
-        e.message
+        e.message,
       );
       user = null;
     } else {
       // Gérer les erreurs inattendues lors de l'appel à getUser
-      console.error("Unexpected error during supabase.auth.getUser() in middleware:", e);
+      console.error(
+        "Unexpected error during supabase.auth.getUser() in middleware:",
+        e,
+      );
       user = null;
     }
   }
@@ -168,7 +177,9 @@ export async function middleware(request: NextRequest) {
   if (pathToCheck === "/") {
     // Utiliser la configuration de pathnames pour obtenir le chemin localisé de la boutique
     const shopPath = pathnames["/shop"][currentLocale as Locale] || "/shop";
-    return NextResponse.redirect(new URL(`/${currentLocale}${shopPath}`, request.url));
+    return NextResponse.redirect(
+      new URL(`/${currentLocale}${shopPath}`, request.url),
+    );
   }
 
   // Protéger les routes de profil
@@ -176,7 +187,9 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       // Utilisateur non authentifié : redirection vers la page de connexion avec redirectUrl
       const loginRedirectPath = `/${currentLocale}/login?redirectUrl=${encodeURIComponent(request.nextUrl.pathname)}`;
-      return NextResponse.redirect(new URL(loginRedirectPath, request.nextUrl.origin));
+      return NextResponse.redirect(
+        new URL(loginRedirectPath, request.nextUrl.origin),
+      );
     }
     // Si l'utilisateur est authentifié, l'accès est autorisé pour les pages de profil.
   }
@@ -185,19 +198,25 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       // Si c'est un timeout, ne pas rediriger vers login - laisser la page gérer l'auth
       if (authTimedOut) {
-        console.warn("Auth timeout in middleware for admin route. Letting page handle authentication.");
+        console.warn(
+          "Auth timeout in middleware for admin route. Letting page handle authentication.",
+        );
         return response;
       }
-      
+
       // Utilisateur non authentifié : redirection vers la page de connexion avec redirectUrl
       const loginRedirectPath = `/${currentLocale}/login?redirectUrl=${encodeURIComponent(request.nextUrl.pathname)}`;
-      return NextResponse.redirect(new URL(loginRedirectPath, request.nextUrl.origin));
+      return NextResponse.redirect(
+        new URL(loginRedirectPath, request.nextUrl.origin),
+      );
     }
 
     // Vérification admin via la base de données (nouveau système unifié)
     try {
       // Import dynamique pour éviter les problèmes de dépendance circulaire
-      const { checkAdminRole, logSecurityEvent } = await import("@/lib/auth/admin-service");
+      const { checkAdminRole, logSecurityEvent } = await import(
+        "@/lib/auth/admin-service"
+      );
 
       const adminCheck = await checkAdminRole(user.id);
 
@@ -214,20 +233,28 @@ export async function middleware(request: NextRequest) {
           },
         });
 
-        const unauthorizedUrl = new URL(`/${currentLocale}/unauthorized`, request.url);
+        const unauthorizedUrl = new URL(
+          `/${currentLocale}/unauthorized`,
+          request.url,
+        );
         return NextResponse.redirect(unauthorizedUrl);
       }
 
       // Utilisateur admin vérifié : accès autorisé
       console.log(
-        `Admin access granted for user ${user.id} (role: ${adminCheck.role}) to ${pathToCheck}`
+        `Admin access granted for user ${user.id} (role: ${adminCheck.role}) to ${pathToCheck}`,
       );
     } catch (error) {
       console.error("Error checking admin role in middleware:", error);
 
       // En cas d'erreur critique, rediriger vers unauthorized par sécurité
-      console.warn(`Admin check failed for user ${user.id} due to system error`);
-      const unauthorizedUrl = new URL(`/${currentLocale}/unauthorized`, request.url);
+      console.warn(
+        `Admin check failed for user ${user.id} due to system error`,
+      );
+      const unauthorizedUrl = new URL(
+        `/${currentLocale}/unauthorized`,
+        request.url,
+      );
       return NextResponse.redirect(unauthorizedUrl);
     }
   }

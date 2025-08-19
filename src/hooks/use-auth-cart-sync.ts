@@ -14,40 +14,94 @@ export function useAuthCartSync() {
   const clearCart = useCartStore((state) => state.clearCart);
   const setItems = useCartStore((state) => state._setItems);
   const setIsLoading = useCartStore((state) => state._setIsLoading);
+  const currentItems = useCartStore((state) => state.items);
+  const forceReloadFromServer = useCartStore(
+    (state) => state.forceReloadFromServer,
+  );
 
   useEffect(() => {
     const supabase = createClient();
+
+    // Fonction pour charger le panier
+    const loadCartFromServer = async (eventType: string) => {
+      console.log(`Loading cart from server (${eventType})...`);
+      setIsLoading(true);
+
+      try {
+        const cartResult = await getCart();
+        if (cartResult.success && cartResult.data) {
+          console.log(
+            `Cart loaded successfully (${eventType}):`,
+            cartResult.data.items.length,
+            "items",
+          );
+          setItems(cartResult.data.items);
+        } else {
+          console.log(`No cart data for user (${eventType})`);
+          setItems([]);
+        }
+      } catch (error) {
+        console.error(`Error loading cart after ${eventType}:`, error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     // Écouter les changements d'état d'authentification
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.id);
+      console.log(
+        "useAuthCartSync - Auth state changed:",
+        event,
+        session?.user?.id,
+      );
 
       // Si l'utilisateur se déconnecte (événement SIGNED_OUT ou session null)
-      if (event === "SIGNED_OUT" || !session) {
-        console.log("User signed out or session ended. Clearing cart.");
+      if (event === "SIGNED_OUT" || (!session && event !== "INITIAL_SESSION")) {
+        console.log(
+          "useAuthCartSync - User signed out or session ended. Clearing cart.",
+        );
         clearCart();
       }
       // Si l'utilisateur se connecte, recharger le panier depuis le serveur
       else if (event === "SIGNED_IN" && session) {
-        console.log("User signed in. Loading cart from server...");
-        setIsLoading(true);
-
-        try {
-          const cartResult = await getCart();
-          if (cartResult.success && cartResult.data) {
-            console.log("Cart loaded successfully:", cartResult.data.items.length, "items");
-            setItems(cartResult.data.items);
-          } else {
-            console.log("No cart data or empty cart for user");
-            setItems([]);
-          }
-        } catch (error) {
-          console.error("Error loading cart after sign in:", error);
-        } finally {
-          setIsLoading(false);
+        console.log(
+          "useAuthCartSync - User signed in. Force reloading cart from server...",
+        );
+        // Utiliser forceReloadFromServer pour garantir le rechargement immédiat
+        setTimeout(async () => {
+          await forceReloadFromServer();
+        }, 100); // Très court délai pour laisser la redirection se faire
+      }
+      // Token refreshed - recharger seulement si le panier est vide
+      else if (event === "TOKEN_REFRESHED" && session) {
+        console.log("useAuthCartSync - Token refreshed.");
+        if (currentItems.length === 0) {
+          console.log(
+            "useAuthCartSync - Cart is empty, reloading from server...",
+          );
+          await loadCartFromServer("TOKEN_REFRESHED");
         }
+      }
+      // Session initiale - charger le panier si utilisateur connecté et panier vide
+      else if (event === "INITIAL_SESSION" && session) {
+        console.log(
+          "useAuthCartSync - Initial session detected with authenticated user.",
+        );
+        // Attendre un peu pour laisser les autres composants se stabiliser
+        setTimeout(async () => {
+          if (currentItems.length === 0) {
+            console.log(
+              "useAuthCartSync - Loading initial cart from server...",
+            );
+            await loadCartFromServer("INITIAL_SESSION");
+          } else {
+            console.log(
+              "useAuthCartSync - Cart already has items, skipping initial load.",
+            );
+          }
+        }, 500);
       }
     });
 
@@ -55,5 +109,11 @@ export function useAuthCartSync() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [clearCart, setItems, setIsLoading]);
+  }, [
+    clearCart,
+    setItems,
+    setIsLoading,
+    currentItems.length,
+    forceReloadFromServer,
+  ]);
 }

@@ -25,17 +25,18 @@ import {
   ErrorUtils,
 } from "@/lib/core/errors";
 
+// Import pour la gestion améliorée des erreurs d'authentification
+import { AuthErrorMapper } from "@/lib/auth/error-mapper";
+
 // SÉCURITÉ: Rate limiting pour actions d'authentification
 import { withRateLimit } from "@/lib/security/rate-limit-decorator";
 
 // --- Schéma Login ---
 const loginSchema = z.object({
   email: z.string().email({ message: "L'adresse email n'est pas valide." }),
-  password: z
-    .string()
-    .min(8, {
-      message: "Le mot de passe doit contenir au moins 8 caractères.",
-    }),
+  password: z.string().min(8, {
+    message: "Le mot de passe doit contenir au moins 8 caractères.",
+  }),
 });
 
 // --- Types d'Actions --- (Deprecated: use ActionResult<T> instead)
@@ -67,8 +68,20 @@ export const loginAction = withRateLimit(
     });
 
     if (!validatedFields.success) {
-      throw new ValidationError("Données de connexion invalides", undefined, {
-        validationErrors: validatedFields.error.flatten().fieldErrors,
+      // Utiliser des messages de validation plus spécifiques
+      const fieldErrors = validatedFields.error.flatten().fieldErrors;
+
+      // Créer un message spécifique basé sur l'erreur de validation
+      let specificMessage =
+        "Veuillez vérifier les informations saisies et réessayer.";
+      if (fieldErrors.email && fieldErrors.email.length > 0) {
+        specificMessage = fieldErrors.email[0];
+      } else if (fieldErrors.password && fieldErrors.password.length > 0) {
+        specificMessage = fieldErrors.password[0];
+      }
+
+      throw new ValidationError(specificMessage, undefined, {
+        validationErrors: fieldErrors,
       });
     }
 
@@ -91,14 +104,39 @@ export const loginAction = withRateLimit(
     });
 
     if (error) {
-      if (error.message === "Email not confirmed") {
-        throw new AuthenticationError(
-          "Email non confirmé. Veuillez vérifier votre boîte de réception.",
-        );
+      // Utiliser le mapper pour obtenir un message d'erreur spécifique
+      const errorKey = AuthErrorMapper.mapLoginError(error);
+
+      // Essayer d'obtenir le message traduit, avec fallback sur un message générique
+      let specificMessage: string;
+      try {
+        const t = await getTranslations({ locale: "fr", namespace: "Auth" });
+        specificMessage = t(errorKey as any);
+      } catch {
+        // Fallback sur des messages en dur si les traductions échouent
+        const errorMessages: Record<string, string> = {
+          "errors.login.invalidCredentials":
+            "Email ou mot de passe incorrect. Vérifiez vos identifiants et réessayez.",
+          "errors.login.emailNotConfirmed":
+            "Votre email n'est pas encore confirmé. Vérifiez votre boîte de réception.",
+          "errors.login.userNotFound":
+            "Aucun compte trouvé avec cette adresse email.",
+          "errors.login.tooManyRequests":
+            "Trop de tentatives de connexion. Attendez quelques minutes.",
+        };
+        specificMessage =
+          errorMessages[errorKey] ||
+          "Une erreur de connexion s'est produite. Veuillez réessayer.";
       }
-      throw new AuthenticationError(
-        "L'email ou le mot de passe est incorrect.",
-      );
+
+      // Log l'erreur originale pour le debugging
+      LogUtils.logOperationError("login_supabase_error", error, {
+        ...context,
+        originalError: error.message,
+        errorKey,
+      });
+
+      throw new AuthenticationError(specificMessage);
     }
 
     // 4. Si la connexion est réussie et qu'un utilisateur invité a été détecté, tenter la migration du panier
@@ -129,7 +167,7 @@ export const loginAction = withRateLimit(
     }
 
     LogUtils.logOperationSuccess("login", { ...context, email });
-    redirect("/fr/profile/account");
+    redirect("/fr/shop");
   } catch (error) {
     LogUtils.logOperationError("login", error, context);
 
@@ -220,13 +258,40 @@ export const signUpAction = withRateLimit(
     });
 
     if (error) {
-      const t = await getTranslations({ locale, namespace: "Auth.validation" });
+      // Utiliser le mapper pour obtenir un message d'erreur spécifique
+      const errorKey = AuthErrorMapper.mapSignupError(error);
 
-      if (error.message.includes("User already registered")) {
-        throw new ValidationError(t("emailAlreadyExists"));
+      // Essayer d'obtenir le message traduit, avec fallback sur un message générique
+      let specificMessage: string;
+      try {
+        const t = await getTranslations({ locale, namespace: "Auth" });
+        specificMessage = t(errorKey as any);
+      } catch {
+        // Fallback sur des messages en dur si les traductions échouent
+        const errorMessages: Record<string, string> = {
+          "errors.signup.emailAlreadyRegistered":
+            "Cette adresse email est déjà utilisée. Connectez-vous ou utilisez une autre adresse.",
+          "errors.signup.weakPassword":
+            "Le mot de passe est trop faible. Il doit contenir au moins 8 caractères avec majuscules, minuscules et chiffres.",
+          "errors.signup.invalidEmailFormat":
+            "Le format de l'adresse email n'est pas valide.",
+          "errors.signup.tooManyRequests":
+            "Trop de tentatives d'inscription. Attendez quelques minutes.",
+        };
+        specificMessage =
+          errorMessages[errorKey] ||
+          "Une erreur d'inscription s'est produite. Veuillez réessayer.";
       }
 
-      throw new AuthenticationError(t("genericSignupError"));
+      // Log l'erreur originale pour le debugging
+      LogUtils.logOperationError("signup_supabase_error", error, {
+        ...context,
+        originalError: error.message,
+        errorKey,
+        locale,
+      });
+
+      throw new AuthenticationError(specificMessage);
     }
 
     // 4. Audit the successful signup

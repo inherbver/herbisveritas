@@ -21,7 +21,7 @@ const useCartStore = create<CartStore>()(
           image?: string;
           slug?: string;
         },
-        quantityToAdd: number = 1
+        quantityToAdd: number = 1,
       ) => {
         try {
           if (quantityToAdd <= 0) {
@@ -31,18 +31,21 @@ const useCartStore = create<CartStore>()(
 
           const currentItems = get().items;
           const existingItemIndex = currentItems.findIndex(
-            (item: CartItem) => item.productId === itemDetails.productId
+            (item: CartItem) => item.productId === itemDetails.productId,
           );
 
           if (existingItemIndex !== -1) {
             // Mise à jour de la quantité d'un article existant
-            const updatedItems = currentItems.map((item: CartItem, index: number) =>
-              index === existingItemIndex
-                ? { ...item, quantity: item.quantity + quantityToAdd }
-                : item
+            const updatedItems = currentItems.map(
+              (item: CartItem, index: number) =>
+                index === existingItemIndex
+                  ? { ...item, quantity: item.quantity + quantityToAdd }
+                  : item,
             );
             set({ items: updatedItems, error: null });
-            console.log(`CartStore: Updated quantity for product ${itemDetails.productId}`);
+            console.log(
+              `CartStore: Updated quantity for product ${itemDetails.productId}`,
+            );
           } else {
             // Ajout d'un nouvel article
             const newItem: CartItem = {
@@ -50,7 +53,9 @@ const useCartStore = create<CartStore>()(
               quantity: quantityToAdd,
             };
             set({ items: [...currentItems, newItem], error: null });
-            console.log(`CartStore: Added new item ${itemDetails.productId} to cart`);
+            console.log(
+              `CartStore: Added new item ${itemDetails.productId} to cart`,
+            );
           }
         } catch (error) {
           console.error("CartStore: Error adding item to cart:", error);
@@ -63,7 +68,7 @@ const useCartStore = create<CartStore>()(
           const currentItems = get().items;
           // Fix: Check both id and productId for backward compatibility
           const itemExists = currentItems.some(
-            (item) => item.id === cartItemId || item.productId === cartItemId
+            (item) => item.id === cartItemId || item.productId === cartItemId,
           );
 
           if (!itemExists) {
@@ -73,7 +78,8 @@ const useCartStore = create<CartStore>()(
 
           set((state: CartStore) => ({
             items: state.items.filter(
-              (item: CartItem) => item.id !== cartItemId && item.productId !== cartItemId
+              (item: CartItem) =>
+                item.id !== cartItemId && item.productId !== cartItemId,
             ),
             error: null,
           }));
@@ -87,7 +93,9 @@ const useCartStore = create<CartStore>()(
       updateItemQuantity: (cartItemId: string, newQuantity: number) => {
         try {
           if (newQuantity <= 0) {
-            const itemToRemove = get().items.find((item: CartItem) => item.id === cartItemId);
+            const itemToRemove = get().items.find(
+              (item: CartItem) => item.id === cartItemId,
+            );
             if (itemToRemove?.id) {
               get().removeItem(itemToRemove.id);
             }
@@ -95,20 +103,28 @@ const useCartStore = create<CartStore>()(
           }
 
           const currentItems = get().items;
-          const itemExists = currentItems.some((item) => item.id === cartItemId);
+          const itemExists = currentItems.some(
+            (item) => item.id === cartItemId,
+          );
 
           if (!itemExists) {
-            console.warn(`CartStore: Cannot update quantity - item ${cartItemId} not found`);
+            console.warn(
+              `CartStore: Cannot update quantity - item ${cartItemId} not found`,
+            );
             return;
           }
 
           set((state: CartStore) => ({
             items: state.items.map((item: CartItem) =>
-              item.id === cartItemId ? { ...item, quantity: newQuantity } : item
+              item.id === cartItemId
+                ? { ...item, quantity: newQuantity }
+                : item,
             ),
             error: null,
           }));
-          console.log(`CartStore: Updated quantity for item ${cartItemId} to ${newQuantity}`);
+          console.log(
+            `CartStore: Updated quantity for item ${cartItemId} to ${newQuantity}`,
+          );
         } catch (error) {
           console.error("CartStore: Error updating item quantity:", error);
           set({ error: "Erreur lors de la mise à jour" });
@@ -124,7 +140,7 @@ const useCartStore = create<CartStore>()(
 
           const currentItems = get().items;
           const itemIndex = currentItems.findIndex(
-            (item) => item.productId === productId || item.id === productId
+            (item) => item.productId === productId || item.id === productId,
           );
 
           if (itemIndex === -1) {
@@ -136,20 +152,27 @@ const useCartStore = create<CartStore>()(
             // Remove item if quantity is 0
             set((state: CartStore) => ({
               items: state.items.filter(
-                (item) => item.productId !== productId && item.id !== productId
+                (item) => item.productId !== productId && item.id !== productId,
               ),
               error: null,
             }));
-            console.log(`CartStore: Removed item ${productId} (quantity set to 0)`);
+            console.log(
+              `CartStore: Removed item ${productId} (quantity set to 0)`,
+            );
           } else {
             // Update quantity
             const updatedItems = currentItems.map((item, index) =>
               index === itemIndex
-                ? { ...item, quantity: Math.min(quantity, item.stock || quantity) }
-                : item
+                ? {
+                    ...item,
+                    quantity: Math.min(quantity, item.stock || quantity),
+                  }
+                : item,
             );
             set({ items: updatedItems, error: null });
-            console.log(`CartStore: Updated quantity for ${productId} to ${quantity}`);
+            console.log(
+              `CartStore: Updated quantity for ${productId} to ${quantity}`,
+            );
           }
         } catch (error) {
           console.error("CartStore: Error updating quantity:", error);
@@ -161,7 +184,9 @@ const useCartStore = create<CartStore>()(
         try {
           const currentItemCount = get().items.length;
           set({ items: [], isLoading: false, error: null });
-          console.log(`CartStore: Cart cleared (${currentItemCount} items removed)`);
+          console.log(
+            `CartStore: Cart cleared (${currentItemCount} items removed)`,
+          );
         } catch (error) {
           console.error("CartStore: Error clearing cart:", error);
           set({ error: "Erreur lors de la vidange du panier" });
@@ -181,21 +206,60 @@ const useCartStore = create<CartStore>()(
         set({ error });
       },
 
-      _setItems: (items: CartItem[]) => {
+      _setItems: (items: CartItem[], force: boolean = false) => {
         const logPrefix = `[CartStore _setItems ${new Date().toISOString()}]`;
         try {
           const currentItems = get().items;
           // Data is already transformed by getCart, so we can directly compare.
-          if (JSON.stringify(currentItems) === JSON.stringify(items)) {
-            console.log(`${logPrefix} New items are identical to current items. Skipping update.`);
+          if (
+            !force &&
+            JSON.stringify(currentItems) === JSON.stringify(items)
+          ) {
+            console.log(
+              `${logPrefix} New items are identical to current items. Skipping update.`,
+            );
             return;
           }
 
           set({ items, error: null });
-          console.log(`${logPrefix} Successfully set ${items.length} items in cart.`);
+          console.log(
+            `${logPrefix} Successfully ${force ? "force " : ""}set ${items.length} items in cart.`,
+          );
         } catch (error) {
           console.error(`${logPrefix} Error setting items:`, error);
-          set({ error: "Erreur lors de la synchronisation des articles du panier." });
+          set({
+            error: "Erreur lors de la synchronisation des articles du panier.",
+          });
+        }
+      },
+
+      forceReloadFromServer: async () => {
+        const logPrefix = `[CartStore forceReload ${new Date().toISOString()}]`;
+        console.log(`${logPrefix} Force reloading cart from server...`);
+
+        try {
+          set({ isLoading: true, error: null });
+
+          // Dynamically import to avoid circular dependency
+          const { getCart } = await import("@/actions/cartActions");
+          const cartResult = await getCart();
+
+          if (cartResult.success && cartResult.data) {
+            console.log(
+              `${logPrefix} Cart force reloaded successfully:`,
+              cartResult.data.items.length,
+              "items",
+            );
+            get()._setItems(cartResult.data.items, true); // Force update
+          } else {
+            console.log(`${logPrefix} No cart data found during force reload`);
+            get()._setItems([], true);
+          }
+        } catch (error) {
+          console.error(`${logPrefix} Error during force reload:`, error);
+          set({ error: "Erreur lors du rechargement du panier." });
+        } finally {
+          set({ isLoading: false });
         }
       },
 
@@ -219,9 +283,15 @@ const useCartStore = create<CartStore>()(
       migrate: (persistedState: unknown, version: number) => {
         // Solution 2: Handle migration from older state versions
         if (version === 0) {
-          console.log("CartStore: Migrating state from version 0 to 1. Old data will be cleared.");
+          console.log(
+            "CartStore: Migrating state from version 0 to 1. Old data will be cleared.",
+          );
           // For this migration, we clear the incompatible old state.
-          return { items: [], isLoading: false, error: null } as Partial<CartState>;
+          return {
+            items: [],
+            isLoading: false,
+            error: null,
+          } as Partial<CartState>;
         }
         return persistedState as Partial<CartState>;
       },
@@ -231,14 +301,15 @@ const useCartStore = create<CartStore>()(
           if (error) {
             console.error(
               "CartStore: Rehydration error, clearing localStorage to prevent further issues.",
-              error
+              error,
             );
             // Directly clear the corrupted storage
             localStorage.removeItem("inherbis-cart-storage");
             // Safely reset the state in the running application
             if (state) {
               state.items = [];
-              state.error = "Votre panier a été réinitialisé suite à un problème technique.";
+              state.error =
+                "Votre panier a été réinitialisé suite à un problème technique.";
               state.isLoading = false;
             }
             return;
@@ -261,7 +332,9 @@ const useCartStore = create<CartStore>()(
             const validItems = state.items.filter(isValidCartItem);
 
             if (validItems.length !== state.items.length) {
-              console.warn("CartStore: Filtered out invalid items during rehydration.");
+              console.warn(
+                "CartStore: Filtered out invalid items during rehydration.",
+              );
               state.items = validItems;
             }
           }
@@ -271,8 +344,8 @@ const useCartStore = create<CartStore>()(
         items: state.items,
         // Do not persist transient state like isLoading or errors
       }),
-    }
-  )
+    },
+  ),
 );
 
 export default useCartStore;
@@ -281,10 +354,12 @@ export { useCartStore };
 // Hooks pour utilisation directe
 export const useCartItems = () => useCartStore((state) => state.items);
 export const useCartTotalItems = () =>
-  useCartStore((state) => state.items.reduce((total, item) => total + item.quantity, 0));
+  useCartStore((state) =>
+    state.items.reduce((total, item) => total + item.quantity, 0),
+  );
 export const useCartSubtotal = () =>
   useCartStore((state) =>
-    state.items.reduce((total, item) => total + item.price * item.quantity, 0)
+    state.items.reduce((total, item) => total + item.price * item.quantity, 0),
   );
 
 // Sélecteurs améliorés avec memoization
@@ -297,8 +372,10 @@ export const selectCartSubtotal = (state: CartState): number =>
   state.items.reduce((total, item) => total + item.price * item.quantity, 0);
 
 // Nouveaux sélecteurs utiles
-export const selectCartItemCount = (state: CartState): number => state.items.length;
+export const selectCartItemCount = (state: CartState): number =>
+  state.items.length;
 
-export const selectCartIsEmpty = (state: CartState): boolean => state.items.length === 0;
+export const selectCartIsEmpty = (state: CartState): boolean =>
+  state.items.length === 0;
 
 export const selectCartHasErrors = (state: CartState): boolean => !!state.error;

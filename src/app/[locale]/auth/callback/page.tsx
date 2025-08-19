@@ -15,7 +15,9 @@ function AuthCallbackContent() {
   const params = useParams(); // Pour obtenir la locale
   const locale = params.locale as string; // Assumant que locale est toujours présent
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
   const [message, setMessage] = useState<string>(t("loading"));
 
   // Utilisation de useCallback pour la fonction de redirection pour éviter de la recréer à chaque render
@@ -26,7 +28,7 @@ function AuthCallbackContent() {
       // ou sont des chemins relatifs à la racine qui seront gérés par le routing Next.js
       router.push(path);
     },
-    [router]
+    [router],
   );
 
   useEffect(() => {
@@ -48,13 +50,19 @@ function AuthCallbackContent() {
       locale,
     });
 
-    let determinedFinalRedirectPath = `/${locale}/profile/account`; // Default
+    let determinedFinalRedirectPath = `/${locale}/shop`; // Default
     if (nextPath) {
       // Valider et s'assurer que nextPath est une route interne et sûre
-      if (nextPath.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("..")) {
+      if (
+        nextPath.startsWith("/") &&
+        !nextPath.startsWith("//") &&
+        !nextPath.includes("..")
+      ) {
         determinedFinalRedirectPath = nextPath;
       } else {
-        console.warn(`Invalid nextPath detected: ${nextPath}. Using default redirect.`);
+        console.warn(
+          `Invalid nextPath detected: ${nextPath}. Using default redirect.`,
+        );
       }
     }
 
@@ -64,7 +72,9 @@ function AuthCallbackContent() {
         errorDescription,
       });
       setStatus("error");
-      setMessage(t("errorGeneric", { details: errorDescription || errorParam }));
+      setMessage(
+        t("errorGeneric", { details: errorDescription || errorParam }),
+      );
       return;
     }
 
@@ -88,10 +98,12 @@ function AuthCallbackContent() {
           // Normalement ne devrait pas arriver ici sauf si l'utilisateur se déconnecte pendant le callback
           console.log("[AuthCallback] Received SIGNED_OUT event.");
           setStatus("error");
-          setMessage(t("errorGeneric", { details: "User signed out during callback." }));
+          setMessage(
+            t("errorGeneric", { details: "User signed out during callback." }),
+          );
         }
         // Autres événements comme TOKEN_REFRESHED, USER_UPDATED pourraient être gérés si nécessaire
-      }
+      },
     );
 
     // 2. Gestion si pas d'événement SIGNED_IN après un délai
@@ -125,7 +137,9 @@ function AuthCallbackContent() {
     return (
       <main>
         <p>{message}</p>
-        <button onClick={() => router.push(`/${locale}/login`)}>{t("goToLogin")}</button>
+        <button onClick={() => router.push(`/${locale}/login`)}>
+          {t("goToLogin")}
+        </button>
       </main>
     );
   }

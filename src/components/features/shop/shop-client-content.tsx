@@ -2,10 +2,14 @@
 
 import React, { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { ProductGrid, ProductData } from "@/components/features/shop/product-grid";
+import {
+  ProductGrid,
+  ProductData,
+} from "@/components/features/shop/product-grid";
 import type { ProductListItem } from "@/app/[locale]/shop/page";
 import type { CartData } from "@/types/cart";
 import { useCartStore } from "@/stores/cartStore";
+import { useInitialCartLoad } from "@/hooks/use-initial-cart-load";
 
 interface ShopClientContentProps {
   initialProducts: ProductListItem[];
@@ -18,6 +22,9 @@ export const ShopClientContent: React.FC<ShopClientContentProps> = ({
 }) => {
   const t = useTranslations("ShopPage");
   const { _setItems, _setIsLoading, _setError } = useCartStore();
+
+  // Hook pour charger automatiquement le panier si utilisateur connecté
+  useInitialCartLoad();
 
   useEffect(() => {
     if (initialCart) {

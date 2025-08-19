@@ -85,7 +85,10 @@ export interface CartState {
  * Defines the actions available in the cart store.
  */
 export interface CartActions {
-  addItem: (itemDetails: Omit<CartItem, "quantity">, quantityToAdd?: number) => void;
+  addItem: (
+    itemDetails: Omit<CartItem, "quantity">,
+    quantityToAdd?: number,
+  ) => void;
   removeItem: (cartItemId: string) => void;
   updateItemQuantity: (cartItemId: string, newQuantity: number) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -97,7 +100,10 @@ export interface CartActions {
   // Internal actions for state management
   _setIsLoading: (loading: boolean) => void;
   _setError: (error: string | null) => void;
-  _setItems: (items: CartItem[]) => void;
+  _setItems: (items: CartItem[], force?: boolean) => void;
+
+  // Utility actions
+  forceReloadFromServer: () => Promise<void>;
 }
 
 /**

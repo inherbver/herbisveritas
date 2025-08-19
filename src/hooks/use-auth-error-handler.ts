@@ -37,6 +37,25 @@ export function useAuthErrorHandler() {
       if (event === "TOKEN_REFRESHED") {
         console.log("Token successfully refreshed");
       }
+
+      // Gérer les erreurs de refresh token
+      if (event === "USER_UPDATED" && !session) {
+        console.log("Session expired, cleaning up tokens");
+        // Nettoyer tous les tokens Supabase
+        Object.keys(localStorage).forEach((key) => {
+          if (key.includes("supabase") || key.includes("sb-")) {
+            localStorage.removeItem(key);
+          }
+        });
+
+        // Rediriger vers la page de connexion si nécessaire
+        if (
+          window.location.pathname.startsWith("/profile") ||
+          window.location.pathname.startsWith("/admin")
+        ) {
+          router.push("/");
+        }
+      }
     });
 
     // Intercepter les erreurs globales liées à l'authentification
@@ -47,9 +66,17 @@ export function useAuthErrorHandler() {
 
         // Vérifier si c'est une erreur de refresh token
         if (!response.ok && response.status === 401) {
-          const text = await response.text();
-          if (text.includes("Refresh Token") || text.includes("refresh_token")) {
-            await handleAuthError({ message: text });
+          try {
+            const text = await response.text();
+            if (
+              text.includes("Refresh Token") ||
+              text.includes("refresh_token")
+            ) {
+              await handleAuthError({ message: text });
+            }
+          } catch (textError) {
+            // Ignorer les erreurs de lecture du texte de réponse
+            console.warn("Could not read response text:", textError);
           }
         }
 
