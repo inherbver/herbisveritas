@@ -3,7 +3,7 @@
  * Tests d'intégration Stripe, gestion d'erreurs, et recovery
  */
 
-import { CheckoutService } from '../checkout.service'
+import { CheckoutOrchestrator } from '../checkout.service'
 import { AddressValidationService } from '../address-validation.service'
 import { CartService } from '../cart.service'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
@@ -28,18 +28,25 @@ const mockCreateSupabaseServerClient = createSupabaseServerClient as jest.Mocked
 const mockStripe = stripe as jest.Mocked<typeof stripe>
 
 describe('CheckoutService - Advanced Integration Tests (Phase 3.2)', () => {
-  let cleanup: () => void
-  let checkoutService: CheckoutService
+  let checkoutService: CheckoutOrchestrator
   
-  beforeEach(() => {
-    ({ cleanup } = setupTestEnvironment())
+  beforeEach(async () => {
+    await setupTestEnvironment()
     jest.clearAllMocks()
     
-    checkoutService = new CheckoutService()
+    // CheckoutOrchestrator requires dependencies in constructor
+    const mockStripeService = mockStripe
+    const mockProductValidationService = {} // Mock simple
+    
+    checkoutService = new CheckoutOrchestrator(
+      mockStripeService as any,
+      mockProductValidationService as any,
+      mockAddressValidationService as any
+    )
   })
   
   afterEach(() => {
-    cleanup()
+    jest.clearAllMocks()
   })
 
   describe('Stripe Integration Tests', () => {

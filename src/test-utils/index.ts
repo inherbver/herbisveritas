@@ -30,6 +30,9 @@ export {
 
 // Utilitaires existants
 export * from "./formDataHelpers";
+export * from "./server-action-helpers";
+export * from "./fast-mocks";
+export * from "./cleanup-helpers";
 
 // Types TypeScript pour les tests
 export type { UserWithProfile } from "./factories/UserFactory";

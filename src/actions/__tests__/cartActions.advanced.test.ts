@@ -37,13 +37,16 @@ const mockRevalidateTag = revalidateTag as jest.MockedFunction<typeof revalidate
 describe('cartActions - Advanced Tests (Phase 3.2)', () => {
   let cleanup: () => void
   
-  beforeEach(() => {
-    ({ cleanup } = setupTestEnvironment())
+  beforeEach(async () => {
+    const testEnv = await setupTestEnvironment()
+    cleanup = testEnv.cleanup
     jest.clearAllMocks()
   })
   
   afterEach(() => {
-    cleanup()
+    if (cleanup) {
+      cleanup()
+    }
   })
 
   describe('Concurrency Tests', () => {

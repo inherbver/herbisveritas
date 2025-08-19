@@ -9,7 +9,7 @@ import {
   signOutAction,
   updatePasswordAction,
   resetPasswordAction,
-  confirmEmailAction,
+  // confirmEmailAction, // TODO: À implémenter si nécessaire
 } from '../authActions'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -40,13 +40,16 @@ const mockRedirect = redirect as jest.MockedFunction<typeof redirect>
 describe('authActions - Advanced Security Tests (Phase 3.2)', () => {
   let cleanup: () => void
   
-  beforeEach(() => {
-    ({ cleanup } = setupTestEnvironment())
+  beforeEach(async () => {
+    const testEnv = await setupTestEnvironment()
+    cleanup = testEnv.cleanup
     jest.clearAllMocks()
   })
   
   afterEach(() => {
-    cleanup()
+    if (cleanup) {
+      cleanup()
+    }
   })
 
   describe('Brute Force Protection', () => {

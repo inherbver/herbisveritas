@@ -37,19 +37,18 @@ mockSupabaseClient.auth = {
 (checkUserPermission as jest.Mock).mockResolvedValue(true);
 
 // Mock the html converter functions
-const { convertTipTapToHTML, calculateReadingTime, extractExcerpt } = await import(
-  "@/lib/magazine/html-converter"
-);
-convertTipTapToHTML.mockReturnValue("<p>Test content</p>");
-calculateReadingTime.mockReturnValue(5);
-extractExcerpt.mockReturnValue("Test excerpt");
+jest.mock("@/lib/magazine/html-converter", () => ({
+  convertTipTapToHTML: jest.fn().mockReturnValue("<p>Test content</p>"),
+  calculateReadingTime: jest.fn().mockReturnValue(5),
+  extractExcerpt: jest.fn().mockReturnValue("Test excerpt"),
+}));
 
 // Mock publication utils
-const { canPerformPublicationAction, validateArticleForPublication, getPublicationActionMessage } =
-  await import("@/lib/magazine/publication-utils");
-canPerformPublicationAction.mockReturnValue(true);
-validateArticleForPublication.mockReturnValue(true);
-getPublicationActionMessage.mockReturnValue("Article created successfully");
+jest.mock("@/lib/magazine/publication-utils", () => ({
+  canPerformPublicationAction: jest.fn().mockReturnValue(true),
+  validateArticleForPublication: jest.fn().mockReturnValue(true),
+  getPublicationActionMessage: jest.fn().mockReturnValue("Article created successfully"),
+}));
 
 // Mock data
 const mockArticle = {

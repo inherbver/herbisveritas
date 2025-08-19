@@ -6,18 +6,25 @@ import { POST } from "../route";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 
+// Create mock before jest.mock calls to avoid hoisting issues
+const mockConstructEvent = jest.fn();
+
 // Mock dependencies
 jest.mock("next/headers");
 jest.mock("@supabase/supabase-js", () => ({
   createClient: jest.fn(),
 }));
+jest.mock("@/lib/admin/event-logger", () => ({
+  logEvent: jest.fn(),
+}));
+
 jest.mock("stripe", () => {
-  const mockStripe = {
+  const mockConstructEventFunction = jest.fn();
+  return jest.fn(() => ({
     webhooks: {
-      constructEvent: jest.fn(),
+      constructEvent: mockConstructEventFunction,
     },
-  };
-  return jest.fn(() => mockStripe);
+  }));
 });
 jest.mock("next/server", () => {
   const MockNextResponse = class MockNextResponse {
@@ -171,13 +178,7 @@ const mockOrder = {
 };
 
 describe("Stripe Webhook Handler", () => {
-  let mockStripe: {
-    webhooks: {
-      constructEvent: jest.MockedFunction<
-        (payload: string, signature: string, secret: string) => unknown
-      >;
-    };
-  };
+  let mockStripe: any;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -195,10 +196,14 @@ describe("Stripe Webhook Handler", () => {
     (headers as jest.Mock).mockResolvedValue(mockHeaders);
     const { createClient } = await import("@supabase/supabase-js");
     (createClient as jest.Mock).mockReturnValue(mockSupabaseClient);
+    
+    // Setup event logger mock
+    const { logEvent } = await import("@/lib/admin/event-logger");
+    (logEvent as jest.Mock).mockResolvedValue(undefined);
 
-    // Create mock Stripe instance
+    // Get stripe instance to access mocked constructEvent
     const StripeConstructor = Stripe as any;
-    mockStripe = new StripeConstructor("", { apiVersion: "2023-10-16" });
+    mockStripe = new StripeConstructor();
 
     mockHeaders.get.mockReturnValue("whsec_test_signature");
   });
@@ -227,7 +232,7 @@ describe("Stripe Webhook Handler", () => {
         text: jest.fn().mockResolvedValue("webhook body"),
       } as any;
 
-      // Mock successful webhook verification using the global Stripe mock
+      // Mock successful webhook verification
       mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
 
       // Mock database operations with proper chaining

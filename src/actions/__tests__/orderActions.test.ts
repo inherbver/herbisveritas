@@ -7,6 +7,20 @@ import {
   getOrderStatsAction,
 } from "../orderActions";
 
+// Mock des utilitaires AVANT les imports
+jest.mock("@/lib/supabase/server");
+jest.mock("@/lib/auth/admin-service");
+jest.mock("next/cache");
+
+const mockCheckAdminRole = jest.fn();
+const mockCreateSupabaseServerClient = jest.fn();
+const mockRevalidatePath = jest.fn();
+
+// Override the mocked modules
+jest.mocked(require("@/lib/auth/admin-service")).checkAdminRole = mockCheckAdminRole;
+jest.mocked(require("@/lib/supabase/server")).createSupabaseServerClient = mockCreateSupabaseServerClient;
+jest.mocked(require("next/cache")).revalidatePath = mockRevalidatePath;
+
 // Mock Supabase client
 const mockSupabaseClient = {
   auth: {
@@ -17,37 +31,32 @@ const mockSupabaseClient = {
 };
 
 const mockQuery = {
-  select: jest.fn().mockReturnThis(),
-  eq: jest.fn().mockReturnThis(),
-  in: jest.fn().mockReturnThis(),
-  gte: jest.fn().mockReturnThis(),
-  lte: jest.fn().mockReturnThis(),
-  or: jest.fn().mockReturnThis(),
-  order: jest.fn().mockReturnThis(),
-  range: jest.fn().mockReturnThis(),
+  select: jest.fn(),
+  eq: jest.fn(),
+  in: jest.fn(),
+  gte: jest.fn(),
+  lte: jest.fn(),
+  or: jest.fn(),
+  order: jest.fn(),
+  range: jest.fn(),
   single: jest.fn(),
-  update: jest.fn().mockReturnThis(),
-  insert: jest.fn().mockReturnThis(),
+  update: jest.fn(),
+  insert: jest.fn(),
 };
 
-// Mock des utilitaires
-jest.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: jest.fn(() => Promise.resolve(mockSupabaseClient)),
-}));
-
-jest.mock("@/lib/auth/admin-service", () => ({
-  checkAdminRole: jest.fn(),
-}));
-
-jest.mock("next/cache", () => ({
-  revalidatePath: jest.fn(),
-}));
-
-import { checkAdminRole } from "@/lib/auth/admin-service";
+// Setup chaining for all methods
+Object.keys(mockQuery).forEach(key => {
+  if (mockQuery[key] && typeof mockQuery[key].mockReturnThis === 'function') {
+    mockQuery[key].mockReturnThis();
+  }
+});
 
 describe("Order Actions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Configure mocks
+    mockCreateSupabaseServerClient.mockResolvedValue(mockSupabaseClient);
     mockSupabaseClient.from.mockReturnValue(mockQuery);
   });
 
@@ -75,8 +84,10 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
-      mockQuery.single.mockResolvedValue({
+      mockCheckAdminRole.mockResolvedValue(true);
+      
+      // Return the data directly (not using single for the main query)
+      mockQuery.range.mockResolvedValue({
         data: mockOrders,
         error: null,
         count: 1,
@@ -100,7 +111,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(false);
+      mockCheckAdminRole.mockResolvedValue(false);
 
       // Act
       const result = await getOrdersListAction();
@@ -115,8 +126,8 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
-      mockQuery.single.mockResolvedValue({
+      mockCheckAdminRole.mockResolvedValue(true);
+      mockQuery.range.mockResolvedValue({
         data: [],
         error: null,
         count: 0,
@@ -172,7 +183,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
+      mockCheckAdminRole.mockResolvedValue(true);
       mockQuery.single.mockResolvedValue({
         data: mockOrderDetails,
         error: null,
@@ -192,7 +203,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(false);
+      mockCheckAdminRole.mockResolvedValue(false);
 
       // Act
       const result = await getOrderDetailsAction("order-1");
@@ -211,7 +222,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
+      mockCheckAdminRole.mockResolvedValue(true);
       mockQuery.update.mockResolvedValue({
         error: null,
       });
@@ -240,7 +251,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
+      mockCheckAdminRole.mockResolvedValue(true);
       mockQuery.update.mockResolvedValue({ error: null });
 
       const updateData = {
@@ -274,7 +285,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
+      mockCheckAdminRole.mockResolvedValue(true);
 
       // Mock order status check
       mockQuery.select.mockReturnValueOnce({
@@ -328,7 +339,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
+      mockCheckAdminRole.mockResolvedValue(true);
 
       mockQuery.select.mockReturnValueOnce({
         ...mockQuery,
@@ -375,7 +386,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
+      mockCheckAdminRole.mockResolvedValue(true);
       mockQuery.select.mockResolvedValue({
         data: mockOrdersData,
         error: null,
@@ -402,7 +413,7 @@ describe("Order Actions", () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
       });
-      checkAdminRole.mockResolvedValue(true);
+      mockCheckAdminRole.mockResolvedValue(true);
       mockQuery.select.mockResolvedValue({
         data: [],
         error: null,

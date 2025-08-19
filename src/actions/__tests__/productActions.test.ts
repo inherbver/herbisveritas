@@ -38,7 +38,7 @@ const mockSupabaseClient = {
 
 // Mock data
 const mockProduct = {
-  id: "prod-1",
+  id: "550e8400-e29b-41d4-a716-446655440000",  // Same UUID as mockProductFormValues
   name: "Test Product",
   slug: "test-product",
   price: 29.99,
@@ -53,27 +53,36 @@ const mockProduct = {
 };
 
 const mockProductFormValues = {
-  id: "prod-1",
+  id: "550e8400-e29b-41d4-a716-446655440000",  // Valid UUID
   slug: "test-product",
   price: 29.99,
   stock: 100,
   unit: "pièce",
   image_url: "test.jpg",
-  inci_list: "test ingredients",
+  inci_list: ["ingredient1", "ingredient2"],  // Array, not string
   status: "active" as const,
   is_new: false,
   is_on_promotion: false,
+  is_active: true,  // Added missing field
   translations: [
     {
       locale: "fr",
       name: "Test Product",
-      description: "Test description",
-      category: "herbs",
+      short_description: "Test description",
+      description_long: "Long description",
+      usage_instructions: "Instructions",
+      properties: "Properties",
+      composition_text: "Composition",
     },
   ],
 };
 
 const mockProducts = [mockProduct, { ...mockProduct, id: "prod-2", slug: "product-2" }];
+
+// Mock crypto.randomUUID
+global.crypto = {
+  randomUUID: jest.fn(() => 'generated-uuid-123'),
+} as any;
 
 describe("productActions", () => {
   beforeEach(() => {
@@ -196,12 +205,25 @@ describe("productActions", () => {
     });
 
     it("should create a product successfully", async () => {
+      // First, test if the data passes validation directly
+      const { productSchema } = require("@/lib/validators/product-validator");
+      const validationTest = productSchema.safeParse(mockProductFormValues);
+      if (!validationTest.success) {
+        console.log("Direct validation failed:", validationTest.error.format());
+      }
+      
       mockSupabaseClient.rpc.mockResolvedValue({
         data: mockProduct,
         error: null,
       });
 
       const result = await createProduct(mockProductFormValues);
+
+      // Debug: Log the result to see what's wrong
+      if (!result.success) {
+        console.log("Test failed with error:", result.error);
+        console.log("Full result:", JSON.stringify(result, null, 2));
+      }
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockProduct);
@@ -282,7 +304,7 @@ describe("productActions", () => {
       expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
         "update_product_with_translations",
         expect.objectContaining({
-          p_id: "prod-1",
+          p_id: "550e8400-e29b-41d4-a716-446655440000",
           p_slug: "test-product",
           p_price: 29.99,
           p_is_active: true,
@@ -344,12 +366,12 @@ describe("productActions", () => {
         error: null,
       });
 
-      const result = await deleteProduct("prod-1");
+      const result = await deleteProduct("550e8400-e29b-41d4-a716-446655440000");
 
       expect(result.success).toBe(true);
       expect(mockSupabaseClient.from).toHaveBeenCalledWith("products");
       expect(mockSupabaseClient.delete).toHaveBeenCalled();
-      expect(mockSupabaseClient.eq).toHaveBeenCalledWith("id", "prod-1");
+      expect(mockSupabaseClient.eq).toHaveBeenCalledWith("id", "550e8400-e29b-41d4-a716-446655440000");
     });
 
     it("should handle empty product ID", async () => {
@@ -370,7 +392,7 @@ describe("productActions", () => {
         error: null,
       });
 
-      const result = await deleteProduct("non-existent");
+      const result = await deleteProduct("550e8400-e29b-41d4-a716-446655440001");
 
       expect(result.success).toBe(true); // Should still succeed even if product not found during fetch
     });

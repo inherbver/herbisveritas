@@ -21,6 +21,12 @@ jest.mock("@/actions/cartActions");
 jest.mock("next/navigation");
 jest.mock("next-intl/server");
 jest.mock("@/lib/core/logger", () => ({
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
   LogUtils: {
     createUserActionContext: jest.fn(() => ({ userId: "user-123" })),
     logOperationStart: jest.fn(),
