@@ -448,6 +448,26 @@ jest.mock("stripe", () => {
   }));
 });
 
+// Mock logger for rate-limit-decorator and other services
+jest.mock("@/lib/core/logger", () => ({
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+  LogUtils: {
+    createUserActionContext: jest.fn((userId, action, resource) => ({
+      userId,
+      action,
+      resource,
+    })),
+    logOperationStart: jest.fn(),
+    logOperationSuccess: jest.fn(),
+    logOperationError: jest.fn(),
+  },
+}));
+
 console.log(
   "Jest setup fully loaded with complete next-intl, Supabase and Stripe mocks",
 );

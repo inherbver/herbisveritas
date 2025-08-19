@@ -41,15 +41,20 @@ const customJestConfig = {
     },
   },
   coverageReporters: ['text', 'lcov', 'html', 'json'],
-  // Parallélisation pour CI
-  maxWorkers: process.env.CI ? '50%' : '100%',
-  // Support pour les shards
-  testTimeout: 30000,
-  // Amélioration des performances en CI
+  // Parallélisation optimisée
+  maxWorkers: process.env.CI ? 1 : '75%',
+  // Timeout réduit pour tests plus rapides
+  testTimeout: 15000,
+  // Cache amélioré pour performances
   cache: true,
   cacheDirectory: '<rootDir>/.jest-cache',
-  // Reporter de base pour le moment
-  reporters: ['default'],
+  // Reporters avec moins de verbosité en CI
+  reporters: process.env.CI ? ['default'] : ['default', 'summary'],
+  // Optimisations de performance
+  clearMocks: true,
+  restoreMocks: true,
+  // Bail on first test failure in CI
+  bail: process.env.CI ? 1 : false,
   // Configuration pour les tests avec MSW
   testEnvironmentOptions: {
     customExportConditions: [''],
