@@ -54,7 +54,8 @@ const mockSupabaseClient: any = {
 };
 
 // Get the mocked stripe instance
-const { stripe: mockStripe } = await import("@/lib/stripe");
+// Use static import instead of dynamic import
+const mockStripe = _stripe as any;
 
 const mockHeaders = {
   get: jest.fn(),

@@ -10,6 +10,16 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testEnvironment: 'jest-environment-jsdom',
+  // Fix ESM module handling
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  transform: {
+    '^.+\.(ts|tsx)$': ['ts-jest', {
+      useESM: true
+    }]
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(.*\.mjs$|uuid|nanoid))'
+  ],
   testPathIgnorePatterns: [
     '<rootDir>/.next/', 
     '<rootDir>/node_modules/', 

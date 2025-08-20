@@ -1,4 +1,5 @@
 import { AuthError } from "@supabase/supabase-js";
+import { AuthErrorTranslationKey } from "@/types/i18n";
 
 /**
  * Mappe les erreurs Supabase vers des clés de traduction spécifiques
@@ -7,7 +8,7 @@ export class AuthErrorMapper {
   /**
    * Mappe une erreur de connexion Supabase vers une clé de traduction
    */
-  static mapLoginError(error: AuthError): string {
+  static mapLoginError(error: AuthError): AuthErrorTranslationKey {
     const message = error.message?.toLowerCase() || "";
 
     // Erreurs spécifiques de Supabase Auth (clés relatives au namespace Auth)
@@ -68,7 +69,7 @@ export class AuthErrorMapper {
   /**
    * Mappe une erreur d'inscription Supabase vers une clé de traduction
    */
-  static mapSignupError(error: AuthError): string {
+  static mapSignupError(error: AuthError): AuthErrorTranslationKey {
     const message = error.message?.toLowerCase() || "";
 
     // Erreurs spécifiques de Supabase Auth (clés relatives au namespace Auth)

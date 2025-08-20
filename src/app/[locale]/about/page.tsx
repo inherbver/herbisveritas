@@ -5,18 +5,22 @@ import { Hero } from "@/components/common/hero"; // Utiliser le Hero partagé av
 import { StorySection } from "@/components/domain/about/story-section"; // Import de la nouvelle section
 import { PhotoGallerySection } from "@/components/domain/about/photo-gallery-section"; // Import de la nouvelle section
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const { locale } = await params;
   const tPage = await getTranslations({ locale, namespace: "AboutPage" });
   console.log(
     "[AboutPage - generateMetadata] Locale:",
     locale,
     "Attempting to get hero.title:",
-    tPage("hero.title")
+    tPage("hero.title"),
   ); // Correction: hero.heading -> hero.title
   console.log(
     "[AboutPage - generateMetadata] Attempting to get sections.values.title:",
-    tPage("sections.values.title")
+    tPage("sections.values.title"),
   );
   return {
     title: tPage("navigation.title"), // Assurez-vous que AboutPage.json a navigation.title
@@ -35,7 +39,7 @@ export default function AboutPage() {
       <Hero
         heading={tHero("title")}
         description={tHero("subtitle")}
-        imageUrl="https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//hero_about.webp"
+        imageUrl={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/about//hero_about.webp`}
         imageAlt={tHero("imageAlt")}
         // ctaLabel={tHero("ctaLabel")} // Décommenter si un CTA est souhaité
         // ctaLink="/products" // Adapter le lien du CTA si besoin

@@ -26,9 +26,33 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Vous pouvez également enregistrer l'erreur dans un service de reporting d'erreurs
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
-    // Exemple: logErrorToMyService(error, errorInfo);
+    // Log comprehensive error information for debugging
+    console.error("ErrorBoundary caught an error:", {
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+      errorInfo: {
+        componentStack: errorInfo.componentStack,
+      },
+      url: typeof window !== "undefined" ? window.location.href : "unknown",
+      userAgent:
+        typeof window !== "undefined" ? window.navigator.userAgent : "unknown",
+      timestamp: new Date().toISOString(),
+    });
+
+    // In production, consider sending to error monitoring service
+    if (
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV === "production"
+    ) {
+      // Example: Send to error monitoring service
+      // window.gtag?.('event', 'exception', {
+      //   description: error.message,
+      //   fatal: false,
+      // });
+    }
   }
 
   private handleReset = () => {
@@ -54,9 +78,16 @@ class ErrorBoundary extends Component<Props, State> {
               <p>Quelque chose s&apos;est mal passé. Veuillez réessayer.</p>
               {/* Affiche l'erreur en développement pour faciliter le débogage */}
               {process.env.NODE_ENV === "development" && this.state.error && (
-                <pre className="mt-2 whitespace-pre-wrap text-xs">{this.state.error.message}</pre>
+                <pre className="mt-2 whitespace-pre-wrap text-xs">
+                  {this.state.error.message}
+                </pre>
               )}
-              <Button onClick={this.handleReset} variant="secondary" size="sm" className="mt-4">
+              <Button
+                onClick={this.handleReset}
+                variant="secondary"
+                size="sm"
+                className="mt-4"
+              >
                 Réessayer
               </Button>
             </AlertDescription>

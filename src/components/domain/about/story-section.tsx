@@ -45,11 +45,11 @@ export const StorySection = () => {
             <figure
               className={cn(
                 "relative aspect-[4/3] overflow-hidden rounded-lg shadow-xl", // Aspect ratio, coins arrondis, ombre
-                "transition-all duration-300 hover:shadow-2xl" // Effet de survol
+                "transition-all duration-300 hover:shadow-2xl", // Effet de survol
               )}
             >
               <Image
-                src="https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about/about_001.webp"
+                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/about/about_001.webp`}
                 alt={t("imageAlt")}
                 fill // 'fill' pour remplir le conteneur parent
                 className="object-cover" // Assure que l'image couvre bien sans se déformer

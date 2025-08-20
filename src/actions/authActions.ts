@@ -27,6 +27,10 @@ import {
 
 // Import pour la gestion améliorée des erreurs d'authentification
 import { AuthErrorMapper } from "@/lib/auth/error-mapper";
+import {
+  getTranslatedErrorMessage,
+  DEFAULT_AUTH_ERROR_MESSAGES,
+} from "@/types/i18n";
 
 // SÉCURITÉ: Rate limiting pour actions d'authentification
 import { withRateLimit } from "@/lib/security/rate-limit-decorator";
@@ -39,13 +43,7 @@ const loginSchema = z.object({
   }),
 });
 
-// --- Types d'Actions --- (Deprecated: use ActionResult<T> instead)
-export interface AuthActionResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-  fieldErrors?: Record<string, string[]>;
-}
+// Note: Using standardized ActionResult<T> from @/lib/core/result
 
 // --- Action de Connexion ---
 export const loginAction = withRateLimit(
@@ -107,27 +105,15 @@ export const loginAction = withRateLimit(
       // Utiliser le mapper pour obtenir un message d'erreur spécifique
       const errorKey = AuthErrorMapper.mapLoginError(error);
 
-      // Essayer d'obtenir le message traduit, avec fallback sur un message générique
-      let specificMessage: string;
-      try {
-        const t = await getTranslations({ locale: "fr", namespace: "Auth" });
-        specificMessage = t(errorKey as any);
-      } catch {
-        // Fallback sur des messages en dur si les traductions échouent
-        const errorMessages: Record<string, string> = {
-          "errors.login.invalidCredentials":
-            "Email ou mot de passe incorrect. Vérifiez vos identifiants et réessayez.",
-          "errors.login.emailNotConfirmed":
-            "Votre email n'est pas encore confirmé. Vérifiez votre boîte de réception.",
-          "errors.login.userNotFound":
-            "Aucun compte trouvé avec cette adresse email.",
-          "errors.login.tooManyRequests":
-            "Trop de tentatives de connexion. Attendez quelques minutes.",
-        };
-        specificMessage =
-          errorMessages[errorKey] ||
-          "Une erreur de connexion s'est produite. Veuillez réessayer.";
-      }
+      // Obtenir le message traduit de manière type-safe
+      const specificMessage = await getTranslatedErrorMessage(
+        async () => {
+          const t = await getTranslations({ locale: "fr", namespace: "Auth" });
+          return t(errorKey);
+        },
+        errorKey,
+        DEFAULT_AUTH_ERROR_MESSAGES,
+      );
 
       // Log l'erreur originale pour le debugging
       LogUtils.logOperationError("login_supabase_error", error, {
@@ -198,7 +184,7 @@ export const signUpAction = withRateLimit(
   "AUTH", // Configuration de rate limiting pour auth
   "signup",
 )(async function signUpAction(
-  prevState: AuthActionResult | undefined,
+  prevState: ActionResult<null> | undefined,
   formData: FormData,
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
@@ -261,27 +247,15 @@ export const signUpAction = withRateLimit(
       // Utiliser le mapper pour obtenir un message d'erreur spécifique
       const errorKey = AuthErrorMapper.mapSignupError(error);
 
-      // Essayer d'obtenir le message traduit, avec fallback sur un message générique
-      let specificMessage: string;
-      try {
-        const t = await getTranslations({ locale, namespace: "Auth" });
-        specificMessage = t(errorKey as any);
-      } catch {
-        // Fallback sur des messages en dur si les traductions échouent
-        const errorMessages: Record<string, string> = {
-          "errors.signup.emailAlreadyRegistered":
-            "Cette adresse email est déjà utilisée. Connectez-vous ou utilisez une autre adresse.",
-          "errors.signup.weakPassword":
-            "Le mot de passe est trop faible. Il doit contenir au moins 8 caractères avec majuscules, minuscules et chiffres.",
-          "errors.signup.invalidEmailFormat":
-            "Le format de l'adresse email n'est pas valide.",
-          "errors.signup.tooManyRequests":
-            "Trop de tentatives d'inscription. Attendez quelques minutes.",
-        };
-        specificMessage =
-          errorMessages[errorKey] ||
-          "Une erreur d'inscription s'est produite. Veuillez réessayer.";
-      }
+      // Obtenir le message traduit de manière type-safe
+      const specificMessage = await getTranslatedErrorMessage(
+        async () => {
+          const t = await getTranslations({ locale, namespace: "Auth" });
+          return t(errorKey);
+        },
+        errorKey,
+        DEFAULT_AUTH_ERROR_MESSAGES,
+      );
 
       // Log l'erreur originale pour le debugging
       LogUtils.logOperationError("signup_supabase_error", error, {
@@ -333,7 +307,7 @@ export const signUpAction = withRateLimit(
 
 // --- Mot de passe oublié ---
 export async function requestPasswordResetAction(
-  prevState: AuthActionResult | undefined,
+  prevState: ActionResult<null> | undefined,
   formData: FormData,
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";
@@ -402,7 +376,7 @@ export async function requestPasswordResetAction(
 }
 
 export async function updatePasswordAction(
-  prevState: AuthActionResult | undefined,
+  prevState: ActionResult<null> | undefined,
   formData: FormData,
 ): Promise<ActionResult<null>> {
   const locale = (formData.get("locale") as string) || "fr";

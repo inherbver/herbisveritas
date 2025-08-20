@@ -9,7 +9,7 @@ global.TextDecoder = TextDecoder as any;
 
 // Variables d'environnement pour les tests
 process.env.NEXT_PUBLIC_SUPABASE_URL =
-  "https://esgirafriwoildqcwtjm.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://test-project.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 process.env.STRIPE_SECRET_KEY = "sk_test_123456789";

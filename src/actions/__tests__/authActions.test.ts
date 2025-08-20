@@ -50,7 +50,9 @@ const mockSupabaseClient = {
 };
 
 (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
-(getTranslations as jest.Mock).mockImplementation(() => Promise.resolve((key: string) => key));
+(getTranslations as jest.Mock).mockImplementation(() =>
+  Promise.resolve((key: string) => key),
+);
 (redirect as jest.Mock).mockImplementation(() => {
   throw new Error("NEXT_REDIRECT");
 });
@@ -96,7 +98,7 @@ describe("authActions", () => {
         email: "test@example.com",
         password: "password123",
       });
-      expect(redirect).toHaveBeenCalledWith("/fr/profile/account");
+      expect(redirect).toHaveBeenCalledWith("/fr/shop");
     });
 
     it("should handle login validation errors", async () => {
@@ -149,7 +151,9 @@ describe("authActions", () => {
         // Expected redirect
       }
 
-      expect(migrateAndGetCart).toHaveBeenCalledWith({ guestUserId: "guest-123" });
+      expect(migrateAndGetCart).toHaveBeenCalledWith({
+        guestUserId: "guest-123",
+      });
     });
   });
 
@@ -176,7 +180,8 @@ describe("authActions", () => {
         email: "test@example.com",
         password: "Password123!",
         options: {
-          emailRedirectTo: "https://example.com/fr/auth/callback?type=signup&next=/fr/shop",
+          emailRedirectTo:
+            "https://example.com/fr/auth/callback?type=signup&next=/fr/shop",
         },
       });
     });
@@ -227,10 +232,11 @@ describe("authActions", () => {
       const result = await requestPasswordResetAction(undefined, formData);
 
       expect(result.success).toBe(true);
-      expect(mockSupabaseClient.auth.resetPasswordForEmail).toHaveBeenCalledWith(
-        "test@example.com",
-        { redirectTo: "https://example.com/fr/update-password" }
-      );
+      expect(
+        mockSupabaseClient.auth.resetPasswordForEmail,
+      ).toHaveBeenCalledWith("test@example.com", {
+        redirectTo: "https://example.com/fr/update-password",
+      });
     });
 
     it("should handle invalid email", async () => {
@@ -334,7 +340,9 @@ describe("authActions", () => {
         expect(error).toEqual(new Error("NEXT_REDIRECT"));
       }
 
-      expect(redirect).toHaveBeenCalledWith("/?logout_error=true&message=Logout%20failed");
+      expect(redirect).toHaveBeenCalledWith(
+        "/?logout_error=true&message=Logout%20failed",
+      );
     });
   });
 });

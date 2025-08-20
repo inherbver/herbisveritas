@@ -30,12 +30,12 @@ export const createSupabaseMock = (overrides: Record<string, unknown> = {}) => {
     delete: jest.fn(),
     order: jest.fn(),
     limit: jest.fn(),
+    single: jest.fn(),
+    maybeSingle: jest.fn(),
   };
 
   const mock = {
     ...chainableMethods,
-    single: jest.fn(),
-    maybeSingle: jest.fn(),
     rpc: jest.fn(),
     auth: {
       admin: {
@@ -52,6 +52,11 @@ export const createSupabaseMock = (overrides: Record<string, unknown> = {}) => {
       (mockMethod as unknown as jest.Mock).mockReturnValue(mock);
     }
   });
+
+  // Set default resolved values for terminating methods
+  mock.single.mockResolvedValue({ data: null, error: null });
+  mock.maybeSingle.mockResolvedValue({ data: null, error: null });
+  mock.rpc.mockResolvedValue({ data: null, error: null });
 
   return mock;
 };

@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Container } from "@/components/layout/container";
 import { Toaster } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/common/error-boundary";
 import "@/app/globals.css";
 
 interface Props {
@@ -23,7 +24,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   if (!locales.includes(currentLocale as Locale)) {
     console.warn(
-      `LocaleLayout: Invalid locale '${currentLocale}' received. Available locales are: ${locales.join(", ")}. Falling back to default locale '${locales[0]}'.`
+      `LocaleLayout: Invalid locale '${currentLocale}' received. Available locales are: ${locales.join(", ")}. Falling back to default locale '${locales[0]}'.`,
     );
     notFound();
   }
@@ -41,10 +42,20 @@ export default async function LocaleLayout({ children, params }: Props) {
   const timeZone = await getTimeZone({ locale: currentLocale });
 
   return (
-    <ClientLayout locale={currentLocale} messages={messages} timeZone={timeZone}>
-      <Header />
-      <Container>{children}</Container>
-      <Footer />
+    <ClientLayout
+      locale={currentLocale}
+      messages={messages}
+      timeZone={timeZone}
+    >
+      <ErrorBoundary>
+        <Header />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <Container>{children}</Container>
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <Footer />
+      </ErrorBoundary>
       <Toaster richColors position="bottom-right" />
     </ClientLayout>
   );

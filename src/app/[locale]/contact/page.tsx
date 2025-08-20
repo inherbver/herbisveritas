@@ -9,7 +9,10 @@ import type { AppPathname } from "@/i18n/navigation";
 import { Mail, Phone, MapPin } from "lucide-react"; // Icônes pour les coordonnées
 import { MarketCalendarView } from "@/components/domain/market/MarketCalendarView"; // Import du nouveau composant calendrier
 import { SocialFollow } from "@/components/domain/social/SocialFollow"; // Import du composant pour les réseaux sociaux
-import { PartnerShopCard, PartnerShop } from "@/components/domain/partner/PartnerShopCard";
+import {
+  PartnerShopCard,
+  PartnerShop,
+} from "@/components/domain/partner/PartnerShopCard";
 import { getPartners } from "@/actions/partnerActions";
 
 type Props = {
@@ -28,16 +31,19 @@ export default async function ContactPage({ params }: Props) {
   const heroProps: HeroProps = {
     heading: t("defaultHeroHeading"),
     description: t("defaultHeroSubheading"),
-    imageUrl:
-      "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/contact//hero_next_market.webp",
+    imageUrl: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/contact//hero_next_market.webp`,
     imageAlt: t("defaultHeroImageAlt"),
   };
 
   if (nextMarket) {
-    const { formatDate: formatDateForHero } = await import("@/lib/market-utils");
+    const { formatDate: formatDateForHero } = await import(
+      "@/lib/market-utils"
+    );
     const formattedDate = formatDateForHero(nextMarket.date, locale);
 
-    heroProps.heading = t("nextMarketHeroHeading", { marketName: nextMarket.name });
+    heroProps.heading = t("nextMarketHeroHeading", {
+      marketName: nextMarket.name,
+    });
     heroProps.description = t("nextMarketHeroSubheading", {
       date: formattedDate,
       city: nextMarket.city,
@@ -45,7 +51,9 @@ export default async function ContactPage({ params }: Props) {
       endTime: nextMarket.endTime,
     });
 
-    heroProps.imageAlt = t("nextMarketHeroImageAlt", { marketName: nextMarket.name });
+    heroProps.imageAlt = t("nextMarketHeroImageAlt", {
+      marketName: nextMarket.name,
+    });
     heroProps.ctaLabel = t("seeAllMarketsButton");
     const targetPath: AppPathname = "/contact";
     heroProps.ctaLink = { pathname: targetPath, hash: "marches" };
@@ -87,7 +95,10 @@ export default async function ContactPage({ params }: Props) {
           </header>
           <address className="grid grid-cols-1 gap-8 not-italic md:grid-cols-3 md:gap-12">
             <article className="flex flex-col items-center text-center">
-              <Mail className="mb-3 h-10 w-10 text-primary" aria-hidden="true" />
+              <Mail
+                className="mb-3 h-10 w-10 text-primary"
+                aria-hidden="true"
+              />
               <h3 className="mb-1 text-xl font-medium">{t("emailTitle")}</h3>
               <a
                 href="mailto:inherbisveritas@gmail.com"
@@ -98,7 +109,10 @@ export default async function ContactPage({ params }: Props) {
               </a>
             </article>
             <article className="flex flex-col items-center text-center">
-              <Phone className="mb-3 h-10 w-10 text-primary" aria-hidden="true" />
+              <Phone
+                className="mb-3 h-10 w-10 text-primary"
+                aria-hidden="true"
+              />
               <h3 className="mb-1 text-xl font-medium">{t("phoneTitle")}</h3>
               <a
                 href="tel:+33638895324"
@@ -109,8 +123,13 @@ export default async function ContactPage({ params }: Props) {
               </a>
             </article>
             <article className="flex flex-col items-center text-center">
-              <MapPin className="mb-3 h-10 w-10 text-primary" aria-hidden="true" />
-              <h3 className="mb-1 text-xl font-medium">{t("headquartersTitle")}</h3>
+              <MapPin
+                className="mb-3 h-10 w-10 text-primary"
+                aria-hidden="true"
+              />
+              <h3 className="mb-1 text-xl font-medium">
+                {t("headquartersTitle")}
+              </h3>
               <address className="not-italic">
                 2105 Route du Thérondel
                 <br />
@@ -121,13 +140,19 @@ export default async function ContactPage({ params }: Props) {
         </section>
 
         {/* ✅ Section 2: Agenda des marchés - Amélioration sémantique */}
-        <section id="marches" className="mb-12 flex flex-col items-center md:mb-16">
+        <section
+          id="marches"
+          className="mb-12 flex flex-col items-center md:mb-16"
+        >
           <header className="mb-8">
             <h2 className="text-center text-3xl font-semibold tracking-tight">
               {t("marketsAgendaTitle")}
             </h2>
           </header>
-          <MarketCalendarView initialMarkets={allSortedMarkets} locale={locale} />
+          <MarketCalendarView
+            initialMarkets={allSortedMarkets}
+            locale={locale}
+          />
         </section>
 
         {/* ✅ Section 3: Partner Shops - Amélioration sémantique */}
@@ -140,7 +165,10 @@ export default async function ContactPage({ params }: Props) {
               {t("partnerShopsSubtitle")}
             </p>
           </header>
-          <section className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2" role="list">
+          <section
+            className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2"
+            role="list"
+          >
             {partners.map((partner) => (
               <article key={partner.name} role="listitem">
                 <PartnerShopCard partner={partner} />
@@ -152,8 +180,12 @@ export default async function ContactPage({ params }: Props) {
         {/* ✅ Section 4: Social Media - Amélioration sémantique */}
         <section id="social-media" className="py-12 text-center">
           <header className="mb-6">
-            <h2 className="text-3xl font-semibold tracking-tight">{t("socialMediaTitle")}</h2>
-            <p className="mb-6 text-lg text-muted-foreground">{t("socialMediaSubtitle")}</p>
+            <h2 className="text-3xl font-semibold tracking-tight">
+              {t("socialMediaTitle")}
+            </h2>
+            <p className="mb-6 text-lg text-muted-foreground">
+              {t("socialMediaSubtitle")}
+            </p>
           </header>
           <SocialFollow />
         </section>

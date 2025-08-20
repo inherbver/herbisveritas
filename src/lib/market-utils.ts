@@ -13,6 +13,7 @@ import {
   getNextUpcomingMarket as getNextUpcomingMarketFromDb,
   getAllMarketsSorted as getAllMarketsSortedFromDb,
 } from "@/lib/markets/queries";
+import { normalizeSupabaseUrls } from "@/lib/utils/supabase-url";
 
 // Legacy imports for backward compatibility (will be removed after migration)
 import recurringMarketsData from "@/data/markets.json";
@@ -36,7 +37,8 @@ function generateMarketInstancesLegacy(): MarketInfo[] {
     while (currentDate <= endDate) {
       if (currentDate.getUTCDay() === dayOfWeek) {
         const isoDate = currentDate.toISOString().split("T")[0];
-        allInstances.push({
+        // Normaliser les URLs Supabase
+        const normalizedMarket = normalizeSupabaseUrls({
           id: `${recurringMarket.id}-${isoDate}`,
           name: recurringMarket.name,
           date: isoDate,
@@ -49,6 +51,7 @@ function generateMarketInstancesLegacy(): MarketInfo[] {
           heroImage: recurringMarket.heroImage,
           image: recurringMarket.image,
         });
+        allInstances.push(normalizedMarket);
       }
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
@@ -63,7 +66,10 @@ const legacyMarketInstances = generateMarketInstancesLegacy();
 /**
  * Formats a date string (YYYY-MM-DD) into a more readable format.
  */
-export function formatDate(dateString: string, locale: string = "fr-FR"): string {
+export function formatDate(
+  dateString: string,
+  locale: string = "fr-FR",
+): string {
   const date = new Date(dateString);
   return date.toLocaleDateString(locale, {
     weekday: "long",
@@ -84,7 +90,10 @@ export async function getNextUpcomingMarket(): Promise<MarketInfo | null> {
     // Try to get from database first
     return await getNextUpcomingMarketFromDb();
   } catch (error) {
-    console.warn("Failed to fetch market from database, falling back to legacy data:", error);
+    console.warn(
+      "Failed to fetch market from database, falling back to legacy data:",
+      error,
+    );
 
     // Fallback to legacy logic
     const now = new Date();
@@ -98,7 +107,9 @@ export async function getNextUpcomingMarket(): Promise<MarketInfo | null> {
           tempDate.setUTCDate(tempDate.getUTCDate() + 1);
           marketEndDateTime = tempDate;
         } else {
-          marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00Z`);
+          marketEndDateTime = new Date(
+            `${marketDateString}T${market.endTime}:00Z`,
+          );
         }
         return marketEndDateTime > now;
       })
@@ -122,7 +133,10 @@ export async function getAllUpcomingMarkets(): Promise<MarketInfo[]> {
     // Try to get from database first
     return await getUpcomingMarkets();
   } catch (error) {
-    console.warn("Failed to fetch markets from database, falling back to legacy data:", error);
+    console.warn(
+      "Failed to fetch markets from database, falling back to legacy data:",
+      error,
+    );
 
     // Fallback to legacy logic
     const now = new Date();
@@ -136,7 +150,9 @@ export async function getAllUpcomingMarkets(): Promise<MarketInfo[]> {
           tempDate.setUTCDate(tempDate.getUTCDate() + 1);
           marketEndDateTime = tempDate;
         } else {
-          marketEndDateTime = new Date(`${marketDateString}T${market.endTime}:00Z`);
+          marketEndDateTime = new Date(
+            `${marketDateString}T${market.endTime}:00Z`,
+          );
         }
         return marketEndDateTime > now;
       })
@@ -157,11 +173,14 @@ export async function getAllMarketsSorted(): Promise<MarketInfo[]> {
     // Try to get from database first
     return await getAllMarketsSortedFromDb();
   } catch (error) {
-    console.warn("Failed to fetch markets from database, falling back to legacy data:", error);
+    console.warn(
+      "Failed to fetch markets from database, falling back to legacy data:",
+      error,
+    );
 
     // Fallback to legacy logic
     return [...legacyMarketInstances].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
   }
 }

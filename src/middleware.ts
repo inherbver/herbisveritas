@@ -10,6 +10,7 @@ import {
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { clearSupabaseCookies } from "@/lib/auth/utils";
 import { type NextRequest, NextResponse } from "next/server";
+import { CSRFProtection } from "@/lib/security/csrf-protection";
 
 const handleI18n = createMiddleware({
   locales,
@@ -78,16 +79,27 @@ export async function middleware(request: NextRequest) {
   let user = null;
   let authTimedOut = false;
 
-  // Fonction helper pour les appels Supabase avec timeout
+  // Fonction helper pour les appels Supabase avec timeout et cleanup
   const supabaseCallWithTimeout = async <T>(
     promise: Promise<T>,
     timeoutMs: number = 3000,
   ): Promise<T> => {
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Supabase_Timeout")), timeoutMs),
-    );
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error("Supabase_Timeout")),
+        timeoutMs,
+      );
+    });
 
-    return Promise.race([promise, timeoutPromise]);
+    try {
+      const result = await Promise.race([promise, timeoutPromise]);
+      clearTimeout(timeoutId);
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   };
 
   try {
@@ -97,20 +109,22 @@ export async function middleware(request: NextRequest) {
     );
 
     if (error) {
-      // Ne log que si ce n'est pas "Auth session missing" qui est normal
-      if (!error.message.includes("Auth session missing")) {
-        console.warn("Supabase auth warning in middleware:", error.message);
-        // Pour d'autres erreurs, log plus détaillé et potentiellement nettoyer les cookies
-        console.error(
-          "Supabase auth error in middleware (not session missing):",
-          error,
-        );
-        // Si l'erreur spécifique est 'user_not_found', cela signifie que le token est invalide ou expiré.
-        // Nous nettoyons les cookies pour forcer une déconnexion propre.
-        if (error.code === "user_not_found") {
-          console.log(
-            "User not found with existing auth token. Clearing cookies.",
-          );
+      // Categorize errors for better handling
+      const isSessionMissing = error.message.includes("Auth session missing");
+      const isUserNotFound = error.code === "user_not_found";
+      const isTokenExpired =
+        error.message.includes("expired") || error.message.includes("invalid");
+
+      if (!isSessionMissing) {
+        console.warn("Supabase auth warning in middleware:", {
+          message: error.message,
+          code: error.code,
+          pathname: pathname,
+        });
+
+        // Clean cookies for invalid/expired tokens to prevent auth loops
+        if (isUserNotFound || isTokenExpired) {
+          console.log("Clearing invalid auth tokens. Error:", error.code);
           clearSupabaseCookies(request, response);
         }
       }
@@ -256,6 +270,37 @@ export async function middleware(request: NextRequest) {
         request.url,
       );
       return NextResponse.redirect(unauthorizedUrl);
+    }
+  }
+
+  // Protection CSRF pour Server Actions et API routes sensibles
+  try {
+    const csrfResponse = await CSRFProtection.middleware(request);
+    if (csrfResponse) {
+      console.warn(
+        `[CSRF] Requête bloquée: ${pathname} - Token invalide ou manquant`,
+      );
+      return csrfResponse;
+    }
+  } catch (error) {
+    console.error("[CSRF] Erreur protection CSRF:", error);
+    // En cas d'erreur CSRF critique, bloquer par sécurité
+    if (
+      CSRFProtection.isServerAction(request) ||
+      CSRFProtection.requiresCSRFProtection(pathname)
+    ) {
+      return new Response(
+        JSON.stringify({
+          error: "CSRF validation failed",
+          code: "CSRF_ERROR",
+        }),
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
     }
   }
 

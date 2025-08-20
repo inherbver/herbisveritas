@@ -23,24 +23,25 @@ export const PhotoGallerySection = () => {
   const t = useTranslations("AboutPage.PhotoGallery");
 
   // Vous remplacerez ces images par les vôtres
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const images: GalleryImage[] = [
     {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//album_01.webp",
+      src: `${supabaseUrl}/storage/v1/object/public/about//album_01.webp`,
       alt: "Image de la galerie 1",
       aspectRatio: "aspect-square",
     },
     {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//album_02.webp",
+      src: `${supabaseUrl}/storage/v1/object/public/about//album_02.webp`,
       alt: "Image de la galerie 2",
       aspectRatio: "aspect-square",
     },
     {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//album_03.webp",
+      src: `${supabaseUrl}/storage/v1/object/public/about//album_03.webp`,
       alt: "Image de la galerie 3",
       aspectRatio: "aspect-square",
     },
     {
-      src: "https://esgirafriwoildqcwtjm.supabase.co/storage/v1/object/public/about//album_04.webp",
+      src: `${supabaseUrl}/storage/v1/object/public/about//album_04.webp`,
       alt: "Image de la galerie 4",
       aspectRatio: "aspect-square",
     },
@@ -63,7 +64,10 @@ export const PhotoGallerySection = () => {
         >
           <CarouselContent>
             {images.map((image, index) => (
-              <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
+              <CarouselItem
+                key={index}
+                className="pl-4 md:basis-1/2 lg:basis-1/3"
+              >
                 <div className="p-1">
                   <Card className="overflow-hidden">
                     {" "}

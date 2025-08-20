@@ -5,7 +5,7 @@ import ImageMinimizerPlugin from "image-minimizer-webpack-plugin";
 
 const withNextIntl = createNextIntlPlugin(
   // Chemin spécifique vers notre fichier i18n
-  "./src/i18n.ts"
+  "./src/i18n.ts",
 );
 
 const withMDX = createMDX({
@@ -56,30 +56,35 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          // Désactiver temporairement le CSP en développement pour debug
-          ...(isDev
-            ? []
-            : [
-                {
-                  key: "Content-Security-Policy",
-                  value: [
-                    // CSP strict en production seulement
-                    "default-src 'self'",
-                    "script-src 'self' 'unsafe-eval' 'unsafe-inline' js.stripe.com ws.colissimo.fr",
-                    "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
-                    "img-src 'self' data: https: blob:",
-                    "font-src 'self' fonts.gstatic.com",
-                    "connect-src 'self' https://*.supabase.co wss://*.supabase.co *.supabase.com esgirafriwoildqcwtjm.supabase.co api.stripe.com vitals.vercel-insights.com ws.colissimo.fr api-adresse.data.gouv.fr *.vercel.app",
-                    "frame-src js.stripe.com",
-                    "worker-src 'self' blob:",
-                    "object-src 'none'",
-                    "base-uri 'self'",
-                    "form-action 'self'",
-                    "frame-ancestors 'none'",
-                    "upgrade-insecure-requests",
-                  ].join("; "),
-                },
-              ]),
+          // CSP progressif - plus restrictif en production, permissif mais sécurisé en dev
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              // Script restrictions - remove unsafe-eval in production
+              isDev
+                ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' js.stripe.com ws.colissimo.fr"
+                : "script-src 'self' 'nonce-{NONCE}' js.stripe.com ws.colissimo.fr",
+              // Style restrictions - use nonces in production
+              isDev
+                ? "style-src 'self' 'unsafe-inline' fonts.googleapis.com"
+                : "style-src 'self' 'nonce-{NONCE}' fonts.googleapis.com",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' fonts.gstatic.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co *.supabase.com esgirafriwoildqcwtjm.supabase.co api.stripe.com vitals.vercel-insights.com ws.colissimo.fr api-adresse.data.gouv.fr *.vercel.app",
+              "frame-src js.stripe.com",
+              "worker-src 'self' blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests",
+              // Add report directive for CSP violations
+              isDev ? "" : "report-uri /api/security/csp-report",
+            ]
+              .filter(Boolean)
+              .join("; "),
+          },
         ],
       },
     ];
@@ -98,7 +103,9 @@ const nextConfig = {
 
     // Ignorer certains warnings en développement
     if (dev && !isServer) {
-      config.ignoreWarnings = [{ message: /unreachable code after return statement/ }];
+      config.ignoreWarnings = [
+        { message: /unreachable code after return statement/ },
+      ];
     }
 
     // Optimisation des images en production
@@ -120,7 +127,7 @@ const nextConfig = {
               ],
             },
           },
-        })
+        }),
       );
     }
 
