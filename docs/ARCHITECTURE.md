@@ -1,4 +1,369 @@
-# Documentation Technique - HerbisVeritas
+# Architecture HerbisVeritas E-commerce
+
+Guide technique complet de l'architecture et des patterns utilisés  
+Date de mise à jour : 19 août 2025
+
+## Vue d'ensemble
+
+HerbisVeritas est une plateforme e-commerce moderne construite avec une Clean Architecture et des technologies de pointe pour garantir performance, maintenabilité et évolutivité.
+
+### Stack Technologique
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend       │    │   Database      │
+│                 │    │                 │    │                 │
+│ Next.js 15      │◄──►│ Server Actions  │◄──►│ Supabase        │
+│ TypeScript      │    │ Zod Validation  │    │ PostgreSQL      │
+│ Tailwind CSS    │    │ Stripe          │    │ RLS Policies    │
+│ shadcn/ui       │    │ Next-intl       │    │ Auth System     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 🏛️ Architecture Layers
+
+### 1. **Présentation Layer** - Interface Utilisateur
+
+```typescript
+src/
+├── app/[locale]/          # Pages Next.js 15 avec App Router
+├── components/
+│   ├── ui/                # Composants shadcn/ui
+│   ├── common/            # Composants réutilisables
+│   ├── features/          # Composants métier
+│   └── layout/            # Navigation et mise en page
+```
+
+**Principles** :
+
+- **Server Components par défaut** - Performance optimisée
+- **Client Components** uniquement si interactivité requise
+- **Composition over Inheritance** - Composants modulaires
+- **Props drilling évité** avec Zustand pour l'état global
+
+### 2. **Business Logic Layer** - Règles Métier
+
+```typescript
+src/
+├── actions/               # Server Actions Next.js
+├── services/              # Services métier
+├── lib/
+│   ├── validators/        # Schémas Zod
+│   └── types/            # Définitions TypeScript
+```
+
+**Patterns utilisés** :
+
+- **Result Pattern** pour la gestion d'erreurs
+- **Repository Pattern** pour l'abstraction des données
+- **Factory Pattern** pour la création d'objets complexes
+- **Strategy Pattern** pour les différents moyens de paiement
+
+### 3. **Data Access Layer** - Accès aux Données
+
+```typescript
+src/
+├── lib/
+│   ├── supabase/          # Clients et requêtes
+│   │   ├── client.ts      # Client côté navigateur
+│   │   ├── server.ts      # Client côté serveur
+│   │   └── admin.ts       # Client administrateur
+│   └── stripe/            # API Stripe
+```
+
+**Caractéristiques** :
+
+- **Row Level Security (RLS)** pour la sécurité
+- **Type Safety** avec génération automatique des types
+- **Connection Pooling** optimisé
+- **Query Optimization** avec index appropriés
+
+## 🔄 Data Flow Architecture
+
+### Flux de données typique :
+
+1. **User Input** → Form/Component
+2. **Validation** → Zod Schema
+3. **Server Action** → Business Logic
+4. **Service Layer** → Data Operations
+5. **Database** → Supabase with RLS
+6. **Response** → Result Pattern
+7. **UI Update** → Optimistic Updates
+
+## 🛡️ Sécurité Architecture
+
+### Authentification & Autorisation
+
+```typescript
+// Middleware de sécurité
+export async function middleware(request: NextRequest) {
+  // 1. Authentification Supabase
+  const { user } = await supabase.auth.getUser();
+
+  // 2. Autorisation basée sur les rôles
+  const adminCheck = await checkAdminRole(user.id);
+
+  // 3. Protection CSRF
+  const csrfValid = await CSRFProtection.validateToken(request);
+
+  // 4. Rate Limiting
+  await rateLimitCheck(user.id);
+}
+```
+
+### Layers de Sécurité
+
+1. **Network Level** : HTTPS, CORS, CSP
+2. **Application Level** : CSRF, Rate Limiting, Input Sanitization
+3. **Database Level** : RLS Policies, Constraints
+4. **Authentication** : JWT, Refresh Tokens
+5. **Audit** : Security Events Logging
+
+## 📱 State Management Architecture
+
+### Zustand Stores Pattern
+
+```typescript
+// Pattern de store typique
+interface CartStore {
+  // State
+  items: CartItem[];
+  isLoading: boolean;
+
+  // Actions
+  addItem: (item: CartItem) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
+  clear: () => Promise<void>;
+
+  // Computed
+  total: number;
+  itemCount: number;
+}
+
+// Implémentation avec optimistic updates
+const useCartStore = create<CartStore>((set, get) => ({
+  items: [],
+  isLoading: false,
+
+  addItem: async (item) => {
+    // Optimistic update
+    set((state) => ({ items: [...state.items, item] }));
+
+    try {
+      await addItemToCart(item);
+    } catch (error) {
+      // Rollback on error
+      set((state) => ({
+        items: state.items.filter((i) => i.id !== item.id),
+      }));
+      throw error;
+    }
+  },
+
+  get total() {
+    return get().items.reduce((sum, item) => sum + item.total, 0);
+  },
+}));
+```
+
+## 🚀 Performance Architecture
+
+### Optimisations Implémentées
+
+1. **Next.js 15 Optimizations**
+   - Server Components pour réduire le JavaScript côté client
+   - Streaming pour le loading progressif
+   - Image Optimization avec WebP/AVIF
+
+2. **Database Optimizations**
+
+   ```sql
+   -- Index critiques pour les requêtes fréquentes
+   CREATE INDEX CONCURRENTLY idx_products_active_created
+   ON products(is_active, created_at DESC)
+   WHERE is_active = true;
+
+   -- Vues optimisées pour éviter les requêtes N+1
+   CREATE VIEW cart_with_product_details AS
+   SELECT ci.*, p.name, p.price, (ci.quantity * p.price) as line_total
+   FROM cart_items ci
+   JOIN products p ON ci.product_id = p.id;
+   ```
+
+3. **Client-Side Optimizations**
+   - Code Splitting automatique
+   - Lazy Loading des composants
+   - Memoization avec React.memo
+
+### Métriques de Performance
+
+- **LCP (Largest Contentful Paint)** : < 2.5s
+- **FID (First Input Delay)** : < 100ms
+- **CLS (Cumulative Layout Shift)** : < 0.1
+- **Time to Interactive** : < 3s
+
+## 🧪 Testing Architecture
+
+### Stratégie de Test
+
+```typescript
+src/
+├── __tests__/             # Tests d'intégration
+├── components/            # Tests unitaires composants
+├── actions/__tests__/     # Tests Server Actions
+├── services/__tests__/    # Tests services métier
+└── test-utils/           # Utilitaires de test
+    ├── factories/        # Data factories
+    ├── mocks/           # Mocks consolidés
+    └── helpers/         # Test helpers
+```
+
+### Types de Tests
+
+1. **Unit Tests** - Logique métier isolée
+2. **Integration Tests** - Flux de données complets
+3. **E2E Tests** - Parcours utilisateur avec Playwright
+4. **Security Tests** - Tests de sécurité automatisés
+
+## 🌐 Internationalization Architecture
+
+### Structure i18n
+
+```typescript
+src/
+├── i18n/
+│   ├── config.ts          # Configuration next-intl
+│   └── messages/
+│       ├── fr/            # Français (défaut)
+│       ├── en/            # Anglais
+│       ├── de/            # Allemand
+│       └── es/            # Espagnol
+```
+
+### Pattern d'utilisation
+
+```typescript
+// Server Component
+import { getTranslations } from 'next-intl/server';
+
+export default async function ProductPage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations('ProductPage');
+
+  return <h1>{t('title')}</h1>;
+}
+
+// Client Component
+import { useTranslations } from 'next-intl';
+
+export function ProductCard() {
+  const t = useTranslations('ProductCard');
+
+  return <button>{t('addToCart')}</button>;
+}
+```
+
+## 🔧 Development Patterns
+
+### Error Handling Pattern
+
+```typescript
+// Result Pattern pour la gestion d'erreurs
+type Result<T> =
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error: string;
+      code?: string;
+    };
+
+// Utilisation
+export async function createOrder(data: OrderData): Promise<Result<Order>> {
+  try {
+    // Validation
+    const validData = orderSchema.parse(data);
+
+    // Business logic
+    const order = await orderService.create(validData);
+
+    return { success: true, data: order };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      code: error.code,
+    };
+  }
+}
+```
+
+### Service Pattern
+
+```typescript
+// Service abstrait de base
+export abstract class BaseService<T, CreateT, UpdateT> {
+  abstract create(data: CreateT): Promise<Result<T>>;
+  abstract findById(id: string): Promise<Result<T>>;
+  abstract update(id: string, data: UpdateT): Promise<Result<T>>;
+  abstract delete(id: string): Promise<Result<void>>;
+}
+
+// Implémentation concrète
+export class ProductService extends BaseService<
+  Product,
+  CreateProduct,
+  UpdateProduct
+> {
+  async create(data: CreateProduct): Promise<Result<Product>> {
+    // Implémentation spécifique
+  }
+}
+```
+
+## 📦 Deployment Architecture
+
+### Environnements
+
+- **Development** : Local avec Supabase local
+- **Staging** : Vercel Preview avec Supabase staging
+- **Production** : Vercel Production avec Supabase production
+
+## 🔮 Évolutions Futures
+
+### Architectures Envisagées
+
+1. **Microservices** - Pour la montée en charge
+2. **Event Sourcing** - Pour l'audit complet
+3. **CQRS** - Pour la séparation lecture/écriture
+4. **GraphQL** - Pour l'API unifiée
+
+### Migrations Planifiées
+
+- Migration vers **Next.js 16** dès disponibilité
+- Adoption de **React Server Actions** avancées
+- Intégration **Supabase Edge Functions** pour la logique métier
+- **PWA** pour l'expérience mobile native
+
+---
+
+## 🏆 Conclusion
+
+Cette architecture moderne garantit :
+
+- ✅ **Performance** optimale avec Server Components
+- ✅ **Sécurité** enterprise-grade avec RLS et CSRF
+- ✅ **Maintenabilité** avec Clean Architecture
+- ✅ **Évolutivité** pour la croissance future
+- ✅ **Developer Experience** avec TypeScript strict
+
+L'architecture est prête pour une montée en charge significative tout en maintenant la qualité et la sécurité.
+
+---
+
+_Document maintenu par l'équipe technique HerbisVeritas_
 
 ## Vue d'ensemble
 

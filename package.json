@@ -34,7 +34,13 @@
     "security:validate-keys": "tsx scripts/security/validate-supabase-keys.ts",
     "security:apply-rate-limiting": "tsx scripts/maintenance/apply-rate-limiting.ts",
     "security:validate-rate-limiting": "tsx scripts/maintenance/apply-rate-limiting.ts --validate-only",
-    "security:full-audit": "npm run security:validate-keys && npm run security:validate-rate-limiting && echo 'Audit sécurité terminé'"
+    "security:audit": "tsx scripts/security/security-audit.ts",
+    "security:full-audit": "npm run security:validate-keys && npm run security:audit && echo 'Audit sécurité terminé'",
+    "maintenance:cleanup-guest-carts": "tsx scripts/maintenance/cleanup-guest-carts.ts",
+    "maintenance:cleanup-guest-carts:preview": "tsx scripts/maintenance/cleanup-guest-carts.ts --preview",
+    "maintenance:cleanup-guest-carts:dry-run": "tsx scripts/maintenance/cleanup-guest-carts.ts --dry-run",
+    "maintenance:performance-monitor": "tsx scripts/maintenance/performance-monitor.ts",
+    "maintenance:full": "npm run maintenance:cleanup-guest-carts:dry-run && npm run maintenance:performance-monitor && echo 'Maintenance terminée'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -84,11 +90,13 @@
     "@tiptap/pm": "^3.0.7",
     "@tiptap/react": "^3.0.7",
     "@tiptap/starter-kit": "^3.0.7",
+    "@types/dompurify": "^3.0.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.9.4",
+    "isomorphic-dompurify": "^2.26.0",
     "jquery": "^3.7.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.503.0",
