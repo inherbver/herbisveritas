@@ -1,7 +1,7 @@
 // src/components/layout/header-client.tsx
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import React, { useEffect, useState, useCallback } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Session } from "@supabase/supabase-js";
@@ -24,7 +24,11 @@ import {
 import { Menu, Info } from "lucide-react";
 import { CartSheet } from "@/components/features/shop/cart-sheet";
 import { cn } from "@/utils/cn";
-import { useSafeTranslations, useSafePathname, useSafeRouter } from "@/hooks/use-safe-intl";
+import {
+  useSafeTranslations,
+  useSafePathname,
+  useSafeRouter,
+} from "@/hooks/use-safe-intl";
 import LocaleSwitcher from "./locale-switcher";
 import { useScroll } from "@/hooks/use-scroll";
 import { motion } from "framer-motion";
@@ -67,14 +71,14 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
   const refreshSession = useCallback(async () => {
     try {
       // Ajouter un timeout pour éviter les blocages
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Session_Timeout")), 3000)
+        setTimeout(() => reject(new Error("Session_Timeout")), 3000),
       );
 
       const sessionPromise = supabase.auth.getSession();
@@ -83,9 +87,14 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
         data: { session: currentSession },
       } = await Promise.race([sessionPromise, timeoutPromise]);
 
-      setAuthState((prev) => ({ ...prev, session: currentSession, isLoading: false }));
+      setAuthState((prev) => ({
+        ...prev,
+        session: currentSession,
+        isLoading: false,
+      }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An unknown error occurred";
 
       // Gestion silencieuse des erreurs réseau temporaires
       if (
@@ -96,13 +105,18 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
       ) {
         console.warn(
           "HeaderClient: Network/timeout error during session refresh - continuing silently:",
-          errorMessage
+          errorMessage,
         );
         // Ne pas afficher d'erreur, juste marquer comme pas loading
         setAuthState((prev) => ({ ...prev, isLoading: false }));
       } else {
         console.error("Error refreshing session:", errorMessage);
-        setAuthState((prev) => ({ ...prev, session: null, isLoading: false, error: errorMessage }));
+        setAuthState((prev) => ({
+          ...prev,
+          session: null,
+          isLoading: false,
+          error: errorMessage,
+        }));
       }
     }
   }, [supabase]);
@@ -110,14 +124,16 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
   useEffect(() => {
     refreshSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log("Auth state changed:", event, !!newSession);
-      setAuthState({ session: newSession, isLoading: false });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        console.log("Auth state changed:", event, !!newSession);
+        setAuthState({ session: newSession, isLoading: false });
 
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-        setTimeout(() => router?.refresh(), 100);
-      }
-    });
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          setTimeout(() => router?.refresh(), 100);
+        }
+      },
+    );
 
     return () => {
       authListener?.subscription.unsubscribe();
@@ -144,7 +160,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
         "sticky top-0 z-50 w-full transition-colors duration-300",
         scrolled
           ? "border-border/40 bg-background/80 dark:bg-background/90 dark:border-foreground/10 shadow-md backdrop-blur-md"
-          : "border-b border-transparent"
+          : "border-b border-transparent",
       )}
     >
       {/* 1. Barre d'annonce (Optionnelle) */}
@@ -158,7 +174,10 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
         <div className="flex items-center gap-6">
           <Logo />
           {/* 4. Navigation Principale (Desktop) */}
-          <NavigationMenu className="hidden md:flex" data-testid="main-navigation">
+          <NavigationMenu
+            className="hidden md:flex"
+            data-testid="main-navigation"
+          >
             <NavigationMenuList>
               {navLinks.map((link) => {
                 const isActive = pathname === link.href;
@@ -169,7 +188,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-                        isActive ? "text-primary" : "text-foreground/80"
+                        isActive ? "text-primary" : "text-foreground/80",
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
@@ -212,7 +231,11 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
               </Link>
               {isAdmin && (
                 <Link href="/admin" data-testid="admin-link">
-                  <Button variant="secondary" size="sm" data-testid="admin-button">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    data-testid="admin-button"
+                  >
                     Admin
                   </Button>
                 </Link>
@@ -225,7 +248,12 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                   {tGlobal("Header.login")}
                 </Link>
               </Button>
-              <Button asChild variant="primary" size="sm" className="rounded-2xl">
+              <Button
+                asChild
+                variant="primary"
+                size="sm"
+                className="rounded-2xl"
+              >
                 <Link href="/register">{tGlobal("Header.register")}</Link>
               </Button>
             </>
@@ -247,7 +275,9 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                 className="hover:bg-accent/50 min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95"
               >
                 <Menu className="h-6 w-6" />
-                <span className="sr-only">{tGlobal("Header.mobileMenuAriaLabel")}</span>
+                <span className="sr-only">
+                  {tGlobal("Header.mobileMenuAriaLabel")}
+                </span>
               </Button>
             </SheetTrigger>
             <SheetContent
@@ -262,7 +292,9 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                 <SheetTitle className="text-2xl font-bold">
                   {tGlobal("Header.mobileSheetTitle")}
                 </SheetTitle>{" "}
-                <SheetDescription>{tGlobal("Header.mobileSheetDescription")}</SheetDescription>{" "}
+                <SheetDescription>
+                  {tGlobal("Header.mobileSheetDescription")}
+                </SheetDescription>{" "}
               </SheetHeader>
               <nav className="flex flex-col gap-4 px-4">
                 {navLinks.map((link) => {
@@ -275,7 +307,7 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                           "active:bg-accent/80 flex min-h-[44px] touch-manipulation items-center rounded-md px-4 py-4 text-base font-medium transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground",
                           isActive
                             ? "bg-primary/10 border-l-4 border-primary font-semibold text-primary"
-                            : "text-foreground/80"
+                            : "text-foreground/80",
                         )}
                         aria-current={isActive ? "page" : undefined}
                       >
@@ -307,9 +339,11 @@ export function HeaderClient({ isAdmin }: HeaderClientProps) {
                             "active:bg-accent/80 -mx-3 block flex min-h-[44px] touch-manipulation items-center rounded-lg px-4 py-4 text-base font-semibold leading-7 transition-all duration-200 active:scale-[0.98] hover:bg-accent hover:text-accent-foreground",
                             pathname.startsWith("/admin")
                               ? "bg-primary/10 border-l-4 border-primary text-primary"
-                              : "text-foreground/80"
+                              : "text-foreground/80",
                           )}
-                          aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+                          aria-current={
+                            pathname.startsWith("/admin") ? "page" : undefined
+                          }
                         >
                           Admin
                         </Link>

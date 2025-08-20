@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { Instagram, Facebook } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { motion, useInView } from "framer-motion";
 import { NewsletterSignupForm } from "@/components/features/newsletter/newsletter-signup-form";
 
@@ -12,7 +12,11 @@ const socialLinks = [
     href: "https://www.instagram.com/in_herbis_veritas/?utm_source=ig_web_button_share_sheet",
     icon: Instagram,
   },
-  { name: "Facebook", href: "https://www.facebook.com/in.herbis.veritas", icon: Facebook },
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/in.herbis.veritas",
+    icon: Facebook,
+  },
 ];
 
 const navigationLinks = [
@@ -61,10 +65,12 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-y-10 md:grid-cols-3 md:gap-x-8">
           {/* Brand & Description Column */}
           <div className="space-y-4">
-            <h2 className="font-serif text-2xl font-medium text-primary">In Herbis Veritas</h2>
+            <h2 className="font-serif text-2xl font-medium text-primary">
+              In Herbis Veritas
+            </h2>
             <p className="text-foreground/80 text-sm">
-              Des tisanes biologiques d'exception, cultivées avec passion pour votre bien-être au
-              quotidien.
+              Des tisanes biologiques d'exception, cultivées avec passion pour
+              votre bien-être au quotidien.
             </p>
           </div>
 
@@ -105,9 +111,12 @@ export function Footer() {
           {/* Newsletter & Social Column */}
           <div className="space-y-8 md:col-span-1">
             <div>
-              <h3 className="font-semibold text-foreground">Restons en contact</h3>
+              <h3 className="font-semibold text-foreground">
+                Restons en contact
+              </h3>
               <p className="text-foreground/80 mt-2 text-sm">
-                Inscrivez-vous à notre newsletter pour des offres exclusives et nos nouveautés.
+                Inscrivez-vous à notre newsletter pour des offres exclusives et
+                nos nouveautés.
               </p>
               <NewsletterSignupForm variant="inline" className="mt-4" />
             </div>
@@ -131,7 +140,8 @@ export function Footer() {
         {/* Copyright Bar */}
         <div className="border-border/20 mt-16 border-t pt-8">
           <p className="text-foreground/70 text-xs">
-            © {new Date().getFullYear()} In Herbis Veritas. Tous droits réservés.
+            © {new Date().getFullYear()} In Herbis Veritas. Tous droits
+            réservés.
           </p>
         </div>
       </div>

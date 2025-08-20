@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { usePathname } from "next/navigation";
 import { Home, ShoppingBag, ShoppingCart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,11 +18,16 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const t = useTranslations("Global");
   const cartItems = useCartStore((state) => state.items);
-  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const cartItemCount = cartItems.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
 
   // Hide on certain pages
   const shouldHide =
-    pathname.includes("/checkout") || pathname.includes("/login") || pathname.includes("/register");
+    pathname.includes("/checkout") ||
+    pathname.includes("/login") ||
+    pathname.includes("/register");
 
   if (shouldHide) return null;
 
@@ -58,7 +63,8 @@ export function MobileBottomNav() {
       <div className="pb-safe flex h-16 items-center justify-around px-2">
         {navItems.map((item) => {
           const isActive =
-            pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href));
 
           return (
             <Link
@@ -68,7 +74,7 @@ export function MobileBottomNav() {
                 "flex min-h-[44px] flex-1 touch-manipulation flex-col items-center justify-center rounded-lg px-1 py-2 transition-colors active:scale-95",
                 isActive
                   ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground dark:text-muted-foreground dark:hover:bg-[var(--surface-elevated)] dark:hover:text-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground dark:text-muted-foreground dark:hover:bg-[var(--surface-elevated)] dark:hover:text-foreground",
               )}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
@@ -95,7 +101,9 @@ export function MobileBottomNavSpacer() {
 
   // Hide on certain pages
   const shouldHide =
-    pathname.includes("/checkout") || pathname.includes("/login") || pathname.includes("/register");
+    pathname.includes("/checkout") ||
+    pathname.includes("/login") ||
+    pathname.includes("/register");
 
   if (shouldHide) return null;
 
