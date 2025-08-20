@@ -35,10 +35,10 @@ export function useAuthCartSync() {
             cartResult.data.items.length,
             "items",
           );
-          setItems(cartResult.data.items);
+          setItems(cartResult.data.items, true, "auth-sync-load");
         } else {
           console.log(`No cart data for user (${eventType})`);
-          setItems([]);
+          setItems([], true, "auth-sync-empty");
         }
       } catch (error) {
         console.error(`Error loading cart after ${eventType}:`, error);
@@ -67,12 +67,10 @@ export function useAuthCartSync() {
       // Si l'utilisateur se connecte, recharger le panier depuis le serveur
       else if (event === "SIGNED_IN" && session) {
         console.log(
-          "useAuthCartSync - User signed in. Force reloading cart from server...",
+          "useAuthCartSync - User signed in. Loading cart from server...",
         );
-        // Utiliser forceReloadFromServer pour garantir le rechargement immédiat
-        setTimeout(async () => {
-          await forceReloadFromServer();
-        }, 100); // Très court délai pour laisser la redirection se faire
+        // Synchronisation immédiate et directe
+        await loadCartFromServer("SIGNED_IN");
       }
       // Token refreshed - recharger seulement si le panier est vide
       else if (event === "TOKEN_REFRESHED" && session) {
@@ -89,19 +87,15 @@ export function useAuthCartSync() {
         console.log(
           "useAuthCartSync - Initial session detected with authenticated user.",
         );
-        // Attendre un peu pour laisser les autres composants se stabiliser
-        setTimeout(async () => {
-          if (currentItems.length === 0) {
-            console.log(
-              "useAuthCartSync - Loading initial cart from server...",
-            );
-            await loadCartFromServer("INITIAL_SESSION");
-          } else {
-            console.log(
-              "useAuthCartSync - Cart already has items, skipping initial load.",
-            );
-          }
-        }, 500);
+        // Vérification immédiate du panier sans délai arbitraire
+        if (currentItems.length === 0) {
+          console.log("useAuthCartSync - Loading initial cart from server...");
+          await loadCartFromServer("INITIAL_SESSION");
+        } else {
+          console.log(
+            "useAuthCartSync - Cart already has items, skipping initial load.",
+          );
+        }
       }
     });
 

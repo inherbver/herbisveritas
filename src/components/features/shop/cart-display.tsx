@@ -48,13 +48,34 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
       return;
     }
 
+    // Optimistic update - retirer l'item immédiatement
+    const currentItems = useCartStore.getState().items;
+    const currentVersion = useCartStore.getState().getUpdateVersion();
+    const optimisticItems = currentItems.filter(
+      (item) => item.id !== cartItemId,
+    );
+    useCartStore
+      .getState()
+      ._setItems(optimisticItems, true, "cart-display-remove-optimistic");
+
     const actionInput: RemoveFromCartInput = { cartItemId };
-    const result: CartActionResult<CartData | null> = await removeItemFromCart(actionInput);
+    const result: CartActionResult<CartData | null> =
+      await removeItemFromCart(actionInput);
 
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemRemovedSuccess"));
       if (result.data?.items) {
-        useCartStore.getState()._setItems(result.data.items);
+        // Force la mise à jour avec les données du serveur
+        const serverVersion = useCartStore.getState().getUpdateVersion();
+        // Ne mettre à jour que si la version n'a pas changé depuis notre update optimiste
+        if (serverVersion === currentVersion + 1) {
+          useCartStore
+            .getState()
+            ._setItems(result.data.items, true, "cart-display-remove-server");
+        } else {
+          // Une autre mise à jour a eu lieu, forcer le rechargement
+          useCartStore.getState().forceReloadFromServer();
+        }
       }
     } else {
       // Gestion spéciale pour les erreurs d'authentification
@@ -64,21 +85,33 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
         result.message?.includes("User identification failed");
 
       if (isAuthError) {
-        console.warn("User not authenticated during remove operation. Clearing cart.");
+        console.warn(
+          "User not authenticated during remove operation. Clearing cart.",
+        );
         useCartStore.getState().clearCart();
         toast.info(
-          tGlobal("Cart.sessionExpired") || "Votre session a expiré. Le panier a été vidé."
+          tGlobal("Cart.sessionExpired") ||
+            "Votre session a expiré. Le panier a été vidé.",
         );
       } else {
+        // Rollback en cas d'erreur non-auth
+        useCartStore
+          .getState()
+          ._setItems(currentItems, true, "cart-display-remove-rollback");
         toast.error(result.message || tGlobal("genericError"));
       }
     }
     // Reset loading state if implemented
   };
 
-  const handleUpdateItemQuantity = async (cartItemId: string, newQuantity: number) => {
+  const handleUpdateItemQuantity = async (
+    cartItemId: string,
+    newQuantity: number,
+  ) => {
     const logPrefix = `[CartDisplay handleUpdateItemQuantity ${new Date().toISOString()}]`;
-    console.log(`${logPrefix} CALLED with cartItemId: ${cartItemId}, newQuantity: ${newQuantity}`);
+    console.log(
+      `${logPrefix} CALLED with cartItemId: ${cartItemId}, newQuantity: ${newQuantity}`,
+    );
 
     if (!cartItemId) {
       console.error(`${logPrefix} cartItemId is MISSING.`);
@@ -88,7 +121,9 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
 
     // Validation côté client
     if (newQuantity < 0) {
-      console.warn(`${logPrefix} Invalid quantity: ${newQuantity}. Must be >= 0.`);
+      console.warn(
+        `${logPrefix} Invalid quantity: ${newQuantity}. Must be >= 0.`,
+      );
       toast.error("La quantité doit être positive ou nulle.");
       return;
     }
@@ -97,39 +132,69 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
     const currentItems = useCartStore.getState().items;
     const previousState = [...currentItems]; // Deep copy pour éviter les mutations
 
-    console.log(`${logPrefix} Current state saved (${previousState.length} items)`);
+    console.log(
+      `${logPrefix} Current state saved (${previousState.length} items)`,
+    );
 
     // 2. OPTIMISTIC UPDATE - Mettre à jour l'UI immédiatement
     const optimisticItems = currentItems
-      .map((item) => (item.id === cartItemId ? { ...item, quantity: newQuantity } : item))
+      .map((item) =>
+        item.id === cartItemId ? { ...item, quantity: newQuantity } : item,
+      )
       .filter((item) => item.quantity > 0); // Retirer si quantity <= 0
 
-    useCartStore.getState()._setItems(optimisticItems);
+    const currentVersion = useCartStore.getState().getUpdateVersion();
+    useCartStore
+      .getState()
+      ._setItems(optimisticItems, true, "cart-display-quantity-optimistic");
     console.log(
-      `${logPrefix} Applied optimistic update (${optimisticItems.length} items after update)`
+      `${logPrefix} Applied optimistic update (${optimisticItems.length} items after update, v${currentVersion + 1})`,
     );
 
     // 3. APPELER L'ACTION SERVEUR
-    const actionInput: UpdateCartItemQuantityInput = { cartItemId, quantity: newQuantity };
+    const actionInput: UpdateCartItemQuantityInput = {
+      cartItemId,
+      quantity: newQuantity,
+    };
     console.log(
       `${logPrefix} Calling server action with input:`,
-      JSON.stringify(actionInput, null, 2)
+      JSON.stringify(actionInput, null, 2),
     );
 
     try {
       const result: CartActionResult<CartData | null> =
         await updateCartItemQuantityAction(actionInput);
-      console.log(`${logPrefix} Received response from server action. Success: ${result.success}`);
+      console.log(
+        `${logPrefix} Received response from server action. Success: ${result.success}`,
+      );
 
       if (isSuccessResult(result)) {
         // 3a. SUCCÈS - Synchroniser avec les données serveur
         if (result.data?.items) {
           console.log(
-            `${logPrefix} Server action SUCCESS. Syncing with server data (${result.data.items.length} items)`
+            `${logPrefix} Server action SUCCESS. Syncing with server data (${result.data.items.length} items)`,
           );
-          useCartStore.getState()._setItems(result.data.items);
+          const serverVersion = useCartStore.getState().getUpdateVersion();
+          // Vérifier que notre update optimiste est toujours la dernière
+          if (serverVersion === currentVersion + 1) {
+            useCartStore
+              .getState()
+              ._setItems(
+                result.data.items,
+                true,
+                "cart-display-quantity-server",
+              );
+          } else {
+            // Une autre mise à jour a eu lieu, forcer le rechargement
+            console.log(
+              `${logPrefix} Version mismatch (expected v${currentVersion + 1}, got v${serverVersion}), forcing reload`,
+            );
+            useCartStore.getState().forceReloadFromServer();
+          }
         } else {
-          console.log(`${logPrefix} Server action SUCCESS but no data - keeping optimistic update`);
+          console.log(
+            `${logPrefix} Server action SUCCESS but no data - keeping optimistic update`,
+          );
         }
         toast.success(result.message || t("itemQuantityUpdatedSuccess"));
       } else {
@@ -144,20 +209,29 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
           console.warn(`${logPrefix} User not authenticated. Clearing cart.`);
           useCartStore.getState().clearCart();
           toast.info(
-            tGlobal("Cart.sessionExpired") || "Votre session a expiré. Le panier a été vidé."
+            tGlobal("Cart.sessionExpired") ||
+              "Votre session a expiré. Le panier a été vidé.",
           );
         } else {
           // Autres erreurs serveur - Rollback à l'état précédent
           console.error(
-            `${logPrefix} Server action FAILED. Error: ${result.message}. Rolling back to previous state.`
+            `${logPrefix} Server action FAILED. Error: ${result.message}. Rolling back to previous state.`,
           );
-          useCartStore.getState()._setItems(previousState);
+          useCartStore
+            .getState()
+            ._setItems(previousState, true, "cart-display-quantity-rollback");
 
           // Log des détails d'erreur pour debugging
           if ("fieldErrors" in result && result.fieldErrors) {
-            console.error(`${logPrefix} Field validation errors:`, result.fieldErrors);
+            console.error(
+              `${logPrefix} Field validation errors:`,
+              result.fieldErrors,
+            );
           } else if ("internalError" in result && result.internalError) {
-            console.error(`${logPrefix} Internal server error:`, result.internalError);
+            console.error(
+              `${logPrefix} Internal server error:`,
+              result.internalError,
+            );
           }
 
           toast.error(result.message || tGlobal("genericError"));
@@ -165,21 +239,29 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
       }
     } catch (error: unknown) {
       // 3c. ERREUR RÉSEAU/INATTENDUE - Rollback
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.";
       console.error(
-        `${logPrefix} Network/unexpected error during server action. Error: ${errorMessage}. Rolling back to previous state.`
+        `${logPrefix} Network/unexpected error during server action. Error: ${errorMessage}. Rolling back to previous state.`,
       );
       console.error(
         `${logPrefix} Previous state being restored (first 3 items):`,
-        JSON.stringify(previousState.slice(0, 3), null, 2)
+        JSON.stringify(previousState.slice(0, 3), null, 2),
       );
 
       // Log séparé pour l'objet error complet (pour debugging)
       if (!(error instanceof Error)) {
-        console.error(`${logPrefix} Additional error details (non-Error object):`, error);
+        console.error(
+          `${logPrefix} Additional error details (non-Error object):`,
+          error,
+        );
       }
 
-      useCartStore.getState()._setItems(previousState);
+      useCartStore
+        .getState()
+        ._setItems(previousState, true, "cart-display-quantity-error-rollback");
       toast.error(tGlobal("genericError"));
     }
   };
@@ -242,7 +324,10 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                       <h3>
                         {item.slug ? (
                           <NextLink
-                            href={{ pathname: "/products/[slug]", params: { slug: item.slug } }}
+                            href={{
+                              pathname: "/products/[slug]",
+                              params: { slug: item.slug },
+                            }}
                           >
                             {item.name}
                           </NextLink>
@@ -250,7 +335,9 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                           item.name
                         )}
                       </h3>
-                      <p className="ml-4">{(item.price * item.quantity).toFixed(2)} €</p>
+                      <p className="ml-4">
+                        {(item.price * item.quantity).toFixed(2)} €
+                      </p>
                     </section>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {/* TODO: Afficher les variantes du produit si disponibles (couleur, taille, etc.) */}
@@ -262,20 +349,31 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                     <section
                       className="flex items-center"
                       role="group"
-                      aria-label={t("quantityControls", { itemName: item.name })}
+                      aria-label={t("quantityControls", {
+                        itemName: item.name,
+                      })}
                     >
                       <Button
                         variant="outline"
                         size="mobile-icon"
                         className="md:h-8 md:w-8"
                         onClick={() => {
-                          if (item.id) handleUpdateItemQuantity(item.id, item.quantity - 1);
+                          if (item.id)
+                            handleUpdateItemQuantity(
+                              item.id,
+                              item.quantity - 1,
+                            );
                         }}
-                        aria-label={t("decreaseQuantity", { itemName: item.name })}
+                        aria-label={t("decreaseQuantity", {
+                          itemName: item.name,
+                        })}
                       >
                         <MinusIcon className="h-4 w-4" />
                       </Button>
-                      <output className="mx-3 w-8 text-center" aria-live="polite">
+                      <output
+                        className="mx-3 w-8 text-center"
+                        aria-live="polite"
+                      >
                         {item.quantity}
                       </output>
                       <Button
@@ -283,9 +381,15 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                         size="mobile-icon"
                         className="md:h-8 md:w-8"
                         onClick={() => {
-                          if (item.id) handleUpdateItemQuantity(item.id, item.quantity + 1);
+                          if (item.id)
+                            handleUpdateItemQuantity(
+                              item.id,
+                              item.quantity + 1,
+                            );
                         }}
-                        aria-label={t("increaseQuantity", { itemName: item.name })}
+                        aria-label={t("increaseQuantity", {
+                          itemName: item.name,
+                        })}
                       >
                         <PlusIcon className="h-4 w-4" />
                       </Button>
@@ -299,7 +403,9 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                           if (item.id) {
                             handleRemoveItem(item.id);
                           } else {
-                            toast.error("Impossible de supprimer l'article : ID manquant.");
+                            toast.error(
+                              "Impossible de supprimer l'article : ID manquant.",
+                            );
                           }
                         }}
                         className="hover:text-destructive/80 font-medium text-destructive md:h-9"

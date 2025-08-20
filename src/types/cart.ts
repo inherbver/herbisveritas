@@ -79,6 +79,8 @@ export interface CartState {
   items: CartItem[];
   isLoading: boolean;
   error: string | null;
+  updateVersion: number;
+  lastUpdateTimestamp: number;
 }
 
 /**
@@ -100,10 +102,16 @@ export interface CartActions {
   // Internal actions for state management
   _setIsLoading: (loading: boolean) => void;
   _setError: (error: string | null) => void;
-  _setItems: (items: CartItem[], force?: boolean) => void;
+  _setItems: (
+    items: CartItem[],
+    force?: boolean,
+    updateSource?: string,
+  ) => void;
 
   // Utility actions
   forceReloadFromServer: () => Promise<void>;
+  getUpdateVersion: () => number;
+  getLastUpdateTimestamp: () => number;
 }
 
 /**

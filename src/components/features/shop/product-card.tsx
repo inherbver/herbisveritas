@@ -15,7 +15,11 @@ import type {
 import type { CartData } from "@/types/cart";
 import { addItemToCart as addItemToCartAction } from "@/actions/cartActions";
 import { toast } from "sonner";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { useCartStore } from "@/stores/cartStore";
 
 export interface ProductCardProps {
@@ -85,15 +89,25 @@ export function ProductCard({
   >(addItemToCartAction, initialAddItemState);
 
   useEffect(() => {
-    if (state.success === false && "error" in state && state.error === INITIAL_ACTION_STATE_ID) {
+    // Vérifier que state existe avant d'accéder à ses propriétés
+    if (!state) {
+      return;
+    }
+
+    if (
+      state.success === false &&
+      "error" in state &&
+      state.error === INITIAL_ACTION_STATE_ID
+    ) {
       return;
     }
     if (state.success) {
       toast.success(state.message || t("itemAddedSuccess"));
-      // Mettre à jour le store avec les données du serveur
+      // Synchronisation directe et fiable avec les données serveur
       if (state.data?.items) {
         const { _setItems } = useCartStore.getState();
-        _setItems(state.data.items);
+        // Force update pour garantir la cohérence avec le serveur
+        _setItems(state.data.items, true, "product-card-add");
       }
     } else {
       toast.error(state.message || tGlobal("genericError"));
@@ -131,20 +145,27 @@ export function ProductCard({
         "focus-within:ring-primary/40 group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm transition-shadow duration-300 focus-within:outline-none focus-within:ring-2 hover:shadow-lg",
         "cursor-pointer touch-manipulation md:cursor-default", // Make card clickable on mobile
         isOutOfStock && "opacity-70",
-        className
+        className,
       )}
       aria-label={`Product: ${title}`}
       itemScope
       itemType="https://schema.org/Product"
       onClick={(e) => {
         // Only handle click on mobile when not clicking on buttons
-        if (window.innerWidth < 768 && !(e.target as HTMLElement).closest("button, form")) {
+        if (
+          window.innerWidth < 768 &&
+          !(e.target as HTMLElement).closest("button, form")
+        ) {
           window.location.href = `/products/${slug}`;
         }
       }}
     >
       {/* Image Container with Link */}
-      <NextLink href={linkHref} className="contents" aria-label={`View details for ${title}`}>
+      <NextLink
+        href={linkHref}
+        className="contents"
+        aria-label={`View details for ${title}`}
+      >
         <figure className="relative aspect-square w-full overflow-hidden rounded-t-2xl sm:aspect-[4/5] xl:aspect-[4/5]">
           <Image
             src={imageSrc}
@@ -207,7 +228,7 @@ export function ProductCard({
                   ref={descriptionRef}
                   className={cn(
                     "text-foreground/70 line-clamp-3 select-none text-sm",
-                    isClamped && "is-clamped"
+                    isClamped && "is-clamped",
                   )}
                 >
                   {short_description}
@@ -224,7 +245,11 @@ export function ProductCard({
 
         {/* Price & CTA */}
         <div className="mt-auto flex flex-col space-y-2 pt-2">
-          <section itemProp="offers" itemScope itemType="https://schema.org/Offer">
+          <section
+            itemProp="offers"
+            itemScope
+            itemType="https://schema.org/Offer"
+          >
             <data
               value={price}
               className="font-sans text-base font-semibold text-primary"
@@ -236,7 +261,9 @@ export function ProductCard({
             <meta
               itemProp="availability"
               content={
-                isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
+                isOutOfStock
+                  ? "https://schema.org/OutOfStock"
+                  : "https://schema.org/InStock"
               }
             />
           </section>
@@ -255,12 +282,18 @@ export function ProductCard({
                 size="sm"
                 disabled={isPending || isOutOfStock}
                 aria-disabled={isPending || isOutOfStock}
-                aria-describedby={isOutOfStock ? `${id}-out-of-stock` : undefined}
+                aria-describedby={
+                  isOutOfStock ? `${id}-out-of-stock` : undefined
+                }
                 variant="secondary"
                 className="min-h-[44px] w-full touch-manipulation rounded-xl text-sm font-medium transition-transform duration-200 active:scale-95 md:min-h-[36px]"
                 onClick={(e) => e.stopPropagation()} // Prevent card click on mobile
               >
-                {isPending ? t("addingToCart") : isOutOfStock ? t("outOfStock") : t("addToCart")}
+                {isPending
+                  ? t("addingToCart")
+                  : isOutOfStock
+                    ? t("outOfStock")
+                    : t("addToCart")}
               </Button>
 
               {isOutOfStock && (

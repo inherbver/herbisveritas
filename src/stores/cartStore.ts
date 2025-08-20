@@ -11,6 +11,8 @@ const useCartStore = create<CartStore>()(
       items: [] as CartItem[],
       isLoading: false,
       error: null,
+      updateVersion: 0,
+      lastUpdateTimestamp: Date.now(),
 
       // Actions améliorées
       addItem: (
@@ -206,24 +208,52 @@ const useCartStore = create<CartStore>()(
         set({ error });
       },
 
-      _setItems: (items: CartItem[], force: boolean = false) => {
+      _setItems: (
+        items: CartItem[],
+        force: boolean = false,
+        updateSource?: string,
+      ) => {
         const logPrefix = `[CartStore _setItems ${new Date().toISOString()}]`;
         try {
           const currentItems = get().items;
-          // Data is already transformed by getCart, so we can directly compare.
-          if (
-            !force &&
-            JSON.stringify(currentItems) === JSON.stringify(items)
-          ) {
-            console.log(
-              `${logPrefix} New items are identical to current items. Skipping update.`,
-            );
+          const currentVersion = get().updateVersion;
+
+          // Comparaison optimisée pour éviter JSON.stringify coûteux
+          const itemsChanged =
+            force ||
+            currentItems.length !== items.length ||
+            !currentItems.every((current, index) => {
+              const newItem = items[index];
+              return (
+                newItem &&
+                current.id === newItem.id &&
+                current.quantity === newItem.quantity &&
+                current.productId === newItem.productId
+              );
+            });
+
+          if (!itemsChanged) {
+            console.log(`${logPrefix} Cart items unchanged, skipping update.`);
             return;
           }
 
-          set({ items, error: null });
+          // Incrémenter la version et mettre à jour le timestamp
+          const newVersion = currentVersion + 1;
+          const newTimestamp = Date.now();
+
+          set({
+            items,
+            error: null,
+            updateVersion: newVersion,
+            lastUpdateTimestamp: newTimestamp,
+          });
+
+          const totalQuantity = items.reduce(
+            (sum, item) => sum + item.quantity,
+            0,
+          );
           console.log(
-            `${logPrefix} Successfully ${force ? "force " : ""}set ${items.length} items in cart.`,
+            `${logPrefix} Successfully updated cart (v${newVersion}, source: ${updateSource || "unknown"}) with ${items.length} items (total quantity: ${totalQuantity}).`,
           );
         } catch (error) {
           console.error(`${logPrefix} Error setting items:`, error);
@@ -235,28 +265,34 @@ const useCartStore = create<CartStore>()(
 
       forceReloadFromServer: async () => {
         const logPrefix = `[CartStore forceReload ${new Date().toISOString()}]`;
-        console.log(`${logPrefix} Force reloading cart from server...`);
+        console.log(`${logPrefix} Reloading cart from server...`);
+
+        // Éviter les rechargements concurrents
+        if (get().isLoading) {
+          console.log(`${logPrefix} Reload already in progress, skipping`);
+          return;
+        }
 
         try {
           set({ isLoading: true, error: null });
 
-          // Dynamically import to avoid circular dependency
+          // Import dynamique pour éviter les dépendances circulaires
           const { getCart } = await import("@/actions/cartActions");
           const cartResult = await getCart();
 
           if (cartResult.success && cartResult.data) {
             console.log(
-              `${logPrefix} Cart force reloaded successfully:`,
+              `${logPrefix} Cart reloaded successfully:`,
               cartResult.data.items.length,
               "items",
             );
-            get()._setItems(cartResult.data.items, true); // Force update
+            get()._setItems(cartResult.data.items, true, "server-reload");
           } else {
-            console.log(`${logPrefix} No cart data found during force reload`);
-            get()._setItems([], true);
+            console.log(`${logPrefix} No cart data found during reload`);
+            get()._setItems([], true, "server-reload-empty");
           }
         } catch (error) {
-          console.error(`${logPrefix} Error during force reload:`, error);
+          console.error(`${logPrefix} Error during reload:`, error);
           set({ error: "Erreur lors du rechargement du panier." });
         } finally {
           set({ isLoading: false });
@@ -274,6 +310,14 @@ const useCartStore = create<CartStore>()(
 
       isEmpty: (): boolean => {
         return get().items.length === 0;
+      },
+
+      getUpdateVersion: (): number => {
+        return get().updateVersion;
+      },
+
+      getLastUpdateTimestamp: (): number => {
+        return get().lastUpdateTimestamp;
       },
     }),
     {
