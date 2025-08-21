@@ -3,6 +3,7 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { migrateAndGetCart } from "@/actions/cartActions"; // AJOUT: Importer pour la migration du panier
@@ -125,7 +126,9 @@ export const loginAction = withRateLimit(
       throw new AuthenticationError(specificMessage);
     }
 
-    // 4. Si la connexion est réussie et qu'un utilisateur invité a été détecté, tenter la migration du panier
+    // 4. Migration du panier : gérer TOUS les cas (anonyme Supabase ET cookie invité)
+
+    // 4a. D'abord gérer le cas des utilisateurs anonymes Supabase (cas rare)
     if (guestUserId) {
       try {
         const migrationResult = await migrateAndGetCart({ guestUserId });
@@ -138,16 +141,105 @@ export const loginAction = withRateLimit(
             errorDetails = `Erreurs de validation: ${JSON.stringify(migrationResult.errors)}`;
           }
           LogUtils.logOperationError(
-            "cart_migration",
+            "cart_migration_anonymous",
             new Error(errorDetails),
             context,
           );
-          // Ne pas bloquer la connexion si la migration échoue
         } else {
-          LogUtils.logOperationSuccess("cart_migration", context);
+          LogUtils.logOperationSuccess("cart_migration_anonymous", context);
         }
       } catch (migrationError) {
-        LogUtils.logOperationError("cart_migration", migrationError, context);
+        LogUtils.logOperationError(
+          "cart_migration_anonymous",
+          migrationError,
+          context,
+        );
+      }
+    }
+
+    // 4b. Gérer le cas des paniers avec cookie (cas majoritaire - 99% des invités)
+    const cookieStore = await cookies();
+    const guestCartId = cookieStore.get("herbis-cart-id")?.value;
+
+    if (guestCartId) {
+      try {
+        // Récupérer l'utilisateur connecté
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not found after successful login");
+
+        // Vérifier que le panier invité existe et n'appartient à personne
+        const { data: guestCart } = await supabase
+          .from("carts")
+          .select("id")
+          .eq("id", guestCartId)
+          .is("user_id", null)
+          .single();
+
+        if (guestCart) {
+          // Chercher le panier existant de l'utilisateur
+          const { data: existingUserCart } = await supabase
+            .from("carts")
+            .select("id")
+            .eq("user_id", user.id)
+            .single();
+
+          if (existingUserCart) {
+            // Fusionner les deux paniers via la fonction SQL
+            const { error: mergeError } = await supabase.rpc("merge_carts", {
+              p_guest_cart_id: guestCartId,
+              p_auth_cart_id: existingUserCart.id,
+            });
+
+            if (mergeError) {
+              LogUtils.logOperationError("cart_merge", mergeError, {
+                ...context,
+                guestCartId,
+                userCartId: existingUserCart.id,
+              });
+            } else {
+              LogUtils.logOperationSuccess("cart_merge", {
+                ...context,
+                guestCartId,
+                userCartId: existingUserCart.id,
+                action: "merged",
+              });
+            }
+          } else {
+            // Pas de panier utilisateur existant : assigner directement le panier invité
+            const { error: updateError } = await supabase
+              .from("carts")
+              .update({
+                user_id: user.id,
+                guest_id: null,
+              })
+              .eq("id", guestCartId);
+
+            if (updateError) {
+              LogUtils.logOperationError("cart_assign", updateError, {
+                ...context,
+                guestCartId,
+                userId: user.id,
+              });
+            } else {
+              LogUtils.logOperationSuccess("cart_assign", {
+                ...context,
+                guestCartId,
+                userId: user.id,
+                action: "assigned",
+              });
+            }
+          }
+
+          // Supprimer le cookie après migration réussie
+          cookieStore.delete("herbis-cart-id");
+        }
+      } catch (migrationError) {
+        LogUtils.logOperationError("cart_migration_cookie", migrationError, {
+          ...context,
+          guestCartId,
+        });
         // Ne pas bloquer la connexion si la migration échoue
       }
     }
@@ -287,6 +379,57 @@ export const signUpAction = withRateLimit(
       if (auditError) {
         LogUtils.logOperationError("audit_signup", auditError, context);
         // Don't fail signup if audit fails
+      }
+
+      // 5. Migration du panier invité après inscription réussie
+      const cookieStore = await cookies();
+      const guestCartId = cookieStore.get("herbis-cart-id")?.value;
+
+      if (guestCartId) {
+        try {
+          // Vérifier que le panier invité existe et n'appartient à personne
+          const { data: guestCart } = await supabase
+            .from("carts")
+            .select("id")
+            .eq("id", guestCartId)
+            .is("user_id", null)
+            .single();
+
+          if (guestCart) {
+            // Assigner le panier invité au nouvel utilisateur
+            const { error: updateError } = await supabase
+              .from("carts")
+              .update({
+                user_id: data.user.id,
+                guest_id: null,
+              })
+              .eq("id", guestCartId);
+
+            if (updateError) {
+              LogUtils.logOperationError("cart_assign_signup", updateError, {
+                ...context,
+                guestCartId,
+                userId: data.user.id,
+              });
+            } else {
+              LogUtils.logOperationSuccess("cart_assign_signup", {
+                ...context,
+                guestCartId,
+                userId: data.user.id,
+                action: "assigned_on_signup",
+              });
+
+              // Supprimer le cookie après assignation réussie
+              cookieStore.delete("herbis-cart-id");
+            }
+          }
+        } catch (migrationError) {
+          LogUtils.logOperationError("cart_migration_signup", migrationError, {
+            ...context,
+            guestCartId,
+          });
+          // Ne pas bloquer l'inscription si la migration échoue
+        }
       }
     }
 

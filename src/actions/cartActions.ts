@@ -5,7 +5,7 @@ import { revalidateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
-import { getActiveUserId } from "@/utils/authUtils";
+import { getActiveUserId, withStableSession } from "@/utils/authUtils";
 import {
   createGeneralErrorResult,
   createSuccessResult,
@@ -38,161 +38,226 @@ export { getCart };
 
 export async function addItemToCart(
   prevState: unknown,
-  formData: FormData
+  formData: FormData,
 ): Promise<CartActionResult<(CartData & { guestCartId?: string }) | null>> {
-  try {
-    const validatedFields = AddToCartInputSchema.safeParse({
-      productId: formData.get("productId"),
-      quantity: formData.get("quantity"),
-    });
+  return await withStableSession(async () => {
+    console.log("🛒 [addItemToCart] Starting with stable session...");
+    try {
+      const validatedFields = AddToCartInputSchema.safeParse({
+        productId: formData.get("productId"),
+        quantity: formData.get("quantity"),
+      });
 
-    if (!validatedFields.success) {
-      return createValidationErrorResult(
-        validatedFields.error.flatten().fieldErrors,
-        "Erreur de validation."
-      );
-    }
-
-    const { productId, quantity } = validatedFields.data;
-
-    const supabase = await createSupabaseServerClient();
-
-    // Récupérer les infos du produit pour le logging
-    const { data: product } = await supabase
-      .from("products")
-      .select("name, price")
-      .eq("id", productId)
-      .single();
-    const activeUserId = await getActiveUserId(supabase);
-
-    // Gestion des utilisateurs invités (guests) - similaire à cartReader.ts
-    let cartId: string | null = null;
-
-    if (activeUserId) {
-      // Utilisateur authentifié - chercher son panier
-      const { data: existingCart, error: findCartError } = await supabase
-        .from("carts")
-        .select("id")
-        .eq("user_id", activeUserId)
-        .maybeSingle();
-
-      if (findCartError) throw findCartError;
-      cartId = existingCart?.id || null;
-    } else {
-      // Utilisateur invité - chercher le panier via cookie
-      const cookieStore = await cookies();
-      const guestCartId = cookieStore.get("herbis-cart-id")?.value;
-
-      if (guestCartId) {
-        // Vérifier que le panier invité existe
-        const { data: guestCart, error: guestCartError } = await supabase
-          .from("carts")
-          .select("id")
-          .eq("id", guestCartId)
-          .maybeSingle();
-
-        if (guestCartError) throw guestCartError;
-        cartId = guestCart?.id || null;
-      }
-    }
-
-    // Créer un nouveau panier si nécessaire
-    if (!cartId) {
-      if (activeUserId) {
-        // Créer un panier pour utilisateur authentifié
-        const { data: newCart, error: newCartError } = await supabase
-          .from("carts")
-          .insert({ user_id: activeUserId })
-          .select("id")
-          .single();
-        if (newCartError || !newCart) {
-          throw newCartError || new Error("Cart creation failed.");
-        }
-        cartId = newCart.id;
-      } else {
-        // Créer un panier invité avec un guest_id généré
-        const guestId = crypto.randomUUID();
-        const { data: newGuestCart, error: newGuestCartError } = await supabase
-          .from("carts")
-          .insert({ guest_id: guestId })
-          .select("id")
-          .single();
-        if (newGuestCartError || !newGuestCart) {
-          throw newGuestCartError || new Error("Guest cart creation failed.");
-        }
-        cartId = newGuestCart.id;
-      }
-    }
-
-    // Vérification de sécurité - cartId ne devrait jamais être null à ce point
-    if (!cartId) {
-      throw new Error("Failed to create or find cart");
-    }
-
-    const { error: rpcError } = await supabase.rpc("add_or_update_cart_item", {
-      p_cart_id: cartId,
-      p_product_id: productId,
-      p_quantity_to_add: quantity,
-    });
-
-    if (rpcError) {
-      console.error("Supabase RPC Error:", rpcError);
-      throw new Error(`Erreur lors de l'ajout au panier: ${rpcError.message}`);
-    }
-
-    revalidateTag("cart");
-
-    const updatedCart = await getCart();
-    if (!updatedCart.success) {
-      if (isGeneralErrorResult(updatedCart)) {
-        return createGeneralErrorResult(updatedCart.error, updatedCart.message);
-      } else {
-        return createGeneralErrorResult(
-          "UnexpectedError",
-          "Une erreur inattendue est survenue lors de la récupération du panier mis à jour."
+      if (!validatedFields.success) {
+        return createValidationErrorResult(
+          validatedFields.error.flatten().fieldErrors,
+          "Erreur de validation.",
         );
       }
+
+      const { productId, quantity } = validatedFields.data;
+      console.log("🛒 [addItemToCart] Validated data:", {
+        productId,
+        quantity,
+      });
+
+      const supabase = await createSupabaseServerClient();
+
+      // Récupérer les infos du produit pour le logging
+      const { data: product } = await supabase
+        .from("products")
+        .select("name, price")
+        .eq("id", productId)
+        .single();
+      const activeUserId = await getActiveUserId(supabase);
+
+      // Gestion des utilisateurs invités (guests) - similaire à cartReader.ts
+      let cartId: string | null = null;
+
+      if (activeUserId) {
+        // Utilisateur authentifié - chercher son panier
+        const { data: existingCart, error: findCartError } = await supabase
+          .from("carts")
+          .select("id")
+          .eq("user_id", activeUserId)
+          .maybeSingle();
+
+        if (findCartError) throw findCartError;
+        cartId = existingCart?.id || null;
+      } else {
+        // Utilisateur invité - chercher le panier via cookie
+        const cookieStore = await cookies();
+        const guestCartId = cookieStore.get("herbis-cart-id")?.value;
+
+        if (guestCartId) {
+          // Vérifier que le panier invité existe
+          const { data: guestCart, error: guestCartError } = await supabase
+            .from("carts")
+            .select("id")
+            .eq("id", guestCartId)
+            .maybeSingle();
+
+          if (guestCartError) throw guestCartError;
+          cartId = guestCart?.id || null;
+        }
+      }
+
+      // Créer un nouveau panier si nécessaire
+      if (!cartId) {
+        if (activeUserId) {
+          // Créer un panier pour utilisateur authentifié
+          const { data: newCart, error: newCartError } = await supabase
+            .from("carts")
+            .insert({ user_id: activeUserId })
+            .select("id")
+            .single();
+          if (newCartError || !newCart) {
+            throw newCartError || new Error("Cart creation failed.");
+          }
+          cartId = newCart.id;
+        } else {
+          // Créer un panier invité avec un guest_id généré
+          const guestId = crypto.randomUUID();
+          const { data: newGuestCart, error: newGuestCartError } =
+            await supabase
+              .from("carts")
+              .insert({ guest_id: guestId })
+              .select("id")
+              .single();
+          if (newGuestCartError || !newGuestCart) {
+            throw newGuestCartError || new Error("Guest cart creation failed.");
+          }
+          cartId = newGuestCart.id;
+          console.log("🛒 [addItemToCart] Created guest cart:", cartId);
+
+          // IMPORTANT: Définir le cookie pour le panier invité (SÉCURISÉ)
+          const cookieStore = await cookies();
+          cookieStore.set("herbis-cart-id", cartId, {
+            httpOnly: true, // Protection contre XSS - ne peut pas être lu par JavaScript
+            secure: process.env.NODE_ENV === "production", // HTTPS en production
+            sameSite: "lax", // Protection CSRF tout en permettant la navigation normale
+            maxAge: 14 * 24 * 60 * 60, // 14 jours (aligné avec cleanup_expired_guest_carts)
+            path: "/",
+          });
+          console.log("🛒 [addItemToCart] Set guest cart cookie:", cartId);
+        }
+      }
+
+      console.log("🛒 [addItemToCart] Final cartId:", cartId);
+
+      // Vérification de sécurité - cartId ne devrait jamais être null à ce point
+      if (!cartId) {
+        throw new Error("Failed to create or find cart");
+      }
+
+      const { error: rpcError } = await supabase.rpc(
+        "add_or_update_cart_item",
+        {
+          p_cart_id: cartId,
+          p_product_id: productId,
+          p_quantity_to_add: quantity,
+        },
+      );
+
+      if (rpcError) {
+        console.error("🛒 [addItemToCart] Supabase RPC Error:", rpcError);
+        throw new Error(
+          `Erreur lors de l'ajout au panier: ${rpcError.message}`,
+        );
+      }
+
+      console.log("🛒 [addItemToCart] RPC call successful");
+
+      revalidateTag("cart");
+
+      console.log("🛒 [addItemToCart] Fetching updated cart...");
+      const updatedCart = await getCart();
+      console.log("🛒 [addItemToCart] Updated cart result:", {
+        success: updatedCart.success,
+        itemsCount: updatedCart.success
+          ? updatedCart.data?.items?.length
+          : "N/A",
+        totalQuantity:
+          updatedCart.success && updatedCart.data?.items
+            ? updatedCart.data.items.reduce(
+                (sum, item) => sum + item.quantity,
+                0,
+              )
+            : "N/A",
+      });
+      if (!updatedCart.success) {
+        if (isGeneralErrorResult(updatedCart)) {
+          return createGeneralErrorResult(
+            updatedCart.error,
+            updatedCart.message,
+          );
+        } else {
+          return createGeneralErrorResult(
+            "UnexpectedError",
+            "Une erreur inattendue est survenue lors de la récupération du panier mis à jour.",
+          );
+        }
+      }
+
+      // Log l'ajout au panier
+      await logEvent(
+        "CART_ITEM_ADDED",
+        activeUserId || undefined,
+        {
+          product_id: productId,
+          product_name: product?.name || "Produit inconnu",
+          product_price: product?.price || 0,
+          quantity: quantity,
+          message: `Ajout panier: ${product?.name || "produit"} (${quantity}x)`,
+        },
+        "INFO",
+      );
+
+      const resultData = {
+        ...updatedCart.data,
+        ...(!activeUserId && cartId && { guestCartId: cartId }),
+      };
+
+      console.log(
+        "🛒 [addItemToCart] Returning success result with cart items:",
+        {
+          itemsCount: resultData.items?.length,
+          totalQuantity: resultData.items?.reduce(
+            (sum, item) => sum + item.quantity,
+            0,
+          ),
+          guestCartId: resultData.guestCartId,
+          firstThreeItems: resultData.items?.slice(0, 3).map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+          })),
+        },
+      );
+
+      return createSuccessResult(
+        resultData as CartData & { guestCartId?: string },
+        "Article ajouté au panier avec succès.",
+      );
+    } catch (error: unknown) {
+      const errorMessage = (error as Error).message;
+      console.error("🛒 [addItemToCart] EXCEPTION:", error);
+      return createGeneralErrorResult(
+        errorMessage,
+        "Une erreur inattendue est survenue.",
+      );
     }
-
-    // Log l'ajout au panier
-    await logEvent(
-      "CART_ITEM_ADDED",
-      activeUserId || undefined,
-      {
-        product_id: productId,
-        product_name: product?.name || "Produit inconnu",
-        product_price: product?.price || 0,
-        quantity: quantity,
-        message: `Ajout panier: ${product?.name || "produit"} (${quantity}x)`,
-      },
-      "INFO"
-    );
-
-    const resultData = {
-      ...updatedCart.data,
-      ...(!activeUserId && cartId && { guestCartId: cartId }),
-    };
-
-    return createSuccessResult(
-      resultData as CartData & { guestCartId?: string },
-      "Article ajouté au panier avec succès."
-    );
-  } catch (error: unknown) {
-    const errorMessage = (error as Error).message;
-    console.error("addItemToCart Error:", error);
-    return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
-  }
+  });
 }
 
 export async function removeItemFromCart(
-  input: RemoveFromCartInput
+  input: RemoveFromCartInput,
 ): Promise<CartActionResult<CartData | null>> {
   try {
     const validatedFields = RemoveFromCartInputSchema.safeParse(input);
     if (!validatedFields.success) {
       return createValidationErrorResult(
         validatedFields.error.flatten().fieldErrors,
-        "Erreur de validation."
+        "Erreur de validation.",
       );
     }
     const { cartItemId } = validatedFields.data;
@@ -202,7 +267,7 @@ export async function removeItemFromCart(
     if (!activeUserId) {
       return createGeneralErrorResult(
         "User not authenticated.",
-        "Impossible d'identifier l'utilisateur."
+        "Impossible d'identifier l'utilisateur.",
       );
     }
 
@@ -213,11 +278,16 @@ export async function removeItemFromCart(
       .eq("id", cartItemId)
       .single();
 
-    const { error: deleteError } = await supabase.from("cart_items").delete().eq("id", cartItemId);
+    const { error: deleteError } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("id", cartItemId);
 
     if (deleteError) {
       console.error("Supabase Delete Error:", deleteError);
-      throw new Error(`Erreur lors de la suppression de l'article: ${deleteError.message}`);
+      throw new Error(
+        `Erreur lors de la suppression de l'article: ${deleteError.message}`,
+      );
     }
 
     revalidateTag("cart");
@@ -229,7 +299,7 @@ export async function removeItemFromCart(
       } else {
         return createGeneralErrorResult(
           "UnexpectedError",
-          "Une erreur inattendue est survenue lors de la récupération du panier mis à jour."
+          "Une erreur inattendue est survenue lors de la récupération du panier mis à jour.",
         );
       }
     }
@@ -241,12 +311,13 @@ export async function removeItemFromCart(
         activeUserId,
         {
           product_id: cartItem.product_id,
-          product_name: (cartItem.product as Product)?.name || "Produit inconnu",
+          product_name:
+            (cartItem.product as Product)?.name || "Produit inconnu",
           product_price: (cartItem.product as Product)?.price || 0,
           quantity: cartItem.quantity,
           message: `Suppression panier: ${(cartItem.product as Product)?.name || "produit"}`,
         },
-        "INFO"
+        "INFO",
       );
     }
 
@@ -254,19 +325,22 @@ export async function removeItemFromCart(
   } catch (error: unknown) {
     const errorMessage = (error as Error).message;
     console.error("removeItemFromCart Error:", error);
-    return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
+    return createGeneralErrorResult(
+      errorMessage,
+      "Une erreur inattendue est survenue.",
+    );
   }
 }
 
 export async function updateCartItemQuantity(
-  input: UpdateCartItemQuantityInput
+  input: UpdateCartItemQuantityInput,
 ): Promise<CartActionResult<CartData | null>> {
   try {
     const validatedFields = UpdateCartItemQuantityInputSchema.safeParse(input);
     if (!validatedFields.success) {
       return createValidationErrorResult(
         validatedFields.error.flatten().fieldErrors,
-        "Erreur de validation."
+        "Erreur de validation.",
       );
     }
     const { cartItemId, quantity } = validatedFields.data;
@@ -280,7 +354,7 @@ export async function updateCartItemQuantity(
     if (!activeUserId) {
       return createGeneralErrorResult(
         "User not authenticated.",
-        "Impossible d'identifier l'utilisateur."
+        "Impossible d'identifier l'utilisateur.",
       );
     }
 
@@ -291,7 +365,9 @@ export async function updateCartItemQuantity(
 
     if (updateError) {
       console.error("Supabase Update Error:", updateError);
-      throw new Error(`Erreur lors de la mise à jour de la quantité: ${updateError.message}`);
+      throw new Error(
+        `Erreur lors de la mise à jour de la quantité: ${updateError.message}`,
+      );
     }
 
     revalidateTag("cart");
@@ -303,7 +379,7 @@ export async function updateCartItemQuantity(
       } else {
         return createGeneralErrorResult(
           "UnexpectedError",
-          "Une erreur inattendue est survenue lors de la récupération du panier mis à jour."
+          "Une erreur inattendue est survenue lors de la récupération du panier mis à jour.",
         );
       }
     }
@@ -312,20 +388,23 @@ export async function updateCartItemQuantity(
   } catch (error: unknown) {
     const errorMessage = (error as Error).message;
     console.error("updateCartItemQuantity Error:", error);
-    return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
+    return createGeneralErrorResult(
+      errorMessage,
+      "Une erreur inattendue est survenue.",
+    );
   }
 }
 
 export async function removeItemFromCartFormAction(
   prevState: unknown,
-  formData: FormData
+  formData: FormData,
 ): Promise<CartActionResult<CartData | null>> {
   const cartItemId = formData.get("cartItemId") as string;
 
   if (!cartItemId) {
     return createValidationErrorResult(
       { cartItemId: ["L'ID de l'article est requis"] },
-      "L'ID de l'article est requis"
+      "L'ID de l'article est requis",
     );
   }
 
@@ -334,7 +413,7 @@ export async function removeItemFromCartFormAction(
 
 export async function updateCartItemQuantityFormAction(
   prevState: unknown,
-  formData: FormData
+  formData: FormData,
 ): Promise<CartActionResult<CartData | null>> {
   const cartItemId = formData.get("cartItemId") as string;
   const quantityStr = formData.get("quantity") as string;
@@ -342,7 +421,7 @@ export async function updateCartItemQuantityFormAction(
   if (!cartItemId) {
     return createValidationErrorResult(
       { cartItemId: ["L'ID de l'article est requis"] },
-      "L'ID de l'article est requis"
+      "L'ID de l'article est requis",
     );
   }
 
@@ -350,7 +429,7 @@ export async function updateCartItemQuantityFormAction(
   if (isNaN(quantity) || quantity < 0) {
     return createValidationErrorResult(
       { quantity: ["La quantité doit être un nombre positif"] },
-      "La quantité doit être un nombre positif"
+      "La quantité doit être un nombre positif",
     );
   }
 
@@ -362,7 +441,7 @@ const MigrateCartInputSchema = z.object({
 });
 
 export async function migrateAndGetCart(
-  input: z.infer<typeof MigrateCartInputSchema>
+  input: z.infer<typeof MigrateCartInputSchema>,
 ): Promise<CartActionResult<CartData | null>> {
   const migrationId = crypto.randomBytes(4).toString("hex");
   let migrationSuccessful = false;
@@ -372,7 +451,7 @@ export async function migrateAndGetCart(
     if (!validatedFields.success) {
       return createValidationErrorResult(
         validatedFields.error.flatten().fieldErrors,
-        "ID invité invalide."
+        "ID invité invalide.",
       );
     }
     const { guestUserId } = validatedFields.data;
@@ -383,12 +462,14 @@ export async function migrateAndGetCart(
     if (!authenticatedUserId) {
       return createGeneralErrorResult(
         "Authenticated user not found.",
-        "Utilisateur authentifié non trouvé."
+        "Utilisateur authentifié non trouvé.",
       );
     }
 
     if (authenticatedUserId === guestUserId) {
-      console.log(`[Migration ${migrationId}] No migration needed (same user).`);
+      console.log(
+        `[Migration ${migrationId}] No migration needed (same user).`,
+      );
       return getCart();
     }
 
@@ -402,13 +483,15 @@ export async function migrateAndGetCart(
     if (guestCartError) throw guestCartError;
 
     if (!guestCart) {
-      console.log(`[Migration ${migrationId}] No guest cart found. Returning current user cart.`);
+      console.log(
+        `[Migration ${migrationId}] No guest cart found. Returning current user cart.`,
+      );
       migrationSuccessful = true;
       return getCart();
     }
 
     console.log(
-      `[Migration ${migrationId}] Guest cart found: ${guestCart.id}. Finding auth user cart...`
+      `[Migration ${migrationId}] Guest cart found: ${guestCart.id}. Finding auth user cart...`,
     );
     const { data: authCart, error: authCartError } = await supabase
       .from("carts")
@@ -419,7 +502,9 @@ export async function migrateAndGetCart(
     if (authCartError) throw authCartError;
 
     if (!authCart) {
-      console.log(`[Migration ${migrationId}] No auth cart, updating ownership...`);
+      console.log(
+        `[Migration ${migrationId}] No auth cart, updating ownership...`,
+      );
       const { error: updateError } = await supabase
         .from("carts")
         .update({ user_id: authenticatedUserId })
@@ -456,18 +541,21 @@ export async function migrateAndGetCart(
           const supabaseAdmin = createSupabaseAdminClient();
           await supabaseAdmin.auth.admin.deleteUser(guestUserId);
           console.log(
-            `[Migration ${migrationId}] Guest user cleanup successful for ${guestUserId}.`
+            `[Migration ${migrationId}] Guest user cleanup successful for ${guestUserId}.`,
           );
         }
       } catch (cleanupError) {
-        console.warn(`[Migration ${migrationId}] Guest user cleanup failed.`, cleanupError);
+        console.warn(
+          `[Migration ${migrationId}] Guest user cleanup failed.`,
+          cleanupError,
+        );
       }
     }
   }
 }
 
 export async function clearCartAction(
-  _prevState: unknown
+  _prevState: unknown,
 ): Promise<CartActionResult<CartData | null>> {
   const supabase = await createSupabaseServerClient();
   const activeUserId = await getActiveUserId(supabase);
@@ -475,7 +563,7 @@ export async function clearCartAction(
   if (!activeUserId) {
     return createGeneralErrorResult(
       "User not authenticated.",
-      "Impossible d'identifier l'utilisateur."
+      "Impossible d'identifier l'utilisateur.",
     );
   }
 
@@ -487,7 +575,9 @@ export async function clearCartAction(
       .maybeSingle();
 
     if (cartError) {
-      throw new Error(`Erreur lors de la recherche du panier: ${cartError.message}`);
+      throw new Error(
+        `Erreur lors de la recherche du panier: ${cartError.message}`,
+      );
     }
 
     if (!cartData) {
@@ -500,13 +590,18 @@ export async function clearCartAction(
       .eq("cart_id", cartData.id);
 
     if (deleteItemsError) {
-      throw new Error(`Erreur lors de la suppression: ${deleteItemsError.message}`);
+      throw new Error(
+        `Erreur lors de la suppression: ${deleteItemsError.message}`,
+      );
     }
 
     revalidateTag("cart");
     return createSuccessResult(null, "Panier vidé avec succès.");
   } catch (error: unknown) {
     const errorMessage = (error as Error).message;
-    return createGeneralErrorResult(errorMessage, "Une erreur inattendue est survenue.");
+    return createGeneralErrorResult(
+      errorMessage,
+      "Une erreur inattendue est survenue.",
+    );
   }
 }
