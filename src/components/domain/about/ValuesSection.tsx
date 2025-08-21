@@ -31,14 +31,14 @@ const valuesData: ValueItem[] = [
   },
 ];
 
-export default function ValuesSection() {
+export function ValuesSection() {
   const t = useTranslations("AboutPage");
   // Le console.log ci-dessous va maintenant chercher AboutPage.sections.items.authenticity.title
   // ce qui est correct si valuesData[0].titleKey est utilisé.
   // Pour un test direct : t('sections.items.authenticity.title')
   console.log(
     "[ValuesSection - Client] Attempting to get authenticity.title defined in valuesData[0]:",
-    t(valuesData[0].titleKey)
+    t(valuesData[0].titleKey),
   );
 
   return (
@@ -50,14 +50,16 @@ export default function ValuesSection() {
             key={value.id}
             className={cn(
               "group transition-all duration-300 hover:shadow-lg",
-              "border-border/50 bg-card text-card-foreground"
+              "border-border/50 bg-card text-card-foreground",
             )}
           >
             <CardContent className="flex flex-col items-center space-y-4 p-8 text-center">
               <div className="bg-primary/10 group-hover:bg-primary/20 rounded-full p-4 transition-colors duration-300">
                 <IconComponent className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground">{t(value.titleKey)}</h3>
+              <h3 className="text-xl font-semibold text-foreground">
+                {t(value.titleKey)}
+              </h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {t(value.descriptionKey)}
               </p>

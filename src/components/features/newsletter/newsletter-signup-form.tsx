@@ -5,7 +5,7 @@ import { subscribeToNewsletter } from "@/actions/newsletterActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Mail, Loader2, Check } from "lucide-react";
+import { Mail, Loader2, Check, Leaf } from "lucide-react";
 
 interface NewsletterSignupFormProps {
   className?: string;
@@ -46,9 +46,13 @@ export function NewsletterSignupForm({
 
   if (isSuccess) {
     return (
-      <div className={`flex items-center justify-center space-x-2 text-green-600 ${className}`}>
+      <div
+        className={`flex items-center justify-center space-x-2 text-green-600 ${className}`}
+      >
         <Check className="h-5 w-5" />
-        <span className="text-sm font-medium">Merci ! Inscription confirmée.</span>
+        <span className="text-sm font-medium">
+          Merci ! Inscription confirmée.
+        </span>
       </div>
     );
   }
@@ -66,7 +70,9 @@ export function NewsletterSignupForm({
   };
 
   const containerClasses =
-    variant === "inline" ? "flex flex-col gap-2 sm:flex-row sm:items-center" : "space-y-3";
+    variant === "inline"
+      ? "flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2"
+      : "space-y-3";
 
   return (
     <form action={handleSubmit} className={`${containerClasses} ${className}`}>
@@ -93,7 +99,7 @@ export function NewsletterSignupForm({
         disabled={isPending || !email.trim()}
         className={`${buttonSizeClasses[size]} ${
           variant === "inline" ? "shrink-0" : "w-full"
-        } font-semibold transition-all hover:shadow-md disabled:opacity-50`}
+        } font-semibold transition-all hover:shadow-md disabled:opacity-50 rounded-lg shadow-sm hover:shadow-lg`}
       >
         {isPending ? (
           <>
@@ -102,7 +108,7 @@ export function NewsletterSignupForm({
           </>
         ) : (
           <>
-            <Mail className="mr-2 h-4 w-4" />
+            <Leaf className="mr-2 h-4 w-4" />
             S'inscrire
           </>
         )}

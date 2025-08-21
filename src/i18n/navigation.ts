@@ -17,7 +17,7 @@ export const pathnames = {
   // --- END: Product detail page ---
   "/about": {
     en: "/about",
-    fr: "/a-propos",
+    fr: "/about",
   },
   "/privacy-policy": {
     en: "/privacy-policy",
@@ -63,6 +63,18 @@ export const pathnames = {
     en: "/register",
     fr: "/inscription",
   },
+  "/faq": {
+    en: "/faq",
+    fr: "/faq",
+  },
+  "/shipping": {
+    en: "/shipping",
+    fr: "/livraison",
+  },
+  "/returns": {
+    en: "/returns",
+    fr: "/retours",
+  },
   // --- Profile Pages: Keeping same URLs for both languages for consistency ---
   // "/profile/account": {
   //   en: "/profile/account",
@@ -86,9 +98,10 @@ export const pathnames = {
 // Type for canonical pathnames based on the keys of the pathnames object
 export type AppPathname = keyof typeof pathnames;
 
-export const { Link, redirect, usePathname, useRouter, getPathname } = createNavigation({
-  locales,
-  defaultLocale,
-  localePrefix,
-  pathnames,
-});
+export const { Link, redirect, usePathname, useRouter, getPathname } =
+  createNavigation({
+    locales,
+    defaultLocale,
+    localePrefix,
+    pathnames,
+  });

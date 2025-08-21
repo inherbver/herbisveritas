@@ -1,0 +1,60 @@
+{
+  "title": "Retours et Remboursements",
+  "description": "Politique de retour simple et transparente",
+  "subtitle": "Nous vous offrons une politique de retour flexible pour votre satisfaction",
+  "policy": {
+    "title": "30 Jours pour Changer d'Avis",
+    "description": "Vous disposez de 30 jours à compter de la réception de votre commande pour nous retourner vos produits"
+  },
+  "processTitle": "Comment Procéder au Retour",
+  "steps": {
+    "0": {
+      "title": "1. Nous Contacter",
+      "description": "Envoyez-nous un email avec votre numéro de commande et le motif du retour"
+    },
+    "1": {
+      "title": "2. Préparer le Retour",
+      "description": "Emballez soigneusement vos produits dans leur emballage d'origine"
+    },
+    "2": {
+      "title": "3. Expédier le Colis",
+      "description": "Envoyez le colis à l'adresse que nous vous communiquerons"
+    }
+  },
+  "conditions": {
+    "title": "Conditions de Retour",
+    "accepted": {
+      "title": "Retours Acceptés",
+      "items": [
+        "Produits non ouverts et dans leur emballage d'origine",
+        "Produits défectueux ou endommagés",
+        "Erreur de livraison de notre part"
+      ]
+    },
+    "rejected": {
+      "title": "Retours Non Acceptés",
+      "items": [
+        "Produits ouverts ou utilisés",
+        "Produits périssables ou d'hygiène",
+        "Retours après 30 jours de la réception"
+      ]
+    }
+  },
+  "shipping": {
+    "title": "Frais de Retour",
+    "description": "Les frais de retour sont à votre charge, sauf en cas de produit défectueux ou d'erreur de notre part.",
+    "address": {
+      "title": "Adresse de retour :"
+    }
+  },
+  "refund": {
+    "title": "Remboursement",
+    "description": "Une fois votre retour réceptionné et vérifié, nous procédons au remboursement sur votre moyen de paiement initial.",
+    "timeframe": "Délai de remboursement : 5-10 jours ouvrés après réception du retour."
+  },
+  "contact": {
+    "title": "Questions sur les retours ?",
+    "description": "Notre service client est là pour vous accompagner",
+    "button": "Nous contacter"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "title": "Informations de Livraison",
+  "description": "Tout ce que vous devez savoir sur nos options de livraison",
+  "subtitle": "Découvrez nos options de livraison rapides et sécurisées",
+  "freeShipping": {
+    "title": "Livraison Gratuite dès 50€",
+    "description": "Profitez de la livraison gratuite en France métropolitaine pour toute commande supérieure à 50€"
+  },
+  "optionsTitle": "Nos Options de Livraison",
+  "options": {
+    "standard": {
+      "title": "Livraison Standard",
+      "price": "4,90€",
+      "duration": "3-5 jours ouvrés",
+      "description": "Livraison par Colissimo avec suivi"
+    },
+    "express": {
+      "title": "Livraison Express",
+      "price": "9,90€",
+      "duration": "1-2 jours ouvrés",
+      "description": "Livraison rapide par transporteur express"
+    },
+    "pickup": {
+      "title": "Point Relais",
+      "price": "3,90€",
+      "duration": "3-4 jours ouvrés",
+      "description": "Retrait dans un point relais proche de chez vous"
+    }
+  },
+  "processing": {
+    "title": "Délais de Préparation",
+    "description": "Vos commandes sont préparées avec soin dans nos ateliers :",
+    "times": [
+      "Commandes passées avant 14h : expédition le jour même",
+      "Commandes du weekend : expédition le lundi",
+      "Délai de préparation : 24-48h maximum"
+    ]
+  },
+  "international": {
+    "title": "Livraison Internationale",
+    "description": "Nous livrons dans toute l'Europe avec des délais de 7-10 jours ouvrés.",
+    "note": "Les frais de port varient selon la destination. Les droits de douane éventuels sont à la charge du client."
+  },
+  "tracking": {
+    "title": "Suivi de Commande",
+    "description": "Dès l'expédition, vous recevrez un email avec le numéro de suivi de votre colis.",
+    "howTo": "Utilisez ce numéro sur le site du transporteur pour suivre votre livraison en temps réel."
+  },
+  "contact": {
+    "title": "Questions sur votre livraison ?",
+    "description": "Notre équipe est à votre disposition pour toute question",
+    "button": "Nous contacter"
+  }
+}
