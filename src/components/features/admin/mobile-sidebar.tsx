@@ -1,9 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { usePathname } from "next/navigation";
-import { Menu, Home, Package, Users, FileText, MapPin, Handshake } from "lucide-react";
+import {
+  Menu,
+  Home,
+  Package,
+  Users,
+  FileText,
+  MapPin,
+  Handshake,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -59,7 +67,9 @@ export function MobileSidebar() {
           </SheetDescription>
         </SheetHeader>
         <nav className="flex flex-col gap-2">
-          <h2 className="mb-2 text-lg font-semibold tracking-tight">Dashboard</h2>
+          <h2 className="mb-2 text-lg font-semibold tracking-tight">
+            Dashboard
+          </h2>
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -67,7 +77,7 @@ export function MobileSidebar() {
               onClick={() => setIsOpen(false)}
               className={cn(
                 "flex min-h-[44px] touch-manipulation items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors active:scale-95 hover:bg-muted hover:text-primary",
-                activePath === item.href && "bg-muted text-primary"
+                activePath === item.href && "bg-muted text-primary",
               )}
             >
               <item.icon className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Hash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function TagList({
         variant={variant === "badges" ? "default" : "secondary"}
         className={cn(
           "cursor-pointer text-xs transition-colors hover:bg-primary hover:text-primary-foreground",
-          variant === "compact" && "px-1.5 py-0.5 text-[10px]"
+          variant === "compact" && "px-1.5 py-0.5 text-[10px]",
         )}
         onClick={onTagClick ? () => onTagClick(tag) : undefined}
       >
@@ -60,7 +60,7 @@ export function TagList({
           variant="secondary"
           className={cn(
             "pointer-events-none text-xs",
-            variant === "compact" && "px-1.5 py-0.5 text-[10px]"
+            variant === "compact" && "px-1.5 py-0.5 text-[10px]",
           )}
         >
           +{remainingCount}

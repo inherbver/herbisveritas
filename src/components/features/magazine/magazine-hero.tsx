@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,13 @@ export function MagazineHero({
       {/* Image de fond optionnelle */}
       {backgroundImage && (
         <div className="absolute inset-0 z-0">
-          <Image src={backgroundImage} alt="" fill className="object-cover opacity-20" priority />
+          <Image
+            src={backgroundImage}
+            alt=""
+            fill
+            className="object-cover opacity-20"
+            priority
+          />
           <div className="from-background/80 via-background/60 to-background/90 absolute inset-0 bg-gradient-to-b" />
         </div>
       )}
@@ -25,7 +31,8 @@ export function MagazineHero({
       <div
         className={cn(
           "relative z-10 px-4 py-16",
-          !backgroundImage && "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"
+          !backgroundImage &&
+            "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50",
         )}
       >
         <div className="container mx-auto max-w-4xl space-y-8 text-center">
@@ -41,7 +48,10 @@ export function MagazineHero({
 
           {/* Navigation par catégories */}
           {categories.length > 0 && (
-            <nav className="flex flex-wrap justify-center gap-3" aria-label="Filtrer par catégorie">
+            <nav
+              className="flex flex-wrap justify-center gap-3"
+              aria-label="Filtrer par catégorie"
+            >
               <Button
                 variant={!currentCategory ? "default" : "outline"}
                 size="sm"
@@ -54,7 +64,9 @@ export function MagazineHero({
               {categories.map((category) => (
                 <Button
                   key={category.id}
-                  variant={currentCategory === category.slug ? "default" : "outline"}
+                  variant={
+                    currentCategory === category.slug ? "default" : "outline"
+                  }
                   size="sm"
                   asChild
                   className="rounded-full"

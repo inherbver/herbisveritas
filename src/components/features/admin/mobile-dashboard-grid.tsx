@@ -1,8 +1,22 @@
 "use client";
 
-import Link from "next/link";
-import { Package, FileText, MapPin, Handshake, Users, ShoppingCart, Mail } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "@/i18n/navigation";
+import {
+  Package,
+  FileText,
+  MapPin,
+  Handshake,
+  Users,
+  ShoppingCart,
+  Mail,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/utils/cn";
 
 interface DashboardItem {
@@ -86,12 +100,14 @@ export function MobileDashboardGrid() {
             href={isDisabled ? "#" : item.href}
             className={cn(
               "block touch-manipulation transition-transform active:scale-95",
-              isDisabled && "pointer-events-none opacity-50"
+              isDisabled && "pointer-events-none opacity-50",
             )}
           >
             <Card className="h-full transition-shadow hover:shadow-lg">
               <CardHeader className="pb-3">
-                <div className={cn("mb-2 inline-flex rounded-lg p-3", item.color)}>
+                <div
+                  className={cn("mb-2 inline-flex rounded-lg p-3", item.color)}
+                >
                   <item.icon className="h-6 w-6" />
                 </div>
                 <CardTitle className="text-base">{item.label}</CardTitle>
@@ -124,12 +140,14 @@ export function DesktopDashboardGrid() {
             href={isDisabled ? "#" : item.href}
             className={cn(
               "block transition-transform hover:scale-105",
-              isDisabled && "pointer-events-none opacity-50"
+              isDisabled && "pointer-events-none opacity-50",
             )}
           >
             <Card className="h-full transition-all hover:shadow-xl">
               <CardHeader>
-                <div className={cn("mb-3 inline-flex rounded-lg p-4", item.color)}>
+                <div
+                  className={cn("mb-3 inline-flex rounded-lg p-4", item.color)}
+                >
                   <item.icon className="h-8 w-8" />
                 </div>
                 <CardTitle>{item.label}</CardTitle>

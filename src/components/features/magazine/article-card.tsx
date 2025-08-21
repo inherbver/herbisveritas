@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,10 @@ import { ArticleMetadata } from "@/components/features/magazine/article-metadata
 import { TagList } from "@/components/features/magazine/tag-list";
 import type { ArticleCardProps } from "@/types/magazine";
 
-export function ArticleCard({ article, variant = "default" }: ArticleCardProps) {
+export function ArticleCard({
+  article,
+  variant = "default",
+}: ArticleCardProps) {
   const isCompact = variant === "compact";
   const isFeatured = variant === "featured";
 
@@ -30,7 +33,7 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
     <article
       className={cn(
         "group relative flex h-full w-full min-w-0 flex-col",
-        isFeatured && "md:col-span-2 lg:col-span-2"
+        isFeatured && "md:col-span-2 lg:col-span-2",
       )}
     >
       {/* Container pour l'image avec lien principal */}
@@ -43,7 +46,7 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
           className={cn(
             "relative mb-4 overflow-hidden rounded-lg bg-muted",
             isCompact ? "aspect-[16/9]" : "aspect-[4/3]",
-            isFeatured && "aspect-[16/9] md:aspect-[2/1]"
+            isFeatured && "aspect-[16/9] md:aspect-[2/1]",
           )}
         >
           {article.featured_image ? (
@@ -60,7 +63,9 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
             />
           ) : (
             <div className="via-muted/80 to-muted/60 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted">
-              <span className="text-sm font-medium text-muted-foreground">Pas d'image</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Pas d'image
+              </span>
             </div>
           )}
 
@@ -70,9 +75,16 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
       </Link>
 
       {/* Contenu de l'article - SÉPARÉ du lien principal */}
-      <div className={cn("flex min-w-0 flex-grow flex-col", isFeatured && "md:space-y-4")}>
+      <div
+        className={cn(
+          "flex min-w-0 flex-grow flex-col",
+          isFeatured && "md:space-y-4",
+        )}
+      >
         {/* Contenu principal (flexible) */}
-        <div className={cn("flex-grow space-y-3", isFeatured && "md:space-y-4")}>
+        <div
+          className={cn("flex-grow space-y-3", isFeatured && "md:space-y-4")}
+        >
           {/* Catégorie */}
           {article.category && (
             <Link
@@ -84,7 +96,7 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
                 variant="outline"
                 className={cn(
                   "hover:bg-background/50 border-2 text-xs font-medium transition-colors",
-                  isCompact && "text-[10px]"
+                  isCompact && "text-[10px]",
                 )}
                 style={{
                   borderColor: article.category.color || "#6b7280",
@@ -102,7 +114,7 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
               className={cn(
                 "cursor-pointer font-semibold leading-tight text-foreground transition-colors duration-300 hover:text-primary",
                 isCompact ? "text-base" : "text-xl",
-                isFeatured && "md:text-2xl lg:text-3xl"
+                isFeatured && "md:text-2xl lg:text-3xl",
               )}
             >
               {article.title}
@@ -115,13 +127,16 @@ export function ArticleCard({ article, variant = "default" }: ArticleCardProps) 
               <div
                 className={cn(
                   "cursor-pointer leading-relaxed text-muted-foreground transition-colors duration-300 hover:text-foreground",
-                  isFeatured ? "text-base" : "text-sm"
+                  isFeatured ? "text-base" : "text-sm",
                 )}
               >
                 {article.excerpt ? (
                   <p>{article.excerpt}</p>
                 ) : (
-                  <ArticleExcerpt content={article.content} maxLength={isFeatured ? 200 : 120} />
+                  <ArticleExcerpt
+                    content={article.content}
+                    maxLength={isFeatured ? 200 : 120}
+                  />
                 )}
               </div>
             </Link>

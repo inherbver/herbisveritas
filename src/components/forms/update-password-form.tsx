@@ -3,7 +3,7 @@
 import { useFormStatus } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 import { updatePasswordAction } from "@/actions/authActions";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,13 @@ const REGEX_UPPERCASE = /[A-Z]/;
 const REGEX_NUMBER = /[0-9]/;
 const REGEX_SPECIAL_CHAR = /[^A-Za-z0-9]/;
 
-function SubmitButton({ text, loadingText }: { text: string; loadingText: string }) {
+function SubmitButton({
+  text,
+  loadingText,
+}: {
+  text: string;
+  loadingText: string;
+}) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full" disabled={pending}>
@@ -60,7 +66,9 @@ export function UpdatePasswordForm() {
   if (state?.success) {
     return (
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-green-700">{t("successMessage")}</h2>
+        <h2 className="text-2xl font-semibold text-green-700">
+          {t("successMessage")}
+        </h2>
         <Link
           href="/login"
           className="bg-p-olive-dark hover:bg-p-olive-dark/90 focus:ring-p-olive-dark mt-4 inline-block rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2"
@@ -73,8 +81,12 @@ export function UpdatePasswordForm() {
 
   return (
     <div>
-      <h2 className="text-center text-3xl font-extrabold text-gray-900">{t("title")}</h2>
-      <p className="mt-2 text-center text-sm text-gray-600">{t("description")}</p>
+      <h2 className="text-center text-3xl font-extrabold text-gray-900">
+        {t("title")}
+      </h2>
+      <p className="mt-2 text-center text-sm text-gray-600">
+        {t("description")}
+      </p>
       <form action={formAction} className="mt-8 space-y-6">
         <input type="hidden" name="locale" value={locale} />
         <div className="space-y-4">
@@ -89,7 +101,9 @@ export function UpdatePasswordForm() {
               onChange={(e) => setPassword(e.target.value)}
             />
             {state?.fieldErrors?.password && (
-              <p className="mt-2 text-sm text-red-600">{state.fieldErrors.password.join(", ")}</p>
+              <p className="mt-2 text-sm text-red-600">
+                {state.fieldErrors.password.join(", ")}
+              </p>
             )}
           </div>
           <PasswordStrengthBar strength={passwordStrength} />
@@ -102,7 +116,10 @@ export function UpdatePasswordForm() {
               met={requirements.uppercase}
               label={t("validation.oneUppercase")}
             />
-            <PasswordRequirement met={requirements.number} label={t("validation.oneNumber")} />
+            <PasswordRequirement
+              met={requirements.number}
+              label={t("validation.oneNumber")}
+            />
             <PasswordRequirement
               met={requirements.specialChar}
               label={t("validation.oneSpecialChar")}
@@ -125,10 +142,15 @@ export function UpdatePasswordForm() {
           </div>
         </div>
 
-        {state?.error && <p className="mt-4 text-center text-sm text-red-600">{state.error}</p>}
+        {state?.error && (
+          <p className="mt-4 text-center text-sm text-red-600">{state.error}</p>
+        )}
 
         <div>
-          <SubmitButton text={t("submitButton")} loadingText={tGlobal("loading")} />
+          <SubmitButton
+            text={t("submitButton")}
+            loadingText={tGlobal("loading")}
+          />
         </div>
       </form>
     </div>

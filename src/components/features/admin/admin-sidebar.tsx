@@ -1,8 +1,15 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { usePathname } from "next/navigation";
-import { Home, Package, Users, FileText, MapPin, Handshake } from "lucide-react";
+import {
+  Home,
+  Package,
+  Users,
+  FileText,
+  MapPin,
+  Handshake,
+} from "lucide-react";
 import { cn } from "@/utils/cn";
 
 const navItems = [
@@ -39,7 +46,7 @@ export function AdminSidebar() {
             href={item.href}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary",
-              activePath === item.href && "bg-muted text-primary"
+              activePath === item.href && "bg-muted text-primary",
             )}
           >
             <item.icon className="h-4 w-4" />

@@ -1,6 +1,6 @@
 import React from "react";
 import { Logo } from "@/components/common/logo"; // Optional: Add logo
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 interface AuthLayoutProps {
   children: React.ReactNode;

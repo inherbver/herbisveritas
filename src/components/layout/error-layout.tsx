@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Container } from "./container";
 import { Heading } from "@/components/common/heading";
@@ -12,7 +12,12 @@ interface ErrorLayoutProps {
   children?: React.ReactNode; // Optional children for more customization
 }
 
-const ErrorLayout: React.FC<ErrorLayoutProps> = ({ statusCode, title, message, children }) => {
+const ErrorLayout: React.FC<ErrorLayoutProps> = ({
+  statusCode,
+  title,
+  message,
+  children,
+}) => {
   return (
     <Container className="flex min-h-[calc(100vh-10rem)] items-center justify-center py-12 text-center">
       <div className="space-y-4">
