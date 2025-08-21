@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { LOGIN_REDIRECT_URL } from "@/lib/constants";
 import type { Database } from "@/types/supabase";
 import { Metadata } from "next";
@@ -40,7 +40,9 @@ const AccountDisplayAddress = ({
             <dt className="text-sm font-medium text-muted-foreground">
               {t("addressFields.fullName")}
             </dt>
-            <dd className="mt-1 text-base text-foreground">{address.full_name}</dd>
+            <dd className="mt-1 text-base text-foreground">
+              {address.full_name}
+            </dd>
           </div>
         )}
         {address.company_name && (
@@ -48,11 +50,15 @@ const AccountDisplayAddress = ({
             <dt className="text-sm font-medium text-muted-foreground">
               {t("addressFields.companyName")}
             </dt>
-            <dd className="mt-1 text-base text-foreground">{address.company_name}</dd>
+            <dd className="mt-1 text-base text-foreground">
+              {address.company_name}
+            </dd>
           </div>
         )}
         <div className="sm:col-span-2">
-          <dt className="text-sm font-medium text-muted-foreground">{t("addressFields.line1")}</dt>
+          <dt className="text-sm font-medium text-muted-foreground">
+            {t("addressFields.line1")}
+          </dt>
           <dd className="mt-1 text-base text-foreground">
             {address.street_number && `${address.street_number} `}
             {address.address_line1}
@@ -63,17 +69,23 @@ const AccountDisplayAddress = ({
             <dt className="text-sm font-medium text-muted-foreground">
               {t("addressFields.line2")}
             </dt>
-            <dd className="mt-1 text-base text-foreground">{address.address_line2}</dd>
+            <dd className="mt-1 text-base text-foreground">
+              {address.address_line2}
+            </dd>
           </div>
         )}
         <div className="sm:col-span-1">
           <dt className="text-sm font-medium text-muted-foreground">
             {t("addressFields.postalCode")}
           </dt>
-          <dd className="mt-1 text-base text-foreground">{address.postal_code}</dd>
+          <dd className="mt-1 text-base text-foreground">
+            {address.postal_code}
+          </dd>
         </div>
         <div className="sm:col-span-1">
-          <dt className="text-sm font-medium text-muted-foreground">{t("addressFields.city")}</dt>
+          <dt className="text-sm font-medium text-muted-foreground">
+            {t("addressFields.city")}
+          </dt>
           <dd className="mt-1 text-base text-foreground">{address.city}</dd>
         </div>
         {address.state_province_region && (
@@ -81,21 +93,31 @@ const AccountDisplayAddress = ({
             <dt className="text-sm font-medium text-muted-foreground">
               {t("addressFields.stateProvinceRegion")}
             </dt>
-            <dd className="mt-1 text-base text-foreground">{address.state_province_region}</dd>
+            <dd className="mt-1 text-base text-foreground">
+              {address.state_province_region}
+            </dd>
           </div>
         )}
-        <div className={address.state_province_region ? "sm:col-span-1" : "sm:col-span-2"}>
+        <div
+          className={
+            address.state_province_region ? "sm:col-span-1" : "sm:col-span-2"
+          }
+        >
           <dt className="text-sm font-medium text-muted-foreground">
             {t("addressFields.country")}
           </dt>
-          <dd className="mt-1 text-base text-foreground">{address.country_code}</dd>
+          <dd className="mt-1 text-base text-foreground">
+            {address.country_code}
+          </dd>
         </div>
         {address.phone_number && (
           <div className="sm:col-span-2">
             <dt className="text-sm font-medium text-muted-foreground">
               {t("addressFields.phone")}
             </dt>
-            <dd className="mt-1 text-base text-foreground">{address.phone_number}</dd>
+            <dd className="mt-1 text-base text-foreground">
+              {address.phone_number}
+            </dd>
           </div>
         )}
       </dl>
@@ -107,7 +129,9 @@ interface AccountPageProps {
   params: Promise<{ locale: string }>;
 }
 
-export async function generateMetadata({ params }: AccountPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: AccountPageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({
     locale,
@@ -121,8 +145,14 @@ export async function generateMetadata({ params }: AccountPageProps): Promise<Me
 
 export default async function AccountPage({ params }: AccountPageProps) {
   const { locale: currentLocale } = await params;
-  const t = await getTranslations({ locale: currentLocale, namespace: "AccountPage" });
-  const tGlobal = await getTranslations({ locale: currentLocale, namespace: "Global" });
+  const t = await getTranslations({
+    locale: currentLocale,
+    namespace: "AccountPage",
+  });
+  const tGlobal = await getTranslations({
+    locale: currentLocale,
+    namespace: "Global",
+  });
 
   const supabase = await createSupabaseServerClient();
 
@@ -155,7 +185,9 @@ export default async function AccountPage({ params }: AccountPageProps) {
     console.error("Error fetching profile data:", profileError);
     return (
       <section className="container mx-auto px-4 py-8">
-        <h1 className="mb-6 text-3xl font-bold text-foreground">{t("title")}</h1>
+        <h1 className="mb-6 text-3xl font-bold text-foreground">
+          {t("title")}
+        </h1>
         <p className="text-destructive">{t("errors.userProfileNotFound")}</p>
       </section>
     );
@@ -181,10 +213,15 @@ export default async function AccountPage({ params }: AccountPageProps) {
         console.error("Error creating profile:", createError);
         return (
           <section className="container mx-auto px-4 py-8">
-            <h1 className="mb-6 text-3xl font-bold text-foreground">{t("title")}</h1>
-            <p className="text-destructive">{t("errors.userProfileNotFound")}</p>
+            <h1 className="mb-6 text-3xl font-bold text-foreground">
+              {t("title")}
+            </h1>
+            <p className="text-destructive">
+              {t("errors.userProfileNotFound")}
+            </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Erreur lors de la création du profil. Veuillez contacter le support.
+              Erreur lors de la création du profil. Veuillez contacter le
+              support.
             </p>
           </section>
         );
@@ -197,7 +234,9 @@ export default async function AccountPage({ params }: AccountPageProps) {
       console.error("Unexpected error creating profile:", error);
       return (
         <section className="container mx-auto px-4 py-8">
-          <h1 className="mb-6 text-3xl font-bold text-foreground">{t("title")}</h1>
+          <h1 className="mb-6 text-3xl font-bold text-foreground">
+            {t("title")}
+          </h1>
           <p className="text-destructive">{t("errors.userProfileNotFound")}</p>
         </section>
       );
@@ -212,9 +251,13 @@ export default async function AccountPage({ params }: AccountPageProps) {
   // FIX: Utiliser 'is_default' au lieu de 'is_default_shipping' et 'is_default_billing'
   // et filtrer par address_type pour déterminer les adresses par défaut
   const defaultShippingAddress =
-    userAddresses?.find((addr) => addr.is_default && addr.address_type === "shipping") ?? null;
+    userAddresses?.find(
+      (addr) => addr.is_default && addr.address_type === "shipping",
+    ) ?? null;
   const defaultBillingAddress =
-    userAddresses?.find((addr) => addr.is_default && addr.address_type === "billing") ?? null;
+    userAddresses?.find(
+      (addr) => addr.is_default && addr.address_type === "billing",
+    ) ?? null;
 
   // Determine the display addresses based on defaults and types
   const shippingAddress =
@@ -222,11 +265,15 @@ export default async function AccountPage({ params }: AccountPageProps) {
     userAddresses?.find((addr) => addr.address_type === "shipping") ??
     null;
   const billingAddress =
-    defaultBillingAddress ?? userAddresses?.find((addr) => addr.address_type === "billing") ?? null;
+    defaultBillingAddress ??
+    userAddresses?.find((addr) => addr.address_type === "billing") ??
+    null;
 
   // FIX: Construire le nom complet et l'email à partir des données disponibles
   const fullName =
-    profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : "";
+    profile?.first_name && profile?.last_name
+      ? `${profile.first_name} ${profile.last_name}`
+      : "";
 
   const email = user.email || ""; // L'email vient de l'objet user, pas du profil
 
@@ -236,7 +283,9 @@ export default async function AccountPage({ params }: AccountPageProps) {
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("generalInfo.title")}</h2>
+            <h2 className="text-xl font-semibold text-foreground">
+              {t("generalInfo.title")}
+            </h2>
             <Link
               href={`/${currentLocale}/profile/account/edit`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -265,7 +314,9 @@ export default async function AccountPage({ params }: AccountPageProps) {
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("addresses.title")}</h2>
+            <h2 className="text-xl font-semibold text-foreground">
+              {t("addresses.title")}
+            </h2>
             <Link
               href={`/${currentLocale}/profile/addresses`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -273,7 +324,9 @@ export default async function AccountPage({ params }: AccountPageProps) {
               {tGlobal("manage")}
             </Link>
           </div>
-          <BillingAddressToggle initialIsSame={!profile.billing_address_is_different} />
+          <BillingAddressToggle
+            initialIsSame={!profile.billing_address_is_different}
+          />
           <AccountDisplayAddress
             address={shippingAddress}
             title={
@@ -303,7 +356,9 @@ export default async function AccountPage({ params }: AccountPageProps) {
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("password.sectionTitle")}</h2>
+            <h2 className="text-xl font-semibold text-foreground">
+              {t("password.sectionTitle")}
+            </h2>
             <Link
               href={`/${currentLocale}/profile/password`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -322,7 +377,9 @@ export default async function AccountPage({ params }: AccountPageProps) {
       >
         <div className="px-4 py-5 sm:p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("orders.title")}</h2>
+            <h2 className="text-xl font-semibold text-foreground">
+              {t("orders.title")}
+            </h2>
             <Link
               href={`/${currentLocale}/profile/orders`}
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -337,10 +394,14 @@ export default async function AccountPage({ params }: AccountPageProps) {
       <article className="overflow-hidden border border-border bg-background shadow-md sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">{t("logout.sectionTitle")}</h2>
+            <h2 className="text-xl font-semibold text-foreground">
+              {t("logout.sectionTitle")}
+            </h2>
             <LogoutButton />
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">{t("logout.description")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t("logout.description")}
+          </p>
         </div>
       </article>
     </section>

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ArrowRight, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Metadata } from "next";
 import { ArticleCard, MagazineHero } from "@/components/features/magazine";
 
@@ -23,7 +23,8 @@ function generateMagazineStructuredData(baseUrl: string) {
     "@context": "https://schema.org",
     "@type": "Blog",
     name: "Magazine Herbis Veritas",
-    description: "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio",
+    description:
+      "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio",
     url: `${baseUrl}/magazine`,
     publisher: {
       "@type": "Organization",
@@ -45,19 +46,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
 
   return {
-    title: "Magazine | Herbis Veritas - Articles et guides sur les cosmétiques naturels",
+    title:
+      "Magazine | Herbis Veritas - Articles et guides sur les cosmétiques naturels",
     description:
       "Découvrez nos articles exclusifs sur les cosmétiques naturels, conseils beauté bio, guides d'utilisation et actualités du monde de la beauté naturelle.",
     openGraph: {
       title: "Magazine Herbis Veritas - Cosmétiques naturels",
-      description: "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio.",
+      description:
+        "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio.",
       type: "website",
       locale: locale,
     },
     twitter: {
       card: "summary_large_image",
       title: "Magazine Herbis veritas",
-      description: "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio.",
+      description:
+        "Articles, guides et conseils sur les cosmétiques naturels et la beauté bio.",
     },
     alternates: {
       canonical: "/magazine",
@@ -70,17 +74,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Les filtres de catégories sont maintenant intégrés dans MagazineHero
 
 // Composant pour la pagination
-function Pagination({ pagination, baseUrl }: { pagination: ArticlePagination; baseUrl: string }) {
+function Pagination({
+  pagination,
+  baseUrl,
+}: {
+  pagination: ArticlePagination;
+  baseUrl: string;
+}) {
   if (pagination.totalPages <= 1) return null;
 
   const pages = Array.from({ length: pagination.totalPages }, (_, i) => i + 1);
 
   return (
-    <nav className="flex items-center justify-center space-x-2" aria-label="Pagination">
+    <nav
+      className="flex items-center justify-center space-x-2"
+      aria-label="Pagination"
+    >
       {/* Page précédente */}
       {pagination.page > 1 && (
         <Button variant="outline" size="sm" asChild>
-          <Link href={`${baseUrl}${pagination.page > 2 ? `&page=${pagination.page - 1}` : ""}`}>
+          <Link
+            href={`${baseUrl}${pagination.page > 2 ? `&page=${pagination.page - 1}` : ""}`}
+          >
             <ArrowLeft className="mr-1 h-4 w-4" />
             Précédent
           </Link>
@@ -96,7 +111,9 @@ function Pagination({ pagination, baseUrl }: { pagination: ArticlePagination; ba
             size="sm"
             asChild
           >
-            <Link href={page === 1 ? baseUrl : `${baseUrl}&page=${page}`}>{page}</Link>
+            <Link href={page === 1 ? baseUrl : `${baseUrl}&page=${page}`}>
+              {page}
+            </Link>
           </Button>
         ))}
       </div>
@@ -192,7 +209,9 @@ async function MagazineContent({
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <div className="space-y-2 text-center">
-                  <h3 className="text-lg font-semibold">Aucun article trouvé</h3>
+                  <h3 className="text-lg font-semibold">
+                    Aucun article trouvé
+                  </h3>
                   <p className="text-muted-foreground">
                     {search || category
                       ? "Essayez de modifier vos critères de recherche."
@@ -281,7 +300,10 @@ export default async function MagazinePage({ params, searchParams }: Props) {
 
       {/* Contenu principal avec hero et articles */}
       <Suspense fallback={<MagazineContentSkeleton />}>
-        <MagazineContent searchParams={resolvedSearchParams} heroTitle={t("title") || "Magazine"} />
+        <MagazineContent
+          searchParams={resolvedSearchParams}
+          heroTitle={t("title") || "Magazine"}
+        />
       </Suspense>
     </main>
   );

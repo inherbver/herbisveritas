@@ -6,7 +6,7 @@ import { getArticles, getCategoryBySlug } from "@/lib/magazine/queries";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { ArticleDisplay, Category, Tag } from "@/types/magazine";
 
@@ -28,7 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${category.name} | Magazine Herbis Veritas`,
     description:
-      category.description || `Découvrez nos articles dans la catégorie ${category.name}`,
+      category.description ||
+      `Découvrez nos articles dans la catégorie ${category.name}`,
     openGraph: {
       title: `${category.name} - Magazine Herbis Veritas`,
       description: category.description || `Articles sur ${category.name}`,
@@ -112,7 +113,9 @@ function ArticleCard({ article }: { article: ArticleDisplay }) {
                 </span>
               </div>
             )}
-            {article.reading_time && <span>{article.reading_time} min de lecture</span>}
+            {article.reading_time && (
+              <span>{article.reading_time} min de lecture</span>
+            )}
           </div>
 
           <h3 className="line-clamp-2 font-semibold text-gray-900 transition-colors group-hover:text-blue-600">
@@ -120,7 +123,9 @@ function ArticleCard({ article }: { article: ArticleDisplay }) {
           </h3>
 
           {article.excerpt && (
-            <p className="line-clamp-3 text-sm text-gray-600">{article.excerpt}</p>
+            <p className="line-clamp-3 text-sm text-gray-600">
+              {article.excerpt}
+            </p>
           )}
 
           {/* Tags */}
@@ -146,7 +151,11 @@ async function CategoryContent({ slug }: { slug: string }) {
     notFound();
   }
 
-  const { articles } = await getArticles({ category_id: category.id, status: "published" }, 1, 20);
+  const { articles } = await getArticles(
+    { category_id: category.id, status: "published" },
+    1,
+    20,
+  );
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const structuredData = generateCategoryStructuredData(category, baseUrl);
 
@@ -190,13 +199,20 @@ async function CategoryContent({ slug }: { slug: string }) {
 
           <div className="mb-4 flex items-center gap-4">
             {category.color && (
-              <div className="h-4 w-4 rounded-full" style={{ backgroundColor: category.color }} />
+              <div
+                className="h-4 w-4 rounded-full"
+                style={{ backgroundColor: category.color }}
+              />
             )}
-            <h1 className="text-4xl font-bold text-gray-900 md:text-5xl">{category.name}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 md:text-5xl">
+              {category.name}
+            </h1>
           </div>
 
           {category.description && (
-            <p className="max-w-2xl text-xl text-gray-600">{category.description}</p>
+            <p className="max-w-2xl text-xl text-gray-600">
+              {category.description}
+            </p>
           )}
 
           <div className="mt-6">

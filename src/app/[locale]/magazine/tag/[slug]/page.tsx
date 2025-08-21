@@ -6,7 +6,7 @@ import { getArticles, getTagBySlug } from "@/lib/magazine/queries";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, ArrowLeft, Hash } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { ArticleDisplay, Tag } from "@/types/magazine";
 
@@ -111,7 +111,9 @@ function ArticleCard({ article }: { article: ArticleDisplay }) {
                 </span>
               </div>
             )}
-            {article.reading_time && <span>{article.reading_time} min de lecture</span>}
+            {article.reading_time && (
+              <span>{article.reading_time} min de lecture</span>
+            )}
           </div>
 
           <h3 className="line-clamp-2 font-semibold text-gray-900 transition-colors group-hover:text-blue-600">
@@ -119,7 +121,9 @@ function ArticleCard({ article }: { article: ArticleDisplay }) {
           </h3>
 
           {article.excerpt && (
-            <p className="line-clamp-3 text-sm text-gray-600">{article.excerpt}</p>
+            <p className="line-clamp-3 text-sm text-gray-600">
+              {article.excerpt}
+            </p>
           )}
 
           {/* Catégorie */}
@@ -147,7 +151,11 @@ async function TagContent({ slug }: { slug: string }) {
     notFound();
   }
 
-  const { articles } = await getArticles({ tag_ids: [tag.id], status: "published" }, 1, 20);
+  const { articles } = await getArticles(
+    { tag_ids: [tag.id], status: "published" },
+    1,
+    20,
+  );
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const structuredData = generateTagStructuredData(tag, baseUrl);
 
@@ -191,7 +199,9 @@ async function TagContent({ slug }: { slug: string }) {
 
           <div className="mb-4 flex items-center gap-4">
             <Hash className="h-8 w-8 text-purple-600" />
-            <h1 className="text-4xl font-bold text-gray-900 md:text-5xl">{tag.name}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 md:text-5xl">
+              {tag.name}
+            </h1>
           </div>
 
           <p className="max-w-2xl text-xl text-gray-600">

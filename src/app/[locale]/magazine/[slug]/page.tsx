@@ -8,8 +8,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TipTapViewer } from "@/components/features/magazine/tiptap-viewer";
 import { ArticleDisplay, Tag } from "@/types/magazine";
-import { Calendar, User, Clock, Eye, ArrowLeft, Facebook, Twitter, Linkedin } from "lucide-react";
-import Link from "next/link";
+import {
+  Calendar,
+  User,
+  Clock,
+  Eye,
+  ArrowLeft,
+  Facebook,
+  Twitter,
+  Linkedin,
+} from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Metadata } from "next";
 
@@ -71,7 +80,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: article.published_at || article.created_at || undefined,
       authors: article.author
-        ? [`${article.author.first_name || ""} ${article.author.last_name || ""}`]
+        ? [
+            `${article.author.first_name || ""} ${article.author.last_name || ""}`,
+          ]
         : [],
       images: article.featured_image ? [article.featured_image] : [],
     },
@@ -85,7 +96,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 // Composant pour les boutons de partage
-function ShareButtons({ article, currentUrl }: { article: ArticleDisplay; currentUrl: string }) {
+function ShareButtons({
+  article,
+  currentUrl,
+}: {
+  article: ArticleDisplay;
+  currentUrl: string;
+}) {
   const shareText = `${article.title} - ${article.excerpt || ""}`;
 
   return (
@@ -129,20 +146,31 @@ function ShareButtons({ article, currentUrl }: { article: ArticleDisplay; curren
 }
 
 // Composant pour les articles connexes
-async function RelatedArticles({ currentArticleId }: { currentArticleId: string }) {
+async function RelatedArticles({
+  currentArticleId,
+}: {
+  currentArticleId: string;
+}) {
   const relatedArticles = await getPublishedArticles(3);
-  const filteredArticles = relatedArticles.filter((article) => article.id !== currentArticleId);
+  const filteredArticles = relatedArticles.filter(
+    (article) => article.id !== currentArticleId,
+  );
 
   if (filteredArticles.length === 0) return null;
 
   return (
     <section className="bg-gray-50 py-12">
       <div className="container mx-auto px-4">
-        <h2 className="mb-8 text-center text-2xl font-bold text-gray-900">Articles connexes</h2>
+        <h2 className="mb-8 text-center text-2xl font-bold text-gray-900">
+          Articles connexes
+        </h2>
 
         <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredArticles.slice(0, 3).map((article) => (
-            <Card key={article.id} className="transition-shadow hover:shadow-lg">
+            <Card
+              key={article.id}
+              className="transition-shadow hover:shadow-lg"
+            >
               <Link href={`/magazine/${article.slug}`}>
                 <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
                   {article.featured_image ? (
@@ -178,7 +206,9 @@ async function RelatedArticles({ currentArticleId }: { currentArticleId: string 
                   </h3>
 
                   {article.excerpt && (
-                    <p className="line-clamp-2 text-sm text-gray-600">{article.excerpt}</p>
+                    <p className="line-clamp-2 text-sm text-gray-600">
+                      {article.excerpt}
+                    </p>
                   )}
                 </CardContent>
               </Link>
@@ -278,7 +308,9 @@ async function ArticleContent({ slug }: { slug: string }) {
 
           {/* Extrait */}
           {article.excerpt && (
-            <p className="mb-6 text-xl leading-relaxed text-gray-600">{article.excerpt}</p>
+            <p className="mb-6 text-xl leading-relaxed text-gray-600">
+              {article.excerpt}
+            </p>
           )}
 
           {/* Métadonnées */}
@@ -292,7 +324,11 @@ async function ArticleContent({ slug }: { slug: string }) {
 
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              <time dateTime={article.published_at || article.created_at || undefined}>
+              <time
+                dateTime={
+                  article.published_at || article.created_at || undefined
+                }
+              >
                 {publishedDate}
               </time>
             </div>
@@ -359,7 +395,8 @@ async function ArticleContent({ slug }: { slug: string }) {
                   new Date(article.created_at).toDateString() && (
                   <span>
                     {" "}
-                    • Mis à jour le {new Date(article.updated_at).toLocaleDateString("fr-FR")}
+                    • Mis à jour le{" "}
+                    {new Date(article.updated_at).toLocaleDateString("fr-FR")}
                   </span>
                 )}
             </div>
