@@ -55,9 +55,9 @@ export function Footer() {
       {/* Subtle botanical pattern bar */}
       <hr className="h-[2px] w-full bg-gradient-to-r from-primary/20 via-accent/30 to-primary/20 border-0" />
 
-      {/* Botanical watermarks in corners */}
+      {/* Botanical watermarks in corners - Hidden on mobile */}
       <div
-        className="absolute left-0 top-0 -z-10 h-80 w-80 -translate-x-1/4 -translate-y-1/6 opacity-40 bg-[url('/illustration_footer_nobg.svg')] bg-no-repeat bg-contain"
+        className="absolute left-0 top-0 -z-10 h-80 w-80 -translate-x-1/4 -translate-y-1/6 opacity-40 bg-[url('/illustration_footer_nobg.svg')] bg-no-repeat bg-contain hidden md:block"
         aria-hidden="true"
       />
 

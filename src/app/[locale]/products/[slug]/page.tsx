@@ -27,10 +27,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const translation = product.product_translations?.find((t) => t.locale === locale);
+  const translation = product.product_translations?.find(
+    (t) => t.locale === locale,
+  );
 
   const pageTitle = `${translation?.name || product.slug} | ${t("metadata.title")}`;
-  const pageDescription = translation?.short_description || t("metadata.description");
+  const pageDescription =
+    translation?.short_description || t("metadata.description");
 
   return {
     title: pageTitle,
@@ -47,7 +50,9 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound();
   }
 
-  const translation = productData.product_translations?.find((t) => t.locale === locale);
+  const translation = productData.product_translations?.find(
+    (t) => t.locale === locale,
+  );
 
   const productForDisplay: ProductDetailData = {
     id: productData.id,
@@ -70,16 +75,22 @@ export default async function ProductDetailPage({ params }: Props) {
     inciList: productData.inci_list ?? [],
   };
 
-  // Log la vue produit (async, sans attendre)
+  // Log la vue produit (async, sans attendre) - seulement si utilisateur authentifié
   const logProductView = async () => {
     try {
       const supabase = await createSupabaseServerClient();
       const userId = await getActiveUserId(supabase);
+
+      // Ne logger que si l'utilisateur est authentifié (évite les erreurs RLS)
+      if (!userId) {
+        return;
+      }
+
       const headersList = await headers();
 
       await logEvent(
         "PRODUCT_VIEWED",
-        userId || undefined,
+        userId,
         {
           product_id: productData.id,
           product_name: productForDisplay.name,
@@ -89,7 +100,7 @@ export default async function ProductDetailPage({ params }: Props) {
           referrer: headersList.get("referer") || undefined,
           message: `Vue produit: ${productForDisplay.name} (${productData.price}€)`,
         },
-        "INFO"
+        "INFO",
       );
     } catch (error) {
       console.error("Error logging product view:", error);
