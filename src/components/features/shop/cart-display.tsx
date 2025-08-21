@@ -323,12 +323,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                     <section className="flex justify-between text-base font-medium">
                       <h3>
                         {item.slug ? (
-                          <NextLink
-                            href={{
-                              pathname: "/products/[slug]",
-                              params: { slug: item.slug },
-                            }}
-                          >
+                          <NextLink href={`/products/${item.slug}`}>
                             {item.name}
                           </NextLink>
                         ) : (

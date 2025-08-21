@@ -128,10 +128,7 @@ export function ProductCard({
     }
   }, []);
 
-  const linkHref = {
-    pathname: "/products/[slug]",
-    params: { slug },
-  } as const;
+  const linkHref = `/products/${slug}`;
 
   if (isLoading) {
     return (
