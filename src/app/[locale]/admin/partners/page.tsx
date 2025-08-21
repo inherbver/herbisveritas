@@ -4,8 +4,14 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAllPartners } from "@/lib/markets/queries";
 import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "@/i18n/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 /**
@@ -47,7 +53,9 @@ export default async function AdminPartnersPage() {
           <Card>
             <CardHeader>
               <CardTitle>Aucun partenaire</CardTitle>
-              <CardDescription>Aucun partenaire n'est configuré pour le moment.</CardDescription>
+              <CardDescription>
+                Aucun partenaire n'est configuré pour le moment.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/admin/partners/new">
@@ -63,10 +71,14 @@ export default async function AdminPartnersPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       {partner.name}
-                      <Badge variant={partner.isActive ? "default" : "secondary"}>
+                      <Badge
+                        variant={partner.isActive ? "default" : "secondary"}
+                      >
                         {partner.isActive ? "Actif" : "Inactif"}
                       </Badge>
-                      <Badge variant="outline">Ordre: {partner.displayOrder}</Badge>
+                      <Badge variant="outline">
+                        Ordre: {partner.displayOrder}
+                      </Badge>
                     </CardTitle>
                     <CardDescription>{partner.address}</CardDescription>
                   </div>
@@ -81,7 +93,9 @@ export default async function AdminPartnersPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{partner.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {partner.description}
+                  </p>
                   {partner.facebookUrl && (
                     <div className="text-sm">
                       <span className="font-medium">Facebook:</span>{" "}

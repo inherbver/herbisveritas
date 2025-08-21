@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMarketById } from "@/lib/markets/queries";
 import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { MarketForm } from "../../market-form";
 
 interface EditMarketPageProps {

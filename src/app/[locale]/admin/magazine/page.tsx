@@ -1,11 +1,17 @@
 import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, FileText, Eye, Calendar, User } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getArticles, getArticleStats } from "@/lib/magazine/queries";
 import { ArticleFilters } from "@/types/magazine";
 import { formatDate } from "@/lib/market-utils";
@@ -60,7 +66,10 @@ async function ArticlesList({
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {articles.map((article) => (
-          <Card key={article.id} className="flex flex-col transition-shadow hover:shadow-md">
+          <Card
+            key={article.id}
+            className="flex flex-col transition-shadow hover:shadow-md"
+          >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <Badge
@@ -88,7 +97,9 @@ async function ArticlesList({
               {/* Réservation d'espace pour l'excerpt pour maintenir l'alignement */}
               <div className="min-h-[2.5rem]">
                 {article.excerpt && (
-                  <CardDescription className="line-clamp-2">{article.excerpt}</CardDescription>
+                  <CardDescription className="line-clamp-2">
+                    {article.excerpt}
+                  </CardDescription>
                 )}
               </div>
             </CardHeader>
@@ -126,7 +137,9 @@ async function ArticlesList({
               {/* Boutons toujours alignés en bas */}
               <div className="mt-auto flex gap-2">
                 <Button variant="outline" size="sm" asChild className="flex-1">
-                  <Link href={`/admin/magazine/${article.id}/edit`}>Modifier</Link>
+                  <Link href={`/admin/magazine/${article.id}/edit`}>
+                    Modifier
+                  </Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href={`/magazine/${article.slug}`} target="_blank">
@@ -254,7 +267,10 @@ function LoadingSkeleton() {
   );
 }
 
-export default async function AdminMagazinePage({ params, searchParams }: Props) {
+export default async function AdminMagazinePage({
+  params,
+  searchParams,
+}: Props) {
   const { locale } = await params;
   const resolvedSearchParams = await searchParams;
   setRequestLocale(locale);
@@ -267,7 +283,9 @@ export default async function AdminMagazinePage({ params, searchParams }: Props)
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Magazine</h1>
-          <p className="text-muted-foreground">Gérez vos articles et contenus éditoriaux</p>
+          <p className="text-muted-foreground">
+            Gérez vos articles et contenus éditoriaux
+          </p>
         </div>
         <Button asChild>
           <Link href="/admin/magazine/new">
@@ -279,25 +297,35 @@ export default async function AdminMagazinePage({ params, searchParams }: Props)
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        <Button variant={!resolvedSearchParams.status ? "default" : "outline"} size="sm" asChild>
+        <Button
+          variant={!resolvedSearchParams.status ? "default" : "outline"}
+          size="sm"
+          asChild
+        >
           <Link href="/admin/magazine">Tous</Link>
         </Button>
         <Button
-          variant={resolvedSearchParams.status === "published" ? "default" : "outline"}
+          variant={
+            resolvedSearchParams.status === "published" ? "default" : "outline"
+          }
           size="sm"
           asChild
         >
           <Link href="?status=published">Publiés</Link>
         </Button>
         <Button
-          variant={resolvedSearchParams.status === "draft" ? "default" : "outline"}
+          variant={
+            resolvedSearchParams.status === "draft" ? "default" : "outline"
+          }
           size="sm"
           asChild
         >
           <Link href="?status=draft">Brouillons</Link>
         </Button>
         <Button
-          variant={resolvedSearchParams.status === "archived" ? "default" : "outline"}
+          variant={
+            resolvedSearchParams.status === "archived" ? "default" : "outline"
+          }
           size="sm"
           asChild
         >

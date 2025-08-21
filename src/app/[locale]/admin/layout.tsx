@@ -5,7 +5,7 @@ import { checkUserPermission } from "@/lib/auth/server-auth";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AdminSidebar } from "@/components/features/admin/admin-sidebar";
 import { DashboardShell } from "@/components/features/admin/dashboard-shell";
@@ -16,7 +16,10 @@ interface AdminLayoutProps {
   params: Promise<{ locale: string }>;
 }
 
-export default async function AdminLayout({ children, params }: AdminLayoutProps) {
+export default async function AdminLayout({
+  children,
+  params,
+}: AdminLayoutProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
@@ -38,9 +41,13 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
           <AlertDescription>
             <p>{tGlobal("Errors.unauthorizedMessage")}</p>
             <p className="mt-2 text-xs text-muted-foreground">
-              {tGlobal("Errors.reason")}: {error || tGlobal("Errors.insufficientPrivileges")}
+              {tGlobal("Errors.reason")}:{" "}
+              {error || tGlobal("Errors.insufficientPrivileges")}
             </p>
-            <Link href="/" className="mt-4 block text-sm text-primary underline">
+            <Link
+              href="/"
+              className="mt-4 block text-sm text-primary underline"
+            >
               {tGlobal("Header.goBackHome")}
             </Link>
           </AlertDescription>

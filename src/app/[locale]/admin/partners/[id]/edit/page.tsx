@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getPartnerById } from "@/lib/markets/queries";
 import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { PartnerForm } from "../../partner-form";
 
 interface EditPartnerPageProps {
@@ -16,7 +16,9 @@ interface EditPartnerPageProps {
  *
  * Page de modification d'un partenaire existant
  */
-export default async function EditPartnerPage({ params }: EditPartnerPageProps) {
+export default async function EditPartnerPage({
+  params,
+}: EditPartnerPageProps) {
   const { id } = await params;
 
   // 1. Check admin permissions

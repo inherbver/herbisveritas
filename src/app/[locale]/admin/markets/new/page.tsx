@@ -3,7 +3,7 @@ import { checkAdminRole } from "@/lib/auth/admin-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { MarketForm } from "../market-form";
 
 /**

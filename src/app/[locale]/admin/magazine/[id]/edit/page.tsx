@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 type Props = {
   params: Promise<{ locale: string; id: string }>;
@@ -58,7 +58,9 @@ export default async function EditArticlePage({ params }: Props) {
             </Badge>
           </div>
           <h1 className="text-3xl font-bold">{article.title}</h1>
-          <p className="text-muted-foreground">Modifiez votre article et gérez sa publication</p>
+          <p className="text-muted-foreground">
+            Modifiez votre article et gérez sa publication
+          </p>
         </div>
 
         <div className="flex gap-2">
@@ -120,7 +122,12 @@ export default async function EditArticlePage({ params }: Props) {
               </div>
             }
           >
-            <ArticleForm article={article} categories={categories} tags={tags} mode="edit" />
+            <ArticleForm
+              article={article}
+              categories={categories}
+              tags={tags}
+              mode="edit"
+            />
           </Suspense>
         </CardContent>
       </Card>

@@ -15,7 +15,7 @@ import { type ProductWithTranslations } from "@/lib/supabase/queries/products";
 import { Database } from "@/types/supabase";
 import { DeleteProductDialog } from "./delete-product-dialog";
 import { DeactivateProductDialog } from "./deactivate-product-dialog";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { ProductStatus } from "@/types/product-filters";
@@ -24,7 +24,8 @@ import { PRODUCT_STATUS_GROUPS } from "@/types/product-filters";
 // Badge de statut réutilisable
 function StatusBadge({ status }: { status: ProductStatus }) {
   const statusGroup = PRODUCT_STATUS_GROUPS.find((s) => s.id === status);
-  if (!statusGroup) return <span className="text-xs text-muted-foreground">Inconnu</span>;
+  if (!statusGroup)
+    return <span className="text-xs text-muted-foreground">Inconnu</span>;
 
   const colorClasses = {
     green: "bg-green-100 text-green-800 border-green-200",
@@ -54,10 +55,14 @@ function ProductActions({ product }: { product: ProductWithTranslations }) {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuItem asChild>
-          <Link href={`/${locale}/products/${product.slug}`}>Voir le produit</Link>
+          <Link href={`/${locale}/products/${product.slug}`}>
+            Voir le produit
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={`/${locale}/admin/products/${product.id}/edit`}>Modifier</Link>
+          <Link href={`/${locale}/admin/products/${product.id}/edit`}>
+            Modifier
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DeactivateProductDialog
@@ -72,7 +77,10 @@ function ProductActions({ product }: { product: ProductWithTranslations }) {
             {product.status === "active" ? "Désactiver" : "Activer"}
           </DropdownMenuItem>
         </DeactivateProductDialog>
-        <DeleteProductDialog productId={product.id} productName={product.name || "ce produit"}>
+        <DeleteProductDialog
+          productId={product.id}
+          productName={product.name || "ce produit"}
+        >
           <DropdownMenuItem
             onSelect={(e) => e.preventDefault()}
             className="text-red-600 focus:bg-red-50 focus:text-red-700"
@@ -98,7 +106,8 @@ export const columns: ColumnDef<ProductWithTranslations>[] = [
       const product = row.original;
       const defaultTranslation =
         product.product_translations?.find(
-          (t: Database["public"]["Tables"]["product_translations"]["Row"]) => t.locale === "fr"
+          (t: Database["public"]["Tables"]["product_translations"]["Row"]) =>
+            t.locale === "fr",
         ) || product.product_translations?.[0];
       return defaultTranslation?.name || product.name || "N/A";
     },

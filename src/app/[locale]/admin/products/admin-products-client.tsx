@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { DashboardShell } from "@/components/features/admin/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 import { ProductFilters } from "@/components/features/admin/ProductFilters";
 import { columns } from "./columns";
@@ -19,8 +19,12 @@ interface AdminProductsClientProps {
   initialProducts: ProductWithTranslations[];
 }
 
-export default function AdminProductsClient({ initialProducts }: AdminProductsClientProps) {
-  const [filters, setFilters] = useState<ProductFiltersType>(DEFAULT_PRODUCT_FILTERS);
+export default function AdminProductsClient({
+  initialProducts,
+}: AdminProductsClientProps) {
+  const [filters, setFilters] = useState<ProductFiltersType>(
+    DEFAULT_PRODUCT_FILTERS,
+  );
 
   // Filtrage côté client avec useMemo pour les performances
   const filteredProducts = useMemo(() => {
@@ -28,7 +32,9 @@ export default function AdminProductsClient({ initialProducts }: AdminProductsCl
       // Filtrage par statut
       if (
         filters.status.length > 0 &&
-        !filters.status.includes(product.status as ProductFiltersType["status"][0])
+        !filters.status.includes(
+          product.status as ProductFiltersType["status"][0],
+        )
       ) {
         return false;
       }
@@ -47,7 +53,8 @@ export default function AdminProductsClient({ initialProducts }: AdminProductsCl
         const price = Number(product.price) || 0;
         if (
           price < filters.priceRange.min ||
-          (filters.priceRange.max !== Infinity && price > filters.priceRange.max)
+          (filters.priceRange.max !== Infinity &&
+            price > filters.priceRange.max)
         ) {
           return false;
         }
@@ -62,14 +69,19 @@ export default function AdminProductsClient({ initialProducts }: AdminProductsCl
       }
 
       // Filtrage par catégories
-      if (filters.categories.length > 0 && !filters.categories.includes(product.category || "")) {
+      if (
+        filters.categories.length > 0 &&
+        !filters.categories.includes(product.category || "")
+      ) {
         return false;
       }
 
       // Filtrage par tags/labels
       if (filters.tags.length > 0) {
         const productLabels = product.labels || [];
-        const hasMatchingTag = filters.tags.some((tag) => productLabels.includes(tag));
+        const hasMatchingTag = filters.tags.some((tag) =>
+          productLabels.includes(tag),
+        );
         if (!hasMatchingTag) {
           return false;
         }
