@@ -1,10 +1,12 @@
 "use server";
 
 import { withPermissionSafe } from "@/lib/auth/server-actions-auth";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  createSupabaseAdminClient,
+  createSupabaseServerClient,
+} from "@/lib/supabase/server";
 
 // New imports for Clean Architecture
-import { ActionResult } from "@/lib/core/result";
 import { LogUtils } from "@/lib/core/logger";
 import { ErrorUtils, AuthenticationError } from "@/lib/core/errors";
 
@@ -55,51 +57,87 @@ export interface PaginatedUserResponse {
 
 export const getUsers = withPermissionSafe(
   "users:read:all",
-  async (options?: UserPaginationOptions): Promise<ActionResult<PaginatedUserResponse>> => {
-    const context = LogUtils.createUserActionContext("unknown", "get_users", "admin");
+  async (options?: UserPaginationOptions): Promise<PaginatedUserResponse> => {
+    const context = LogUtils.createUserActionContext(
+      "unknown",
+      "get_users",
+      "admin",
+    );
     LogUtils.logOperationStart("get_users", context);
 
     try {
       const supabase = createSupabaseAdminClient();
+      console.log("[getUsers] Admin client created");
 
       // Default pagination
       const page = options?.page || 1;
       const limit = Math.min(options?.limit || 25, 100); // Cap at 100 for performance
+      console.log(`[getUsers] Fetching page ${page} with limit ${limit}`);
 
-      // 1. Get total count first for better performance
-      const { count: totalCount } = await supabase.auth.admin.listUsers({
-        page: 1,
-        perPage: 1,
-      });
+      // 1. Get all users to get accurate count (Supabase Admin API doesn't provide total)
+      // Note: This is inefficient but necessary due to Supabase Admin API limitations
+      console.log("[getUsers] Fetching all users for count...");
+      const { data: allUsersData, error: countError } =
+        await supabase.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000, // Get a large batch to count total
+        });
 
-      if (!totalCount) {
-        return ActionResult.ok(
-          {
-            data: [],
-            pagination: {
-              page: 1,
-              limit,
-              total: 0,
-              totalPages: 0,
-              hasNext: false,
-              hasPrev: false,
-            },
+      if (countError) {
+        console.error("[getUsers] Error counting users:", countError);
+        throw ErrorUtils.fromSupabaseError(countError);
+      }
+
+      // The total is the length of all users
+      const totalCount = allUsersData?.users?.length || 0;
+
+      console.log("[getUsers] Total user count:", totalCount);
+
+      if (totalCount === 0) {
+        return {
+          data: [],
+          pagination: {
+            page: 1,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasNext: false,
+            hasPrev: false,
           },
-          "Aucun utilisateur trouvé"
-        );
+        };
       }
 
       // 2. Get users for current page only
-      const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers({
-        page,
-        perPage: limit,
-      });
+      const { data: authUsers, error: authUsersError } =
+        await supabase.auth.admin.listUsers({
+          page,
+          perPage: limit,
+        });
 
       if (authUsersError) {
         throw ErrorUtils.fromSupabaseError(authUsersError);
       }
 
       const users = authUsers?.users || [];
+
+      console.log(
+        `[getUsers] Retrieved ${users.length} users for page ${page}`,
+      );
+
+      // Handle empty user list
+      if (users.length === 0) {
+        return {
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            totalPages: Math.ceil(totalCount / limit),
+            hasNext: false,
+            hasPrev: page > 1,
+          },
+        };
+      }
 
       // 3. Get corresponding profiles in batch
       const userIds = users.map((u) => u.id);
@@ -117,7 +155,8 @@ export const getUsers = withPermissionSafe(
       let combinedUsers: UserForAdminPanel[] = users.map((user) => {
         const profile = profileMap.get(user.id);
         const fullName = profile
-          ? [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null
+          ? [profile.first_name, profile.last_name].filter(Boolean).join(" ") ||
+            null
           : null;
 
         return {
@@ -137,19 +176,20 @@ export const getUsers = withPermissionSafe(
         combinedUsers = combinedUsers.filter(
           (user) =>
             user.email.toLowerCase().includes(searchTerm) ||
-            (user.full_name && user.full_name.toLowerCase().includes(searchTerm))
+            (user.full_name &&
+              user.full_name.toLowerCase().includes(searchTerm)),
         );
       }
 
       if (options?.roleFilter && options.roleFilter.length > 0) {
         combinedUsers = combinedUsers.filter((user) =>
-          options.roleFilter!.includes(user.role || "user")
+          options.roleFilter!.includes(user.role || "user"),
         );
       }
 
       if (options?.statusFilter && options.statusFilter.length > 0) {
         combinedUsers = combinedUsers.filter((user) =>
-          options.statusFilter!.includes(user.status || "active")
+          options.statusFilter!.includes(user.status || "active"),
         );
       }
 
@@ -168,38 +208,36 @@ export const getUsers = withPermissionSafe(
         });
       }
 
-      const totalPages = Math.ceil(totalCount / limit);
+      // Use the actual total from the initial count, not the filtered count
+      const actualTotal = totalCount || combinedUsers.length;
+      const totalPages = Math.ceil(actualTotal / limit);
 
       LogUtils.logOperationSuccess("get_users", {
         ...context,
         userCount: combinedUsers.length,
+        totalUsers: actualTotal,
         page,
         limit,
       });
 
-      return ActionResult.ok(
-        {
-          data: combinedUsers,
-          pagination: {
-            page,
-            limit,
-            total: totalCount,
-            totalPages,
-            hasNext: page < totalPages,
-            hasPrev: page > 1,
-          },
+      return {
+        data: combinedUsers,
+        pagination: {
+          page,
+          limit,
+          total: actualTotal,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
         },
-        `${combinedUsers.length} utilisateurs récupérés (page ${page}/${totalPages})`
-      );
+      };
     } catch (error) {
       LogUtils.logOperationError("get_users", error, context);
-      return ActionResult.error(
-        ErrorUtils.isAppError(error)
-          ? ErrorUtils.formatForUser(error)
-          : "Impossible de récupérer les utilisateurs"
-      );
+      throw ErrorUtils.isAppError(error)
+        ? error
+        : new Error("Impossible de récupérer les utilisateurs");
     }
-  }
+  },
 );
 
 interface DeleteUserParams {
@@ -209,10 +247,15 @@ interface DeleteUserParams {
 
 export const deleteUser = withPermissionSafe(
   "users:delete",
-  async ({ userId, reason }: DeleteUserParams): Promise<ActionResult<null>> => {
-    const context = LogUtils.createUserActionContext("unknown", "delete_user", "admin", {
-      targetUserId: userId,
-    });
+  async ({ userId, reason }: DeleteUserParams): Promise<null> => {
+    const context = LogUtils.createUserActionContext(
+      "unknown",
+      "delete_user",
+      "admin",
+      {
+        targetUserId: userId,
+      },
+    );
     LogUtils.logOperationStart("delete_user", context);
 
     try {
@@ -228,7 +271,9 @@ export const deleteUser = withPermissionSafe(
 
       // Vérifier qu'on ne supprime pas son propre compte
       if (caller.id === userId) {
-        throw new Error("Impossible de supprimer votre propre compte utilisateur.");
+        throw new Error(
+          "Impossible de supprimer votre propre compte utilisateur.",
+        );
       }
 
       const supabaseAdmin = createSupabaseAdminClient();
@@ -244,23 +289,26 @@ export const deleteUser = withPermissionSafe(
       }
 
       // 2. Supprimer l'utilisateur de auth.users
-      const { error: userError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      const { error: userError } =
+        await supabaseAdmin.auth.admin.deleteUser(userId);
 
       if (userError) {
         throw ErrorUtils.fromSupabaseError(userError);
       }
 
       // 3. Logger l'audit de sécurité
-      const { error: auditError } = await supabaseAdmin.from("audit_logs").insert({
-        user_id: caller.id,
-        action: "user_deleted",
-        resource: "users",
-        details: {
-          deleted_user_id: userId,
-          reason: reason.substring(0, 200), // Limiter la taille
-          timestamp: new Date().toISOString(),
-        },
-      });
+      const { error: auditError } = await supabaseAdmin
+        .from("audit_logs")
+        .insert({
+          user_id: caller.id,
+          action: "user_deleted",
+          resource: "users",
+          details: {
+            deleted_user_id: userId,
+            reason: reason.substring(0, 200), // Limiter la taille
+            timestamp: new Date().toISOString(),
+          },
+        });
 
       if (auditError) {
         // Log l'erreur mais ne fait pas échouer la suppression
@@ -271,22 +319,24 @@ export const deleteUser = withPermissionSafe(
         ...context,
         reason: reason.substring(0, 50),
       });
-      return ActionResult.ok(null, "Utilisateur supprimé avec succès");
+      return null;
     } catch (error) {
       LogUtils.logOperationError("delete_user", error, context);
-      return ActionResult.error(
-        ErrorUtils.isAppError(error)
-          ? ErrorUtils.formatForUser(error)
-          : "Une erreur est survenue lors de la suppression"
-      );
+      throw ErrorUtils.isAppError(error)
+        ? error
+        : new Error("Une erreur est survenue lors de la suppression");
     }
-  }
+  },
 );
 
 export const getUserStats = withPermissionSafe(
   "users:read:all",
-  async (): Promise<ActionResult<UserStats>> => {
-    const context = LogUtils.createUserActionContext("unknown", "get_user_stats", "admin");
+  async (): Promise<UserStats> => {
+    const context = LogUtils.createUserActionContext(
+      "unknown",
+      "get_user_stats",
+      "admin",
+    );
     LogUtils.logOperationStart("get_user_stats", context);
 
     try {
@@ -298,10 +348,11 @@ export const getUserStats = withPermissionSafe(
       const perPage = 1000; // Maximum allowed by Supabase
 
       while (true) {
-        const { data: authUsers, error: authUsersError } = await supabase.auth.admin.listUsers({
-          page,
-          perPage,
-        });
+        const { data: authUsers, error: authUsersError } =
+          await supabase.auth.admin.listUsers({
+            page,
+            perPage,
+          });
 
         if (authUsersError) {
           throw ErrorUtils.fromSupabaseError(authUsersError);
@@ -321,7 +372,7 @@ export const getUserStats = withPermissionSafe(
         page++;
       }
 
-      const users = allUsers;
+      const _users = allUsers;
 
       // 2. Get profile statistics
       const { data: profileStats, error: profileStatsError } = await supabase
@@ -343,26 +394,26 @@ export const getUserStats = withPermissionSafe(
 
       const stats: UserStats = {
         total: totalUsers,
-        active: profiles.filter((p) => p.status === "active" || !p.status).length,
+        active: profiles.filter((p) => p.status === "active" || !p.status)
+          .length,
         suspended: profiles.filter((p) => p.status === "suspended").length,
         admins: profiles.filter((p) => p.role === "admin").length,
         editors: profiles.filter((p) => p.role === "editor").length,
         users: profiles.filter((p) => p.role === "user" || !p.role).length,
-        newThisWeek: profiles.filter((p) => new Date(p.created_at) > oneWeekAgo).length,
+        newThisWeek: profiles.filter((p) => new Date(p.created_at) > oneWeekAgo)
+          .length,
         activeToday: profiles.filter(
-          (p) => p.last_activity && new Date(p.last_activity) > oneDayAgo
+          (p) => p.last_activity && new Date(p.last_activity) > oneDayAgo,
         ).length,
       };
 
       LogUtils.logOperationSuccess("get_user_stats", { ...context, stats });
-      return ActionResult.ok(stats, "Statistiques utilisateur récupérées");
+      return stats;
     } catch (error) {
       LogUtils.logOperationError("get_user_stats", error, context);
-      return ActionResult.error(
-        ErrorUtils.isAppError(error)
-          ? ErrorUtils.formatForUser(error)
-          : "Impossible de récupérer les statistiques"
-      );
+      throw ErrorUtils.isAppError(error)
+        ? error
+        : new Error("Impossible de récupérer les statistiques");
     }
-  }
+  },
 );

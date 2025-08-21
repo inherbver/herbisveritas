@@ -1,4 +1,8 @@
-import { getUsers, getUserStats, type UserPaginationOptions } from "@/actions/userActions";
+import {
+  getUsers,
+  getUserStats,
+  type UserPaginationOptions,
+} from "@/actions/userActions";
 import { columns } from "@/app/[locale]/admin/users/columns";
 import { EnhancedDataTable } from "@/app/[locale]/admin/users/components/enhanced-data-table";
 import { UsersStatsCards } from "@/app/[locale]/admin/users/components/users-stats-cards";
@@ -7,15 +11,27 @@ interface AdminUsersPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
+export default async function AdminUsersPage({
+  searchParams,
+}: AdminUsersPageProps) {
   const resolvedSearchParams = await searchParams;
 
   // Build pagination options from search params
   const paginationOptions: UserPaginationOptions = {
-    page: resolvedSearchParams.page ? parseInt(resolvedSearchParams.page as string) : 1,
-    limit: resolvedSearchParams.limit ? parseInt(resolvedSearchParams.limit as string) : 25,
-    sortBy: (resolvedSearchParams.sortBy as any) || "created_at",
-    sortDirection: (resolvedSearchParams.sortDirection as "asc" | "desc") || "desc",
+    page: resolvedSearchParams.page
+      ? parseInt(resolvedSearchParams.page as string)
+      : 1,
+    limit: resolvedSearchParams.limit
+      ? parseInt(resolvedSearchParams.limit as string)
+      : 25,
+    sortBy:
+      (resolvedSearchParams.sortBy as
+        | "email"
+        | "created_at"
+        | "last_sign_in_at"
+        | "role") || "created_at",
+    sortDirection:
+      (resolvedSearchParams.sortDirection as "asc" | "desc") || "desc",
     search: (resolvedSearchParams.search as string) || undefined,
     roleFilter: resolvedSearchParams.roleFilter
       ? Array.isArray(resolvedSearchParams.roleFilter)
@@ -39,7 +55,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     return (
       <main className="container mx-auto py-10">
         <header className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">Gestion des utilisateurs</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Gestion des utilisateurs
+          </h1>
           <p className="text-muted-foreground">
             Gérez les comptes utilisateur, rôles et permissions
           </p>
@@ -62,21 +80,24 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     hasPrev: false,
   };
   const statsData =
-    statsResult.success && statsResult.data && statsResult.data.success
-      ? statsResult.data.data
-      : null;
+    statsResult.success && statsResult.data ? statsResult.data : null;
 
   return (
     <main className="container mx-auto space-y-6 py-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Gestion des utilisateurs</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Gestion des utilisateurs
+        </h1>
         <p className="text-muted-foreground">
-          Gérez les comptes utilisateur, rôles et permissions de votre plateforme
+          Gérez les comptes utilisateur, rôles et permissions de votre
+          plateforme
         </p>
       </header>
 
       {/* Dashboard statistiques */}
-      {statsData && <UsersStatsCards stats={statsData} isLoading={!statsResult.success} />}
+      {statsData && (
+        <UsersStatsCards stats={statsData} isLoading={!statsResult.success} />
+      )}
 
       {/* Table des utilisateurs avec filtres avancés */}
       <section className="space-y-4">
@@ -84,13 +105,17 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           <div>
             <h2 className="text-xl font-semibold">Liste des utilisateurs</h2>
             <p className="text-sm text-muted-foreground">
-              {pagination.total} utilisateur(s) au total - Page {pagination.page} sur{" "}
-              {pagination.totalPages}
+              {pagination.total} utilisateur(s) au total - Page{" "}
+              {pagination.page} sur {pagination.totalPages}
             </p>
           </div>
         </header>
 
-        <EnhancedDataTable columns={columns} data={usersData} pagination={pagination} />
+        <EnhancedDataTable
+          columns={columns}
+          data={usersData}
+          pagination={pagination}
+        />
       </section>
     </main>
   );

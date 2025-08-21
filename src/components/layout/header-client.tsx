@@ -50,6 +50,7 @@ const Logo = () => {
 
 interface HeaderClientProps {
   isAdmin: boolean;
+  isLoading?: boolean;
 }
 
 interface AuthState {
@@ -58,7 +59,10 @@ interface AuthState {
   error?: string;
 }
 
-export function HeaderClient({ isAdmin }: HeaderClientProps) {
+export function HeaderClient({
+  isAdmin,
+  isLoading: _isAdminLoading = false,
+}: HeaderClientProps) {
   const scrolled = useScroll(10);
   const pathname = useSafePathname();
   const tGlobal = useSafeTranslations("Global");
