@@ -1,5 +1,5 @@
 import type { SupabaseClientType } from "@/lib/supabase/types";
-import { universalCookieManager } from "@/lib/cookies/universal-cookies";
+import { cookies } from "next/headers";
 
 // Cache simple basé sur les cookies pour éviter les appels multiples
 let lastSessionCheck: {
@@ -10,13 +10,19 @@ let lastSessionCheck: {
 
 async function getCookieHash(): Promise<string> {
   try {
-    // Méthode server-side avec next-cookies-universal
-    const supabaseCookies = await universalCookieManager.getSupabaseCookies();
-    const cookieValues = Object.values(supabaseCookies).join("");
+    // Méthode server-side avec cookies de Next.js
+    const cookieStore = await cookies();
+    const allCookies = cookieStore.getAll();
 
-    if (cookieValues) {
+    // Filtrer les cookies Supabase
+    const supabaseCookies = allCookies
+      .filter((c) => c.name.includes("sb-"))
+      .map((c) => `${c.name}=${c.value}`)
+      .join("");
+
+    if (supabaseCookies) {
       // Créer un hash simple basé sur les valeurs des cookies
-      return cookieValues.slice(0, 50); // Premier partie comme hash
+      return supabaseCookies.slice(0, 50); // Premier partie comme hash
     }
 
     // Fallback si aucun cookie Supabase trouvé
