@@ -33,11 +33,11 @@ interface ColissimoWidgetWrapperProps {
 function WidgetSkeleton() {
   return (
     <div className="w-full animate-pulse space-y-4 rounded-lg border p-6">
-      <div className="h-6 w-3/4 rounded bg-gray-200"></div>
-      <div className="h-4 w-1/2 rounded bg-gray-200"></div>
+      <div className="h-6 w-3/4 rounded bg-muted"></div>
+      <div className="h-4 w-1/2 rounded bg-muted"></div>
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 rounded bg-gray-100"></div>
+          <div key={i} className="h-20 rounded bg-muted"></div>
         ))}
       </div>
     </div>
@@ -105,11 +105,16 @@ export default function ColissimoWidgetWrapper({
         throw new Error("Token non reçu");
       }
     } catch (error) {
-      console.error("Erreur lors de la récupération du token Colissimo:", error);
+      console.error(
+        "Erreur lors de la récupération du token Colissimo:",
+        error,
+      );
       setTokenError(error instanceof Error ? error.message : "Erreur inconnue");
 
       // Fallback to mock widget if token fetch fails
-      console.log("Utilisation du widget mock suite à l'échec de récupération du token");
+      console.log(
+        "Utilisation du widget mock suite à l'échec de récupération du token",
+      );
       setUseMockWidget(true);
     } finally {
       setIsLoadingToken(false);
@@ -128,21 +133,27 @@ export default function ColissimoWidgetWrapper({
         <Alert className="mb-4">
           <InfoIcon className="h-4 w-4" />
           <AlertDescription>
-            <strong>Mode développement :</strong> Utilisation du widget Colissimo simulé. Les
-            données affichées sont des exemples pour le développement.
+            <strong>Mode développement :</strong> Utilisation du widget
+            Colissimo simulé. Les données affichées sont des exemples pour le
+            développement.
           </AlertDescription>
         </Alert>
       )}
 
       {/* Show error if token fetch failed but we're using mock as fallback */}
-      {tokenError && useMockWidget && process.env.NODE_ENV !== "development" && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>
-            Impossible de charger le widget Colissimo réel. Utilisation d'une version simplifiée.
-            {tokenError && <span className="mt-1 block text-xs">Erreur: {tokenError}</span>}
-          </AlertDescription>
-        </Alert>
-      )}
+      {tokenError &&
+        useMockWidget &&
+        process.env.NODE_ENV !== "development" && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>
+              Impossible de charger le widget Colissimo réel. Utilisation d'une
+              version simplifiée.
+              {tokenError && (
+                <span className="mt-1 block text-xs">Erreur: {tokenError}</span>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
       {/* Render appropriate widget */}
       {useMockWidget ? (

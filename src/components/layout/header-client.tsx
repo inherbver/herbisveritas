@@ -32,7 +32,7 @@ import {
 import LocaleSwitcher from "./locale-switcher";
 import { useScroll } from "@/hooks/use-scroll";
 import { motion } from "framer-motion";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Logo = () => {
   const tGlobal = useSafeTranslations("Global");
@@ -218,13 +218,12 @@ export function HeaderClient({
 
         {/* 5. Actions Utilisateur (Desktop) */}
         <div className="hidden items-center gap-2 md:flex">
-          <ThemeToggle />
           <LocaleSwitcher />
           <CartSheet />
           {isLoading ? (
             <div className="flex items-center gap-2">
-              <div className="h-10 w-20 animate-pulse rounded-md bg-gray-200"></div>
-              <div className="h-10 w-24 animate-pulse rounded-md bg-gray-200"></div>
+              <Skeleton className="h-10 w-20" />
+              <Skeleton className="h-10 w-24" />
             </div>
           ) : isLoggedIn ? (
             <div className="flex items-center gap-2">
@@ -265,8 +264,6 @@ export function HeaderClient({
         </div>
         {/* Mobile Actions: Cart + Menu */}
         <div className="flex items-center gap-2 md:hidden">
-          {/* Theme toggle for mobile */}
-          <ThemeToggle variant="toggle" />
           {/* Panier mobile - visible directement */}
           <CartSheet />
 
@@ -324,7 +321,7 @@ export function HeaderClient({
                 <hr className="my-4 border-border" />
 
                 {isLoading ? (
-                  <div className="mb-2 h-10 w-full animate-pulse rounded-md bg-gray-200"></div>
+                  <Skeleton className="mb-2 h-10 w-full" />
                 ) : isLoggedIn ? (
                   <>
                     <SheetClose asChild>
