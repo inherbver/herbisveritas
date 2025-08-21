@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "../src/types/supabase";
+import type { Database } from "../../src/lib/supabase/types";
 
 // Charge les variables d'environnement depuis .env.local
 dotenv.config({ path: ".env.local" });
@@ -21,7 +21,7 @@ async function fixAdminRole() {
           autoRefreshToken: false,
           persistSession: false,
         },
-      }
+      },
     );
 
     // 0. Vérifier la structure de la table profiles
@@ -35,25 +35,34 @@ async function fixAdminRole() {
       .single();
 
     if (sampleError && sampleError.code === "42703") {
-      console.log("⚠️ Les colonnes role/permissions n'existent pas. Ajout des colonnes...");
+      console.log(
+        "⚠️ Les colonnes role/permissions n'existent pas. Ajout des colonnes...",
+      );
 
       // Note: Cannot execute DDL statements via RPC in this context
-      console.log("⚠️ DDL operations not available via RPC. Database schema needs manual update.");
+      console.log(
+        "⚠️ DDL operations not available via RPC. Database schema needs manual update.",
+      );
       const alterError1 = new Error("DDL not supported via RPC");
 
       if (alterError1) {
-        console.log("⚠️ Erreur lors de l'ajout des colonnes (tentative alternative)...");
+        console.log(
+          "⚠️ Erreur lors de l'ajout des colonnes (tentative alternative)...",
+        );
 
         // Note: Cannot execute DDL statements via RPC in this context
         console.log("⚠️ Alternative DDL approach also not available via RPC.");
         const alterError2 = new Error("DDL not supported via RPC");
 
         if (alterError2) {
-          console.error("❌ Impossible d'ajouter les colonnes automatiquement:", alterError2);
+          console.error(
+            "❌ Impossible d'ajouter les colonnes automatiquement:",
+            alterError2,
+          );
           console.log("💡 Veuillez exécuter manuellement la migration SQL:");
           console.log("   npx supabase db push");
           console.log(
-            "   ou exécuter la migration: supabase/migrations/20250119120000_add_role_based_admin_system.sql"
+            "   ou exécuter la migration: supabase/migrations/20250119120000_add_role_based_admin_system.sql",
           );
           return;
         }
@@ -84,7 +93,10 @@ async function fixAdminRole() {
         });
 
         if (insertError) {
-          console.error("❌ Erreur lors de la création du profil:", insertError);
+          console.error(
+            "❌ Erreur lors de la création du profil:",
+            insertError,
+          );
           return;
         }
 
@@ -95,7 +107,11 @@ async function fixAdminRole() {
     }
 
     // Type guard to ensure currentProfile exists and has the expected properties
-    if (!currentProfile || typeof currentProfile !== "object" || !("id" in currentProfile)) {
+    if (
+      !currentProfile ||
+      typeof currentProfile !== "object" ||
+      !("id" in currentProfile)
+    ) {
       console.error("❌ Profile data is invalid or missing");
       return;
     }
@@ -146,7 +162,10 @@ async function fixAdminRole() {
           .eq("id", ADMIN_USER_ID);
 
         if (permError) {
-          console.error("❌ Erreur lors de la mise à jour des permissions:", permError);
+          console.error(
+            "❌ Erreur lors de la mise à jour des permissions:",
+            permError,
+          );
           return;
         }
 
@@ -166,7 +185,7 @@ async function fixAdminRole() {
 
     console.log("🎉 Succès! Le profil admin a été configuré.");
     console.log(
-      "💡 Vous pouvez maintenant vous déconnecter et vous reconnecter pour actualiser votre session."
+      "💡 Vous pouvez maintenant vous déconnecter et vous reconnecter pour actualiser votre session.",
     );
     console.log("🔗 Ou videz le cache du navigateur si le problème persiste.");
   } catch (error) {

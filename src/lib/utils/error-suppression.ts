@@ -11,8 +11,8 @@ export function setupErrorSuppression() {
   const originalAddEventListener = window.addEventListener;
   window.addEventListener = function (
     type: string,
-    listener: any,
-    options?: any,
+    listener: EventListenerOrEventListenerObject | null,
+    options?: boolean | AddEventListenerOptions,
   ) {
     if (type === "error") {
       const wrappedListener = (event: ErrorEvent) => {
@@ -31,12 +31,19 @@ export function setupErrorSuppression() {
         // Appeler le listener original pour les vraies erreurs
         if (typeof listener === "function") {
           listener(event);
+        } else if (listener && typeof listener.handleEvent === "function") {
+          listener.handleEvent(event);
         }
       };
 
       originalAddEventListener.call(this, type, wrappedListener, options);
     } else {
-      originalAddEventListener.call(this, type, listener, options);
+      originalAddEventListener.call(
+        this,
+        type,
+        listener as EventListener,
+        options,
+      );
     }
   };
 

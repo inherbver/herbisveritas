@@ -3,7 +3,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { FixedSizeGrid as Grid } from "react-window";
 import { ProductCard } from "./product-card";
-import { OptimizedImage } from "@/components/common/optimized-image";
 import { Button } from "@/components/ui/button";
 import { useHydrated } from "@/hooks/use-hydrated";
 import type { ProductListItem } from "@/app/[locale]/shop/page";
@@ -24,11 +23,11 @@ const GRID_GAP = 16;
  * Grille de produits virtualisée pour de meilleures performances avec de gros datasets
  * Utilise react-window pour ne rendre que les éléments visibles
  */
-export function VirtualizedProductGrid({ 
-  products, 
+export function VirtualizedProductGrid({
+  products,
   loading = false,
   onLoadMore,
-  hasMore = false 
+  hasMore = false,
 }: VirtualizedProductGridProps) {
   const isHydrated = useHydrated();
   const [containerWidth, setContainerWidth] = useState(1200);
@@ -57,32 +56,41 @@ export function VirtualizedProductGrid({
   }, []);
 
   // Composant cellule de la grille
-  const Cell = useCallback(({ columnIndex, rowIndex, style }: any) => {
-    const productIndex = rowIndex * columnsCount + columnIndex;
-    const product = products[productIndex];
+  interface CellProps {
+    columnIndex: number;
+    rowIndex: number;
+    style: React.CSSProperties;
+  }
 
-    if (!product) {
-      return null;
-    }
+  const Cell = useCallback(
+    ({ columnIndex, rowIndex, style }: CellProps) => {
+      const productIndex = rowIndex * columnsCount + columnIndex;
+      const product = products[productIndex];
 
-    return (
-      <div
-        style={{
-          ...style,
-          left: style.left + GRID_GAP,
-          top: style.top + GRID_GAP,
-          width: style.width - GRID_GAP,
-          height: style.height - GRID_GAP,
-        }}
-      >
-        <ProductCard 
-          product={product}
-          priority={productIndex < 6} // Priority pour les 6 premiers
-          className="h-full"
-        />
-      </div>
-    );
-  }, [products, columnsCount]);
+      if (!product) {
+        return null;
+      }
+
+      return (
+        <div
+          style={{
+            ...style,
+            left: style.left + GRID_GAP,
+            top: style.top + GRID_GAP,
+            width: style.width - GRID_GAP,
+            height: style.height - GRID_GAP,
+          }}
+        >
+          <ProductCard
+            product={product}
+            priority={productIndex < 6} // Priority pour les 6 premiers
+            className="h-full"
+          />
+        </div>
+      );
+    },
+    [products, columnsCount],
+  );
 
   // Fallback pour SSR et périodes de chargement
   if (!isHydrated || loading) {
@@ -101,7 +109,7 @@ export function VirtualizedProductGrid({
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product, index) => (
-            <ProductCard 
+            <ProductCard
               key={product.id}
               product={product}
               priority={index < 6}
@@ -110,11 +118,7 @@ export function VirtualizedProductGrid({
         </div>
         {hasMore && (
           <div className="flex justify-center">
-            <Button 
-              onClick={onLoadMore}
-              variant="outline"
-              disabled={loading}
-            >
+            <Button onClick={onLoadMore} variant="outline" disabled={loading}>
               {loading ? "Chargement..." : "Charger plus"}
             </Button>
           </div>
@@ -140,14 +144,10 @@ export function VirtualizedProductGrid({
           {Cell}
         </Grid>
       </div>
-      
+
       {hasMore && (
         <div className="flex justify-center">
-          <Button 
-            onClick={onLoadMore}
-            variant="outline"
-            disabled={loading}
-          >
+          <Button onClick={onLoadMore} variant="outline" disabled={loading}>
             {loading ? "Chargement..." : "Charger plus"}
           </Button>
         </div>
@@ -188,15 +188,15 @@ export function useInfiniteProducts(initialProducts: ProductListItem[]) {
     try {
       // Simuler le chargement de plus de produits
       // Dans un vrai projet, ceci ferait un appel API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Pour l'exemple, nous arrêtons après 3 pages
       if (page >= 3) {
         setHasMore(false);
       } else {
         // Dupliquer les produits existants pour la démo
-        setProducts(prev => [...prev, ...initialProducts.slice(0, 8)]);
-        setPage(prev => prev + 1);
+        setProducts((prev) => [...prev, ...initialProducts.slice(0, 8)]);
+        setPage((prev) => prev + 1);
       }
     } catch (error) {
       console.error("Erreur lors du chargement des produits:", error);
@@ -209,6 +209,6 @@ export function useInfiniteProducts(initialProducts: ProductListItem[]) {
     products,
     loading,
     hasMore,
-    loadMore
+    loadMore,
   };
 }

@@ -9,7 +9,7 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 
 // Variables Next.js
-process.env.NODE_ENV = "test";
+// NODE_ENV est déjà défini par Jest à "test"
 process.env.NEXTAUTH_URL = "http://localhost:3000";
 process.env.NEXTAUTH_SECRET = "test-secret";
 process.env.NEXT_PUBLIC_BASE_URL = "http://localhost:3000";

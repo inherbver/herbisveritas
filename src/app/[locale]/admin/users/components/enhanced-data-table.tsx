@@ -33,10 +33,19 @@ import { AdvancedFilters, FilterState } from "./advanced-filters";
 import { type UserForAdminPanel } from "@/actions/userActions";
 import { ChevronDown } from "lucide-react";
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 interface EnhancedDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  pagination?: any;
+  pagination?: PaginationInfo;
 }
 
 export function EnhancedDataTable<TData extends UserForAdminPanel, TValue>({

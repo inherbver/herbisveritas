@@ -303,13 +303,13 @@ export function withRateLimit(
   config: RateLimitConfig | keyof typeof RATE_LIMIT_CONFIGS,
   actionName?: string,
 ) {
-  return function <T extends (...args: any[]) => any>(target: T): T {
+  return function <T extends (...args: unknown[]) => unknown>(target: T): T {
     const finalActionName = actionName || target.name || "unknown-action";
     const finalConfig =
       typeof config === "string" ? RATE_LIMIT_CONFIGS[config] : config;
 
     const wrappedFunction = async function (
-      this: any,
+      this: unknown,
       ...args: Parameters<T>
     ): Promise<ReturnType<T>> {
       try {
@@ -321,7 +321,8 @@ export function withRateLimit(
           if (firstArg instanceof FormData) {
             userId = firstArg.get("userId")?.toString();
           } else if (typeof firstArg === "object" && firstArg !== null) {
-            userId = (firstArg as any).userId || (firstArg as any).user_id;
+            const obj = firstArg as Record<string, unknown>;
+            userId = (obj.userId || obj.user_id) as string | undefined;
           }
         }
 

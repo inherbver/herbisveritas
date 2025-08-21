@@ -18,37 +18,51 @@ export const mockSupabaseClient = {
       data: { subscription: { unsubscribe: jest.fn() } },
     })),
   },
-  from: jest.fn((table: string) => {
-    const chainMethods = {
-      select: jest.fn().mockReturnValue(chainMethods),
-      insert: jest.fn().mockReturnValue(chainMethods),
-      update: jest.fn().mockReturnValue(chainMethods),
-      upsert: jest.fn().mockReturnValue(chainMethods),
-      delete: jest.fn().mockReturnValue(chainMethods),
-      eq: jest.fn().mockReturnValue(chainMethods),
-      neq: jest.fn().mockReturnValue(chainMethods),
-      in: jest.fn().mockReturnValue(chainMethods),
-      contains: jest.fn().mockReturnValue(chainMethods),
-      order: jest.fn().mockReturnValue(chainMethods),
-      limit: jest.fn().mockReturnValue(chainMethods),
-      range: jest.fn().mockReturnValue(chainMethods),
-      gte: jest.fn().mockReturnValue(chainMethods),
-      lte: jest.fn().mockReturnValue(chainMethods),
-      gt: jest.fn().mockReturnValue(chainMethods),
-      lt: jest.fn().mockReturnValue(chainMethods),
-      ilike: jest.fn().mockReturnValue(chainMethods),
-      or: jest.fn().mockReturnValue(chainMethods),
-      and: jest.fn().mockReturnValue(chainMethods),
-      not: jest.fn().mockReturnValue(chainMethods),
-      is: jest.fn().mockReturnValue(chainMethods),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-      then: jest.fn().mockResolvedValue({ data: [], error: null }),
-    };
+  from: jest.fn((_table: string) => {
+    const chainMethods: Record<string, jest.Mock> = {};
+
+    // Méthodes qui retournent chainMethods pour le chaînage
+    const chainableMethods = [
+      "select",
+      "insert",
+      "update",
+      "upsert",
+      "delete",
+      "eq",
+      "neq",
+      "in",
+      "contains",
+      "order",
+      "limit",
+      "range",
+      "gte",
+      "lte",
+      "gt",
+      "lt",
+      "ilike",
+      "or",
+      "and",
+      "not",
+      "is",
+    ];
+
+    chainableMethods.forEach((method) => {
+      chainMethods[method] = jest.fn().mockReturnValue(chainMethods);
+    });
+
+    // Méthodes qui retournent des promesses
+    chainMethods.single = jest
+      .fn()
+      .mockResolvedValue({ data: null, error: null });
+    chainMethods.maybeSingle = jest
+      .fn()
+      .mockResolvedValue({ data: null, error: null });
+    chainMethods.then = jest.fn().mockResolvedValue({ data: [], error: null });
+
     return chainMethods;
   }),
   storage: {
-    from: jest.fn((bucket: string) => ({
+    from: jest.fn((_bucket: string) => ({
       upload: jest
         .fn()
         .mockResolvedValue({ data: { path: "test-path" }, error: null }),

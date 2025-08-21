@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { checkForUnauthorizedAdmins } from "../src/lib/admin/monitoring-service";
+import { checkForUnauthorizedAdmins } from "../../src/lib/admin/monitoring-service";
 
 // Charge les variables d'environnement depuis le fichier .env
 dotenv.config();
@@ -12,24 +12,40 @@ async function main() {
     if (unauthorizedAdmins.length === 0) {
       console.log("✅ Aucun administrateur non autorisé détecté.");
     } else {
-      console.log(`⚠️  ${unauthorizedAdmins.length} administrateur(s) non autorisé(s) détecté(s):`);
+      console.log(
+        `⚠️  ${unauthorizedAdmins.length} administrateur(s) non autorisé(s) détecté(s):`,
+      );
       console.log("\n--- Tableau des administrateurs non autorisés ---");
       console.table(
-        unauthorizedAdmins.map((admin) => ({
-          ID: admin.id,
-          Email: admin.email,
-          Rôle: admin.role,
-          "Créé le": new Date(admin.created_at).toLocaleDateString("fr-FR"),
-          "Dernière connexion": admin.last_sign_in_at
-            ? new Date(admin.last_sign_in_at).toLocaleDateString("fr-FR")
-            : "Jamais",
-        }))
+        unauthorizedAdmins.map(
+          (admin: {
+            id: string;
+            email: string;
+            role: string;
+            created_at?: string;
+            last_sign_in_at?: string | null;
+          }) => ({
+            ID: admin.id,
+            Email: admin.email,
+            Rôle: admin.role,
+            "Créé le": admin.created_at
+              ? new Date(admin.created_at).toLocaleDateString("fr-FR")
+              : "N/A",
+            "Dernière connexion": admin.last_sign_in_at
+              ? new Date(admin.last_sign_in_at).toLocaleDateString("fr-FR")
+              : "Jamais",
+          }),
+        ),
       );
 
       console.log("\n⚠️  Actions recommandées:");
       console.log("1. Vérifiez l'origine de ces comptes administrateurs");
-      console.log("2. Révoquez les accès non autorisés via l'interface Supabase");
-      console.log("3. Examinez les logs d'audit pour détecter d'éventuelles activités suspectes");
+      console.log(
+        "2. Révoquez les accès non autorisés via l'interface Supabase",
+      );
+      console.log(
+        "3. Examinez les logs d'audit pour détecter d'éventuelles activités suspectes",
+      );
     }
   } catch (error) {
     console.error("\n❌ Erreur critique pendant l'audit:", error);

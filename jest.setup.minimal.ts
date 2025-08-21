@@ -3,15 +3,15 @@ import "@testing-library/jest-dom";
 
 // Essential polyfills only
 import { TextEncoder, TextDecoder } from "util";
-global.TextEncoder = TextEncoder as any;
-global.TextDecoder = TextDecoder as any;
+(global as any).TextEncoder = TextEncoder;
+(global as any).TextDecoder = TextDecoder;
 
 // Essential environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://test-project.supabase.co";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-process.env.NODE_ENV = "test";
+// NODE_ENV est déjà défini par Jest à "test"
 
 // Basic Next.js mocks only
 jest.mock("next/cache", () => ({
