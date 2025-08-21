@@ -17,6 +17,7 @@ const subLinks: NavLinkItem[] = [
   { href: "/profile/addresses", labelKey: "addresses" },
   { href: "/profile/orders", labelKey: "orders" },
   { href: "/profile/password", labelKey: "password" },
+  { href: "/profile/settings", labelKey: "settings" },
 ];
 
 export default function ProfileNavLinks() {
@@ -42,7 +43,7 @@ export default function ProfileNavLinks() {
           href={mainLink.href as any}
           className={cn(
             "block rounded-md px-3 py-2 text-base font-semibold text-foreground",
-            !isSubPage && "bg-accent"
+            !isSubPage && "bg-accent",
           )}
         >
           {t(mainLink.labelKey)}
@@ -57,7 +58,7 @@ export default function ProfileNavLinks() {
                 href={link.href as any}
                 className={cn(
                   "block rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                  isActive && "bg-accent font-semibold text-accent-foreground"
+                  isActive && "bg-accent font-semibold text-accent-foreground",
                 )}
                 aria-current={isActive ? "page" : undefined}
               >

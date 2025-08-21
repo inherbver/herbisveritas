@@ -16,7 +16,10 @@ const UpdatePasswordSchema = z
       .min(8, "Le mot de passe doit contenir au moins 8 caractères.") // TODO: Internationalize
       .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule.") // TODO: Internationalize
       .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre.") // TODO: Internationali
-      .regex(/[^A-Za-z0-9]/, "Le mot de passe doit contenir au moins un caractère spécial."), // TODO: Internationalize
+      .regex(
+        /[^A-Za-z0-9]/,
+        "Le mot de passe doit contenir au moins un caractère spécial.",
+      ), // TODO: Internationalize
     confirmPassword: z.string(), // Sera validé par .refine côté client, mais on le garde pour la forme ici
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -40,10 +43,16 @@ type ProfileActionResult<T> = {
   data?: T;
 };
 
-export async function updateProfile(formData: FormData): Promise<ProfileActionResult<Profile>> {
+export async function updateProfile(
+  formData: FormData,
+): Promise<ProfileActionResult<Profile>> {
   // For profile actions, a manual check is often clearer,
   // especially when the user ID is needed for the query.
-  const { isAuthorized, user, error: permError } = await checkUserPermission("profile:update:own");
+  const {
+    isAuthorized,
+    user,
+    error: permError,
+  } = await checkUserPermission("profile:update:own");
 
   if (!isAuthorized || !user) {
     return {
@@ -82,7 +91,7 @@ export async function updateProfile(formData: FormData): Promise<ProfileActionRe
 
 export async function updatePasswordAction(
   prevState: UpdatePasswordResult | null, // prevState can be null initially
-  formData: FormData
+  formData: FormData,
 ): Promise<UpdatePasswordResult> {
   const supabase = await createSupabaseServerClient();
 
@@ -135,7 +144,10 @@ export async function updatePasswordAction(
     return {
       success: false,
       message: "Le mot de passe actuel est incorrect.", // TODO: Internationalize
-      error: { field: "currentPassword", message: "Le mot de passe actuel est incorrect." }, // TODO: Internationalize
+      error: {
+        field: "currentPassword",
+        message: "Le mot de passe actuel est incorrect.",
+      }, // TODO: Internationalize
     };
   }
 
@@ -146,7 +158,10 @@ export async function updatePasswordAction(
 
   if (error) {
     console.error("Error updating password:", error.message);
-    return { success: false, message: `Error updating password: ${error.message}` };
+    return {
+      success: false,
+      message: `Error updating password: ${error.message}`,
+    };
   }
 
   // Optionnel: revalider un chemin si la mise à jour du mot de passe affecte d'autres données affichées.
@@ -158,7 +173,43 @@ export async function updatePasswordAction(
 
   return {
     success: true,
-    message: "Votre mot de passe a été mis à jour avec succès. Veuillez vous reconnecter.", // TODO: Internationalize
+    message:
+      "Votre mot de passe a été mis à jour avec succès. Veuillez vous reconnecter.", // TODO: Internationalize
     error: null,
   };
+}
+
+export async function updateNewsletterPreference(
+  subscribed: boolean,
+): Promise<ProfileActionResult<null>> {
+  const {
+    isAuthorized,
+    user,
+    error: permError,
+  } = await checkUserPermission("profile:update:own");
+
+  if (!isAuthorized || !user) {
+    return {
+      success: false,
+      error:
+        permError || "User not authorized to update newsletter preferences.",
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const { error: updateError } = await supabase
+    .from("profiles")
+    .update({ newsletter_subscribed: subscribed })
+    .eq("id", user.id);
+
+  if (updateError) {
+    return {
+      success: false,
+      error: `Failed to update newsletter preference: ${updateError.message}`,
+    };
+  }
+
+  revalidatePath("/[locale]/profile/settings");
+  return { success: true };
 }

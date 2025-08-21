@@ -1,0 +1,25 @@
+{
+  "title": "Paramètres",
+  "description": "Gérez vos préférences et paramètres de compte",
+  "newsletter": {
+    "title": "Newsletter",
+    "description": "Recevez nos dernières actualités et offres spéciales",
+    "subscribed": "Abonné à la newsletter",
+    "unsubscribed": "Non abonné à la newsletter",
+    "subscribe": "S'abonner",
+    "unsubscribe": "Se désabonner",
+    "updateSuccess": "Préférences de newsletter mises à jour avec succès",
+    "updateError": "Erreur lors de la mise à jour des préférences"
+  },
+  "theme": {
+    "title": "Thème",
+    "description": "Choisissez votre thème préféré",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "saveChanges": "Enregistrer les modifications",
+  "loading": "Chargement...",
+  "success": "Paramètres mis à jour avec succès",
+  "error": "Erreur lors de la mise à jour des paramètres"
+}

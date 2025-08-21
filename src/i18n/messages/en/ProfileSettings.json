@@ -1,0 +1,25 @@
+{
+  "title": "Settings",
+  "description": "Manage your account preferences and settings",
+  "newsletter": {
+    "title": "Newsletter",
+    "description": "Receive our latest news and special offers",
+    "subscribed": "Subscribed to newsletter",
+    "unsubscribed": "Not subscribed to newsletter",
+    "subscribe": "Subscribe",
+    "unsubscribe": "Unsubscribe",
+    "updateSuccess": "Newsletter preferences updated successfully",
+    "updateError": "Error updating newsletter preferences"
+  },
+  "theme": {
+    "title": "Theme",
+    "description": "Choose your preferred theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "saveChanges": "Save changes",
+  "loading": "Loading...",
+  "success": "Settings updated successfully",
+  "error": "Error updating settings"
+}

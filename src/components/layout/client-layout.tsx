@@ -16,10 +16,6 @@ import { useAuthCartSync } from "@/hooks/use-auth-cart-sync";
 import { useAuthErrorHandler } from "@/hooks/use-auth-error-handler";
 import { useInitialCartLoad } from "@/hooks/use-initial-cart-load";
 import useCartStore from "@/stores/cartStore";
-import {
-  MobileBottomNav,
-  MobileBottomNavSpacer,
-} from "@/components/layout/mobile-bottom-nav";
 import { setupErrorSuppression } from "@/lib/utils/error-suppression";
 
 interface ClientLayoutProps {
@@ -292,7 +288,7 @@ export default function ClientLayout({
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
+      defaultTheme="light"
       enableSystem
       disableTransitionOnChange
     >
@@ -302,11 +298,6 @@ export default function ClientLayout({
         timeZone={timeZone}
       >
         {children}
-        {/* Mobile Bottom Navigation - Only visible on mobile */}
-        <div className="sm:hidden">
-          <MobileBottomNav />
-          <MobileBottomNavSpacer />
-        </div>
       </NextIntlClientProvider>
     </ThemeProvider>
   );

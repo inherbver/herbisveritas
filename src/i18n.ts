@@ -45,6 +45,7 @@ const namespaces = [
   "ProductGrid",
   "ProfileEditPage",
   "ProfileNav",
+  "ProfileSettings",
   "QuantityInput",
   "ShopPage",
   "TestPage",
@@ -64,7 +65,9 @@ async function loadMessagesForLocale(locale: Locale): Promise<Messages> {
   // Chargement parallèle de tous les namespaces
   const promises = namespaces.map(async (namespace) => {
     try {
-      const module = await import(`./i18n/messages/${locale}/${namespace}.json`);
+      const module = await import(
+        `./i18n/messages/${locale}/${namespace}.json`
+      );
       const content = module.default || module;
 
       // Ne garder que les namespaces avec du contenu
@@ -73,13 +76,18 @@ async function loadMessagesForLocale(locale: Locale): Promise<Messages> {
         successCount++;
         return { namespace, status: "success" };
       } else {
-        console.warn(`[i18n] Empty content for ${namespace} in locale ${locale}`);
+        console.warn(
+          `[i18n] Empty content for ${namespace} in locale ${locale}`,
+        );
         return { namespace, status: "empty" };
       }
     } catch (e: unknown) {
       const error = e as Error;
       errorCount++;
-      console.error(`[i18n] Failed to load ${namespace}.json for locale ${locale}:`, error.message);
+      console.error(
+        `[i18n] Failed to load ${namespace}.json for locale ${locale}:`,
+        error.message,
+      );
       return { namespace, status: "error", error };
     }
   });
@@ -89,7 +97,7 @@ async function loadMessagesForLocale(locale: Locale): Promise<Messages> {
 
   // Log du résumé de chargement
   console.log(
-    `[i18n] Loaded ${successCount}/${namespaces.length} namespaces for locale '${locale}' (${errorCount} errors)`
+    `[i18n] Loaded ${successCount}/${namespaces.length} namespaces for locale '${locale}' (${errorCount} errors)`,
   );
 
   // Debug en développement
@@ -124,7 +132,9 @@ export default getRequestConfig(async ({ locale: requestLocale }) => {
   const hasEssentials = essentialNamespaces.some((ns) => messages[ns]);
 
   if (Object.keys(messages).length === 0 || !hasEssentials) {
-    console.error(`[i18n] Critical: No essential messages loaded for locale ${localeToUse}`);
+    console.error(
+      `[i18n] Critical: No essential messages loaded for locale ${localeToUse}`,
+    );
     notFound();
   }
 
