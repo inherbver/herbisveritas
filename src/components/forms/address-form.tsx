@@ -27,11 +27,17 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { addAddress, updateAddress } from "@/actions/addressActions";
-import { useAddressAutocomplete, BanFeature } from "@/hooks/useAddressAutocomplete";
+import {
+  useAddressAutocomplete,
+  BanFeature,
+} from "@/hooks/useAddressAutocomplete";
 import { useLocale, useTranslations } from "next-intl";
 import { countries } from "@/lib/countries";
 import type { Address } from "@/types";
-import { AddressFormData, addressSchema } from "@/lib/validators/address.validator";
+import {
+  AddressFormData,
+  addressSchema,
+} from "@/lib/validators/address.validator";
 
 interface AddressFormProps {
   addressType: "shipping" | "billing";
@@ -67,7 +73,9 @@ const AddressForm: FC<AddressFormProps> = ({
   const router = useRouter();
   const isLoading = isSubmitting || isPending;
   const isEditing = !!existingAddress?.id;
-  const [showAddressLine2, setShowAddressLine2] = useState(!!existingAddress?.address_line2);
+  const [showAddressLine2, setShowAddressLine2] = useState(
+    !!existingAddress?.address_line2,
+  );
   const [isSelectingAddress, setIsSelectingAddress] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
@@ -92,7 +100,8 @@ const AddressForm: FC<AddressFormProps> = ({
 
   const { control, handleSubmit, watch, setValue, setError: _setError } = form;
 
-  const countryList = countries[locale.toUpperCase() as keyof typeof countries] || countries.EN;
+  const countryList =
+    countries[locale.toUpperCase() as keyof typeof countries] || countries.EN;
   const addressLine1Value = watch("address_line1");
   const streetNumberValue = watch("street_number"); // 👈 Surveiller le numéro de rue existant
   const watchedCountry = watch("country_code");
@@ -103,13 +112,16 @@ const AddressForm: FC<AddressFormProps> = ({
     error: addressError,
   } = useAddressAutocomplete(
     isSelectingAddress || !hasUserInteracted ? "" : addressLine1Value,
-    watchedCountry
+    watchedCountry,
   );
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
         setAddressSuggestions([]);
       }
     };
@@ -118,7 +130,10 @@ const AddressForm: FC<AddressFormProps> = ({
   }, [setAddressSuggestions]);
 
   const handleSelectAddress = (address: BanFeature["properties"]) => {
+    // Fermer immédiatement les suggestions avant de faire quoi que ce soit d'autre
+    setAddressSuggestions([]);
     setIsSelectingAddress(true);
+    setHasUserInteracted(false); // Empêche les nouvelles recherches automatiques
 
     // 🚀 LOGIQUE AMÉLIORÉE : Préserver le numéro existant si déjà saisi
     const currentStreetNumber = streetNumberValue?.trim();
@@ -149,7 +164,9 @@ const AddressForm: FC<AddressFormProps> = ({
     // 🔍 Pour address_line1, utiliser street ou name, mais retirer le numéro s'il était au début
     let streetName = address.street || address.name || "";
     if (apiStreetNumber && streetName.startsWith(apiStreetNumber)) {
-      streetName = streetName.replace(new RegExp(`^${apiStreetNumber}\\s+`), "").trim();
+      streetName = streetName
+        .replace(new RegExp(`^${apiStreetNumber}\\s+`), "")
+        .trim();
     }
 
     setValue("address_line1", streetName, {
@@ -165,12 +182,10 @@ const AddressForm: FC<AddressFormProps> = ({
       shouldDirty: true,
     });
 
-    // Fermer immédiatement les suggestions
-    setAddressSuggestions([]);
-    // Réactiver l'autocomplétion après un délai
+    // Réactiver l'autocomplétion après un délai plus court
     setTimeout(() => {
       setIsSelectingAddress(false);
-    }, 500);
+    }, 100);
   };
 
   const processSubmit = (data: AddressFormData) => {
@@ -192,7 +207,9 @@ const AddressForm: FC<AddressFormProps> = ({
         onSuccess?.();
         form.reset();
       } else {
-        toast.error(typeof result.error === "string" ? result.error : t("genericError"));
+        toast.error(
+          typeof result.error === "string" ? result.error : t("genericError"),
+        );
       }
     });
   };
@@ -208,7 +225,10 @@ const AddressForm: FC<AddressFormProps> = ({
               <FormItem>
                 <FormLabel>{t("fieldLabels.first_name")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder={t("placeholders.first_name")} />
+                  <Input
+                    {...field}
+                    placeholder={t("placeholders.first_name")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -268,9 +288,13 @@ const AddressForm: FC<AddressFormProps> = ({
                   </FormControl>
                   <FormMessage />
                   {isAddressLoading && (
-                    <p className="text-sm text-muted-foreground">{t("addressLoading")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("addressLoading")}
+                    </p>
                   )}
-                  {addressError && <p className="text-sm text-red-600">{addressError}</p>}
+                  {addressError && (
+                    <p className="text-sm text-red-600">{addressError}</p>
+                  )}
                   {addressSuggestions.length > 0 && (
                     <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-background shadow-lg">
                       {addressSuggestions.map((feature: BanFeature) => (
@@ -278,10 +302,11 @@ const AddressForm: FC<AddressFormProps> = ({
                           key={feature.properties.id}
                           type="button"
                           className="w-full p-2 text-left hover:bg-accent"
-                          onMouseDown={(e) => {
-                            e.preventDefault(); // Empêche le mousedown de déclencher handleClickOutside
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSelectAddress(feature.properties);
                           }}
-                          onClick={() => handleSelectAddress(feature.properties)}
                         >
                           {feature.properties.label}
                         </button>
@@ -300,11 +325,15 @@ const AddressForm: FC<AddressFormProps> = ({
             onCheckedChange={(checked) => {
               const isChecked = checked as boolean;
               setShowAddressLine2(isChecked);
-              if (!isChecked) setValue("address_line2", "", { shouldValidate: true });
+              if (!isChecked)
+                setValue("address_line2", "", { shouldValidate: true });
             }}
             checked={showAddressLine2}
           />
-          <Label htmlFor="show_address_line2_checkbox" className="cursor-pointer">
+          <Label
+            htmlFor="show_address_line2_checkbox"
+            className="cursor-pointer"
+          >
             {t("fieldLabels.address_line2")}
           </Label>
         </div>
@@ -337,7 +366,10 @@ const AddressForm: FC<AddressFormProps> = ({
               <FormItem>
                 <FormLabel>{t("fieldLabels.postal_code")}</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder={t("placeholders.postal_code")} />
+                  <Input
+                    {...field}
+                    placeholder={t("placeholders.postal_code")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -385,12 +417,19 @@ const AddressForm: FC<AddressFormProps> = ({
 
         <div className="flex items-center justify-end space-x-4">
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isLoading}
+            >
               {t("buttons.cancel")}
             </Button>
           )}
           <Button type="submit" disabled={isLoading || isAddressLoading}>
-            {(isLoading || isAddressLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {(isLoading || isAddressLoading) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             {isEditing ? t("buttons.save") : t("buttons.save")}
           </Button>
         </div>

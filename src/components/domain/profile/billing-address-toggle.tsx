@@ -5,13 +5,24 @@ import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { setBillingAddressSameAsShipping } from "@/actions/profileActions";
+// Import de l'action via une fonction wrapper pour éviter les problèmes ESM
+async function setBillingAddressSameAsShipping(
+  isSame: boolean,
+  locale: string,
+) {
+  const { setBillingAddressSameAsShipping: action } = await import(
+    "@/actions/profileActions"
+  );
+  return action(isSame, locale);
+}
 
 interface BillingAddressToggleProps {
   initialIsSame: boolean; // true si billing_address_is_different === false
 }
 
-export default function BillingAddressToggle({ initialIsSame }: BillingAddressToggleProps) {
+export default function BillingAddressToggle({
+  initialIsSame,
+}: BillingAddressToggleProps) {
   const [isSame, setIsSame] = useState(initialIsSame);
   const [isPending, startTransition] = useTransition();
   const locale = useLocale();
@@ -48,10 +59,15 @@ export default function BillingAddressToggle({ initialIsSame }: BillingAddressTo
         onCheckedChange={handleToggleChange}
         disabled={isPending}
       />
-      <Label htmlFor="billing-same-as-shipping" className="cursor-pointer text-sm font-medium">
+      <Label
+        htmlFor="billing-same-as-shipping"
+        className="cursor-pointer text-sm font-medium"
+      >
         {t("billingSameAsShipping")}
       </Label>
-      {isPending && <span className="text-xs text-muted-foreground">{t("updating")}</span>}
+      {isPending && (
+        <span className="text-xs text-muted-foreground">{t("updating")}</span>
+      )}
     </div>
   );
 }

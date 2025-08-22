@@ -70,13 +70,11 @@ export function NewsletterSignupForm({
   };
 
   const containerClasses =
-    variant === "inline"
-      ? "flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2"
-      : "space-y-3";
+    variant === "inline" ? "flex flex-col gap-4 items-stretch" : "space-y-3";
 
   return (
     <form action={handleSubmit} className={`${containerClasses} ${className}`}>
-      <div className={variant === "inline" ? "flex-1" : ""}>
+      <div className="w-full">
         <label htmlFor="newsletter-email" className="sr-only">
           Adresse e-mail
         </label>
@@ -98,7 +96,7 @@ export function NewsletterSignupForm({
         type="submit"
         disabled={isPending || !email.trim()}
         className={`${buttonSizeClasses[size]} ${
-          variant === "inline" ? "shrink-0" : "w-full"
+          variant === "inline" ? "self-center px-8" : "w-full"
         } font-semibold transition-all hover:shadow-md disabled:opacity-50 rounded-lg shadow-sm hover:shadow-lg`}
       >
         {isPending ? (

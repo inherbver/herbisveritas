@@ -49,6 +49,59 @@ module.exports = {
           DEFAULT: "var(--support)",
           foreground: "var(--support-foreground)",
         },
+        // === Couleurs étendues pour design system ===
+        "surface-base": "var(--surface-base)",
+        "surface-elevated": "var(--surface-elevated)",
+        "surface-sunken": "var(--surface-sunken)",
+      },
+      // === Ajout des box shadows avec custom properties ===
+      boxShadow: {
+        none: "var(--shadow-none)",
+        sm: "var(--shadow-sm)",
+        DEFAULT: "var(--shadow-md)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        xl: "var(--shadow-xl)",
+        // Mode sombre
+        "dark-sm": "var(--shadow-dark-sm)",
+        "dark-md": "var(--shadow-dark-md)",
+        "dark-lg": "var(--shadow-dark-lg)",
+        "dark-xl": "var(--shadow-dark-xl)",
+      },
+      // === Transitions cohérentes ===
+      transitionDuration: {
+        fast: "var(--transition-fast)",
+        normal: "var(--transition-normal)",
+        slow: "var(--transition-slow)",
+      },
+      // === Ring width pour focus states ===
+      ringWidth: {
+        DEFAULT: "var(--focus-ring-width)",
+        focus: "var(--focus-ring-width)",
+      },
+      ringOffsetWidth: {
+        DEFAULT: "var(--focus-ring-offset)",
+        focus: "var(--focus-ring-offset)",
+      },
+      // === Z-index hiérarchisé ===
+      zIndex: {
+        auto: "var(--z-index-auto)",
+        0: "var(--z-index-0)",
+        10: "var(--z-index-10)",
+        20: "var(--z-index-20)",
+        30: "var(--z-index-30)",
+        40: "var(--z-index-40)",
+        50: "var(--z-index-50)",
+        max: "var(--z-index-999)",
+      },
+      // === Utilités pour bordures visibles ===
+      borderWidth: {
+        DEFAULT: "var(--border-width-1)",
+        0: "var(--border-width-0)",
+        1: "var(--border-width-1)",
+        2: "var(--border-width-2)",
+        4: "var(--border-width-4)",
+        visible: "var(--border-width-2)", // Pour bordures bien visibles
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
@@ -78,35 +131,49 @@ module.exports = {
         h1: ["3rem", { lineHeight: "1.3", letterSpacing: "-0.01em" }],
       },
       spacing: {
-        0: "0",
-        1: "0.25rem",
-        2: "0.5rem",
-        3: "0.75rem",
-        4: "1rem",
-        5: "1.25rem",
-        6: "1.5rem",
-        7: "1.75rem",
-        8: "2rem",
-        9: "2.25rem",
-        10: "2.5rem",
-        11: "2.75rem",
-        12: "3rem",
-        14: "3.5rem",
-        16: "4rem",
-        20: "5rem",
-        24: "6rem",
-        28: "7rem",
-        32: "8rem",
+        // === Espacement de base (hauté des custom properties) ===
+        0: "var(--spacing-0)",
+        1: "var(--spacing-1)",
+        2: "var(--spacing-2)",
+        3: "var(--spacing-3)",
+        4: "var(--spacing-4)",
+        5: "var(--spacing-5)",
+        6: "var(--spacing-6)",
+        7: "1.75rem",              // Conservé pour compatibilité
+        8: "var(--spacing-8)",
+        9: "2.25rem",              // Conservé pour compatibilité
+        10: "var(--spacing-10)",
+        11: "2.75rem",             // Conservé pour compatibilité
+        12: "var(--spacing-12)",
+        14: "3.5rem",              // Conservé pour compatibilité
+        16: "var(--spacing-16)",
+        20: "var(--spacing-20)",
+        24: "6rem",               // Conservé pour compatibilité
+        28: "7rem",               // Conservé pour compatibilité
+        32: "8rem",               // Conservé pour compatibilité
+        
+        // === Espacements spécifiques aux composants ===
+        "card-x": "var(--card-padding-x)",
+        "card-y": "var(--card-padding-y)",
+        "card-gap": "var(--card-gap)",
+        "card-spacing": "var(--card-spacing)",
       },
       borderRadius: {
+        // === Rayons cohérents (hauté des custom properties) ===
         none: "0",
-        sm: "0.25rem",
-        DEFAULT: "0.5rem",
-        md: "0.5rem",
-        lg: "0.75rem",
-        xl: "1rem",
-        "2xl": "1.5rem",
+        sm: "var(--radius-sm)",
+        DEFAULT: "var(--radius-md)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-2xl)",
         full: "9999px",
+        
+        // === Rayons spécifiques aux composants ===
+        button: "var(--button-radius)",
+        card: "var(--card-radius)",
+        input: "var(--input-radius)",
+        dropdown: "var(--dropdown-radius)",
       },
       typography: (theme) => ({
         DEFAULT: {
@@ -140,10 +207,19 @@ module.exports = {
               fontFamily: theme("fontFamily.serif"),
             },
             a: {
-              transition: "color 0.2s ease-in-out",
+              transition: "color var(--transition-normal)",
               "&:hover": {
                 color: theme("colors.primary / 80%"),
               },
+            },
+            // Améliorations typographiques pour l'accessibilité
+            p: {
+              marginBottom: "var(--spacing-4)",
+              lineHeight: "1.6", // Meilleure lisibilité
+            },
+            "h1, h2, h3, h4, h5, h6": {
+              marginTop: "var(--spacing-8)",
+              marginBottom: "var(--spacing-4)",
             },
           },
         },

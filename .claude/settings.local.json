@@ -57,7 +57,8 @@
       "Bash(true)",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "WebSearch"
     ],
     "additionalDirectories": ["C:\\c"]
   },

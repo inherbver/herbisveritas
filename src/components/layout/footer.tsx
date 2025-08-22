@@ -55,22 +55,36 @@ export function Footer() {
       {/* Subtle botanical pattern bar */}
       <hr className="h-[2px] w-full bg-gradient-to-r from-primary/20 via-accent/30 to-primary/20 border-0" />
 
-      {/* Botanical watermarks in corners - Hidden on mobile */}
+      {/* Filigrane floral léger et bien espacé */}
       <div
-        className="absolute left-0 top-0 -z-10 h-80 w-80 -translate-x-1/4 -translate-y-1/6 opacity-40 bg-[url('/illustration_footer_nobg.svg')] bg-no-repeat bg-contain hidden md:block"
+        className="absolute inset-0 -z-10 opacity-[0.025] bg-[url('/illustration_footer_nobg.svg')] bg-repeat bg-[length:300px_300px] hidden lg:block"
         aria-hidden="true"
+        style={{
+          backgroundPosition: "150px 150px",
+          maskImage:
+            "radial-gradient(ellipse 60% 40% at center, black 20%, transparent 60%)",
+        }}
       />
 
-      <section className="mx-auto max-w-7xl px-6 py-16 sm:py-20 lg:px-8">
-        <div className="grid grid-cols-1 gap-y-16 md:grid-cols-3 md:gap-x-16">
-          {/* Brand & Description Column */}
-          <section className="space-y-6 relative">
-            <div className="h-20"></div>
-            <header className="space-y-2">
-              <h2 className="font-serif text-2xl font-semibold text-primary/90">
+      <section className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-8">
+          {/* Brand & Description Column avec motif floral intégré */}
+          <section className="bg-background/60 backdrop-blur-sm rounded-2xl p-6 border border-border/30 shadow-sm lg:col-span-1 relative overflow-hidden">
+            {/* Motif floral intégré uniquement au bas de la carte */}
+            <div
+              className="absolute bottom-4 right-4 h-48 w-48 opacity-75 bg-[url('/illustration_footer_nobg.svg')] bg-no-repeat bg-contain"
+              aria-hidden="true"
+            />
+
+            <header className="space-y-4 relative z-10">
+              <h2 className="font-serif text-lg font-medium text-primary/90">
                 In Herbis Veritas
               </h2>
-              <p className="text-green-600/80 text-xs font-medium italic leading-relaxed">
+              <div
+                className="h-0.5 w-12 bg-gradient-to-r from-primary to-primary/50"
+                aria-hidden="true"
+              ></div>
+              <p className="text-green-700/90 text-sm font-medium leading-relaxed">
                 Inspirés par la nature, créés artisanalement dans le sud de la
                 France.
               </p>
@@ -78,119 +92,141 @@ export function Footer() {
           </section>
 
           {/* Navigation Column */}
-          <section className="grid grid-cols-2 gap-12 md:col-span-1">
-            <nav aria-label="{tFooter('navLabel')}">
-              <h3 className="font-serif text-lg font-medium text-primary/90 mb-2">
-                Navigation
-              </h3>
-              <div
-                className="h-0.5 w-10 bg-gradient-to-r from-primary to-transparent mb-6"
-                aria-hidden="true"
-              ></div>
-              <ul role="list" className="space-y-3">
-                {navigationLinks.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className="text-foreground/75 text-sm transition-all duration-200 hover:text-primary hover:translate-x-1 hover:underline underline-offset-4 decoration-primary/40"
-                    >
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            <nav aria-label="Support et aide">
-              <h3 className="font-serif text-lg font-medium text-primary/90 mb-2">
-                Support
-              </h3>
-              <div
-                className="h-0.5 w-10 bg-gradient-to-r from-primary to-transparent mb-6"
-                aria-hidden="true"
-              ></div>
-              <ul role="list" className="space-y-3">
-                {supportLinks.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className="text-foreground/75 text-sm transition-all duration-200 hover:text-primary hover:translate-x-1 hover:underline underline-offset-4 decoration-primary/40"
-                    >
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </section>
-
-          {/* Newsletter & Social Column */}
-          <section className="space-y-10 md:col-span-1">
-            <article>
-              <header>
-                <h3 className="font-serif text-lg font-medium text-primary/90 mb-2">
-                  Restons en contact
-                </h3>
-                <div
-                  className="h-0.5 w-10 bg-gradient-to-r from-primary to-transparent mb-6"
-                  aria-hidden="true"
-                ></div>
-              </header>
-              <p className="text-foreground/75 text-sm leading-relaxed mb-6">
-                Inscrivez-vous à notre newsletter pour des offres exclusives et
-                nos nouveautés.
-              </p>
-              <aside className="relative">
-                <div className="flex gap-2">
-                  <NewsletterSignupForm variant="inline" className="flex-1" />
-                </div>
-              </aside>
-            </article>
-            <aside>
-              <h4 className="font-serif text-sm font-medium text-primary/90 mb-4">
-                Suivez notre aventure
-              </h4>
-              <nav aria-label="Réseaux sociaux">
-                {socialLinks.map((item) => (
-                  <a
-                    key={item.name}
+          <nav
+            aria-label="{tFooter('navLabel')}"
+            className="bg-background/60 backdrop-blur-sm rounded-2xl p-6 border border-border/30 shadow-sm lg:col-span-1"
+          >
+            <h3 className="font-serif text-lg font-medium text-primary/90 mb-2">
+              Navigation
+            </h3>
+            <div
+              className="h-0.5 w-10 bg-gradient-to-r from-primary to-transparent mb-6"
+              aria-hidden="true"
+            ></div>
+            <ul role="list" className="space-y-3">
+              {navigationLinks.map((item) => (
+                <li key={item.name}>
+                  <Link
                     href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary/80 transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-md focus-visible:outline-primary group inline-block mr-6"
-                    aria-label={`Suivez-nous sur ${item.name}`}
+                    className="text-foreground/75 text-sm transition-all duration-200 hover:text-primary hover:translate-x-1 hover:underline underline-offset-4 decoration-primary/40"
                   >
-                    <span className="rounded-full p-2 transition-colors group-hover:bg-primary/10 inline-block">
-                      <item.icon className="h-5 w-5" />
-                    </span>
-                  </a>
-                ))}
-              </nav>
-            </aside>
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Support Column */}
+          <nav
+            aria-label="Support et aide"
+            className="bg-background/60 backdrop-blur-sm rounded-2xl p-6 border border-border/30 shadow-sm lg:col-span-1"
+          >
+            <h3 className="font-serif text-lg font-medium text-primary/90 mb-2">
+              Support
+            </h3>
+            <div
+              className="h-0.5 w-10 bg-gradient-to-r from-primary to-transparent mb-6"
+              aria-hidden="true"
+            ></div>
+            <ul role="list" className="space-y-3">
+              {supportLinks.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-foreground/75 text-sm transition-all duration-200 hover:text-primary hover:translate-x-1 hover:underline underline-offset-4 decoration-primary/40"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Newsletter & Social Column - Bloc différencié */}
+          <section className="bg-primary/5 backdrop-blur-sm rounded-2xl p-6 border border-primary/20 shadow-md lg:col-span-1 relative overflow-hidden">
+            {/* Accent floral discret dans le bloc newsletter */}
+            <div
+              className="absolute top-4 right-4 h-16 w-16 opacity-[0.08] bg-[url('/illustration_footer_nobg.svg')] bg-no-repeat bg-contain rotate-12"
+              aria-hidden="true"
+            />
+
+            <div className="relative z-10 space-y-8">
+              <article>
+                <header>
+                  <h3 className="font-serif text-lg font-medium text-primary/90 mb-2">
+                    Restons en contact
+                  </h3>
+                  <div
+                    className="h-0.5 w-12 bg-gradient-to-r from-primary to-primary/50 mb-6"
+                    aria-hidden="true"
+                  ></div>
+                </header>
+                <p className="text-foreground/80 text-sm leading-relaxed mb-6">
+                  Inscrivez-vous à notre newsletter pour des offres exclusives
+                  et nos nouveautés.
+                </p>
+                <aside className="relative">
+                  <div className="bg-background/80 p-5 rounded-xl border border-primary/40 shadow-sm backdrop-blur-sm">
+                    <NewsletterSignupForm
+                      variant="inline"
+                      size="default"
+                      className="w-full"
+                    />
+                  </div>
+                </aside>
+              </article>
+              <aside>
+                <h4 className="font-serif text-sm font-medium text-primary/90 mb-4">
+                  Suivez notre aventure
+                </h4>
+                <nav aria-label="Réseaux sociaux">
+                  {socialLinks.map((item) => (
+                    <a
+                      key={item.name}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-secondary/80 transition-all duration-200 hover:scale-110 hover:text-secondary hover:drop-shadow-md focus-visible:outline-secondary group inline-block mr-6"
+                      aria-label={`Suivez-nous sur ${item.name}`}
+                    >
+                      <span className="rounded-full p-2 transition-colors group-hover:bg-secondary/10 inline-block">
+                        <item.icon className="h-5 w-5" />
+                      </span>
+                    </a>
+                  ))}
+                </nav>
+              </aside>
+            </div>
           </section>
         </div>
 
-        {/* Copyright Bar */}
-        <footer className="border-border/30 mt-16 border-t pt-6">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-foreground/60 text-xs">
-              © {new Date().getFullYear()} In Herbis Veritas.{" "}
-              {tFooter("copyright")}
-            </p>
-            <aside className="flex items-center gap-2 text-green-600/50">
-              <svg
-                aria-hidden="true"
-                className="h-3 w-3"
-                viewBox="0 0 16 16"
-                fill="currentColor"
-              >
-                <circle cx="8" cy="8" r="1" />
-                <circle cx="4" cy="8" r="1" />
-                <circle cx="12" cy="8" r="1" />
-              </svg>
-              <span className="text-xs font-light italic">
-                Fait avec ❤️ en Occitanie
-              </span>
-            </aside>
+        {/* Copyright Bar - Bas de page uni avec fond contrasté */}
+        <footer className="mt-12 -mx-6 lg:-mx-8">
+          <div className="bg-background/80 backdrop-blur-sm border-t border-border/30 px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col items-center justify-center gap-3 text-center">
+                <p className="text-foreground/70 text-xs font-medium">
+                  © {new Date().getFullYear()} In Herbis Veritas.{" "}
+                  {tFooter("copyright")}
+                </p>
+                <div className="flex items-center gap-2 text-green-700/80">
+                  <svg
+                    aria-hidden="true"
+                    className="h-3 w-3"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                  >
+                    <circle cx="8" cy="8" r="1" />
+                    <circle cx="4" cy="8" r="1" />
+                    <circle cx="12" cy="8" r="1" />
+                  </svg>
+                  <span className="text-xs font-medium">
+                    Fait avec ❤️ en Occitanie
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </footer>
       </section>

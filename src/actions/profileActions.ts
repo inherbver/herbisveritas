@@ -1,9 +1,9 @@
- 
 "use server";
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 
 // New schema for account information only
 const accountInfoSchema = z.object({
@@ -19,7 +19,9 @@ const accountInfoSchema = z.object({
     .trim(),
   phone_number: z
     .string()
-    .regex(/^(\+\d{1,3}[- ]?)?\d{10}$/, { message: "Invalid phone number format." })
+    .regex(/^(\+\d{1,3}[- ]?)?\d{10}$/, {
+      message: "Invalid phone number format.",
+    })
     .or(z.literal("")) // Allows empty string
     .nullable(), // Allows null
 });
@@ -28,15 +30,23 @@ export interface UpdateProfileFormState {
   // This state type might need to be adjusted if its errors field is tied to the full profileSchema
   success: boolean;
   message: string;
-  errors?: Partial<Record<keyof z.infer<typeof accountInfoSchema>, string[]>> | null; // Adjusted to accountInfoSchema
+  errors?: Partial<
+    Record<keyof z.infer<typeof accountInfoSchema>, string[]>
+  > | null; // Adjusted to accountInfoSchema
   resetKey?: string; // To help trigger form reset on successful submission
 }
 
 export async function updateUserProfile(
   prevState: UpdateProfileFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<UpdateProfileFormState> {
   const supabase = await createSupabaseServerClient();
+
+  const locale = (formData.get("locale") as string) || "en";
+  const t = await getTranslations({
+    locale,
+    namespace: "ProfileEditPage.form.toast",
+  });
 
   const {
     data: { user },
@@ -45,7 +55,7 @@ export async function updateUserProfile(
   if (!user) {
     return {
       success: false,
-      message: "User not authenticated.",
+      message: "User not authenticated.", // Garder en anglais car c'est technique
       errors: null,
     };
   }
@@ -58,15 +68,13 @@ export async function updateUserProfile(
 
   // console.log("Processed rawFormData for Zod:", JSON.stringify(rawFormData, null, 2));
 
-  const locale = (formData.get("locale") as string) || "en";
-
   const validationResult = accountInfoSchema.safeParse(rawFormData);
 
   if (!validationResult.success) {
     console.log("Validation errors:", validationResult.error.flatten());
     return {
       success: false,
-      message: "Validation failed. Please check the errors.",
+      message: t("updateError"),
       errors: validationResult.error.flatten().fieldErrors,
     };
   }
@@ -101,7 +109,7 @@ export async function updateUserProfile(
     console.error("Supabase upsert error:", upsertError);
     return {
       success: false,
-      message: upsertError.message || "Failed to update profile. Please try again.",
+      message: t("updateError"),
       errors: null,
     };
   }
@@ -111,7 +119,7 @@ export async function updateUserProfile(
 
   return {
     success: true,
-    message: "Profile updated successfully!",
+    message: t("updateSuccess"),
     errors: null,
     resetKey: Date.now().toString(),
   };
@@ -121,7 +129,9 @@ export async function updateUserProfile(
 const passwordUpdateSchema = z.object({
   // currentPassword n'est pas directement vérifiable par supabase.auth.updateUser sans une étape supplémentaire.
   // La vérification est généralement gérée côté client ou par une étape de re-authentification.
-  newPassword: z.string().min(8, "New password must be at least 8 characters long."),
+  newPassword: z
+    .string()
+    .min(8, "New password must be at least 8 characters long."),
   // confirmPassword est validé côté client pour la correspondance.
 });
 
@@ -136,7 +146,7 @@ interface UpdatePasswordResult {
 export async function updatePassword(
   // Le formulaire enverra currentPassword, newPassword, confirmPassword.
   // Seul newPassword est requis par la fonction supabase.auth.updateUser.
-  values: { newPassword: string; currentPassword?: string } // currentPassword est optionnel ici, car non utilisé par updateUser
+  values: { newPassword: string; currentPassword?: string }, // currentPassword est optionnel ici, car non utilisé par updateUser
 ): Promise<UpdatePasswordResult> {
   const supabase = await createSupabaseServerClient();
 
@@ -149,9 +159,12 @@ export async function updatePassword(
   }
 
   // Valider uniquement newPassword car c'est ce que updateUser attend.
-  const validatedFields = passwordUpdateSchema.safeParse({ newPassword: values.newPassword });
+  const validatedFields = passwordUpdateSchema.safeParse({
+    newPassword: values.newPassword,
+  });
   if (!validatedFields.success) {
-    const firstErrorMessage = validatedFields.error.errors[0]?.message || "Invalid new password.";
+    const firstErrorMessage =
+      validatedFields.error.errors[0]?.message || "Invalid new password.";
     return {
       success: false,
       error: { message: firstErrorMessage },
@@ -166,8 +179,13 @@ export async function updatePassword(
     console.error("Supabase update user (password) error:", updateError);
     // TODO: Traduire ces messages d'erreur potentiels ou les mapper à des clés de traduction
     let friendlyMessage = "Failed to update password.";
-    if (updateError.message.includes("New password should be different from the old password.")) {
-      friendlyMessage = "Le nouveau mot de passe doit être différent de l'ancien."; // Exemple de traduction
+    if (
+      updateError.message.includes(
+        "New password should be different from the old password.",
+      )
+    ) {
+      friendlyMessage =
+        "Le nouveau mot de passe doit être différent de l'ancien."; // Exemple de traduction
     }
     // Vous pouvez ajouter d'autres conditions pour des messages d'erreur spécifiques de Supabase ici
 
@@ -193,7 +211,7 @@ export async function updatePassword(
  */
 export async function syncProfileAddressFlag(
   locale: string,
-  userId?: string
+  userId?: string,
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   const supabase = await createSupabaseServerClient();
 
@@ -223,9 +241,13 @@ export async function syncProfileAddressFlag(
 
     // Utilise la même logique que dans la page account (lignes 167-178)
     const defaultShippingAddress =
-      userAddresses?.find((addr) => addr.is_default && addr.address_type === "shipping") ?? null;
+      userAddresses?.find(
+        (addr) => addr.is_default && addr.address_type === "shipping",
+      ) ?? null;
     const defaultBillingAddress =
-      userAddresses?.find((addr) => addr.is_default && addr.address_type === "billing") ?? null;
+      userAddresses?.find(
+        (addr) => addr.is_default && addr.address_type === "billing",
+      ) ?? null;
 
     // Détermine les adresses effectives (par défaut ou première du type)
     const effectiveShipping =
@@ -248,7 +270,8 @@ export async function syncProfileAddressFlag(
         effectiveShipping.city === effectiveBilling.city &&
         effectiveShipping.postal_code === effectiveBilling.postal_code &&
         effectiveShipping.country_code === effectiveBilling.country_code &&
-        effectiveShipping.state_province_region === effectiveBilling.state_province_region
+        effectiveShipping.state_province_region ===
+          effectiveBilling.state_province_region
       );
     } else if (effectiveBilling && !effectiveShipping) {
       // Si seule l'adresse de facturation existe, elles sont différentes
@@ -290,7 +313,7 @@ export async function syncProfileAddressFlag(
  */
 export async function setBillingAddressSameAsShipping(
   isSame: boolean,
-  locale: string
+  locale: string,
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   const supabase = await createSupabaseServerClient();
 

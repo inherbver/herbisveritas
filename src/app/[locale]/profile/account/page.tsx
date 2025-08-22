@@ -1,7 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
-import { Link } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
 import { LOGIN_REDIRECT_URL } from "@/lib/constants";
 import type { Database } from "@/types/supabase";
 import { Metadata } from "next";
@@ -165,7 +164,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
     if (userError && userError.name !== "AuthSessionMissingError") {
       console.error("Error fetching user:", userError);
     }
-    const redirectTo = `/${currentLocale}${LOGIN_REDIRECT_URL}?next=/profile/account`;
+    const redirectTo = `${LOGIN_REDIRECT_URL}?next=/profile/account`;
     redirect(redirectTo);
   }
 
@@ -229,7 +228,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
 
       console.log("Profile created successfully for user:", user.id);
       // Rediriger pour recharger la page avec le nouveau profil
-      redirect(`/${currentLocale}/profile/account`);
+      redirect(`/profile/account`);
     } catch (error) {
       console.error("Unexpected error creating profile:", error);
       return (
@@ -287,7 +286,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
               {t("generalInfo.title")}
             </h2>
             <Link
-              href={`/${currentLocale}/profile/account/edit`}
+              href="/profile/account/edit"
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {tGlobal("edit")}
@@ -318,7 +317,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
               {t("addresses.title")}
             </h2>
             <Link
-              href={`/${currentLocale}/profile/addresses`}
+              href="/profile/addresses"
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {tGlobal("manage")}
@@ -360,7 +359,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
               {t("password.sectionTitle")}
             </h2>
             <Link
-              href={`/${currentLocale}/profile/password`}
+              href="/profile/password"
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {tGlobal("edit")}
@@ -381,7 +380,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
               {t("orders.title")}
             </h2>
             <Link
-              href={`/${currentLocale}/profile/orders`}
+              href="/profile/orders"
               className="hover:bg-primary/90 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {t("orders.viewLink")}

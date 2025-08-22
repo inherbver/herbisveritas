@@ -63,7 +63,7 @@ export default function ClientLayout({
 
   // Fonction helper pour les appels Supabase avec timeout et retry
   const supabaseCallWithTimeout = useCallback(
-    async (promise: Promise<unknown>, timeoutMs = 3000, maxRetries = 2) => {
+    async (promise: Promise<unknown>, timeoutMs = 10000, maxRetries = 2) => {
       let lastError: Error;
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
