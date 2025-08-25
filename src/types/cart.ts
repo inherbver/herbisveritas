@@ -81,11 +81,7 @@ export interface CartState {
   error: string | null;
   updateVersion: number;
   lastUpdateTimestamp: number;
-  // Nouvelles propriétés pour la queue d'actions
-  actionQueue: Array<() => Promise<void>>;
-  isProcessingQueue: boolean;
-  pendingUpdates: Map<string, number>; // cartItemId -> targetQuantity
-  updateTimers: Map<string, NodeJS.Timeout>; // cartItemId -> timer
+  // Note: Queue et timers sont gérés au niveau du store, pas de l'état persisté
 }
 
 /**

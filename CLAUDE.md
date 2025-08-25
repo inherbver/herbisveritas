@@ -85,6 +85,29 @@ src/
 - Server Actions in `/actions` directory for mutations
 - Optimistic updates pattern for cart operations
 
+##### Cart System Architecture
+
+**Synchronisation Strategy**:
+
+- **Debounce/Throttle**: 30ms debounce for server updates to prevent race conditions
+- **Action Queue**: Sequential processing of cart updates with priority for user actions
+- **Force Updates**: User actions use `force: true` for immediate updates
+- **Timestamp Tracking**: Prevents outdated updates from overwriting recent changes
+
+**Key Components**:
+
+- `cartStore.ts`: Central state management with debounced updates and action queue
+- `useInitialCartLoad`: 50ms delay for initial load to avoid conflicts
+- `ProductCard` & `ProductDetailDisplay`: Consistent use of `force: true` for adds
+- `CartSheet`: Direct cart manipulation with optimistic updates
+
+**Best Practices**:
+
+- Always use `force: true` for user-initiated actions
+- Identify update sources clearly (`product-card-add`, `product-detail-add`, etc.)
+- Use structured logging with component prefixes for debugging
+- Avoid multiple simultaneous cart loads with proper flag management
+
 #### Internationalization
 
 - Routes: `/{locale}/path` with French as default

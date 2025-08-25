@@ -27,7 +27,9 @@ interface ProductDetailDisplayProps {
   // onAddToCart: (productId: string | number, quantity: number) => void;
 }
 
-export default function ProductDetailDisplay({ product }: ProductDetailDisplayProps) {
+export default function ProductDetailDisplay({
+  product,
+}: ProductDetailDisplayProps) {
   const locale = useLocale() as Locale;
   const [activeTab, setActiveTab] = useState("description");
   const sectionRefs = {
@@ -41,16 +43,19 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
   const _cartItems = useCartItems();
 
   // ✅ Define a clear, initial state for the action avec le bon type
-  const initialState: CartActionResult<CartDataFromServer | null> = React.useMemo(
-    () => ({
-      success: false,
-      error: "Initial state", // Use a specific error message to identify the initial state
-    }),
-    []
-  );
+  const initialState: CartActionResult<CartDataFromServer | null> =
+    React.useMemo(
+      () => ({
+        success: false,
+        error: "Initial state", // Use a specific error message to identify the initial state
+      }),
+      [],
+    );
   const [state, formAction] = useActionState(addItemToCart, initialState);
 
   useEffect(() => {
+    const logPrefix = `[ProductDetailDisplay ${new Date().toISOString()}]`;
+
     // ✅ Do not show any toast if the state is still the initial one.
     // This is a robust way to prevent toasts on mount, especially with React 18's Strict Mode double-invoking effects.
     if (isGeneralErrorResult(state) && state.error === "Initial state") {
@@ -61,8 +66,14 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
       toast.success(state.message || t("ProductDetailModal.itemAddedSuccess"));
       // Mettre à jour le store avec les données du serveur
       if (state.data?.items) {
+        console.log(
+          `${logPrefix} Syncing cart with server data:`,
+          state.data.items.length,
+          "items",
+        );
         const { _setItems } = useCartStore.getState();
-        _setItems(state.data.items);
+        // Force la mise à jour pour garantir la synchronisation (comme ProductCard)
+        _setItems(state.data.items, true, "product-detail-add");
       }
     } else if (state.success === false) {
       let errorMessage: string | undefined;
@@ -73,6 +84,11 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
       } else if (isGeneralErrorResult(state)) {
         errorMessage = state.error;
       }
+
+      console.error(
+        `${logPrefix} Error adding to cart:`,
+        state.message || errorMessage,
+      );
       toast.error(state.message || errorMessage || t("Global.errors.generic"));
     }
   }, [state, t]);
@@ -91,7 +107,10 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
       });
     };
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const observer = new IntersectionObserver(
+      observerCallback,
+      observerOptions,
+    );
 
     Object.values(sectionRefs).forEach((ref) => {
       if (ref.current) {
@@ -140,7 +159,9 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
               {product.name}
             </h1>
             {product.unit && (
-              <p className="text-sm italic text-muted-foreground lg:text-base">{product.unit}</p>
+              <p className="text-sm italic text-muted-foreground lg:text-base">
+                {product.unit}
+              </p>
             )}
             <p className="text-foreground/90 text-base leading-relaxed">
               {product.shortDescription}
@@ -164,7 +185,9 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                       locale={locale}
                       className="text-olive-600 text-2xl font-bold"
                     />
-                    <p className="text-xs text-muted-foreground">{t("Global.TTC")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("Global.TTC")}
+                    </p>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
                     <QuantityInput
@@ -194,7 +217,7 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
                       "border-primary text-primary": activeTab === tab.id,
                       "hover:border-primary/70 border-transparent text-muted-foreground hover:text-primary":
                         activeTab !== tab.id,
-                    }
+                    },
                   )}
                 >
                   {tab.label}
@@ -264,7 +287,11 @@ export default function ProductDetailDisplay({ product }: ProductDetailDisplayPr
           )}
         </section>
 
-        <section id="usage" ref={sectionRefs.usage} className="mx-auto max-w-4xl scroll-mt-24">
+        <section
+          id="usage"
+          ref={sectionRefs.usage}
+          className="mx-auto max-w-4xl scroll-mt-24"
+        >
           <h3 className="mb-4 font-serif text-2xl text-gray-900 dark:text-white">
             {t("ProductDetail.tabs.usage")}
           </h3>

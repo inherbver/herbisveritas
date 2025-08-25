@@ -89,6 +89,8 @@ export function ProductCard({
   >(addItemToCartAction, initialAddItemState);
 
   useEffect(() => {
+    const logPrefix = `[ProductCard ${new Date().toISOString()}]`;
+
     // Vérifier que state existe avant d'accéder à ses propriétés
     if (!state) {
       return;
@@ -101,20 +103,23 @@ export function ProductCard({
     ) {
       return;
     }
+
     if (state.success) {
       toast.success(state.message || t("itemAddedSuccess"));
       // Synchronisation directe et fiable avec les données serveur
       if (state.data?.items) {
         console.log(
-          "[ProductCard] Syncing cart with server data:",
+          `${logPrefix} Syncing cart with server data:`,
           state.data.items.length,
           "items",
         );
         const { _setItems } = useCartStore.getState();
-        // Mise à jour immédiate comme dans product-detail-display
+        // Force la mise à jour pour garantir la synchronisation immédiate
+        // Utiliser 'user-action' comme source pour prioriser cette mise à jour
         _setItems(state.data.items, true, "product-card-add");
       }
     } else {
+      console.error(`${logPrefix} Error adding to cart:`, state.message);
       toast.error(state.message || tGlobal("genericError"));
     }
   }, [state, t, tGlobal]);
