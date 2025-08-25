@@ -53,3 +53,7 @@ next-env.d.ts
 tests/*test_*.spec.ts
 tests/screenshot*.png
 tests/temp-*.spec.ts
+
+# Performance reports
+scripts/*-report-*.json
+scripts/analyze-*.js
