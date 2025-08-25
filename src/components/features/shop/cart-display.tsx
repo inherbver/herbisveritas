@@ -25,6 +25,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { CheckoutButton } from "./checkout-button";
 import { MinusIcon, PlusIcon, XIcon } from "lucide-react";
+import { useDebouncedCallback } from "@/hooks/use-debounce";
 
 interface CartDisplayProps {
   onClose: () => void;
@@ -42,6 +43,83 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
   const totalItems = useCartTotalItemsHydrated();
   const subtotal = useCartSubtotalHydrated();
 
+  // Référence pour stocker l'état précédent pour rollback
+  const previousStateRef = React.useRef<typeof items>([]);
+
+  // Fonction pour synchroniser avec le serveur (sera debouncée)
+  const syncQuantityWithServer = React.useCallback(
+    async (cartItemId: string, newQuantity: number) => {
+      const logPrefix = `[CartDisplay syncWithServer ${new Date().toISOString()}]`;
+      console.log(
+        `${logPrefix} Syncing quantity for ${cartItemId}: ${newQuantity}`,
+      );
+
+      try {
+        const actionInput: UpdateCartItemQuantityInput = {
+          cartItemId,
+          quantity: newQuantity,
+        };
+
+        const result: CartActionResult<CartData | null> =
+          await updateCartItemQuantityAction(actionInput);
+
+        if (isSuccessResult(result)) {
+          if (result.data?.items) {
+            console.log(`${logPrefix} Server sync SUCCESS`);
+            // Mise à jour avec les données serveur confirmées
+            useCartStore
+              .getState()
+              ._setItems(
+                result.data.items,
+                true,
+                "cart-display-quantity-server-confirmed",
+              );
+          }
+        } else {
+          // En cas d'erreur, rollback à l'état précédent
+          console.error(`${logPrefix} Server sync FAILED:`, result.message);
+
+          const isAuthError =
+            result.message?.includes("identifier l'utilisateur") ||
+            result.message?.includes("not authenticated");
+
+          if (isAuthError) {
+            useCartStore.getState().clearCart();
+            toast.info(tGlobal("Cart.sessionExpired") || "Session expirée");
+          } else {
+            // Rollback
+            useCartStore
+              .getState()
+              ._setItems(
+                previousStateRef.current,
+                true,
+                "cart-display-quantity-rollback",
+              );
+            toast.error(result.message || tGlobal("genericError"));
+          }
+        }
+      } catch (error) {
+        console.error(`${logPrefix} Network error:`, error);
+        // Rollback en cas d'erreur réseau
+        useCartStore
+          .getState()
+          ._setItems(
+            previousStateRef.current,
+            true,
+            "cart-display-quantity-network-error-rollback",
+          );
+        toast.error(tGlobal("genericError"));
+      }
+    },
+    [tGlobal],
+  );
+
+  // Version debouncée de la synchronisation serveur (500ms)
+  const debouncedSyncWithServer = useDebouncedCallback(
+    syncQuantityWithServer,
+    500,
+  );
+
   const handleRemoveItem = async (cartItemId: string) => {
     if (!cartItemId) {
       toast.error(tGlobal("genericError"));
@@ -50,7 +128,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
 
     // Optimistic update - retirer l'item immédiatement
     const currentItems = useCartStore.getState().items;
-    const currentVersion = useCartStore.getState().getUpdateVersion();
+    const currentVersion = useCartStore.getState().updateVersion;
     const optimisticItems = currentItems.filter(
       (item) => item.id !== cartItemId,
     );
@@ -66,7 +144,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
       toast.success(result.message || t("itemRemovedSuccess"));
       if (result.data?.items) {
         // Force la mise à jour avec les données du serveur
-        const serverVersion = useCartStore.getState().getUpdateVersion();
+        const serverVersion = useCartStore.getState().updateVersion;
         // Ne mettre à jour que si la version n'a pas changé depuis notre update optimiste
         if (serverVersion === currentVersion + 1) {
           useCartStore
@@ -104,166 +182,50 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
     // Reset loading state if implemented
   };
 
-  const handleUpdateItemQuantity = async (
+  const handleUpdateItemQuantity = (
     cartItemId: string,
     newQuantity: number,
   ) => {
     const logPrefix = `[CartDisplay handleUpdateItemQuantity ${new Date().toISOString()}]`;
-    console.log(
-      `${logPrefix} CALLED with cartItemId: ${cartItemId}, newQuantity: ${newQuantity}`,
-    );
 
     if (!cartItemId) {
-      console.error(`${logPrefix} cartItemId is MISSING.`);
       toast.error(tGlobal("genericError"));
       return;
     }
 
     // Validation côté client
     if (newQuantity < 0) {
-      console.warn(
-        `${logPrefix} Invalid quantity: ${newQuantity}. Must be >= 0.`,
-      );
       toast.error("La quantité doit être positive ou nulle.");
       return;
     }
 
-    // 1. SAUVEGARDER L'ÉTAT ACTUEL pour rollback
+    // Ajouter une limite maximale par produit (10)
+    if (newQuantity > 10) {
+      toast.error("Maximum 10 articles par produit");
+      return;
+    }
+
+    // Sauvegarder l'état actuel pour rollback potentiel
     const currentItems = useCartStore.getState().items;
-    const previousState = [...currentItems]; // Deep copy pour éviter les mutations
+    previousStateRef.current = [...currentItems];
 
-    console.log(
-      `${logPrefix} Current state saved (${previousState.length} items)`,
-    );
-
-    // 2. OPTIMISTIC UPDATE - Mettre à jour l'UI immédiatement
+    // OPTIMISTIC UPDATE - Instantané pour l'UX
     const optimisticItems = currentItems
       .map((item) =>
         item.id === cartItemId ? { ...item, quantity: newQuantity } : item,
       )
-      .filter((item) => item.quantity > 0); // Retirer si quantity <= 0
+      .filter((item) => item.quantity > 0);
 
-    const currentVersion = useCartStore.getState().getUpdateVersion();
     useCartStore
       .getState()
       ._setItems(optimisticItems, true, "cart-display-quantity-optimistic");
+
     console.log(
-      `${logPrefix} Applied optimistic update (${optimisticItems.length} items after update, v${currentVersion + 1})`,
+      `${logPrefix} Optimistic update applied, debounced sync scheduled`,
     );
 
-    // 3. APPELER L'ACTION SERVEUR
-    const actionInput: UpdateCartItemQuantityInput = {
-      cartItemId,
-      quantity: newQuantity,
-    };
-    console.log(
-      `${logPrefix} Calling server action with input:`,
-      JSON.stringify(actionInput, null, 2),
-    );
-
-    try {
-      const result: CartActionResult<CartData | null> =
-        await updateCartItemQuantityAction(actionInput);
-      console.log(
-        `${logPrefix} Received response from server action. Success: ${result.success}`,
-      );
-
-      if (isSuccessResult(result)) {
-        // 3a. SUCCÈS - Synchroniser avec les données serveur
-        if (result.data?.items) {
-          console.log(
-            `${logPrefix} Server action SUCCESS. Syncing with server data (${result.data.items.length} items)`,
-          );
-          const serverVersion = useCartStore.getState().getUpdateVersion();
-          // Vérifier que notre update optimiste est toujours la dernière
-          if (serverVersion === currentVersion + 1) {
-            useCartStore
-              .getState()
-              ._setItems(
-                result.data.items,
-                true,
-                "cart-display-quantity-server",
-              );
-          } else {
-            // Une autre mise à jour a eu lieu, forcer le rechargement
-            console.log(
-              `${logPrefix} Version mismatch (expected v${currentVersion + 1}, got v${serverVersion}), forcing reload`,
-            );
-            useCartStore.getState().forceReloadFromServer();
-          }
-        } else {
-          console.log(
-            `${logPrefix} Server action SUCCESS but no data - keeping optimistic update`,
-          );
-        }
-        toast.success(result.message || t("itemQuantityUpdatedSuccess"));
-      } else {
-        // 3b. ERREUR SERVEUR - Gestion spéciale pour les erreurs d'authentification
-        const isAuthError =
-          result.message?.includes("identifier l'utilisateur") ||
-          result.message?.includes("not authenticated") ||
-          result.message?.includes("User identification failed");
-
-        if (isAuthError) {
-          // L'utilisateur n'est plus authentifié - vider le panier silencieusement
-          console.warn(`${logPrefix} User not authenticated. Clearing cart.`);
-          useCartStore.getState().clearCart();
-          toast.info(
-            tGlobal("Cart.sessionExpired") ||
-              "Votre session a expiré. Le panier a été vidé.",
-          );
-        } else {
-          // Autres erreurs serveur - Rollback à l'état précédent
-          console.error(
-            `${logPrefix} Server action FAILED. Error: ${result.message}. Rolling back to previous state.`,
-          );
-          useCartStore
-            .getState()
-            ._setItems(previousState, true, "cart-display-quantity-rollback");
-
-          // Log des détails d'erreur pour debugging
-          if ("fieldErrors" in result && result.fieldErrors) {
-            console.error(
-              `${logPrefix} Field validation errors:`,
-              result.fieldErrors,
-            );
-          } else if ("internalError" in result && result.internalError) {
-            console.error(
-              `${logPrefix} Internal server error:`,
-              result.internalError,
-            );
-          }
-
-          toast.error(result.message || tGlobal("genericError"));
-        }
-      }
-    } catch (error: unknown) {
-      // 3c. ERREUR RÉSEAU/INATTENDUE - Rollback
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.";
-      console.error(
-        `${logPrefix} Network/unexpected error during server action. Error: ${errorMessage}. Rolling back to previous state.`,
-      );
-      console.error(
-        `${logPrefix} Previous state being restored (first 3 items):`,
-        JSON.stringify(previousState.slice(0, 3), null, 2),
-      );
-
-      // Log séparé pour l'objet error complet (pour debugging)
-      if (!(error instanceof Error)) {
-        console.error(
-          `${logPrefix} Additional error details (non-Error object):`,
-          error,
-        );
-      }
-
-      useCartStore
-        .getState()
-        ._setItems(previousState, true, "cart-display-quantity-error-rollback");
-      toast.error(tGlobal("genericError"));
-    }
+    // SYNC SERVEUR - Debouncé pour éviter le spam
+    debouncedSyncWithServer(cartItemId, newQuantity);
   };
 
   if (items.length === 0) {

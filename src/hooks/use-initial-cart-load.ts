@@ -14,12 +14,23 @@ export function useInitialCartLoad() {
   );
   const currentItems = useCartStore((state) => state.items);
   const isLoading = useCartStore((state) => state.isLoading);
+  const updateVersion = useCartStore((state) => state.updateVersion);
   const hasTriedLoad = useRef(false);
+  const lastUpdateVersion = useRef(updateVersion);
 
   useEffect(() => {
     const loadCartIfNeeded = async () => {
-      // Éviter les chargements multiples
+      // Éviter les chargements multiples ou si une mise à jour est en cours
       if (hasTriedLoad.current || isLoading) {
+        return;
+      }
+
+      // Si le panier a été mis à jour pendant qu'on attendait, ne pas le charger
+      if (updateVersion !== lastUpdateVersion.current) {
+        console.log(
+          "[useInitialCartLoad] Cart was updated during wait, skipping load",
+        );
+        hasTriedLoad.current = true;
         return;
       }
 
@@ -32,38 +43,40 @@ export function useInitialCartLoad() {
 
         if (error || !user) {
           console.log(
-            "useInitialCartLoad - No authenticated user, skipping cart load",
+            "[useInitialCartLoad] No authenticated user, skipping cart load",
           );
           return;
         }
 
         // Si l'utilisateur est connecté mais le panier est vide, le charger
-        if (currentItems.length === 0) {
+        // IMPORTANT: Ne charger qu'une seule fois au montage initial
+        if (currentItems.length === 0 && !hasTriedLoad.current) {
           console.log(
-            "useInitialCartLoad - User is authenticated but cart is empty, loading...",
+            "[useInitialCartLoad] User is authenticated but cart is empty, loading...",
           );
           hasTriedLoad.current = true;
           await forceReloadFromServer();
         } else {
           console.log(
-            "useInitialCartLoad - Cart already has items, skipping load",
+            `[useInitialCartLoad] Cart already has ${currentItems.length} items, skipping load`,
           );
+          hasTriedLoad.current = true; // Marquer comme tenté même si on ne charge pas
         }
       } catch (error) {
         console.error(
-          "useInitialCartLoad - Error checking auth or loading cart:",
+          "[useInitialCartLoad] Error checking auth or loading cart:",
           error,
         );
       }
     };
 
-    // Attendre un peu pour laisser les autres hooks se stabiliser
-    const timeout = setTimeout(loadCartIfNeeded, 1000);
+    // Réduire le délai pour éviter les conflits
+    const timeout = setTimeout(loadCartIfNeeded, 200);
 
     return () => {
       clearTimeout(timeout);
     };
-  }, [forceReloadFromServer, currentItems.length, isLoading]);
+  }, [forceReloadFromServer, currentItems.length, isLoading, updateVersion]);
 
   // Reset du flag si le panier est vidé
   useEffect(() => {

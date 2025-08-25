@@ -218,24 +218,42 @@ const useCartStore = create<CartStore>()(
           const currentItems = get().items;
           const currentVersion = get().updateVersion;
 
-          // Comparaison optimisée pour éviter JSON.stringify coûteux
+          // Comparaison améliorée par ID au lieu d'index
+          // Créer des maps pour comparaison O(1)
+          const currentMap = new Map(
+            currentItems.map((item) => [item.id || item.productId, item]),
+          );
+          const newMap = new Map(
+            items.map((item) => [item.id || item.productId, item]),
+          );
+
           const itemsChanged =
             force ||
-            currentItems.length !== items.length ||
-            !currentItems.every((current, index) => {
-              const newItem = items[index];
+            currentMap.size !== newMap.size ||
+            Array.from(currentMap.entries()).some(([id, currentItem]) => {
+              const newItem = newMap.get(id);
               return (
-                newItem &&
-                current.id === newItem.id &&
-                current.quantity === newItem.quantity &&
-                current.productId === newItem.productId
+                !newItem ||
+                newItem.quantity !== currentItem.quantity ||
+                newItem.price !== currentItem.price
               );
             });
 
           if (!itemsChanged) {
             console.log(`${logPrefix} Cart items unchanged, skipping update.`);
+            console.log(
+              `${logPrefix} Current: ${currentMap.size} items, New: ${newMap.size} items`,
+            );
             return;
           }
+
+          // Log des changements détectés
+          console.log(
+            `${logPrefix} Changes detected from source: ${updateSource}`,
+          );
+          console.log(
+            `${logPrefix} Current items: ${currentMap.size}, New items: ${newMap.size}`,
+          );
 
           // Incrémenter la version et mettre à jour le timestamp
           const newVersion = currentVersion + 1;

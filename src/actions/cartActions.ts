@@ -28,15 +28,18 @@ import {
   type UpdateCartItemQuantityInput,
 } from "@/lib/validators/cart.validator";
 
-// SÉCURITÉ: Rate limiting pour actions de panier (actuellement non utilisé)
-// import { withRateLimit } from "@/lib/security/rate-limit-decorator";
+// SÉCURITÉ: Rate limiting pour actions de panier
+import { withRateLimit } from "@/lib/security/rate-limit-decorator";
 
 // Re-export getCart for external usage
 export { getCart };
 
 // --- Cart Actions ---
 
-export async function addItemToCart(
+export const addItemToCart = withRateLimit(
+  "CART",
+  "add-item",
+)(async function addItemToCart(
   prevState: unknown,
   formData: FormData,
 ): Promise<CartActionResult<(CartData & { guestCartId?: string }) | null>> {
@@ -63,12 +66,28 @@ export async function addItemToCart(
 
       const supabase = await createSupabaseServerClient();
 
-      // Récupérer les infos du produit pour le logging
-      const { data: product } = await supabase
+      // Récupérer les infos du produit incluant le stock
+      const { data: product, error: productError } = await supabase
         .from("products")
-        .select("name, price")
+        .select("name, price, stock")
         .eq("id", productId)
         .single();
+
+      if (productError || !product) {
+        return createGeneralErrorResult(
+          "PRODUCT_NOT_FOUND",
+          "Produit introuvable.",
+        );
+      }
+
+      // Vérification du stock disponible
+      if (product.stock !== null && product.stock < quantity) {
+        return createGeneralErrorResult(
+          "INSUFFICIENT_STOCK",
+          `Stock insuffisant. Seulement ${product.stock} article(s) disponible(s).`,
+        );
+      }
+
       const activeUserId = await getActiveUserId(supabase);
 
       // Gestion des utilisateurs invités (guests) - similaire à cartReader.ts
@@ -134,9 +153,9 @@ export async function addItemToCart(
           const cookieStore = await cookies();
           cookieStore.set("herbis-cart-id", cartId, {
             httpOnly: true, // Protection contre XSS - ne peut pas être lu par JavaScript
-            secure: process.env.NODE_ENV === "production", // HTTPS en production
-            sameSite: "lax", // Protection CSRF tout en permettant la navigation normale
-            maxAge: 14 * 24 * 60 * 60, // 14 jours (aligné avec cleanup_expired_guest_carts)
+            secure: true, // Toujours sécurisé (HTTPS requis même en dev)
+            sameSite: "strict", // Protection CSRF maximale
+            maxAge: 7 * 24 * 60 * 60, // 7 jours (réduit de 14 pour limiter l'exposition)
             path: "/",
           });
           console.log("🛒 [addItemToCart] Set guest cart cookie:", cartId);
@@ -247,9 +266,12 @@ export async function addItemToCart(
       );
     }
   });
-}
+});
 
-export async function removeItemFromCart(
+export const removeItemFromCart = withRateLimit(
+  "CART",
+  "remove-item",
+)(async function removeItemFromCart(
   input: RemoveFromCartInput,
 ): Promise<CartActionResult<CartData | null>> {
   try {
@@ -330,9 +352,12 @@ export async function removeItemFromCart(
       "Une erreur inattendue est survenue.",
     );
   }
-}
+});
 
-export async function updateCartItemQuantity(
+export const updateCartItemQuantity = withRateLimit(
+  "CART",
+  "update-quantity",
+)(async function updateCartItemQuantity(
   input: UpdateCartItemQuantityInput,
 ): Promise<CartActionResult<CartData | null>> {
   try {
@@ -355,6 +380,33 @@ export async function updateCartItemQuantity(
       return createGeneralErrorResult(
         "User not authenticated.",
         "Impossible d'identifier l'utilisateur.",
+      );
+    }
+
+    // Récupérer l'item du panier avec les infos du produit pour vérifier le stock
+    const { data: cartItem, error: cartItemError } = await supabase
+      .from("cart_items")
+      .select("*, products(stock)")
+      .eq("id", cartItemId)
+      .single();
+
+    if (cartItemError || !cartItem) {
+      return createGeneralErrorResult(
+        "ITEM_NOT_FOUND",
+        "Article introuvable dans le panier.",
+      );
+    }
+
+    // Vérification du stock disponible
+    const productStock = cartItem.products?.stock;
+    if (
+      productStock !== null &&
+      productStock !== undefined &&
+      productStock < quantity
+    ) {
+      return createGeneralErrorResult(
+        "INSUFFICIENT_STOCK",
+        `Stock insuffisant. Seulement ${productStock} article(s) disponible(s).`,
       );
     }
 
@@ -393,7 +445,7 @@ export async function updateCartItemQuantity(
       "Une erreur inattendue est survenue.",
     );
   }
-}
+});
 
 export async function removeItemFromCartFormAction(
   prevState: unknown,

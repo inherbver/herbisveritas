@@ -6,6 +6,7 @@ import { Home, ShoppingBag, ShoppingCart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useCartStore from "@/stores/cartStore";
 import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 
 interface NavItem {
   href: string;
@@ -18,9 +19,11 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const t = useTranslations("Global");
   const cartItems = useCartStore((state) => state.items);
-  const cartItemCount = cartItems.reduce(
-    (total, item) => total + item.quantity,
-    0,
+
+  // Mémoïser le calcul pour éviter les recalculs à chaque render
+  const cartItemCount = useMemo(
+    () => cartItems.reduce((total, item) => total + item.quantity, 0),
+    [cartItems],
   );
 
   // Hide on certain pages

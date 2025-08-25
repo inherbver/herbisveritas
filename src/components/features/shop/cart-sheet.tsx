@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ShoppingBagIcon } from "lucide-react";
-import { useCartTotalItems } from "@/stores/cartStore";
+import { useCartTotalQuantity } from "@/hooks/use-cart-state";
 import { CartDisplay } from "./cart-display";
 import { cn } from "@/utils/cn";
 
@@ -22,15 +22,9 @@ export function CartSheet() {
   const t = useTranslations("CartSheet"); // Pour les textes comme le titre du sheet
   const tGlobal = useTranslations("Global"); // Pour les textes globaux comme "Panier"
 
-  // Utiliser le store Zustand pour récupérer le nombre total d'articles
-  const totalItems = useCartTotalItems();
+  // Utiliser le hook unifié pour récupérer le nombre total d'articles avec hydratation
+  const { totalQuantity, isHydrated } = useCartTotalQuantity();
   const [isOpen, setIsOpen] = React.useState(false);
-
-  // Gestion d'hydratation pour éviter les erreurs SSR/Client
-  const [isHydrated, setIsHydrated] = React.useState(false);
-  React.useEffect(() => {
-    setIsHydrated(true);
-  }, []);
 
   const handleClose = () => setIsOpen(false);
 
@@ -43,16 +37,16 @@ export function CartSheet() {
           className="relative min-h-[44px] min-w-[44px] touch-manipulation transition-transform duration-200 active:scale-95 md:min-h-[40px] md:min-w-[40px]"
         >
           <ShoppingBagIcon className="h-5 w-5" />
-          {isHydrated && totalItems > 0 && (
+          {isHydrated && totalQuantity > 0 && (
             <span
               className={cn(
                 "absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground",
-                "duration-300 animate-in fade-in zoom-in"
+                "duration-300 animate-in fade-in zoom-in",
               )}
-              aria-label={tGlobal("Cart.itemCount", { count: totalItems })}
+              aria-label={tGlobal("Cart.itemCount", { count: totalQuantity })}
               suppressHydrationWarning
             >
-              {totalItems}
+              {totalQuantity}
             </span>
           )}
           <span className="sr-only">{tGlobal("Cart.openCart")}</span>
@@ -65,7 +59,9 @@ export function CartSheet() {
         <SheetHeader className="border-b p-4 pb-3 sm:p-6 sm:pb-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <SheetTitle className="text-lg font-semibold">{t("yourCartTitle")}</SheetTitle>
+              <SheetTitle className="text-lg font-semibold">
+                {t("yourCartTitle")}
+              </SheetTitle>
               <SheetDescription className="text-sm text-muted-foreground">
                 {t("cartDescription")}
               </SheetDescription>

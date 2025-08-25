@@ -105,8 +105,13 @@ export function ProductCard({
       toast.success(state.message || t("itemAddedSuccess"));
       // Synchronisation directe et fiable avec les données serveur
       if (state.data?.items) {
+        console.log(
+          "[ProductCard] Syncing cart with server data:",
+          state.data.items.length,
+          "items",
+        );
         const { _setItems } = useCartStore.getState();
-        // Force update pour garantir la cohérence avec le serveur
+        // Mise à jour immédiate comme dans product-detail-display
         _setItems(state.data.items, true, "product-card-add");
       }
     } else {
@@ -282,7 +287,7 @@ export function ProductCard({
                 aria-describedby={
                   isOutOfStock ? `${id}-out-of-stock` : undefined
                 }
-                variant="secondary"
+                variant="default"
                 className="min-h-[44px] w-full touch-manipulation rounded-xl text-sm font-medium transition-transform duration-200 active:scale-95 md:min-h-[36px]"
                 onClick={(e) => e.stopPropagation()} // Prevent card click on mobile
               >
