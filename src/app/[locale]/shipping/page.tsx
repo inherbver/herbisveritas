@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { Button } from "@/components/ui/button";
 import { Truck, Package, Clock, MapPin } from "lucide-react";
 
 export async function generateMetadata({
@@ -124,12 +125,9 @@ export default function ShippingPage() {
       <section className="rounded-lg border bg-muted/50 p-8 text-center">
         <h2 className="mb-4 text-xl font-semibold">{t("contact.title")}</h2>
         <p className="mb-4 text-muted-foreground">{t("contact.description")}</p>
-        <a
-          href="mailto:contact@inherbisveritas.fr"
-          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          {t("contact.button")}
-        </a>
+        <Button asChild variant="support">
+          <a href="mailto:contact@inherbisveritas.fr">{t("contact.button")}</a>
+        </Button>
       </section>
     </div>
   );

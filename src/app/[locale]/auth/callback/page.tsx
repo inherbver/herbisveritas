@@ -6,6 +6,7 @@ import { useSearchParams, useRouter, useParams } from "next/navigation"; // useP
 import { useTranslations } from "next-intl";
 import { createClient } from "../../../../lib/supabase/client";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { Button } from "@/components/ui/button";
 
 // Un composant wrapper pour utiliser useSearchParams car il doit être dans un Suspense
 function AuthCallbackContent() {
@@ -137,9 +138,12 @@ function AuthCallbackContent() {
     return (
       <main>
         <p>{message}</p>
-        <button onClick={() => router.push(`/${locale}/login`)}>
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/${locale}/login`)}
+        >
           {t("goToLogin")}
-        </button>
+        </Button>
       </main>
     );
   }

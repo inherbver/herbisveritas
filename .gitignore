@@ -47,6 +47,9 @@ next-env.d.ts
 
 # jest
 /.jest-cache/
+
+# Duplicated route folders for i18n
+/src/app/[locale]/produits/
 /.jest-cache-fast/
 
 # temporary test files

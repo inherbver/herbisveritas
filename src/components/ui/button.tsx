@@ -5,18 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/utils/cn";
 
 const buttonVariants = cva(
-  // Base: taille uniforme, rayon bordure cohérent, transitions douces
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium",
-  // Transitions et états: amélioration de l'expérience utilisateur
-  "transition-all duration-200 ease-out",
-  // États: disabled, focus, invalid avec contrastes améliorés
-  "disabled:pointer-events-none disabled:opacity-60 disabled:cursor-not-allowed",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
-  "aria-invalid:ring-2 aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  // Icônes: comportement cohérent
-  "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
-  // Hover transform subtile pour feedback tactile
-  "hover:scale-[1.02] active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 aria-invalid:ring-2 aria-invalid:ring-destructive/40 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 hover:scale-[1.02] active:scale-[0.98]",
   {
     variants: {
       variant: {
@@ -35,6 +24,8 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline hover:text-primary/80 transition-colors dark:text-primary dark:hover:text-primary/80",
         support:
           "bg-support text-support-foreground shadow-sm hover:bg-support/90 hover:shadow-md dark:hover:bg-support/80 dark:shadow-md dark:shadow-black/20 dark:hover:shadow-lg dark:hover:shadow-black/30",
+        accent:
+          "bg-accent text-accent-foreground shadow-sm hover:bg-accent/90 hover:shadow-md dark:hover:bg-accent/80 dark:shadow-md dark:shadow-black/20 dark:hover:shadow-lg dark:hover:shadow-black/30",
       },
       size: {
         // Tailles uniformes avec padding cohérent et adaptation aux icônes
@@ -70,7 +61,7 @@ function Button({
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />
   );

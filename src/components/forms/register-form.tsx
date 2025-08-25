@@ -120,7 +120,9 @@ export function RegisterForm() {
   return (
     <Card className="border-border/50 w-full max-w-md rounded-xl shadow-xl">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold tracking-tight">{tAuth("title")}</CardTitle>
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          {tAuth("title")}
+        </CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
           {tAuth("description")}
         </CardDescription>
@@ -135,7 +137,11 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>{tAuth("emailLabel")}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="nom@exemple.com" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="nom@exemple.com"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -160,7 +166,10 @@ export function RegisterForm() {
                       label={tPassword("uppercase")}
                       met={requirements.uppercase}
                     />
-                    <PasswordRequirement label={tPassword("number")} met={requirements.number} />
+                    <PasswordRequirement
+                      label={tPassword("number")}
+                      met={requirements.number}
+                    />
                     <PasswordRequirement
                       label={tPassword("specialChar")}
                       met={requirements.specialChar}
@@ -188,8 +197,8 @@ export function RegisterForm() {
             <Button
               type="submit"
               size="lg"
-              variant="secondary"
-              className="mt-6 w-full shadow-md transition-transform duration-200 ease-in-out active:scale-95 hover:scale-105"
+              variant="primary"
+              className="mt-6 w-full"
               disabled={isLoading}
             >
               {isLoading ? tGlobal("loading") : tAuth("submitButton")}

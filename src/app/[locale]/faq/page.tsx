@@ -6,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 
 export async function generateMetadata({
   params,
@@ -90,12 +91,11 @@ export default function FAQPage() {
           <p className="mb-4 text-muted-foreground">
             {t("contact.description")}
           </p>
-          <a
-            href="mailto:contact@inherbisveritas.fr"
-            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            {t("contact.button")}
-          </a>
+          <Button asChild variant="support">
+            <a href="mailto:contact@inherbisveritas.fr">
+              {t("contact.button")}
+            </a>
+          </Button>
         </section>
       </main>
     </div>

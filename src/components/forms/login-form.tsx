@@ -16,7 +16,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginAction, resendConfirmationEmailAction } from "@/actions/authActions";
+import {
+  loginAction,
+  resendConfirmationEmailAction,
+} from "@/actions/authActions";
 import { ActionResult } from "@/lib/core/result";
 
 // Type précis pour l'état du formulaire de connexion
@@ -29,8 +32,8 @@ function SubmitButton() {
     <Button
       type="submit"
       size="lg"
-      variant="secondary"
-      className="w-full shadow-md transition-transform duration-200 ease-in-out active:scale-95 hover:scale-105"
+      variant="primary"
+      className="w-full"
       disabled={pending}
       data-testid="login-submit-button"
     >
@@ -48,8 +51,11 @@ export function LoginForm() {
     data: null,
   };
   const [state, formAction] = useActionState(
-    loginAction as (state: LoginFormState, formData: FormData) => Promise<LoginFormState>,
-    initialState
+    loginAction as (
+      state: LoginFormState,
+      formData: FormData,
+    ) => Promise<LoginFormState>,
+    initialState,
   );
   const [email, setEmail] = React.useState("");
 
@@ -77,7 +83,9 @@ export function LoginForm() {
       data-testid="login-form"
     >
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold tracking-tight">{t("title")}</CardTitle>
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          {t("title")}
+        </CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
           {t("description")}
         </CardDescription>
@@ -97,7 +105,9 @@ export function LoginForm() {
               data-testid="email-input"
             />
             {!state.success && state.error && state.error.includes("email") && (
-              <p className="text-sm font-medium text-destructive">{t("invalidEmail")}</p>
+              <p className="text-sm font-medium text-destructive">
+                {t("invalidEmail")}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -117,9 +127,13 @@ export function LoginForm() {
                 {t("forgotPasswordLink")}
               </a>
             </div>
-            {!state.success && state.error && state.error.includes("password") && (
-              <p className="text-sm font-medium text-destructive">{t("invalidPassword")}</p>
-            )}
+            {!state.success &&
+              state.error &&
+              state.error.includes("password") && (
+                <p className="text-sm font-medium text-destructive">
+                  {t("invalidPassword")}
+                </p>
+              )}
           </div>
           {/* General form error message is now handled by toast */}
         </CardContent>

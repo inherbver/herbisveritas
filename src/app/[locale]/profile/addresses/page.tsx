@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import AddressForm from "@/components/forms/address-form";
 import { AddressFormData } from "@/lib/validators/address.validator";
 import { countries } from "@/lib/countries";
+import { Button } from "@/components/ui/button";
 
 interface Address {
   id: string;
@@ -67,15 +68,16 @@ const DisplayAddress = ({
         </p>
       )}
       <div className="mt-3 flex items-center justify-between">
-        <button
+        <Button
+          variant="link"
+          size="sm"
           onClick={(e) => {
             e.stopPropagation();
             onEdit();
           }}
-          className="text-sm text-blue-600 hover:underline focus:outline-none"
         >
           {t("editAddressButton")}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -91,7 +93,9 @@ export default function AddressesPage({ params }: Props) {
   const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
-  const [formAddressType, setFormAddressType] = useState<"shipping" | "billing" | null>(null);
+  const [formAddressType, setFormAddressType] = useState<
+    "shipping" | "billing" | null
+  >(null);
   const [editingAddress, setEditingAddress] = useState<
     (Partial<AddressFormData> & { id?: string }) | null
   >(null);
@@ -115,8 +119,12 @@ export default function AddressesPage({ params }: Props) {
     if (error) {
       console.error("Error fetching addresses:", error);
     } else if (data) {
-      setShippingAddress(data.find((addr) => addr.address_type === "shipping") || null);
-      setBillingAddress(data.find((addr) => addr.address_type === "billing") || null);
+      setShippingAddress(
+        data.find((addr) => addr.address_type === "shipping") || null,
+      );
+      setBillingAddress(
+        data.find((addr) => addr.address_type === "billing") || null,
+      );
     }
     setLoading(false);
   }, [supabase, locale]);
@@ -173,7 +181,9 @@ export default function AddressesPage({ params }: Props) {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
       <header className="mb-10 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900">{t("title")}</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+          {t("title")}
+        </h1>
       </header>
 
       {showForm && formAddressType && (
@@ -186,7 +196,8 @@ export default function AddressesPage({ params }: Props) {
             locale={locale}
             countries={{
               [locale.toUpperCase()]: [
-                ...(countries[locale.toUpperCase() as keyof typeof countries] || countries.FR),
+                ...(countries[locale.toUpperCase() as keyof typeof countries] ||
+                  countries.FR),
               ],
             }}
           />
@@ -197,7 +208,9 @@ export default function AddressesPage({ params }: Props) {
         <div className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2">
           <section className="h-full">
             <div className="mb-4 flex items-center justify-between border-b border-gray-300 pb-2">
-              <h2 className="text-2xl font-semibold text-gray-800">{t("shippingAddressTitle")}</h2>
+              <h2 className="text-2xl font-semibold text-gray-800">
+                {t("shippingAddressTitle")}
+              </h2>
             </div>
             <div className="space-y-4">
               {shippingAddress ? (
@@ -208,19 +221,22 @@ export default function AddressesPage({ params }: Props) {
                   onEdit={() => handleEdit(shippingAddress)}
                 />
               ) : (
-                <button
+                <Button
+                  variant="outline"
+                  className="w-full h-auto rounded-lg border-2 border-dashed border-gray-300 p-6 text-gray-500 hover:border-gray-400 hover:text-gray-600"
                   onClick={() => handleOpenForm("shipping")}
-                  className="w-full rounded-lg border-2 border-dashed border-gray-300 p-6 text-center text-gray-500 hover:border-gray-400 hover:text-gray-600"
                 >
                   {t("addAddressButton")}
-                </button>
+                </Button>
               )}
             </div>
           </section>
 
           <section className="h-full">
             <div className="mb-4 flex items-center justify-between border-b border-gray-300 pb-2">
-              <h2 className="text-2xl font-semibold text-gray-800">{t("billingAddressTitle")}</h2>
+              <h2 className="text-2xl font-semibold text-gray-800">
+                {t("billingAddressTitle")}
+              </h2>
             </div>
             <div className="space-y-4">
               {billingAddress ? (
@@ -231,12 +247,13 @@ export default function AddressesPage({ params }: Props) {
                   onEdit={() => handleEdit(billingAddress)}
                 />
               ) : (
-                <button
+                <Button
+                  variant="outline"
+                  className="w-full h-auto rounded-lg border-2 border-dashed border-gray-300 p-6 text-gray-500 hover:border-gray-400 hover:text-gray-600"
                   onClick={() => handleOpenForm("billing")}
-                  className="w-full rounded-lg border-2 border-dashed border-gray-300 p-6 text-center text-gray-500 hover:border-gray-400 hover:text-gray-600"
                 >
                   {t("addAddressButton")}
-                </button>
+                </Button>
               )}
             </div>
           </section>

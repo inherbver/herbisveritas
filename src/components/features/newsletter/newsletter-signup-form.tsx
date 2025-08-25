@@ -94,10 +94,10 @@ export function NewsletterSignupForm({
 
       <Button
         type="submit"
+        variant="secondary"
+        size={size === "sm" ? "sm" : size === "lg" ? "lg" : "default"}
         disabled={isPending || !email.trim()}
-        className={`${buttonSizeClasses[size]} ${
-          variant === "inline" ? "self-center px-8" : "w-full"
-        } font-semibold transition-all hover:shadow-md disabled:opacity-50 rounded-lg shadow-sm hover:shadow-lg`}
+        className={variant === "inline" ? "self-center px-8" : "w-full"}
       >
         {isPending ? (
           <>

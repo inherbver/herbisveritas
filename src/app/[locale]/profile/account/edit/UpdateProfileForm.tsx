@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
 
 // Local schema for account information only, matching the one in profileActions.ts
 const localAccountInfoSchema = z.object({
@@ -18,7 +19,9 @@ const localAccountInfoSchema = z.object({
     .trim(),
   phone_number: z
     .string()
-    .regex(/^(\+\d{1,3}[- ]?)?\d{10}$/, { message: "Invalid phone number format." })
+    .regex(/^(\+\d{1,3}[- ]?)?\d{10}$/, {
+      message: "Invalid phone number format.",
+    })
     .or(z.literal(""))
     .nullable(),
 });
@@ -26,7 +29,10 @@ const localAccountInfoSchema = z.object({
 type AccountInfoFormValues = z.infer<typeof localAccountInfoSchema>;
 import { ProfileData } from "@/types/profile";
 import { useTranslations, useLocale } from "next-intl";
-import { updateUserProfile, UpdateProfileFormState } from "@/actions/profileActions";
+import {
+  updateUserProfile,
+  UpdateProfileFormState,
+} from "@/actions/profileActions";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect } from "react";
@@ -45,11 +51,13 @@ const initialState: UpdateProfileFormState = {
 };
 
 // Helper function to generate default form values
-const getInitialProfileValues = (userProfile: ProfileData | null): AccountInfoFormValues => {
+const getInitialProfileValues = (
+  userProfile: ProfileData | null,
+): AccountInfoFormValues => {
   console.log("[getInitialProfileValues] Received userProfile:", userProfile);
   console.log(
     "[getInitialProfileValues] Received userProfile.billing_address_is_different:",
-    userProfile?.billing_address_is_different
+    userProfile?.billing_address_is_different,
   );
   if (!userProfile) {
     const defaultVals = {
@@ -57,7 +65,10 @@ const getInitialProfileValues = (userProfile: ProfileData | null): AccountInfoFo
       last_name: "",
       phone_number: "",
     };
-    console.log("[getInitialProfileValues] No userProfile, returning:", defaultVals);
+    console.log(
+      "[getInitialProfileValues] No userProfile, returning:",
+      defaultVals,
+    );
     return defaultVals;
   }
   const vals = {
@@ -69,31 +80,43 @@ const getInitialProfileValues = (userProfile: ProfileData | null): AccountInfoFo
   return vals;
 };
 
-function SubmitButton({ text, pendingText }: { text: string; pendingText: string }) {
+function SubmitButton({
+  text,
+  pendingText,
+}: {
+  text: string;
+  pendingText: string;
+}) {
   const { pending } = useFormStatus();
   return (
-    <button
+    <Button
       type="submit"
+      variant="primary"
+      className="w-full"
       disabled={pending}
-      className="hover:bg-primary/90 flex w-full justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
     >
       {pending ? pendingText : text}
-    </button>
+    </Button>
   );
 }
 
-export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProps) {
+export default function UpdateProfileForm({
+  userProfile,
+}: UpdateProfileFormProps) {
   console.log("UpdateProfileForm rendered. userProfile prop:", userProfile);
   console.log(
     "UpdateProfileForm rendered. userProfile.billing_address_is_different:",
-    userProfile?.billing_address_is_different
+    userProfile?.billing_address_is_different,
   );
 
   const t = useTranslations("ProfileEditPage.form");
   const tGlobal = useTranslations("Global");
   const locale = useLocale();
 
-  const [formState, formAction] = useActionState(updateUserProfile, initialState);
+  const [formState, formAction] = useActionState(
+    updateUserProfile,
+    initialState,
+  );
 
   const defaultValuesToUse = getInitialProfileValues(userProfile);
 
@@ -111,19 +134,22 @@ export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProp
       "[useEffect] Fired. formState.success:",
       formState.success,
       "formState.resetKey:",
-      formState.resetKey
+      formState.resetKey,
     );
     console.log(
       "[useEffect] userProfile.billing_address_is_different:",
       userProfile?.billing_address_is_different,
       "isDirty:",
-      isDirty
+      isDirty,
     );
 
     // Priorité au reset demandé par le serveur après une action réussie
     if (formState.success && formState.resetKey) {
       const newDefaults = getInitialProfileValues(userProfile);
-      console.log("[useEffect] Condition 1: Post-action reset. New defaults:", newDefaults);
+      console.log(
+        "[useEffect] Condition 1: Post-action reset. New defaults:",
+        newDefaults,
+      );
       reset(newDefaults);
       return; // Sortir pour ne pas interférer avec la logique ci-dessous
     }
@@ -135,7 +161,7 @@ export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProp
       const newDefaults = getInitialProfileValues(userProfile);
       console.log(
         "[useEffect] Condition 2: userProfile exists AND form NOT dirty. New defaults:",
-        newDefaults
+        newDefaults,
       );
       reset(newDefaults);
     } else {
@@ -143,7 +169,7 @@ export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProp
         "[useEffect] Condition 2 not met. userProfile exists:",
         !!userProfile,
         "isDirty:",
-        isDirty
+        isDirty,
       );
     }
     // Dépendances : userProfile pour réagir à ses changements,
@@ -175,10 +201,15 @@ export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProp
           {formState.message}
         </div>
       )}
-      <h2 className="text-lg font-semibold text-foreground">{t("personalInfo.title")}</h2>
+      <h2 className="text-lg font-semibold text-foreground">
+        {t("personalInfo.title")}
+      </h2>
       <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
         <div className="sm:col-span-3">
-          <label htmlFor="first_name" className="block text-sm font-medium text-foreground">
+          <label
+            htmlFor="first_name"
+            className="block text-sm font-medium text-foreground"
+          >
             {t("firstName.label")}
           </label>
           <Input
@@ -189,13 +220,17 @@ export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProp
           />
           {(clientErrors.first_name || formState?.errors?.first_name) && (
             <p className="mt-1 text-sm text-destructive">
-              {clientErrors.first_name?.message || formState?.errors?.first_name?.[0]}
+              {clientErrors.first_name?.message ||
+                formState?.errors?.first_name?.[0]}
             </p>
           )}
         </div>
 
         <div className="sm:col-span-3">
-          <label htmlFor="last_name" className="block text-sm font-medium text-foreground">
+          <label
+            htmlFor="last_name"
+            className="block text-sm font-medium text-foreground"
+          >
             {t("lastName.label")}
           </label>
           <Input
@@ -206,14 +241,18 @@ export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProp
           />
           {(clientErrors.last_name || formState?.errors?.last_name) && (
             <p className="mt-1 text-sm text-destructive">
-              {clientErrors.last_name?.message || formState?.errors?.last_name?.[0]}
+              {clientErrors.last_name?.message ||
+                formState?.errors?.last_name?.[0]}
             </p>
           )}
         </div>
       </div>
 
       <div>
-        <label htmlFor="phone_number" className="block text-sm font-medium text-foreground">
+        <label
+          htmlFor="phone_number"
+          className="block text-sm font-medium text-foreground"
+        >
           {t("phoneNumber.label")}
         </label>
         <Input
@@ -225,13 +264,17 @@ export default function UpdateProfileForm({ userProfile }: UpdateProfileFormProp
         />
         {(clientErrors.phone_number || formState?.errors?.phone_number) && (
           <p className="mt-1 text-sm text-destructive">
-            {clientErrors.phone_number?.message || formState?.errors?.phone_number?.[0]}
+            {clientErrors.phone_number?.message ||
+              formState?.errors?.phone_number?.[0]}
           </p>
         )}
       </div>
 
       <div className="pt-2">
-        <SubmitButton text={tGlobal("save_changes")} pendingText={tGlobal("saving")} />
+        <SubmitButton
+          text={tGlobal("save_changes")}
+          pendingText={tGlobal("saving")}
+        />
       </div>
     </form>
   );

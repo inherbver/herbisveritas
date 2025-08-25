@@ -279,8 +279,8 @@ export function ProductCard({
                 aria-describedby={
                   isOutOfStock ? `${id}-out-of-stock` : undefined
                 }
-                variant="secondary"
-                className="min-h-[44px] w-full touch-manipulation rounded-xl text-sm font-medium transition-transform duration-200 active:scale-95 md:min-h-[36px]"
+                variant="accent"
+                className="w-full"
                 onClick={(e) => e.stopPropagation()} // Prevent card click on mobile
               >
                 {isPending
