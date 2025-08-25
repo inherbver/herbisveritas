@@ -19,9 +19,11 @@
 
 Le système d'authentification de HerbisVeritas utilise **Supabase Auth** avec des améliorations personnalisées pour la sécurité, les performances et l'expérience utilisateur.
 
+**Stratégie produit** : Authentification simple et sécurisée via email/mot de passe uniquement. Pas de social login pour maintenir le contrôle total sur les données utilisateurs et simplifier le parcours d'inscription.
+
 ### Fonctionnalités principales
 
-- ✅ Authentification email/mot de passe
+- ✅ Authentification email/mot de passe uniquement
 - ✅ Gestion des sessions sécurisées
 - ✅ Migration de panier invité → authentifié
 - ✅ Protection des routes (middleware)
@@ -30,28 +32,28 @@ Le système d'authentification de HerbisVeritas utilise **Supabase Auth** avec d
 - ✅ Audit logging des événements de sécurité
 - ✅ Réinitialisation de mot de passe
 - ✅ Confirmation d'email
-- 🚧 Double authentification (2FA)
-- 🚧 Social login (Google, GitHub)
-- 🚧 Magic links
+- 🔜 Double authentification (2FA) - Post-MVP pour admins uniquement
+- ❌ Pas de social login prévu (stratégie produit)
+- 🔜 Magic links - Post-MVP optionnel
 
 ---
 
 ## 📊 État des User Stories
 
-### Résumé : 72% Complet (36/50 stories)
+### Résumé : 75% Complet (33/44 stories)
 
 | Épique                 | Complété | Total | Statut |
 | ---------------------- | -------- | ----- | ------ |
-| Authentification Basic | 8/10     | 80%   | ✅     |
+| Authentification Basic | 8/8      | 100%  | ✅     |
 | Gestion de Session     | 7/8      | 88%   | ✅     |
-| Sécurité               | 6/9      | 67%   | ⚠️     |
+| Sécurité               | 6/8      | 75%   | ✅     |
 | Autorisation & Rôles   | 5/7      | 71%   | ✅     |
-| Expérience Utilisateur | 6/8      | 75%   | ✅     |
-| Intégration            | 4/8      | 50%   | 🚧     |
+| Expérience Utilisateur | 5/7      | 71%   | ✅     |
+| Intégration            | 2/6      | 33%   | 🚧     |
 
 ### User Stories Détaillées
 
-#### ✅ Authentification Basic (8/10)
+#### ✅ Authentification Basic (8/8) - 100%
 
 - [x] **US-AUTH-001**: En tant qu'utilisateur, je peux créer un compte avec email/mot de passe
 - [x] **US-AUTH-002**: En tant qu'utilisateur, je peux me connecter avec mes identifiants
@@ -61,8 +63,6 @@ Le système d'authentification de HerbisVeritas utilise **Supabase Auth** avec d
 - [x] **US-AUTH-006**: En tant qu'utilisateur, je peux renvoyer l'email de confirmation
 - [x] **US-AUTH-007**: En tant qu'utilisateur, je vois des messages d'erreur clairs
 - [x] **US-AUTH-008**: En tant qu'utilisateur, mes tentatives de connexion sont limitées (rate limiting)
-- [ ] **US-AUTH-009**: En tant qu'utilisateur, je peux me connecter avec Google
-- [ ] **US-AUTH-010**: En tant qu'utilisateur, je peux activer la 2FA
 
 #### ✅ Gestion de Session (7/8)
 
@@ -75,7 +75,7 @@ Le système d'authentification de HerbisVeritas utilise **Supabase Auth** avec d
 - [x] **US-SESS-007**: En tant qu'utilisateur, mes cookies sont sécurisés (HTTPOnly, Secure)
 - [ ] **US-SESS-008**: En tant qu'utilisateur, je peux voir mes sessions actives
 
-#### ⚠️ Sécurité (6/9)
+#### ✅ Sécurité (6/8) - 75%
 
 - [x] **US-SEC-001**: En tant que système, je hash les mots de passe avec bcrypt
 - [x] **US-SEC-002**: En tant que système, je valide la force des mots de passe
@@ -83,9 +83,8 @@ Le système d'authentification de HerbisVeritas utilise **Supabase Auth** avec d
 - [x] **US-SEC-004**: En tant que système, je log les tentatives d'accès non autorisées
 - [x] **US-SEC-005**: En tant que système, je protège contre les attaques CSRF
 - [x] **US-SEC-006**: En tant que système, j'utilise des tokens JWT sécurisés
-- [ ] **US-SEC-007**: En tant que système, je détecte les connexions suspectes
+- [ ] **US-SEC-007**: En tant qu'admin, j'ai la 2FA obligatoire (Post-MVP)
 - [ ] **US-SEC-008**: En tant que système, j'envoie des alertes de sécurité
-- [ ] **US-SEC-009**: En tant que système, je supporte la biométrie
 
 #### ✅ Autorisation & Rôles (5/7)
 
@@ -97,35 +96,32 @@ Le système d'authentification de HerbisVeritas utilise **Supabase Auth** avec d
 - [ ] **US-ROLE-006**: En tant qu'admin, je peux créer des rôles personnalisés
 - [ ] **US-ROLE-007**: En tant que système, je supporte les permissions granulaires
 
-#### ✅ Expérience Utilisateur (6/8)
+#### ✅ Expérience Utilisateur (5/7) - 71%
 
 - [x] **US-UX-001**: En tant qu'utilisateur, je vois un indicateur de chargement
 - [x] **US-UX-002**: En tant qu'utilisateur, je reçois des toasts de confirmation
 - [x] **US-UX-003**: En tant qu'utilisateur, les formulaires sont validés en temps réel
 - [x] **US-UX-004**: En tant qu'utilisateur, je peux voir/masquer mon mot de passe
 - [x] **US-UX-005**: En tant qu'utilisateur, les messages sont traduits (i18n)
-- [x] **US-UX-006**: En tant qu'utilisateur, je suis redirigé après actions
-- [ ] **US-UX-007**: En tant qu'utilisateur, je peux rester connecté (remember me)
-- [ ] **US-UX-008**: En tant qu'utilisateur, j'ai un onboarding personnalisé
+- [ ] **US-UX-006**: En tant qu'utilisateur, je peux rester connecté 30 jours (Post-MVP)
+- [ ] **US-UX-007**: En tant qu'utilisateur, j'ai un onboarding personnalisé (Post-MVP)
 
-#### 🚧 Intégration (4/8)
+#### 🚧 Intégration (2/6) - 33%
 
 - [x] **US-INT-001**: En tant que système, je migre le panier invité
-- [x] **US-INT-002**: En tant que système, je synchronise avec Stripe Customer
-- [x] **US-INT-003**: En tant que système, je crée un profil utilisateur
-- [x] **US-INT-004**: En tant que système, je log les événements d'audit
-- [ ] **US-INT-005**: En tant que système, je synchronise avec le CRM
-- [ ] **US-INT-006**: En tant que système, j'envoie des emails transactionnels
-- [ ] **US-INT-007**: En tant que système, je track les analytics
-- [ ] **US-INT-008**: En tant que système, je supporte SSO entreprise
+- [x] **US-INT-002**: En tant que système, je crée un profil utilisateur automatiquement
+- [ ] **US-INT-003**: En tant que système, je synchronise avec Stripe Customer
+- [ ] **US-INT-004**: En tant que système, j'envoie des emails transactionnels avancés
+- [ ] **US-INT-005**: En tant que système, je track les analytics d'authentification
+- [ ] **US-INT-006**: En tant que système, je nettoie les sessions expirées automatiquement
 
 ### Issues Critiques à Résoudre
 
 1. **Protection CSRF désactivée** - Réactiver après debug
-2. **Pas de détection d'anomalies** - Implémenter la détection de connexions suspectes
-3. **Pas de 2FA** - Ajouter l'authentification à deux facteurs
-4. **Sessions multiples** - Permettre la gestion des sessions actives
-5. **Logs dispersés** - Centraliser les logs de sécurité
+2. **Détection d'anomalies basique** - Améliorer avec ML post-MVP
+3. **2FA pour admins** - Implémenter post-MVP (obligatoire pour rôles admin)
+4. **Sessions multiples** - Limiter à 1 session pour MVP, multi-sessions post-MVP
+5. **Nettoyage automatique** - Cron job pour sessions/tokens expirés
 
 ---
 
@@ -560,12 +556,13 @@ HAVING COUNT(DISTINCT ip_address) > 3;
 
 ### Phase 1 : Sécurité Renforcée (1 mois)
 
-#### 1.1 Authentification à Deux Facteurs (2FA)
+#### 1.1 Authentification à Deux Facteurs (2FA) - Admins uniquement
 
-- [ ] Intégration TOTP (Google Authenticator)
-- [ ] Backup codes
-- [ ] SMS fallback (Twilio)
-- [ ] Enforcement pour admins
+- [ ] Intégration TOTP (Google Authenticator) pour rôles admin/super_admin
+- [ ] Backup codes sécurisés
+- [ ] Enforcement obligatoire pour tous les admins
+- [ ] Interface de gestion 2FA dans le profil admin
+- [ ] Recovery process via email super_admin
 
 #### 1.2 Détection d'Anomalies
 
@@ -581,37 +578,30 @@ HAVING COUNT(DISTINCT ip_address) > 3;
 - [ ] Rate limiting distribué (Redis)
 - [ ] Honeypot fields
 
-### Phase 2 : Expérience Utilisateur (2 mois)
+### Phase 2 : Expérience Utilisateur (1 mois)
 
-#### 2.1 Social Login
+#### 2.1 Magic Links (Optionnel)
 
-- [ ] Google OAuth2
-- [ ] Apple Sign In
-- [ ] GitHub (pour devs)
-- [ ] Account linking
-
-#### 2.2 Magic Links
-
-- [ ] Connexion sans mot de passe
+- [ ] Connexion sans mot de passe pour utilisateurs
 - [ ] Deep linking mobile
-- [ ] Expiration configurable
-- [ ] Revocation immédiate
+- [ ] Expiration 15 minutes
+- [ ] Un seul lien actif à la fois
 
-#### 2.3 Améliorations UX
+#### 2.2 Améliorations UX
 
 - [ ] Remember me (30 jours)
-- [ ] Sessions multiples gérables
-- [ ] Trusted devices
-- [ ] Progressive disclosure
+- [ ] Gestion session unique améliorée
+- [ ] Trusted devices (cookies sécurisés)
+- [ ] Meilleur feedback visuel lors de l'authentification
 
-### Phase 3 : Entreprise & Conformité (3 mois)
+### Phase 3 : Optimisations & Conformité (2 mois)
 
-#### 3.1 Single Sign-On (SSO)
+#### 3.1 Performance & Scalabilité
 
-- [ ] SAML 2.0
-- [ ] OpenID Connect
-- [ ] Active Directory
-- [ ] Custom IdP support
+- [ ] Sessions Redis pour haute disponibilité
+- [ ] Cache distribué des permissions
+- [ ] Optimisation requêtes auth
+- [ ] Load balancing des services auth
 
 #### 3.2 Conformité RGPD
 
@@ -620,28 +610,28 @@ HAVING COUNT(DISTINCT ip_address) > 3;
 - [ ] Consentement granulaire
 - [ ] Audit trail complet
 
-#### 3.3 Features Entreprise
+#### 3.3 Administration Avancée
 
-- [ ] Provisioning SCIM
-- [ ] Politiques de mot de passe
-- [ ] Session management admin
-- [ ] IP whitelisting
+- [ ] Politiques de mot de passe configurables
+- [ ] Gestion centralisée des sessions
+- [ ] Audit trail détaillé avec export
+- [ ] Blocage IP/pays pour sécurité
 
 ### Estimations Budgétaires
 
-| Phase                   | Effort (j.h) | Priorité        | ROI Estimé |
-| ----------------------- | ------------ | --------------- | ---------- |
-| Sécurité Renforcée      | 20           | 🔴 Critique     | 10x        |
-| Expérience Utilisateur  | 30           | 🟠 Important    | 5x         |
-| Entreprise & Conformité | 40           | 🟡 Nice-to-have | 3x         |
+| Phase                          | Effort (j.h) | Priorité        | ROI Estimé |
+| ------------------------------ | ------------ | --------------- | ---------- |
+| Sécurité Renforcée (2FA Admin) | 15           | 🔴 Critique     | 15x        |
+| Expérience Utilisateur         | 10           | 🟠 Important    | 5x         |
+| Optimisations & Conformité     | 20           | 🟡 Nice-to-have | 3x         |
 
 ### Stack Technique Futur
 
-- **2FA**: Speakeasy pour TOTP
-- **Anomaly Detection**: TensorFlow.js
-- **SSO**: Auth0 ou Okta SDK
+- **2FA Admin**: Speakeasy pour TOTP (Google Authenticator compatible)
+- **Sessions**: Redis pour scalabilité
 - **Rate Limiting**: Redis avec Bull Queue
-- **Monitoring**: Sentry + DataDog
+- **Monitoring**: Sentry pour erreurs + analytics custom
+- **Magic Links**: Envoi via Resend/SendGrid
 
 ---
 
