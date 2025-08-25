@@ -89,13 +89,6 @@ export function ProductCard({
   >(addItemToCartAction, initialAddItemState);
 
   useEffect(() => {
-    const logPrefix = `[ProductCard ${new Date().toISOString()}]`;
-
-    // Vérifier que state existe avant d'accéder à ses propriétés
-    if (!state) {
-      return;
-    }
-
     if (
       state.success === false &&
       "error" in state &&
@@ -103,23 +96,14 @@ export function ProductCard({
     ) {
       return;
     }
-
     if (state.success) {
       toast.success(state.message || t("itemAddedSuccess"));
-      // Synchronisation directe et fiable avec les données serveur
+      // Mettre à jour le store avec les données du serveur
       if (state.data?.items) {
-        console.log(
-          `${logPrefix} Syncing cart with server data:`,
-          state.data.items.length,
-          "items",
-        );
         const { _setItems } = useCartStore.getState();
-        // Force la mise à jour pour garantir la synchronisation immédiate
-        // Utiliser 'user-action' comme source pour prioriser cette mise à jour
-        _setItems(state.data.items, true, "product-card-add");
+        _setItems(state.data.items);
       }
     } else {
-      console.error(`${logPrefix} Error adding to cart:`, state.message);
       toast.error(state.message || tGlobal("genericError"));
     }
   }, [state, t, tGlobal]);
@@ -138,7 +122,10 @@ export function ProductCard({
     }
   }, []);
 
-  const linkHref = `/products/${slug}`;
+  const linkHref = {
+    pathname: "/products/[slug]",
+    params: { slug },
+  } as const;
 
   if (isLoading) {
     return (
@@ -292,7 +279,7 @@ export function ProductCard({
                 aria-describedby={
                   isOutOfStock ? `${id}-out-of-stock` : undefined
                 }
-                variant="default"
+                variant="secondary"
                 className="min-h-[44px] w-full touch-manipulation rounded-xl text-sm font-medium transition-transform duration-200 active:scale-95 md:min-h-[36px]"
                 onClick={(e) => e.stopPropagation()} // Prevent card click on mobile
               >
