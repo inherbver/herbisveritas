@@ -244,7 +244,33 @@ export const loginAction = withRateLimit(
       }
     }
 
-    LogUtils.logOperationSuccess("login", { ...context, email });
+    // Vérifier si l'utilisateur est admin pour la redirection
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let isUserAdmin = false;
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      isUserAdmin = profile?.role === "admin";
+    }
+
+    LogUtils.logOperationSuccess("login", {
+      ...context,
+      email,
+      isAdmin: isUserAdmin,
+    });
+
+    // Délai court pour permettre la propagation de l'état d'authentification
+    // Cela laisse le temps aux composants client de traiter l'événement SIGNED_IN
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Redirection vers shop (la vérification admin se fera dans le header)
     redirect("/fr/shop");
   } catch (error) {
     LogUtils.logOperationError("login", error, context);

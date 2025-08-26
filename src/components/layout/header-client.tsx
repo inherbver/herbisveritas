@@ -133,8 +133,13 @@ export function HeaderClient({
         console.log("Auth state changed:", event, !!newSession);
         setAuthState({ session: newSession, isLoading: false });
 
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-          setTimeout(() => router?.refresh(), 100);
+        if (event === "SIGNED_IN") {
+          // Pour SIGNED_IN, délai plus long pour s'assurer que tous les états
+          // sont synchronisés avant le refresh
+          setTimeout(() => router?.refresh(), 200);
+        } else if (event === "SIGNED_OUT") {
+          // Pour SIGNED_OUT, refresh immédiat
+          setTimeout(() => router?.refresh(), 50);
         }
       },
     );
