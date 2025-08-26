@@ -9,7 +9,9 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test-utils/render";
 import { UserFactory, testHelpers, assertions } from "@/test-utils";
 
-// Mock de l'API Colissimo
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';
+import { UserFactory } from '@/test-utils';// Mock de l'API Colissimo
 jest.mock("@/services/address-validation.service", () => ({
   AddressValidationService: {
     validateAddress: jest.fn(),
@@ -339,6 +341,9 @@ function AddressForm({
     </form>
   );
 }
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("AddressForm - Tests Composant React (Phase 3.3)", () => {
   beforeEach(() => {

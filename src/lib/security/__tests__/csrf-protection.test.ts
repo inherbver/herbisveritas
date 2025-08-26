@@ -13,7 +13,8 @@ import {
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
-// Mocks
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mocks
 jest.mock("next/headers", () => ({
   cookies: jest.fn(),
 }));
@@ -22,6 +23,9 @@ jest.mock("crypto", () => ({
   ...jest.requireActual("crypto"),
   randomBytes: jest.fn(),
 }));
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("CSRF Protection", () => {
   let mockCookies: any;

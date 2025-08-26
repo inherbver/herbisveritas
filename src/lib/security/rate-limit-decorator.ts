@@ -258,7 +258,7 @@ async function checkRateLimit(
     // Logger l'événement de sécurité
     await logSecurityEvent({
       type: "rate_limit_exceeded",
-      userId: context.userId,
+      userId: context.userId || "anonymous",
       details: {
         message: `Rate limit dépassé pour ${actionName}`,
         action: actionName,
@@ -299,11 +299,11 @@ async function checkRateLimit(
 /**
  * Décorateur pour appliquer le rate limiting
  */
-export function withRateLimit(
+export function withRateLimit<T extends (...args: unknown[]) => unknown>(
   config: RateLimitConfig | keyof typeof RATE_LIMIT_CONFIGS,
   actionName?: string,
 ) {
-  return function <T extends (...args: unknown[]) => unknown>(target: T): T {
+  return function (target: T): T {
     const finalActionName = actionName || target.name || "unknown-action";
     const finalConfig =
       typeof config === "string" ? RATE_LIMIT_CONFIGS[config] : config;
@@ -333,15 +333,17 @@ export function withRateLimit(
         const result = await target.apply(this, args);
 
         // Optionnel: ne pas compter les requêtes réussies si configuré
-        if (finalConfig.skipSuccessfulRequests) {
+        const configWithOptional = finalConfig as RateLimitConfig;
+        if (configWithOptional.skipSuccessfulRequests) {
           // TODO: Implémenter la logique pour ne pas compter cette requête
         }
 
-        return result;
+        return result as ReturnType<T>;
       } catch (error) {
         // Optionnel: ne pas compter les requêtes échouées si configuré
+        const configWithOptional = finalConfig as RateLimitConfig;
         if (
-          finalConfig.skipFailedRequests &&
+          configWithOptional.skipFailedRequests &&
           !(error instanceof RateLimitError)
         ) {
           // TODO: Implémenter la logique pour ne pas compter cette requête
@@ -441,16 +443,19 @@ export function createRateLimitMiddleware(config: RateLimitConfig) {
 
       if (entry.count > config.maxRequests) {
         const resetInSeconds = Math.ceil((entry.resetTime - Date.now()) / 1000);
-        res.status(429).json({
+        const resObj = res as { status: (code: number) => { json: (data: unknown) => void } };
+        resObj.status(429).json({
           error: config.message || "Trop de requêtes",
           resetInSeconds,
         });
         return;
       }
 
-      next();
+      const nextFn = next as () => void;
+      nextFn();
     } catch (error) {
-      next(error);
+      const nextFn = next as (error: unknown) => void;
+      nextFn(error);
     }
   };
 }

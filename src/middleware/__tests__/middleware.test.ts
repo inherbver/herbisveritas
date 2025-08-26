@@ -7,7 +7,8 @@ import { middleware } from '../../middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-// Mock des dépendances  
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock des dépendances  
 jest.mock('@supabase/ssr');
 jest.mock('next-intl/middleware', () => {
   return jest.fn(() => (request: any) => {
@@ -94,6 +95,9 @@ const createMockRequest = (
   
   return mockRequest;
 };
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe('Middleware', () => {
   beforeEach(() => {

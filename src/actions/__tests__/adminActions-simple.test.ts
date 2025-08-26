@@ -5,6 +5,8 @@
 import { checkAdminRole, createAdminUser } from '../adminActions';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';
+import { createMockSupabaseChain } from '@/test-utils/supabase-mock-helper';
 // Mock des dépendances
 jest.mock('@/lib/supabase/server');
 jest.mock('next/cache', () => ({
@@ -25,6 +27,9 @@ const mockSupabaseClient = {
 };
 
 (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe('adminActions - Simple Tests', () => {
   const mockAdminUser = { id: 'admin-123', email: 'admin@test.com' };
@@ -49,7 +54,7 @@ describe('adminActions - Simple Tests', () => {
       const result = await checkAdminRole();
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
 
@@ -64,7 +69,7 @@ describe('adminActions - Simple Tests', () => {
       const result = await createAdminUser('new-admin@test.com', 'NewAdmin123!');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
   });
@@ -103,7 +108,7 @@ describe('adminActions - Simple Tests', () => {
       const result = await checkAdminRole();
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -114,7 +119,7 @@ describe('adminActions - Simple Tests', () => {
       const result = await createAdminUser('invalid-email', 'Password123!');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -123,7 +128,7 @@ describe('adminActions - Simple Tests', () => {
       const result = await createAdminUser('valid@email.com', 'weak');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 

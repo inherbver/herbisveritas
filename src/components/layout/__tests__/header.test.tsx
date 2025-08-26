@@ -1,11 +1,12 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { Header } from "../header";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthChangeEvent } from "@supabase/supabase-js";
 
-// Mock des dépendances
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock des dépendances
 jest.mock("@/lib/supabase/client");
 jest.mock("../header-client", () => ({
   HeaderClient: ({
@@ -34,6 +35,9 @@ const mockSessionStorage = {
 Object.defineProperty(window, "sessionStorage", {
   value: mockSessionStorage,
 });
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("Header Component", () => {
   const mockSupabaseClient = {
@@ -80,7 +84,7 @@ describe("Header Component", () => {
       });
     });
 
-    it("should use sessionStorage cache for immediate display", () => {
+    it("should use sessionStorage cache for immediate display", async () => {
       mockSessionStorage.getItem.mockReturnValue("true");
 
       mockSupabaseClient.auth.getUser.mockResolvedValue({
@@ -101,9 +105,18 @@ describe("Header Component", () => {
 
       render(<Header />);
 
-      // Le cache sessionStorage permet l'affichage immédiat
-      expect(screen.getByTestId("admin-link")).toBeInTheDocument();
+      // Le cache sessionStorage devrait être lu
       expect(mockSessionStorage.getItem).toHaveBeenCalledWith("admin_ui_hint");
+      
+      // Attendre que le composant se mette à jour
+      await waitFor(() => {
+        expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+      });
+      
+      // Vérifier que l'admin link est affiché
+      await waitFor(() => {
+        expect(screen.getByTestId("admin-link")).toBeInTheDocument();
+      });
     });
   });
 
@@ -246,7 +259,9 @@ describe("Header Component", () => {
         error: null,
       });
 
-      authChangeCallback?.("SIGNED_IN", { user: mockUser });
+      await act(async () => {
+        authChangeCallback?.("SIGNED_IN", { user: mockUser });
+      });
 
       await waitFor(() => {
         expect(screen.getByTestId("admin-link")).toBeInTheDocument();
@@ -275,7 +290,9 @@ describe("Header Component", () => {
 
       render(<Header />);
 
-      authChangeCallback?.("SIGNED_OUT", null);
+      await act(async () => {
+        authChangeCallback?.("SIGNED_OUT", null);
+      });
 
       await waitFor(() => {
         expect(mockSessionStorage.removeItem).toHaveBeenCalledWith(

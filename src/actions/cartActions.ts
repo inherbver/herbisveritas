@@ -40,9 +40,9 @@ export const addItemToCart = withRateLimit(
   "CART",
   "add-item",
 )(async function addItemToCart(
-  prevState: unknown,
-  formData: FormData,
-): Promise<CartActionResult<(CartData & { guestCartId?: string }) | null>> {
+  ...args: unknown[]
+): Promise<unknown> {
+  const [prevState, formData] = args as [unknown, FormData];
   return await withStableSession(async () => {
     console.log("🛒 [addItemToCart] Starting with stable session...");
     try {
@@ -272,8 +272,9 @@ export const removeItemFromCart = withRateLimit(
   "CART",
   "remove-item",
 )(async function removeItemFromCart(
-  input: RemoveFromCartInput,
-): Promise<CartActionResult<CartData | null>> {
+  ...args: unknown[]
+): Promise<unknown> {
+  const [input] = args as [RemoveFromCartInput];
   try {
     const validatedFields = RemoveFromCartInputSchema.safeParse(input);
     if (!validatedFields.success) {
@@ -358,8 +359,9 @@ export const updateCartItemQuantity = withRateLimit(
   "CART",
   "update-quantity",
 )(async function updateCartItemQuantity(
-  input: UpdateCartItemQuantityInput,
-): Promise<CartActionResult<CartData | null>> {
+  ...args: unknown[]
+): Promise<unknown> {
+  const [input] = args as [UpdateCartItemQuantityInput];
   try {
     const validatedFields = UpdateCartItemQuantityInputSchema.safeParse(input);
     if (!validatedFields.success) {
@@ -371,7 +373,7 @@ export const updateCartItemQuantity = withRateLimit(
     const { cartItemId, quantity } = validatedFields.data;
 
     if (quantity <= 0) {
-      return await removeItemFromCart({ cartItemId });
+      return (await removeItemFromCart({ cartItemId })) as CartActionResult<CartData | null>;
     }
 
     const supabase = await createSupabaseServerClient();
@@ -460,7 +462,7 @@ export async function removeItemFromCartFormAction(
     );
   }
 
-  return removeItemFromCart({ cartItemId });
+  return (await removeItemFromCart({ cartItemId })) as CartActionResult<CartData | null>;
 }
 
 export async function updateCartItemQuantityFormAction(
@@ -485,7 +487,7 @@ export async function updateCartItemQuantityFormAction(
     );
   }
 
-  return updateCartItemQuantity({ cartItemId, quantity });
+  return (await updateCartItemQuantity({ cartItemId, quantity })) as CartActionResult<CartData | null>;
 }
 
 const MigrateCartInputSchema = z.object({

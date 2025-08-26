@@ -7,7 +7,8 @@ import { useAuth } from '../use-auth';
 import { createClient } from '@/lib/supabase/client';
 import { hasPermission } from '@/lib/auth/utils';
 
-// Mock des dépendances
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock des dépendances
 jest.mock('@/lib/supabase/client');
 jest.mock('@/lib/auth/utils');
 
@@ -29,6 +30,9 @@ const mockSubscription = {
   if (role === 'user' && permission === 'products:view') return true;
   return false;
 });
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe('useAuth Hook', () => {
   beforeEach(() => {

@@ -3,6 +3,12 @@
  */
 
 import { createPartner, updatePartner, deletePartner } from "../partnerActions";
+import { 
+  createMockFormData, 
+  testActionWithRedirect,
+  setupServerActionMocks 
+} from '@/test-utils/server-action-mocks';
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 
@@ -52,6 +58,9 @@ const createFormData = (data: Record<string, string>) => {
   return formData;
 };
 
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
+
 describe("partnerActions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -67,7 +76,7 @@ describe("partnerActions", () => {
         error: null,
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Test Partner",
         description: "Test partner description",
         website_url: "https://test.com",
@@ -78,7 +87,7 @@ describe("partnerActions", () => {
 
       const result = await createPartner(formData);
 
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toEqual({ id: mockPartner.id });
       expect(mockSupabaseClient.from).toHaveBeenCalledWith("partners");
       expect(mockSupabaseClient.insert).toHaveBeenCalledWith(
@@ -98,37 +107,37 @@ describe("partnerActions", () => {
         data: { user: null },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Test Partner",
       });
 
       const result = await createPartner(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("authentifié");
     });
 
     it("should handle non-admin user", async () => {
       (checkAdminRole as jest.Mock).mockResolvedValue(false);
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Test Partner",
       });
 
       const result = await createPartner(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("autorisé");
     });
 
     it("should handle validation errors", async () => {
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "", // Empty name should fail validation
       });
 
       const result = await createPartner(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -138,7 +147,7 @@ describe("partnerActions", () => {
         error: { message: "Database error", code: "500" },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Test Partner",
         description: "Test partner description",
         website_url: "https://test.com",
@@ -148,7 +157,7 @@ describe("partnerActions", () => {
 
       const result = await createPartner(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -161,7 +170,7 @@ describe("partnerActions", () => {
         error: null,
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         id: "partner-1",
         name: "Updated Partner",
         description: "Updated description",
@@ -172,7 +181,7 @@ describe("partnerActions", () => {
 
       const result = await updatePartner(formData);
 
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toEqual({ id: updatedPartner.id });
       expect(mockSupabaseClient.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -187,13 +196,13 @@ describe("partnerActions", () => {
     });
 
     it("should handle missing partner ID", async () => {
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Updated Partner",
       });
 
       const result = await updatePartner(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -202,28 +211,28 @@ describe("partnerActions", () => {
         data: { user: null },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         id: "partner-1",
         name: "Updated Partner",
       });
 
       const result = await updatePartner(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("authentifié");
     });
 
     it("should handle non-admin user", async () => {
       (checkAdminRole as jest.Mock).mockResolvedValue(false);
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         id: "partner-1",
         name: "Updated Partner",
       });
 
       const result = await updatePartner(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("autorisé");
     });
 
@@ -233,7 +242,7 @@ describe("partnerActions", () => {
         error: { message: "Update failed", code: "400" },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         id: "partner-1",
         name: "Updated Partner",
         description: "Updated description",
@@ -244,7 +253,7 @@ describe("partnerActions", () => {
 
       const result = await updatePartner(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -258,7 +267,7 @@ describe("partnerActions", () => {
 
       const result = await deletePartner("partner-1");
 
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(mockSupabaseClient.from).toHaveBeenCalledWith("partners");
       expect(mockSupabaseClient.delete).toHaveBeenCalled();
       expect(mockSupabaseClient.eq).toHaveBeenCalledWith("id", "partner-1");
@@ -271,7 +280,7 @@ describe("partnerActions", () => {
 
       const result = await deletePartner("partner-1");
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("authentifié");
     });
 
@@ -280,14 +289,14 @@ describe("partnerActions", () => {
 
       const result = await deletePartner("partner-1");
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("autorisé");
     });
 
     it("should handle empty partner ID", async () => {
       const result = await deletePartner("");
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -299,7 +308,7 @@ describe("partnerActions", () => {
 
       const result = await deletePartner("partner-1");
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });

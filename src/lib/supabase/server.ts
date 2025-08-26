@@ -13,16 +13,6 @@ export async function createSupabaseServerClient(): Promise<SupabaseClientType> 
   // IMPORTANT: Lire TOUS les cookies, y compris ceux de la requête
   const allCookies = cookieStore.getAll();
 
-  // Debug : afficher TOUS les cookies disponibles
-  console.log(
-    "🍪 [createSupabaseServerClient] ALL cookies count:",
-    allCookies.length,
-  );
-  console.log(
-    "🍪 [createSupabaseServerClient] Cookie names:",
-    allCookies.map((c) => c.name),
-  );
-
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -30,37 +20,9 @@ export async function createSupabaseServerClient(): Promise<SupabaseClientType> 
       cookies: {
         getAll() {
           // Retourner directement tous les cookies lus au début
-          const supabaseCookies = allCookies.filter((c) =>
-            c.name.includes("sb-"),
-          );
-          console.log(
-            "🍪 [createSupabaseServerClient] Supabase cookies:",
-            supabaseCookies.length > 0
-              ? supabaseCookies.map(
-                  (c) => `${c.name}=${c.value.slice(0, 20)}...`,
-                )
-              : "No Supabase cookies found",
-          );
-
-          // Vérification spécifique des cookies d'authentification
-          const authCookies = supabaseCookies.filter((c) =>
-            c.name.includes("auth-token"),
-          );
-          if (authCookies.length > 0) {
-            console.log(
-              "🔐 [createSupabaseServerClient] Auth cookies detected:",
-              authCookies.length,
-            );
-          }
-
           return allCookies;
         },
         setAll(cookiesToSet) {
-          console.log(
-            "🍪 [createSupabaseServerClient] Setting cookies:",
-            cookiesToSet.map((c) => `${c.name}=${c.value.slice(0, 20)}...`),
-          );
-
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, {
@@ -72,9 +34,6 @@ export async function createSupabaseServerClient(): Promise<SupabaseClientType> 
                 sameSite: options?.sameSite || "lax",
               });
             });
-            console.log(
-              "🍪 [createSupabaseServerClient] Cookies set successfully",
-            );
           } catch (error) {
             console.warn(
               "🍪 [createSupabaseServerClient] Failed to set cookies:",

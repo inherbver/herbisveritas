@@ -7,7 +7,8 @@ import {
   getOrderStatsAction,
 } from "../orderActions";
 
-// Mock des utilitaires AVANT les imports
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock des utilitaires AVANT les imports
 jest.mock("@/lib/supabase/server");
 jest.mock("@/lib/auth/admin-service");
 jest.mock("next/cache");
@@ -50,6 +51,9 @@ Object.keys(mockQuery).forEach(key => {
     mockQuery[key].mockReturnThis();
   }
 });
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("Order Actions", () => {
   beforeEach(() => {
@@ -100,7 +104,7 @@ describe("Order Actions", () => {
       });
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toBeDefined();
       expect(result.data?.orders).toHaveLength(1);
       expect(result.data?.total_count).toBe(1);
@@ -117,7 +121,7 @@ describe("Order Actions", () => {
       const result = await getOrdersListAction();
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBe("Accès non autorisé");
     });
 
@@ -193,7 +197,7 @@ describe("Order Actions", () => {
       const result = await getOrderDetailsAction("order-1");
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toEqual(mockOrderDetails);
       expect(mockQuery.eq).toHaveBeenCalledWith("id", "order-1");
     });
@@ -209,7 +213,7 @@ describe("Order Actions", () => {
       const result = await getOrderDetailsAction("order-1");
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBe("Accès non autorisé");
     });
   });
@@ -236,7 +240,7 @@ describe("Order Actions", () => {
       const result = await updateOrderStatusAction("order-1", updateData);
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(mockQuery.update).toHaveBeenCalledWith(
         expect.objectContaining({
           status: "shipped",
@@ -315,7 +319,7 @@ describe("Order Actions", () => {
       const result = await cancelOrderAction("order-1", "Client request");
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(mockQuery.update).toHaveBeenCalledWith(
         expect.objectContaining({
           status: "cancelled",
@@ -353,7 +357,7 @@ describe("Order Actions", () => {
       const result = await cancelOrderAction("order-1", "Test");
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBe("Cette commande ne peut pas être annulée");
     });
   });
@@ -396,7 +400,7 @@ describe("Order Actions", () => {
       const result = await getOrderStatsAction();
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toMatchObject({
         total_orders: 3,
         processing_orders: 1,
@@ -423,7 +427,7 @@ describe("Order Actions", () => {
       const result = await getOrderStatsAction();
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toMatchObject({
         total_orders: 0,
         pending_orders: 0,

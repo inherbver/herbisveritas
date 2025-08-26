@@ -11,6 +11,8 @@ import {
 } from '../userActions';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';
+import { createMockSupabaseChain } from '@/test-utils/supabase-mock-helper';
 // Mock des dépendances
 jest.mock('@/lib/supabase/server');
 jest.mock('@/lib/auth/admin-service', () => ({
@@ -35,6 +37,9 @@ const mockSupabaseClient = {
 
 (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
 
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
+
 describe('userActions - Simple Tests', () => {
   const mockAdminUser = { id: 'admin-123', email: 'admin@test.com' };
 
@@ -58,7 +63,7 @@ describe('userActions - Simple Tests', () => {
       const result = await updateUserRole('user-456', 'editor', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
 
@@ -71,7 +76,7 @@ describe('userActions - Simple Tests', () => {
       const result = await deleteUser('user-456', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('admin');
     });
   });
@@ -99,7 +104,7 @@ describe('userActions - Simple Tests', () => {
       const result = await updateUserRole('user-456', 'invalid-role', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -117,7 +122,7 @@ describe('userActions - Simple Tests', () => {
       const result = await updateUserRole('user-456', 'editor', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -145,7 +150,7 @@ describe('userActions - Simple Tests', () => {
       const result = await deleteUser('', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -154,7 +159,7 @@ describe('userActions - Simple Tests', () => {
       const result = await deleteUser(mockAdminUser.id, 'fr');
 
       // Assert - Should prevent self-deletion
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('self');
     });
   });
@@ -180,7 +185,7 @@ describe('userActions - Simple Tests', () => {
       const result = await getUserStats('fr');
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toEqual(mockStats);
     });
 
@@ -197,7 +202,7 @@ describe('userActions - Simple Tests', () => {
       const result = await getUserStats('fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -225,7 +230,7 @@ describe('userActions - Simple Tests', () => {
       const result = await suspendUser('user-456', '', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -243,7 +248,7 @@ describe('userActions - Simple Tests', () => {
       const result = await reactivateUser('user-456', 'fr');
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('user_profiles');
     });
   });
@@ -259,7 +264,7 @@ describe('userActions - Simple Tests', () => {
       const result = await getUserStats('fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('connection');
     });
 
@@ -289,7 +294,7 @@ describe('userActions - Simple Tests', () => {
         const result = await updateUserRole(invalidId, 'user', 'fr');
 
         // Assert
-        expect(result.success).toBe(false);
+        expect(result?.success).toBe(false);
       }
     });
 

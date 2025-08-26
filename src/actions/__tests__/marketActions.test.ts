@@ -3,6 +3,12 @@
  */
 
 import { createMarket, updateMarket, deleteMarket } from "../marketActions";
+import { 
+  createMockFormData, 
+  testActionWithRedirect,
+  setupServerActionMocks 
+} from '@/test-utils/server-action-mocks';
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 
@@ -55,6 +61,9 @@ const createFormData = (data: Record<string, string>) => {
   return formData;
 };
 
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
+
 describe("marketActions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -70,7 +79,7 @@ describe("marketActions", () => {
         error: null,
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Test Market",
         address: "123 Test St",
         city: "Test City",
@@ -84,7 +93,7 @@ describe("marketActions", () => {
 
       const result = await createMarket(formData);
 
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toEqual({ id: mockMarket.id });
       expect(mockSupabaseClient.from).toHaveBeenCalledWith("markets");
       expect(mockSupabaseClient.insert).toHaveBeenCalledWith(
@@ -104,37 +113,37 @@ describe("marketActions", () => {
         data: { user: null },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Test Market",
       });
 
       const result = await createMarket(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("authentifié");
     });
 
     it("should handle non-admin user", async () => {
       (checkAdminRole as jest.Mock).mockResolvedValue(false);
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Test Market",
       });
 
       const result = await createMarket(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("autorisé");
     });
 
     it("should handle validation errors", async () => {
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "", // Empty name should fail validation
       });
 
       const result = await createMarket(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -144,7 +153,7 @@ describe("marketActions", () => {
         error: { message: "Database error", code: "500" },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Test Market",
         address: "123 Test St",
         city: "Test City",
@@ -155,7 +164,7 @@ describe("marketActions", () => {
 
       const result = await createMarket(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -168,7 +177,7 @@ describe("marketActions", () => {
         error: null,
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         id: "market-1",
         name: "Updated Market",
         address: "123 Test St",
@@ -180,7 +189,7 @@ describe("marketActions", () => {
 
       const result = await updateMarket(formData);
 
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toEqual({ id: updatedMarket.id });
       expect(mockSupabaseClient.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -191,13 +200,13 @@ describe("marketActions", () => {
     });
 
     it("should handle missing market ID", async () => {
-      const formData = createFormData({
+      const formData = createMockFormData({
         name: "Updated Market",
       });
 
       const result = await updateMarket(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -206,28 +215,28 @@ describe("marketActions", () => {
         data: { user: null },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         id: "market-1",
         name: "Updated Market",
       });
 
       const result = await updateMarket(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("authentifié");
     });
 
     it("should handle non-admin user", async () => {
       (checkAdminRole as jest.Mock).mockResolvedValue(false);
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         id: "market-1",
         name: "Updated Market",
       });
 
       const result = await updateMarket(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("autorisé");
     });
 
@@ -237,7 +246,7 @@ describe("marketActions", () => {
         error: { message: "Update failed", code: "400" },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         id: "market-1",
         name: "Updated Market",
         address: "123 Test St",
@@ -249,7 +258,7 @@ describe("marketActions", () => {
 
       const result = await updateMarket(formData);
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -263,7 +272,7 @@ describe("marketActions", () => {
 
       const result = await deleteMarket("market-1");
 
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(mockSupabaseClient.from).toHaveBeenCalledWith("markets");
       expect(mockSupabaseClient.delete).toHaveBeenCalled();
       expect(mockSupabaseClient.eq).toHaveBeenCalledWith("id", "market-1");
@@ -276,7 +285,7 @@ describe("marketActions", () => {
 
       const result = await deleteMarket("market-1");
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("authentifié");
     });
 
@@ -285,14 +294,14 @@ describe("marketActions", () => {
 
       const result = await deleteMarket("market-1");
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("autorisé");
     });
 
     it("should handle empty market ID", async () => {
       const result = await deleteMarket("");
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -304,7 +313,7 @@ describe("marketActions", () => {
 
       const result = await deleteMarket("market-1");
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });

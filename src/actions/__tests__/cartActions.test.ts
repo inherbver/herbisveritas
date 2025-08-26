@@ -11,6 +11,12 @@ import {
   migrateAndGetCart,
   clearCartAction,
 } from "../cartActions";
+import { 
+  createMockFormData, 
+  testActionWithRedirect,
+  setupServerActionMocks 
+} from '@/test-utils/server-action-mocks';
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 // import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCart } from "@/lib/cartReader";
@@ -41,6 +47,9 @@ jest.mock("@/lib/core/logger", () => ({
     logOperationError: jest.fn(),
   },
 }));
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("cartActions", () => {
   let mockSupabase: ReturnType<typeof createSupabaseMock>;
@@ -111,7 +120,7 @@ describe("cartActions", () => {
 
       mockSupabase.rpc.mockResolvedValue({ error: null });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         productId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
         quantity: "2",
       });
@@ -150,7 +159,7 @@ describe("cartActions", () => {
 
       mockSupabase.rpc.mockResolvedValue({ error: null });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         productId: "12345678-1234-1234-1234-123456789013",
         quantity: "1",
       });
@@ -169,7 +178,7 @@ describe("cartActions", () => {
     });
 
     it("should handle validation errors", async () => {
-      const formData = createFormData({
+      const formData = createMockFormData({
         productId: "", // Invalid
         quantity: "0", // Invalid
       });
@@ -198,7 +207,7 @@ describe("cartActions", () => {
       
       mockSupabase.rpc.mockResolvedValue({ error: null });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         productId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc", // Valid UUID
         quantity: "1",
       });
@@ -225,7 +234,7 @@ describe("cartActions", () => {
         error: { message: "Product not found" },
       });
 
-      const formData = createFormData({
+      const formData = createMockFormData({
         productId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc", // Valid UUID
         quantity: "1",
       });
@@ -353,14 +362,14 @@ describe("cartActions", () => {
         // Mock successful deletion
         mockSupabase.eq.mockResolvedValueOnce({ error: null });
 
-        const formData = createFormData({ cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc" });
+        const formData = createMockFormData({ cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc" });
         const result = await removeItemFromCartFormAction(null, formData);
 
         expectSuccessResult(result, "Article supprimé");
       });
 
       it("should handle missing cartItemId", async () => {
-        const formData = createFormData({});
+        const formData = createMockFormData({});
         const result = await removeItemFromCartFormAction(null, formData);
 
         expectErrorResult(result, "ID de l'article est requis");
@@ -372,7 +381,7 @@ describe("cartActions", () => {
         // Mock successful update
         mockSupabase.eq.mockResolvedValueOnce({ error: null });
 
-        const formData = createFormData({
+        const formData = createMockFormData({
           cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
           quantity: "3",
         });
@@ -382,7 +391,7 @@ describe("cartActions", () => {
       });
 
       it("should handle invalid quantity", async () => {
-        const formData = createFormData({
+        const formData = createMockFormData({
           cartItemId: "b84a3bfb-1aa8-4e85-8bcb-1451524d90dc",
           quantity: "invalid",
         });

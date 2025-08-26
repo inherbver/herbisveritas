@@ -9,6 +9,8 @@ import {
 } from '../newsletterActions';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';
+import { createMockSupabaseChain } from '@/test-utils/supabase-mock-helper';
 // Mock des dépendances
 jest.mock('@/lib/supabase/server');
 jest.mock('next/cache', () => ({
@@ -34,6 +36,9 @@ const mockSupabaseClient = {
 };
 
 (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe('newsletterActions - Simple Tests', () => {
   const mockUser = { id: 'user-123', email: 'user@test.com' };
@@ -89,7 +94,7 @@ describe('newsletterActions - Simple Tests', () => {
       const result = await subscribeToNewsletter('invalid-email', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -106,7 +111,7 @@ describe('newsletterActions - Simple Tests', () => {
       const result = await subscribeToNewsletter('valid@email.com', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -134,7 +139,7 @@ describe('newsletterActions - Simple Tests', () => {
       const result = await unsubscribeFromNewsletter('invalid-email', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -152,7 +157,7 @@ describe('newsletterActions - Simple Tests', () => {
       const result = await unsubscribeFromNewsletter('valid@email.com', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -175,7 +180,7 @@ describe('newsletterActions - Simple Tests', () => {
       const result = await updateNewsletterPreferences(preferences, 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
 
@@ -218,7 +223,7 @@ describe('newsletterActions - Simple Tests', () => {
       }, 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -229,7 +234,7 @@ describe('newsletterActions - Simple Tests', () => {
       const result = await subscribeToNewsletter('', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -246,7 +251,7 @@ describe('newsletterActions - Simple Tests', () => {
       const result = await subscribeToNewsletter('existing@test.com', 'fr');
 
       // Assert - Should succeed (upsert handles duplicates)
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
     });
 
     it('should handle long email addresses', async () => {

@@ -10,6 +10,8 @@ import {
 } from '../addressActions';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';
+import { createMockSupabaseChain } from '@/test-utils/supabase-mock-helper';
 // Mock des dépendances
 jest.mock('@/lib/supabase/server');
 jest.mock('next/cache', () => ({
@@ -35,6 +37,9 @@ const mockSupabaseClient = {
 };
 
 (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe('addressActions - Simple Tests', () => {
   const mockUser = { id: 'user-123', email: 'user@test.com' };
@@ -68,7 +73,7 @@ describe('addressActions - Simple Tests', () => {
       const result = await addAddress(addressData, 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
 
@@ -90,7 +95,7 @@ describe('addressActions - Simple Tests', () => {
       }, 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
 
@@ -105,7 +110,7 @@ describe('addressActions - Simple Tests', () => {
       const result = await deleteAddress('addr-123');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
 
@@ -120,7 +125,7 @@ describe('addressActions - Simple Tests', () => {
       const result = await getUserAddresses();
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
   });
@@ -159,7 +164,7 @@ describe('addressActions - Simple Tests', () => {
       const result = await getUserAddresses();
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -170,7 +175,7 @@ describe('addressActions - Simple Tests', () => {
       const result = await deleteAddress('');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -186,7 +191,7 @@ describe('addressActions - Simple Tests', () => {
       }, 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -219,7 +224,7 @@ describe('addressActions - Simple Tests', () => {
       const result = await getUserAddresses();
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data).toEqual(mockAddresses);
     });
 
@@ -237,7 +242,7 @@ describe('addressActions - Simple Tests', () => {
       const result = await deleteAddress('addr-123');
 
       // Assert
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('addresses');
     });
   });

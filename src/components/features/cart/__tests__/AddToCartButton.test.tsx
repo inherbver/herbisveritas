@@ -11,7 +11,9 @@ import { renderWithProviders } from "@/test-utils/render";
 import { UserFactory, ProductFactory, CartFactory } from "@/test-utils";
 import type { Database } from "@/types/supabase";
 
-type Product = Database["public"]["Tables"]["products"]["Row"];
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';
+import { UserFactory, ProductFactory, CartFactory } from '@/test-utils';type Product = Database["public"]["Tables"]["products"]["Row"];
 
 // Mock des actions serveur
 jest.mock("@/actions/cartActions", () => ({
@@ -84,6 +86,9 @@ function AddToCartButton({
     </button>
   );
 }
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("AddToCartButton - Tests Composant React (Phase 3.3)", () => {
   beforeEach(() => {

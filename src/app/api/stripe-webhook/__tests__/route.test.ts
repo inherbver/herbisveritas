@@ -6,7 +6,8 @@ import { POST } from "../route";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 
-// Create mock before jest.mock calls to avoid hoisting issues
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Create mock before jest.mock calls to avoid hoisting issues
 const mockConstructEvent = jest.fn();
 
 // Mock dependencies
@@ -176,6 +177,9 @@ const mockCart = {
 const mockOrder = {
   id: "order-123",
 };
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("Stripe Webhook Handler", () => {
   let mockStripe: any;

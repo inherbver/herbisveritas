@@ -8,7 +8,8 @@ import { useCartStore } from '@/stores/cartStore';
 import { createClient } from '@/lib/supabase/client';
 import { getCart } from '@/actions/cartActions';
 
-// Mock des dépendances
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock des dépendances
 jest.mock('@/lib/supabase/client');
 jest.mock('@/actions/cartActions');
 jest.mock('@/stores/cartStore');
@@ -40,6 +41,9 @@ const mockSubscription = {
   success: true,
   data: { items: [{ id: '1', productId: 'prod-1', quantity: 1 }] }
 });
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe('useAuthCartSync Hook', () => {
   let authCallback: Function;

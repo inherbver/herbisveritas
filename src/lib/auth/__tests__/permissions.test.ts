@@ -13,10 +13,16 @@ import { UserFactory } from "@/test-utils/factories/UserFactory";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logSecurityEvent } from "@/lib/auth/admin-service";
 import type { AppPermission } from "@/lib/auth/types";
+import { 
+  setupServerActionMocks 
+} from '@/test-utils/server-action-mocks';
 
 // Mocks
 jest.mock("@/lib/supabase/server");
 jest.mock("@/lib/auth/admin-service");
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("Permission System", () => {
   const mockSupabase = {

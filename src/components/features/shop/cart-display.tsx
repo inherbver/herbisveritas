@@ -60,8 +60,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
           quantity: newQuantity,
         };
 
-        const result: CartActionResult<CartData | null> =
-          await updateCartItemQuantityAction(actionInput);
+        const result = (await updateCartItemQuantityAction(actionInput)) as CartActionResult<CartData | null>;
 
         if (isSuccessResult(result)) {
           if (result.data?.items) {
@@ -137,8 +136,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
       ._setItems(optimisticItems, true, "cart-display-remove-optimistic");
 
     const actionInput: RemoveFromCartInput = { cartItemId };
-    const result: CartActionResult<CartData | null> =
-      await removeItemFromCart(actionInput);
+    const result = (await removeItemFromCart(actionInput)) as CartActionResult<CartData | null>;
 
     if (isSuccessResult(result)) {
       toast.success(result.message || t("itemRemovedSuccess"));
@@ -285,7 +283,7 @@ export function CartDisplay({ onClose }: CartDisplayProps) {
                     <section className="flex justify-between text-base font-medium">
                       <h3>
                         {item.slug ? (
-                          <NextLink href={`/products/${item.slug}`}>
+                          <NextLink href={`/products/${item.slug}` as "/products"}>
                             {item.name}
                           </NextLink>
                         ) : (

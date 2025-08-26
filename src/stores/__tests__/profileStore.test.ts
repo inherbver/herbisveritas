@@ -8,7 +8,8 @@ import { createMockSupabaseClient } from "@/test-utils/supabaseMocks";
 import { UserFactory } from "@/test-utils/factories/UserFactory";
 import type { Profile } from "@/types/profile";
 
-// Mock profile data
+
+import { UserFactory } from '@/test-utils';// Mock profile data
 const _mockProfileData: Profile = {
   first_name: "John",
   last_name: "Doe",

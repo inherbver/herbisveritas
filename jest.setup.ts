@@ -7,6 +7,37 @@ import { TextEncoder, TextDecoder } from "util";
 global.TextEncoder = TextEncoder as any;
 global.TextDecoder = TextDecoder as any;
 
+// Polyfill FormData pour les tests
+if (typeof FormData === 'undefined') {
+  (global as any).FormData = class FormData {
+    private data: Map<string, any> = new Map();
+    
+    append(key: string, value: any) {
+      this.data.set(key, value);
+    }
+    
+    get(key: string) {
+      return this.data.get(key);
+    }
+    
+    has(key: string) {
+      return this.data.has(key);
+    }
+    
+    set(key: string, value: any) {
+      this.data.set(key, value);
+    }
+    
+    delete(key: string) {
+      this.data.delete(key);
+    }
+    
+    forEach(callback: (value: any, key: string) => void) {
+      this.data.forEach((value, key) => callback(value, key));
+    }
+  };
+}
+
 // Variables d'environnement pour les tests
 process.env.NEXT_PUBLIC_SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://test-project.supabase.co";

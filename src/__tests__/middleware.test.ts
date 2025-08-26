@@ -5,16 +5,30 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { middleware } from "@/middleware";
-import { createClient } from "@/lib/supabase/server";
 
-// Mock des modules
-jest.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: jest.fn(),
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock des modules
+jest.mock("@supabase/ssr", () => ({
+  createServerClient: jest.fn(),
+}));
+
+jest.mock("next-intl/middleware", () => ({
+  __esModule: true,
+  default: jest.fn(() => jest.fn((req) => NextResponse.next())),
 }));
 
 jest.mock("@/lib/security/csrf-protection", () => ({
-  validateCSRFToken: jest.fn(),
+  CSRFProtection: {
+    validateRequest: jest.fn().mockResolvedValue(true),
+  },
 }));
+
+jest.mock("@/lib/auth/utils", () => ({
+  clearSupabaseCookies: jest.fn(),
+}));
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("Authentication Middleware", () => {
   let mockRequest: Partial<NextRequest>;
@@ -39,17 +53,14 @@ describe("Authentication Middleware", () => {
       })),
     };
 
-    (createSupabaseServerClient as jest.Mock).mockResolvedValue(
-      mockSupabaseClient,
-    );
+    const { createServerClient } = require("@supabase/ssr");
+    (createServerClient as jest.Mock).mockReturnValue(mockSupabaseClient);
 
     // Configuration de base de la requête
+    const url = new URL("http://localhost:3000/");
     mockRequest = {
-      nextUrl: {
-        pathname: "/",
-        searchParams: new URLSearchParams(),
-        clone: jest.fn(() => mockRequest.nextUrl),
-      },
+      method: "GET",
+      nextUrl: url,
       headers: new Headers({
         "accept-language": "fr-FR,fr;q=0.9,en;q=0.8",
       }),
@@ -57,6 +68,7 @@ describe("Authentication Middleware", () => {
         get: jest.fn(),
         set: jest.fn(),
         delete: jest.fn(),
+        getAll: jest.fn(() => []),
       },
       url: "http://localhost:3000/",
     };

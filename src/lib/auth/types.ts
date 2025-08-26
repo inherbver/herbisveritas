@@ -118,7 +118,8 @@ export type SecurityEventType =
   | "successful_admin_login"
   | "admin_action"
   | "role_change"
-  | "permission_change";
+  | "permission_change"
+  | "rate_limit_exceeded";
 
 export interface SecurityEvent {
   type: SecurityEventType;

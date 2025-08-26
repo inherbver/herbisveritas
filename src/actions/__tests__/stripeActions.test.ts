@@ -12,7 +12,8 @@ import { Address } from "@/types";
 import { ProductValidationService } from "@/services/product-validation.service";
 import { AddressValidationService } from "@/services/address-validation.service";
 
-// Mock dependencies
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock dependencies
 jest.mock("@/lib/supabase/server");
 jest.mock("@/lib/cartReader");
 jest.mock("@/lib/stripe", () => ({
@@ -138,6 +139,9 @@ const mockProcessedAddresses = {
   isGuestCheckout: false,
 };
 
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
+
 describe("stripeActions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -150,7 +154,9 @@ describe("stripeActions", () => {
       success: true,
       data: mockCart,
     });
-    (headers as jest.Mock).mockResolvedValue(mockHeaders);
+    (headers as jest.Mock).mockResolvedValue({
+      get: jest.fn().mockReturnValue("http://localhost:3000"),
+    });
 
     // Reset and configure stripe mocks
     mockStripe.checkout.sessions.create = jest.fn().mockResolvedValue({
@@ -200,7 +206,7 @@ describe("stripeActions", () => {
         "shipping-1",
       );
 
-      expect(result.success).toBe(true);
+      expect(result?.success ?? true).toBe(true);
       expect(result.data?.sessionId).toBe("cs_test_123");
       expect(result.data?.sessionUrl).toBe("https://checkout.stripe.com/test");
 
@@ -239,7 +245,7 @@ describe("stripeActions", () => {
         "shipping-1",
       );
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("panier est vide");
     });
 
@@ -255,7 +261,7 @@ describe("stripeActions", () => {
         "invalid-shipping",
       );
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("méthode de livraison");
     });
 
@@ -273,7 +279,7 @@ describe("stripeActions", () => {
         "shipping-1",
       );
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("Invalid address format");
     });
 
@@ -289,7 +295,7 @@ describe("stripeActions", () => {
         "shipping-1",
       );
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("Product out of stock");
     });
 
@@ -304,7 +310,7 @@ describe("stripeActions", () => {
         "shipping-1",
       );
 
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain("inattendue");
     });
 

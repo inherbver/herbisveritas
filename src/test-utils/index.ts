@@ -28,6 +28,16 @@ export {
   supabaseTestScenarios,
 } from "./supabaseMocks";
 
+// Helper Supabase amélioré
+export {
+  createMockSupabaseClient as createMockSupabaseClientV2,
+  createMockSupabaseChain,
+  setupSupabaseMocks,
+  resetSupabaseMocks,
+  createPaginatedResponse,
+  createSupabaseError,
+} from "./supabase-mock-helper";
+
 // Utilitaires existants
 export * from "./formDataHelpers";
 export * from "./server-action-helpers";

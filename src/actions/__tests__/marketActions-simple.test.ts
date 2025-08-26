@@ -5,7 +5,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkAdminRole } from "@/lib/auth/admin-service";
 
-// Mock dependencies
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock dependencies
 jest.mock("@/lib/supabase/server");
 jest.mock("@/lib/auth/admin-service");
 jest.mock("next/cache", () => ({
@@ -32,6 +33,9 @@ const mockUser = {
   id: "user-1",
   email: "admin@test.com",
 };
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("marketActions - Core Tests", () => {
   beforeEach(() => {

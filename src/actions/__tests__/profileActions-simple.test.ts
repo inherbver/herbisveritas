@@ -9,6 +9,8 @@ import {
 } from '../profileActions';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';
+import { createMockSupabaseChain } from '@/test-utils/supabase-mock-helper';
 // Mock des dépendances
 jest.mock('@/lib/supabase/server');
 jest.mock('next/cache', () => ({
@@ -33,6 +35,9 @@ const mockSupabaseClient = {
 };
 
 (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe('profileActions - Simple Tests', () => {
   const mockUser = { id: 'user-123', email: 'user@test.com' };
@@ -63,7 +68,7 @@ describe('profileActions - Simple Tests', () => {
       const result = await updateProfile(profileData, 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
 
@@ -78,7 +83,7 @@ describe('profileActions - Simple Tests', () => {
       const result = await updatePassword('oldPass123', 'newPass456!', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
 
@@ -93,7 +98,7 @@ describe('profileActions - Simple Tests', () => {
       const result = await deleteProfile('fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toContain('authentifi');
     });
   });
@@ -139,7 +144,7 @@ describe('profileActions - Simple Tests', () => {
       }, 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -150,7 +155,7 @@ describe('profileActions - Simple Tests', () => {
       const result = await updatePassword('oldPass123', 'weak', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
@@ -181,7 +186,7 @@ describe('profileActions - Simple Tests', () => {
       const result = await updatePassword('oldPass123', 'NewPass456!', 'fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });
@@ -218,7 +223,7 @@ describe('profileActions - Simple Tests', () => {
       const result = await deleteProfile('fr');
 
       // Assert
-      expect(result.success).toBe(false);
+      expect(result?.success).toBe(false);
       expect(result.error).toBeDefined();
     });
   });

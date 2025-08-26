@@ -24,7 +24,8 @@ import {
 import { stripe } from "../index";
 import Stripe from "stripe";
 
-// Mock Stripe client
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock Stripe client
 jest.mock("../index", () => ({
   stripe: {
     webhooks: {
@@ -54,6 +55,9 @@ jest.mock("../index", () => ({
 }));
 
 const mockStripe = stripe as any;
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("Stripe Utils", () => {
   beforeEach(() => {

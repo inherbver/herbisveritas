@@ -218,10 +218,11 @@ export default function CheckoutClientPage({
         selectedShippingMethodId!
       );
 
-      if (result.success && result.data?.sessionUrl) {
-        window.location.href = result.data.sessionUrl;
+      const typedResult = result as { success: boolean; data?: { sessionUrl: string }; error?: string };
+      if (typedResult.success && typedResult.data?.sessionUrl) {
+        window.location.href = typedResult.data.sessionUrl;
       } else {
-        toast.error(t("toast.paymentErrorTitle"), { description: result.error });
+        toast.error(t("toast.paymentErrorTitle"), { description: typedResult.error });
       }
     });
   };
@@ -357,7 +358,7 @@ export default function CheckoutClientPage({
                       <div className="flex justify-between text-base font-medium text-gray-900">
                         <h3>
                           {item.slug ? (
-                            <a href={`/products/${item.slug}`} className="hover:underline">
+                            <a href={`/products/${item.slug}` as "/products"} className="hover:underline">
                               {item.name}
                             </a>
                           ) : (

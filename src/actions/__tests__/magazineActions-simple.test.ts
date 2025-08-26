@@ -4,7 +4,8 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// Mock dependencies
+
+import { setupServerActionMocks } from '@/test-utils/server-action-mocks';// Mock dependencies
 jest.mock("@/lib/supabase/server");
 jest.mock("@/lib/auth/server-auth");
 jest.mock("next/cache", () => ({
@@ -25,6 +26,9 @@ const mockSupabaseClient = {
 };
 
 (createSupabaseServerClient as jest.Mock).mockResolvedValue(mockSupabaseClient);
+
+// Setup des mocks standards pour Server Actions
+setupServerActionMocks();
 
 describe("magazineActions - Core Tests", () => {
   beforeEach(() => {
