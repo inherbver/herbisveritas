@@ -1,11 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./tests",
-  fullyParallel: true,
+  testDir: "./tests/e2e",
+  fullyParallel: false, // Désactiver le parallélisme pour éviter les blocages sur Windows
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1, // Forcer un seul worker pour éviter les problèmes de concurrence
   
   // Reporters optimisés pour CI
   reporter: process.env.CI 
@@ -21,14 +21,20 @@ export default defineConfig({
       ],
   
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3003",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3001",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    video: process.env.CI ? "retain-on-failure" : "off",
-    // Timeout global pour les actions
-    actionTimeout: 10000,
-    // Timeout pour la navigation
-    navigationTimeout: 30000,
+    video: "off", // Désactiver les vidéos pour améliorer les performances
+    // Timeout réduit pour les actions
+    actionTimeout: 5000,
+    // Timeout réduit pour la navigation
+    navigationTimeout: 10000,
+    // Options pour Windows
+    headless: true,
+    launchOptions: {
+      // Options spécifiques pour Windows
+      slowMo: 100, // Ralentir les actions pour éviter les race conditions
+    },
   },
   
   // Configuration des projets pour parallélisation
@@ -63,16 +69,21 @@ export default defineConfig({
     ? undefined // Le serveur est démarré manuellement en CI
     : {
         command: "npm run dev",
-        url: "http://localhost:3003",
-        reuseExistingServer: !process.env.CI,
-        timeout: 120000,
+        url: "http://localhost:3001",
+        reuseExistingServer: true, // Toujours réutiliser le serveur existant
+        timeout: 60000, // Réduire le timeout de démarrage
+        stdout: "pipe",
+        stderr: "pipe",
       },
   
-  // Timeouts globaux
-  timeout: 60000,
+  // Timeouts réduits pour éviter les blocages
+  timeout: 30000, // 30 secondes par test
   expect: {
-    timeout: 10000,
+    timeout: 5000, // 5 secondes pour les assertions
   },
+  
+  // Global timeout pour éviter les tests qui tournent indéfiniment
+  globalTimeout: process.env.CI ? 30 * 60 * 1000 : 10 * 60 * 1000, // 10 minutes local, 30 minutes CI
   
   // Configuration des répertoires de sortie
   outputDir: "test-results/",

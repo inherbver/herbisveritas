@@ -1,0 +1,75 @@
+# Page snapshot
+
+```yaml
+- banner:
+  - text: Header.promoBanner
+  - link "Header.logoAriaLabel":
+    - /url: /fr
+    - text: In Herbis Veritas
+  - navigation "Main":
+    - list:
+      - listitem:
+        - link "Header.home":
+          - /url: /fr/boutique
+      - listitem:
+        - link "Magazine":
+          - /url: /fr/magazine
+      - listitem:
+        - link "Header.findUs":
+          - /url: /fr/contact
+      - listitem:
+        - link "Header.aboutLink":
+          - /url: /fr/about
+  - button "Ouvrir le Panier"
+- banner
+- main
+- contentinfo
+- contentinfo:
+  - separator
+  - heading "In Herbis Veritas" [level=2]
+  - paragraph: Inspirés par la nature, créés artisanalement dans le sud de la France.
+  - 'navigation "{tFooter(''navLabel'')}"':
+    - heading "Navigation" [level=3]
+    - list:
+      - listitem:
+        - link "À propos":
+          - /url: /fr/about
+      - listitem:
+        - link "Contact":
+          - /url: /fr/contact
+      - listitem:
+        - link "Conditions d’utilisation":
+          - /url: /fr/terms
+      - listitem:
+        - link "Politique de confidentialité":
+          - /url: /fr/privacy-policy
+  - navigation "Support et aide":
+    - heading "Support" [level=3]
+    - list:
+      - listitem:
+        - link "FAQ":
+          - /url: /fr/faq
+      - listitem:
+        - link "Livraison":
+          - /url: /fr/livraison
+      - listitem:
+        - link "Retours":
+          - /url: /fr/retours
+  - article:
+    - heading "Restons en contact" [level=3]
+    - paragraph: Inscrivez-vous à notre newsletter pour des offres exclusives et nos nouveautés.
+    - complementary:
+      - text: Adresse e-mail
+      - textbox "Adresse e-mail"
+      - button "S'inscrire" [disabled]
+  - complementary:
+    - heading "Suivez notre aventure" [level=4]
+    - navigation "Réseaux sociaux":
+      - link "Suivez-nous sur Instagram":
+        - /url: https://www.instagram.com/in_herbis_veritas/?utm_source=ig_web_button_share_sheet
+      - link "Suivez-nous sur Facebook":
+        - /url: https://www.facebook.com/in.herbis.veritas
+  - paragraph: © 2025 In Herbis Veritas. Tous droits réservés.
+  - text: Fait avec ❤️ en Occitanie
+- region "Notifications alt+T"
+```

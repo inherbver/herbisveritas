@@ -112,9 +112,9 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
     const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions
-    const hasPermission = await checkUserPermission("content:create");
-    if (!hasPermission) {
-      throw new AuthenticationError("Permission refusée");
+    const authResult = await checkUserPermission("content:create");
+    if (!authResult.isAuthorized) {
+      throw new AuthenticationError(authResult.error || "Permission refusée");
     }
 
     // Récupération de l'utilisateur actuel
@@ -226,9 +226,9 @@ export async function updateArticle(
     const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions
-    const hasPermission = await checkUserPermission("content:update");
-    if (!hasPermission) {
-      throw new AuthenticationError("Permission refusée");
+    const authResult = await checkUserPermission("content:update");
+    if (!authResult.isAuthorized) {
+      throw new AuthenticationError(authResult.error || "Permission refusée");
     }
 
     // Génération du slug si modifié
@@ -334,9 +334,9 @@ export async function deleteArticle(id: string): Promise<ActionResult<null>> {
     const supabase = await createSupabaseServerClient();
 
     // Vérification des permissions
-    const hasPermission = await checkUserPermission("content:delete");
-    if (!hasPermission) {
-      throw new AuthenticationError("Permission refusée");
+    const authResult = await checkUserPermission("content:delete");
+    if (!authResult.isAuthorized) {
+      throw new AuthenticationError(authResult.error || "Permission refusée");
     }
 
     const { error } = await supabase.from("articles").delete().eq("id", id);
@@ -371,9 +371,9 @@ export async function createCategory(
   try {
     const supabase = await createSupabaseServerClient();
 
-    const hasPermission = await checkUserPermission("content:create");
-    if (!hasPermission) {
-      throw new AuthenticationError("Permission refusée");
+    const authResult = await checkUserPermission("content:create");
+    if (!authResult.isAuthorized) {
+      throw new AuthenticationError(authResult.error || "Permission refusée");
     }
 
     const { data: category, error } = await supabase
@@ -550,9 +550,9 @@ export async function createTag(data: Omit<TagInsert, "id">): Promise<ActionResu
   try {
     const supabase = await createSupabaseServerClient();
 
-    const hasPermission = await checkUserPermission("content:create");
-    if (!hasPermission) {
-      throw new AuthenticationError("Permission refusée");
+    const authResult = await checkUserPermission("content:create");
+    if (!authResult.isAuthorized) {
+      throw new AuthenticationError(authResult.error || "Permission refusée");
     }
 
     const { data: tag, error } = await supabase.from("tags").insert(data).select().single();

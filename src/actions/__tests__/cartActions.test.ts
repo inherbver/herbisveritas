@@ -2,6 +2,10 @@
  * Tests for Cart Actions - Server Actions with FormData
  */
 
+// Mock les dépendances critiques
+jest.mock('@/lib/core/logger');
+jest.mock('@/lib/security/rate-limit-decorator');
+
 import {
   addItemToCart,
   removeItemFromCart,

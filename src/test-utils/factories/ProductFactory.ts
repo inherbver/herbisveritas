@@ -27,6 +27,7 @@ export interface MockProduct {
   price: number;
   is_active: boolean;
   stock: number;
+  stock_quantity?: number; // Alias pour compatibilité avec les tests
   created_at: string;
   updated_at: string;
   currency: string;
@@ -41,6 +42,7 @@ export interface MockProduct {
   labels?: string[] | null;
   status?: string | null;
   unit?: string | null;
+  discount_percentage?: number | null;
 }
 
 export interface ProductWithVariants {
@@ -67,6 +69,7 @@ export class ProductFactory {
       description_short: "Description courte du produit de test",
       price: 29.99,
       stock: 100,
+      stock_quantity: 100, // Alias pour compatibilité
       category: "test",
       image_url: "https://example.com/image.jpg",
       is_active: true,
@@ -78,12 +81,14 @@ export class ProductFactory {
       labels: ["test"],
       status: null,
       unit: null,
+      discount_percentage: null,
       ...overrides,
     };
 
     // S'assurer que les valeurs undefined deviennent null
     return {
       ...baseProduct,
+      stock_quantity: baseProduct.stock_quantity ?? baseProduct.stock, // Alias pour compatibilité
       category: baseProduct.category ?? null,
       description_long: baseProduct.description_long ?? null,
       description_short: baseProduct.description_short ?? null,
@@ -94,6 +99,7 @@ export class ProductFactory {
       labels: baseProduct.labels ?? null,
       status: baseProduct.status ?? null,
       unit: baseProduct.unit ?? null,
+      discount_percentage: baseProduct.discount_percentage ?? null,
     };
   }
 
@@ -130,6 +136,7 @@ export class ProductFactory {
   static outOfStock(overrides: Partial<MockProduct> = {}): MockProduct {
     return this.simple({
       stock: 0,
+      stock_quantity: 0, // Alias pour compatibilité
       is_active: false,
       ...overrides,
     });
@@ -144,6 +151,7 @@ export class ProductFactory {
   ): MockProduct {
     return this.simple({
       is_on_promotion: true,
+      discount_percentage: discountPercentage,
       ...overrides,
     });
   }

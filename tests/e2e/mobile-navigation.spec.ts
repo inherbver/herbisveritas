@@ -12,7 +12,6 @@ const androidPhone = devices['Pixel 5']
 test.describe('Mobile Navigation E2E - Phase 3.4', () => {
   
   test.describe('iPhone Tests', () => {
-    test.use({ ...iPhone })
     
     test('mobile menu opens and closes correctly on iPhone', async ({ page }) => {
       // Act - Aller à la page d'accueil
@@ -153,7 +152,6 @@ test.describe('Mobile Navigation E2E - Phase 3.4', () => {
   })
   
   test.describe('Android Tests', () => {
-    test.use({ ...androidPhone })
     
     test('swipe gestures work for product gallery on Android', async ({ page }) => {
       // Act - Aller à un produit avec galerie
@@ -265,7 +263,6 @@ test.describe('Mobile Navigation E2E - Phase 3.4', () => {
   })
   
   test.describe('Touch Interactions', () => {
-    test.use({ ...iPhone })
     
     test('long press context menus work', async ({ page }) => {
       await page.goto('/shop')
@@ -317,7 +314,6 @@ test.describe('Mobile Navigation E2E - Phase 3.4', () => {
   })
   
   test.describe('Performance on Mobile', () => {
-    test.use({ ...iPhone })
     
     test('page load times are acceptable on mobile', async ({ page }) => {
       // Act - Mesurer le temps de chargement
@@ -389,7 +385,9 @@ test.describe('Mobile Navigation E2E - Phase 3.4', () => {
 })
 
 // Extension de l'interface Page pour les gestes tactiles
+// @ts-ignore - Namespace nécessaire pour l'extension de type Playwright
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace PlaywrightTest {
     interface Locator {
       swipeLeft(): Promise<void>

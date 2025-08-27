@@ -58,16 +58,26 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
       "Bash(npx supabase:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx playwright install:*)",
+      "Bash(npx playwright:*)",
+      "Bash(timeout:*)"
     ],
-    "additionalDirectories": ["C:\\c"]
+    "additionalDirectories": [
+      "C:\\c"
+    ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["supabase"],
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"]
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
     }
   }
 }

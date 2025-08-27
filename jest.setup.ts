@@ -50,6 +50,11 @@ process.env.NEXT_PUBLIC_BASE_URL = "https://example.com";
 process.env.NEXT_PUBLIC_SITE_URL = "https://example.com";
 process.env.ADMIN_PRINCIPAL_ID = "123e4567-e89b-12d3-a456-426614174000";
 process.env.INTERNAL_FUNCTION_SECRET = "test-internal-function-secret";
+process.env.RESEND_API_KEY = "re_test_123456789";
+process.env.SMTP_HOST = "smtp.test.com";
+process.env.SMTP_PORT = "587";
+process.env.SMTP_USER = "test@test.com";
+process.env.SMTP_PASS = "test-password";
 // NODE_ENV est déjà défini par Jest, pas besoin de le redéfinir
 
 // Mock Next.js cache et revalidation functions
@@ -480,24 +485,29 @@ jest.mock("stripe", () => {
 });
 
 // Mock logger for rate-limit-decorator and other services
-jest.mock("@/lib/core/logger", () => ({
-  logger: {
+jest.mock("@/lib/core/logger", () => {
+  const mockLogger = {
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-  },
-  LogUtils: {
-    createUserActionContext: jest.fn((userId, action, resource) => ({
-      userId,
-      action,
-      resource,
-    })),
-    logOperationStart: jest.fn(),
-    logOperationSuccess: jest.fn(),
-    logOperationError: jest.fn(),
-  },
-}));
+  };
+  
+  return {
+    logger: mockLogger,
+    default: mockLogger, // Ajout du default export
+    LogUtils: {
+      createUserActionContext: jest.fn((userId, action, resource) => ({
+        userId,
+        action,
+        resource,
+      })),
+      logOperationStart: jest.fn(),
+      logOperationSuccess: jest.fn(),
+      logOperationError: jest.fn(),
+    },
+  };
+});
 
 console.log(
   "Jest setup fully loaded with complete next-intl, Supabase and Stripe mocks",
